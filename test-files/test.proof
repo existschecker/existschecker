@@ -1,5 +1,5 @@
 theorem test {
-  conclude (\forall x\forall y(x\in y\to x\in y\wedge x\in y))\wedge(\forall x\forall y(x\in y\to x\in y\wedge x\in y)) {
+  conclude (\forall x\forall y(x\in y\to x\in y\wedge x\in y))\wedge(\forall y\forall z(y\in z\to y\in z\wedge y\in z)) {
     any x, y {
       assume x\in y conclude x\in y\wedge x\in y {}
     }

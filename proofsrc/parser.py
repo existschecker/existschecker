@@ -6,8 +6,9 @@ import re
 class Expr: pass
 
 @dataclass
-class Atom(Expr):
-    text: str
+class Symbol(Expr):
+    name: str
+    args: list[str]
 
 @dataclass
 class Implies(Expr):
@@ -141,8 +142,15 @@ def parse_expr(text: str) -> Expr:
             return And(parse_expr(left), parse_expr(right))
         i += 1
 
-    # 5. それ以外は原子式
-    return Atom(text)
+    # 5. 原子式
+    # 特別扱い: "x \in y"
+    m = re.match(r"^([a-zA-Z_][a-zA-Z0-9_]*)\\in([a-zA-Z_][a-zA-Z0-9_]*)$", text.replace(" ", ""))
+    if m:
+        left, right = m.groups()
+        return Symbol("in", [left, right])
+
+    # 将来的な拡張に備えて、その他は定数や変数として Symbol にする
+    return Symbol(text, [])
 
 # --- パース関数（暫定・前に作ったものを流用して拡張）
 

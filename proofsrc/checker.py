@@ -1,120 +1,143 @@
-from parser import Theorem, Any, Assume, Conclude, Expr, And, Implies, Forall
+from parser import Theorem, Any, Assume, Conclude, Expr, And, Implies, Forall, Symbol
 
-# --- ユーティリティ関数 ---
-
-def split_conjunction(expr: Expr) -> list[Expr]:
-    """
-    A ∧ B を [A, B] に分解する（再帰的に処理）
-    """
-    if isinstance(expr, And):
-        return split_conjunction(expr.left) + split_conjunction(expr.right)
-    else:
-        return [expr]
-
-def expr_in_context(expr: Expr, context: list[Expr]) -> bool:
-    """
-    context 内に expr が含まれているかどうかを判定
-    """
-    return any(expr == c for c in context)
-
-def derivable(expr: Expr, context: list[Expr]) -> bool:
-    """
-    context から式 expr が導けるかどうかを判定する。
-    and_intro / and_elim 相当の処理もここで吸収。
-    """
-    if expr_in_context(expr, context):
+def alpha_equiv(e1, e2, env=None):
+    if env is None:
+        env = {}
+    # Forall: 束縛変数名を対応付けて再帰
+    if isinstance(e1, Forall) and isinstance(e2, Forall):
+        newenv = env.copy()
+        newenv[e1.var] = e2.var
+        return alpha_equiv(e1.body, e2.body, newenv)
+    # Implies / And
+    if isinstance(e1, Implies) and isinstance(e2, Implies):
+        return alpha_equiv(e1.left, e2.left, env) and alpha_equiv(e1.right, e2.right, env)
+    if isinstance(e1, And) and isinstance(e2, And):
+        return alpha_equiv(e1.left, e2.left, env) and alpha_equiv(e1.right, e2.right, env)
+    # Symbol: 名前一致 + 引数ごとに env を考慮して比較
+    if isinstance(e1, Symbol) and isinstance(e2, Symbol):
+        if e1.name != e2.name or len(e1.args) != len(e2.args):
+            return False
+        for a, b in zip(e1.args, e2.args):
+            mapped = env.get(a, a)  # env にあれば置換してから比較
+            if mapped != b:
+                return False
         return True
-    # ∧ の除去: (A ∧ B) から A または B を導出
+    return False
+
+def expr_in_context(expr, context):
+    return any(alpha_equiv(expr, c) for c in context)
+
+def derivable(goal, context):
+    # まず context に α同値な式があれば可
+    if expr_in_context(goal, context):
+        return True
+    # goal が And のときは左右を導けるか
+    if isinstance(goal, And):
+        return derivable(goal.left, context) and derivable(goal.right, context)
+    # context にある And を分解して探す（A∧B があれば A, B が使える）
     for c in context:
         if isinstance(c, And):
-            if expr == c.left or expr == c.right:
+            if derivable(goal, [c.left] + context):
                 return True
-    # ∧ の導入: A, B が両方 context にあれば A ∧ B を導出
-    if isinstance(expr, And):
-        if derivable(expr.left, context) and derivable(expr.right, context):
-            return True
+            if derivable(goal, [c.right] + context):
+                return True
     return False
 
 # --- 証明チェッカー本体 ---
+def check_proof(node, context=None, indent=0):
+    """
+    シンプルに context を1つだけ回す設計。
+    各ブロック内で導出された式は local_context に溜め、必要に応じて
+    Conclude や Any が context に追加して外へ出す。
 
-def check_proof(node, context, derived, indent=0):
+    標準出力は英語、コメントは日本語。
+    """
+    if context is None:
+        context = []
+
     sp = "  " * indent
 
     # --- Theorem ---
     if isinstance(node, Theorem):
         print(f"{sp}Theorem {node.name}")
-        local_context = []
-        local_derived = []
-        if not check_proof(node.proof, local_context, local_derived, indent + 1):
+        # 定理は新しいトップレベルの context を使って検証
+        top_ctx: list[Expr] = []
+        if not check_proof(node.proof, top_ctx, indent + 1):
+            print(f"{sp}❌ Failed")
             return False
         goal = node.proof.conclusion
-        if derivable(goal, local_derived):
+        if derivable(goal, top_ctx):
             print(f"{sp}✔ Theorem {node.name} proved: {goal}")
             return True
         else:
-            print(f"{sp}❌ Theorem {node.name} failed: goal {goal} not in {local_derived}")
+            print(f"{sp}❌ Theorem {node.name} failed: goal {goal} not derivable from {top_ctx}")
             return False
 
     # --- Conclude ---
-    elif isinstance(node, Conclude):
+    if isinstance(node, Conclude):
         print(f"{sp}>> Checking Conclude {node.conclusion}")
-        local_context = list(context)
-        local_derived = []
+        # このブロック専用のローカル context を作る
+        local_ctx = list(context)
         for stmt in node.body:
-            if not check_proof(stmt, local_context, local_derived, indent + 1):
+            if not check_proof(stmt, local_ctx, indent + 1):
                 return False
-        if derivable(node.conclusion, local_derived):
+        # ボディを検証した後にゴールが local_ctx から導けるか確認
+        if derivable(node.conclusion, local_ctx):
+            # Conclude は成功したゴールを外側の context にエクスポートする
+            context.append(node.conclusion)
             print(f"{sp}✔ Conclude goal {node.conclusion} derived")
-            derived.append(node.conclusion)
             return True
         else:
-            print(f"{sp}❌ Conclude goal {node.conclusion} not derivable (derived={local_derived})")
+            print(f"{sp}❌ Conclude goal {node.conclusion} not derivable from {local_ctx}")
             return False
 
     # --- Assume ---
-    elif isinstance(node, Assume):
+    if isinstance(node, Assume):
         print(f"{sp}>> Checking Assume premise={node.premise}, goal={node.conclusion}")
-        new_context = context + split_conjunction(node.premise)
-
+        # 前提はそのまま追加（split_conjunction は使わない）
+        new_ctx = context + [node.premise]
         if not node.body:
-            # ボディがない場合: 前提から直接ゴールを導けるかを確認
-            if derivable(node.conclusion, new_context):
+            # ボディが無ければ前提から直接ゴールが導けるか
+            if derivable(node.conclusion, new_ctx):
                 implication = Implies(node.premise, node.conclusion)
-                derived.append(implication)
+                context.append(implication)
                 print(f"{sp}✔ Derived implication {implication}")
                 return True
             else:
-                print(f"{sp}❌ Cannot derive {node.conclusion} from {new_context}")
+                print(f"{sp}❌ Cannot derive {node.conclusion} from {new_ctx}")
                 return False
         else:
-            # ボディがある場合: ローカルに検証し、閉じるときに含意を追加
-            local_derived = []
+            # ボディをローカルコンテキストで検証
+            local_ctx = list(new_ctx)
             for stmt in node.body:
-                if not check_proof(stmt, new_context, local_derived, indent + 1):
+                if not check_proof(stmt, local_ctx, indent + 1):
                     return False
             implication = Implies(node.premise, node.conclusion)
-            derived.append(implication)
-            print(f"{sp}✔ Discharged {node.premise}, added {implication} to derived")
+            context.append(implication)
+            print(f"{sp}✔ Discharged {node.premise}, added {implication} to context")
             return True
 
-    # --- Any ---
-    elif isinstance(node, Any):
+    # --- Any (universal intro) ---
+    if isinstance(node, Any):
         print(f"{sp}>> Entering Any {node.vars}")
-        local_context = list(context)
-        local_derived = []
+        local_ctx = list(context)
+        before_len = len(local_ctx)
         for stmt in node.body:
-            if not check_proof(stmt, local_context, local_derived, indent + 1):
+            if not check_proof(stmt, local_ctx, indent + 1):
                 return False
-
-        # local_derived の最後の式を ∀ で一般化
-        if local_derived:
-            formula = local_derived[-1]
+        # body の結果として追加された最後の式を一般化して外側に出す
+        new_items = local_ctx[before_len:]
+        if new_items:
+            last = new_items[-1]
+            formula = last
             for v in reversed(node.vars):
                 formula = Forall(v, formula)
-            derived.append(formula)
+            context.append(formula)
             print(f"{sp}✔ Generalized to {formula}")
+        else:
+            print(f"{sp}⚠ No new derivation inside Any {node.vars}")
         return True
 
-    else:
-        print(f"{sp}⚠ Unsupported node {node}")
-        return False
+    # 未対応ノード
+    print(f"{sp}⚠ Unsupported node {node}")
+    return False

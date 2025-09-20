@@ -11,7 +11,7 @@ def main():
     for node in ast:
         pretty(node)
         if hasattr(node, "proof"):
-            result = check_proof(node, [], [])
+            result = check_proof(node, [])
             print("✔ OK" if result else "❌ Failed")
 
 if __name__ == "__main__":
