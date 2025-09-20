@@ -1,5 +1,5 @@
 import sys
-from parser import parse_file, pretty
+from parser import parse_file_from_source, pretty
 from checker import check_proof
 
 def main():
@@ -7,7 +7,10 @@ def main():
         print("Usage: python proofsrc/main.py <file.proof>")
         return
     path = sys.argv[1]
-    ast = parse_file(path)
+    f = open(path)
+    src = f.read()
+    f.close()
+    ast = parse_file_from_source(src)
     for node in ast:
         pretty(node)
         if hasattr(node, "proof"):
