@@ -98,27 +98,19 @@ def check_proof(node, context=None, indent=0):
     # --- Assume ---
     if isinstance(node, Assume):
         print(f"{sp}>> Checking Assume premise={node.premise}, goal={node.conclusion}")
-        new_ctx = context + split_conjunction(node.premise)
-
-        if not node.body:
-            goal = node.conclusion
-            if derivable(goal, new_ctx):  # ← 置き換え
-                implication = Implies(node.premise, goal)
-                context.append(implication)
-                print(f"{sp}✔ Derived implication {implication}")
-                return True
-            else:
-                print(f"{sp}❌ Cannot derive {goal}")
+        local_ctx = list(context + split_conjunction(node.premise))
+        for stmt in node.body:
+            if not check_proof(stmt, local_ctx, indent+1):
                 return False
+        if derivable(node.conclusion, local_ctx):
+            print(f"{sp}✔ Derived conclusion {node.conclusion}")
         else:
-            local_ctx = list(new_ctx)
-            for stmt in node.body:
-                if not check_proof(stmt, local_ctx, indent+1):
-                    return False
-            implication = Implies(node.premise, node.conclusion)
-            context.append(implication)
-            print(f"{sp}✔ Discharged {node.premise}, added {implication}")
-            return True
+            print(f"{sp}❌ Cannot derive {node.conclusion}")
+            return False
+        implication = Implies(node.premise, node.conclusion)
+        context.append(implication)
+        print(f"{sp}✔ Discharged {node.premise}, added {implication}")
+        return True
 
     # --- Any ---
     if isinstance(node, Any):
