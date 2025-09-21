@@ -1,63 +1,49 @@
-theorem test {
-  conclude \forall x\forall y(x\in y\to x\in y) {
+theorem test \forall x\forall y(x\in y\to x\in y) {
+  any x, y conclude x\in y\to x\in y {
+    assume x\in y conclude x\in y {}
+  }
+}
+
+theorem test \forall x\forall y(x\in y\to x\in y\wedge x\in y) {
+  any x, y conclude x\in y\to x\in y\wedge x\in y {
+    assume x\in y conclude x\in y\wedge x\in y {}
+  }
+}
+
+theorem test \forall x\forall y((x\in y\to x\in y)\wedge(x\in y\to x\in y)) {
+  any x, y conclude (x\in y\to x\in y)\wedge(x\in y\to x\in y) {
+    assume x\in y conclude x\in y {}
+  }
+}
+
+theorem test (\forall x\forall y(x\in y\to x\in y))\wedge(\forall z\forall w(z\in w\to z\in w)) {
     any x, y conclude x\in y\to x\in y {
       assume x\in y conclude x\in y {}
-    }
   }
 }
 
-theorem test {
-  conclude \forall x\forall y(x\in y\to x\in y\wedge x\in y) {
-    any x, y conclude x\in y\to x\in y\wedge x\in y {
-      assume x\in y conclude x\in y\wedge x\in y {}
-    }
+theorem test \forall x\forall y((x\in y\to x\in y)\wedge(x\in y\to x\in y\wedge x\in y)) {
+  any x, y conclude (x\in y\to x\in y)\wedge(x\in y\to x\in y\wedge x\in y) {
+    assume x\in y conclude x\in y {}
+    assume x\in y conclude x\in y\wedge x\in y {}
   }
 }
 
-theorem test {
-  conclude \forall x\forall y((x\in y\to x\in y)\wedge(x\in y\to x\in y)) {
-    any x, y conclude (x\in y\to x\in y)\wedge(x\in y\to x\in y) {
-      assume x\in y conclude x\in y {}
-    }
+theorem test (\forall x\forall y(x\in y\to x\in y))\wedge(\forall x\forall y(x\in y\to x\in y\wedge x\in y)) {
+  any x, y conclude x\in y\to x\in y {
+    assume x\in y conclude x\in y {}
+  }
+  any x, y conclude x\in y\to x\in y\wedge x\in y {
+    assume x\in y conclude x\in y\wedge x\in y {}
   }
 }
 
-theorem test {
-  conclude (\forall x\forall y(x\in y\to x\in y))\wedge(\forall z\forall w(z\in w\to z\in w)) {
-    any x, y conclude x\in y\to x\in y {
-      assume x\in y conclude x\in y {}
-    }
-  }
-}
-
-theorem test {
-  conclude \forall x\forall y((x\in y\to x\in y)\wedge(x\in y\to x\in y\wedge x\in y)) {
-    any x, y conclude (x\in y\to x\in y)\wedge(x\in y\to x\in y\wedge x\in y) {
-      assume x\in y conclude x\in y {}
-      assume x\in y conclude x\in y\wedge x\in y {}
-    }
-  }
-}
-
-theorem test {
-  conclude (\forall x\forall y(x\in y\to x\in y))\wedge(\forall x\forall y(x\in y\to x\in y\wedge x\in y)) {
-    any x, y conclude x\in y\to x\in y {
-      assume x\in y conclude x\in y {}
-    }
-    any x, y conclude x\in y\to x\in y\wedge x\in y {
-      assume x\in y conclude x\in y\wedge x\in y {}
-    }
-  }
-}
-
-theorem test {
-  conclude \forall x\forall y(x\in y\to x\in y\wedge\forall z(z\in x\to z\in x)) {
-    any x, y conclude x\in y\to x\in y\wedge\forall z(z\in x\to z\in x) {
-      assume x\in y conclude x\in y\wedge\forall z(z\in x\to z\in x) {
-        any z conclude z\in x\to z\in x {
-          assume z\in x conclude z\in x {} 
-        }
-      } 
-    }
+theorem test \forall x\forall y(x\in y\to x\in y\wedge\forall z(z\in x\to z\in x)) {
+  any x, y conclude x\in y\to x\in y\wedge\forall z(z\in x\to z\in x) {
+    assume x\in y conclude x\in y\wedge\forall z(z\in x\to z\in x) {
+      any z conclude z\in x\to z\in x {
+        assume z\in x conclude z\in x {} 
+      }
+    } 
   }
 }

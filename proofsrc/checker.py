@@ -69,12 +69,12 @@ def check_proof(node, context=None, indent=0):
     if isinstance(node, Theorem):
         print(f"{sp}Theorem {node.name}:")
         local_ctx = []
-        if not check_proof(node.proof, local_ctx, indent+1):
-            print(f"{sp}❌ Failed")
-            return False
-        goal = node.proof.conclusion
-        if expr_in_context(goal, local_ctx):
-            print(f"{sp}✔ Theorem {node.name} proved: {goal}")
+        for stmt in node.proof:
+            if not check_proof(stmt, local_ctx, indent+1):
+                print(f"{sp}❌ Failed")
+                return False
+        if derivable(node.conclusion, local_ctx):
+            print(f"{sp}✔ Theorem {node.name} proved: {node.conclusion}")
             return True
         else:
             print(f"{sp}❌ Theorem {node.name} failed")

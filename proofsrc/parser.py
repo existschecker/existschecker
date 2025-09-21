@@ -7,7 +7,8 @@ from expr_parser import parse_expr, Symbol, Forall, Exists, And, Or, Implies, If
 @dataclass
 class Theorem:
     name: str
-    proof: "Conclude"
+    conclusion: object
+    proof: list
 
 @dataclass
 class Conclude:
@@ -65,10 +66,11 @@ class Parser:
     def parse_theorem(self):
         self.consume("THEOREM")
         name = self.consume("IDENT").value
+        conclusion, self.pos = parse_expr(self.tokens, self.pos)
         self.consume("LBRACE")
-        conclude = self.parse_conclude()
+        proof = self.parse_block()
         self.consume("RBRACE")
-        return Theorem(name=name, proof=conclude)
+        return Theorem(name=name, conclusion=conclusion, proof=proof)
 
     def parse_conclude(self):
         self.consume("CONCLUDE")
