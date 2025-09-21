@@ -2,15 +2,28 @@
 from parser import Theorem, Any, Assume, Conclude, Symbol, And, Implies, Forall
 
 # === α同値判定 ===
+from itertools import permutations
+
 def alpha_equiv(e1, e2, env=None):
-    """束縛変数の違いを無視して式を比較"""
+    """束縛変数の順序も無視して α同値判定"""
     if env is None:
         env = {}
 
     if isinstance(e1, Forall) and isinstance(e2, Forall):
-        newenv = env.copy()
-        newenv[e1.var] = e2.var
-        return alpha_equiv(e1.body, e2.body, newenv)
+        vars1, body1 = collect_forall_vars(e1)
+        vars2, body2 = collect_forall_vars(e2)
+
+        if len(vars1) != len(vars2):
+            return False
+
+        # vars2 の順列ごとに試す
+        for perm in permutations(vars2):
+            newenv = env.copy()
+            for v1, v2 in zip(vars1, perm):
+                newenv[v1] = v2
+            if alpha_equiv(body1, body2, newenv):
+                return True
+        return False
 
     if isinstance(e1, Implies) and isinstance(e2, Implies):
         return alpha_equiv(e1.left, e2.left, env) and alpha_equiv(e1.right, e2.right, env)
@@ -28,6 +41,16 @@ def alpha_equiv(e1, e2, env=None):
         return True
 
     return False
+
+# --- ヘルパー関数 ---
+def collect_forall_vars(e):
+    """連続する Forall をリストにして本体と返す"""
+    vars_ = []
+    body = e
+    while isinstance(body, Forall):
+        vars_.append(body.var)
+        body = body.body
+    return vars_, body
 
 # === コンテキスト中の式検索 ===
 def expr_in_context(expr, context):

@@ -47,3 +47,9 @@ theorem test \forall x\forall y(x\in y\to x\in y\wedge\forall z(z\in x\to z\in x
     } 
   }
 }
+
+theorem test \forall v\forall u(u\in v\to u\in v) {
+  any x, y conclude x\in y\to x\in y {
+    assume x\in y conclude x\in y {}
+  }
+}
