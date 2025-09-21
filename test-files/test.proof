@@ -53,3 +53,17 @@ theorem test \forall v\forall u(u\in v\to u\in v) {
     assume x\in y conclude x\in y {}
   }
 }
+
+theorem test \forall v\forall u(u\in v\to u\in v) {
+  any x, y conclude x\in y\to x\in y {
+    assume x\in y conclude x\in y {}
+    conclude x\in y\to x\in y
+  }
+}
+
+theorem test \forall v\forall u(u\in v\to u\in v) {
+  any x, y conclude x\in y\to x\in y {
+    assume x\in y conclude x\in y {}
+  }
+  conclude \forall x\forall y(x\in y\to x\in y)
+}

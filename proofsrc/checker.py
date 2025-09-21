@@ -101,12 +101,7 @@ def check_proof(node, context=None, indent=0):
     # --- Conclude ---
     if isinstance(node, Conclude):
         print(f"{sp}>> Checking Conclude {node.conclusion}")
-        local_ctx = list(context)
-        for stmt in node.body:
-            if not check_proof(stmt, local_ctx, indent+1):
-                return False
-        if derivable(node.conclusion, local_ctx):  # ← 置き換え
-            context.append(node.conclusion)
+        if derivable(node.conclusion, context):
             print(f"{sp}✔ Conclude goal {node.conclusion} derived")
             return True
         else:

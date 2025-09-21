@@ -13,7 +13,6 @@ class Theorem:
 @dataclass
 class Conclude:
     conclusion: object   # Expr AST
-    body: list
 
 @dataclass
 class Assume:
@@ -76,10 +75,7 @@ class Parser:
         self.consume("CONCLUDE")
         # conclusion 部分の式を読む
         conclusion, self.pos = parse_expr(self.tokens, self.pos)
-        self.consume("LBRACE")
-        body = self.parse_block()
-        self.consume("RBRACE")
-        return Conclude(conclusion=conclusion, body=body)
+        return Conclude(conclusion=conclusion)
 
     def parse_block(self):
         body = []
@@ -91,6 +87,8 @@ class Parser:
                 body.append(self.parse_any())
             elif tok.type == "ASSUME":
                 body.append(self.parse_assume())
+            elif tok.type == "CONCLUDE":
+                body.append(self.parse_conclude())
             else:
                 raise SyntaxError(f"Unexpected token in block: {tok}")
         return body
