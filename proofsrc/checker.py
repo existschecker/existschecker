@@ -1,5 +1,5 @@
 # checker.py
-from parser import Theorem, Any, Assume, Conclude, Symbol, And, Implies, Forall
+from parser import Theorem, Any, Assume, Conclude, Symbol, And, Or, Implies, Forall
 
 # === α同値判定 ===
 from itertools import permutations
@@ -29,6 +29,9 @@ def alpha_equiv(e1, e2, env=None):
         return alpha_equiv(e1.left, e2.left, env) and alpha_equiv(e1.right, e2.right, env)
 
     if isinstance(e1, And) and isinstance(e2, And):
+        return alpha_equiv(e1.left, e2.left, env) and alpha_equiv(e1.right, e2.right, env)
+    
+    if isinstance(e1, Or) and isinstance(e2, Or):
         return alpha_equiv(e1.left, e2.left, env) and alpha_equiv(e1.right, e2.right, env)
 
     if isinstance(e1, Symbol) and isinstance(e2, Symbol):
@@ -67,6 +70,8 @@ def derivable_flat(goal, flat_ctx):
     # goal が And のとき
     if isinstance(goal, And):
         return derivable(goal.left, flat_ctx) and derivable(goal.right, flat_ctx)
+    if isinstance(goal, Or):
+        return derivable(goal.left, flat_ctx) or derivable(goal.right, flat_ctx)
     # α同値チェック
     return expr_in_context(goal, flat_ctx)
 
