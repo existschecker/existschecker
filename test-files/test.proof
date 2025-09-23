@@ -73,3 +73,9 @@ theorem test \forall u\forall v(u\in v\to u\in v\vee v\in u) {
     assume x\in y conclude x\in y\vee y\in x {}
   }
 }
+
+theorem test \forall u\forall v(u\in v\vee v\in u\to v\in u\vee u\in v) {
+  any x, y conclude x\in y\vee y\in x\to y\in x\vee x\in y {
+    assume x\in y\vee y\in x conclude y\in x\vee x\in y {}
+  }
+}

@@ -32,7 +32,7 @@ def alpha_equiv(e1, e2, env=None):
         return alpha_equiv(e1.left, e2.left, env) and alpha_equiv(e1.right, e2.right, env)
     
     if isinstance(e1, Or) and isinstance(e2, Or):
-        return alpha_equiv(e1.left, e2.left, env) and alpha_equiv(e1.right, e2.right, env)
+        return (alpha_equiv(e1.left, e2.left, env) and alpha_equiv(e1.right, e2.right, env)) or (alpha_equiv(e1.left, e2.right, env) and alpha_equiv(e1.right, e2.left, env))
 
     if isinstance(e1, Symbol) and isinstance(e2, Symbol):
         if e1.name != e2.name or len(e1.args) != len(e2.args):
@@ -71,7 +71,7 @@ def derivable_flat(goal, flat_ctx):
     if isinstance(goal, And):
         return derivable_flat(goal.left, flat_ctx) and derivable_flat(goal.right, flat_ctx)
     if isinstance(goal, Or):
-        return derivable_flat(goal.left, flat_ctx) or derivable_flat(goal.right, flat_ctx)
+        return derivable_flat(goal.left, flat_ctx) or derivable_flat(goal.right, flat_ctx) or expr_in_context(goal, flat_ctx)
     # α同値チェック
     return expr_in_context(goal, flat_ctx)
 
