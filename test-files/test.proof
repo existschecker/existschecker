@@ -1,35 +1,35 @@
-theorem test \forall x\forall y(x\in y\to x\in y) {
+theorem test01 \forall x\forall y(x\in y\to x\in y) {
   any x, y conclude x\in y\to x\in y {
     assume x\in y conclude x\in y {}
   }
 }
 
-theorem test \forall x\forall y(x\in y\to x\in y\wedge x\in y) {
+theorem test02 \forall x\forall y(x\in y\to x\in y\wedge x\in y) {
   any x, y conclude x\in y\to x\in y\wedge x\in y {
     assume x\in y conclude x\in y\wedge x\in y {}
   }
 }
 
-theorem test \forall x\forall y((x\in y\to x\in y)\wedge(x\in y\to x\in y)) {
+theorem test03 \forall x\forall y((x\in y\to x\in y)\wedge(x\in y\to x\in y)) {
   any x, y conclude (x\in y\to x\in y)\wedge(x\in y\to x\in y) {
     assume x\in y conclude x\in y {}
   }
 }
 
-theorem test (\forall x\forall y(x\in y\to x\in y))\wedge(\forall z\forall w(z\in w\to z\in w)) {
+theorem test04 (\forall x\forall y(x\in y\to x\in y))\wedge(\forall z\forall w(z\in w\to z\in w)) {
     any x, y conclude x\in y\to x\in y {
       assume x\in y conclude x\in y {}
   }
 }
 
-theorem test \forall x\forall y((x\in y\to x\in y)\wedge(x\in y\to x\in y\wedge x\in y)) {
+theorem test05 \forall x\forall y((x\in y\to x\in y)\wedge(x\in y\to x\in y\wedge x\in y)) {
   any x, y conclude (x\in y\to x\in y)\wedge(x\in y\to x\in y\wedge x\in y) {
     assume x\in y conclude x\in y {}
     assume x\in y conclude x\in y\wedge x\in y {}
   }
 }
 
-theorem test (\forall x\forall y(x\in y\to x\in y))\wedge(\forall x\forall y(x\in y\to x\in y\wedge x\in y)) {
+theorem test06 (\forall x\forall y(x\in y\to x\in y))\wedge(\forall x\forall y(x\in y\to x\in y\wedge x\in y)) {
   any x, y conclude x\in y\to x\in y {
     assume x\in y conclude x\in y {}
   }
@@ -38,7 +38,7 @@ theorem test (\forall x\forall y(x\in y\to x\in y))\wedge(\forall x\forall y(x\i
   }
 }
 
-theorem test \forall x\forall y(x\in y\to x\in y\wedge\forall z(z\in x\to z\in x)) {
+theorem test07 \forall x\forall y(x\in y\to x\in y\wedge\forall z(z\in x\to z\in x)) {
   any x, y conclude x\in y\to x\in y\wedge\forall z(z\in x\to z\in x) {
     assume x\in y conclude x\in y\wedge\forall z(z\in x\to z\in x) {
       any z conclude z\in x\to z\in x {
@@ -48,44 +48,55 @@ theorem test \forall x\forall y(x\in y\to x\in y\wedge\forall z(z\in x\to z\in x
   }
 }
 
-theorem test \forall v\forall u(u\in v\to u\in v) {
+theorem test08 \forall v\forall u(u\in v\to u\in v) {
   any x, y conclude x\in y\to x\in y {
     assume x\in y conclude x\in y {}
   }
 }
 
-theorem test \forall v\forall u(u\in v\to u\in v) {
+theorem test09 \forall v\forall u(u\in v\to u\in v) {
   any x, y conclude x\in y\to x\in y {
     assume x\in y conclude x\in y {}
     conclude x\in y\to x\in y
   }
 }
 
-theorem test \forall v\forall u(u\in v\to u\in v) {
+theorem test10 \forall v\forall u(u\in v\to u\in v) {
   any x, y conclude x\in y\to x\in y {
     assume x\in y conclude x\in y {}
   }
   conclude \forall x\forall y(x\in y\to x\in y)
 }
 
-theorem test \forall u\forall v(u\in v\to u\in v\vee v\in u) {
+theorem test11 \forall u\forall v(u\in v\to u\in v\vee v\in u) {
   any x, y conclude x\in y\to(x\in y\vee y\in x) {
     assume x\in y conclude x\in y\vee y\in x {}
   }
 }
 
-theorem test \forall u\forall v(u\in v\vee v\in u\to v\in u\vee u\in v) {
+theorem test12 \forall u\forall v(u\in v\vee v\in u\to v\in u\vee u\in v) {
   any x, y conclude x\in y\vee y\in x\to y\in x\vee x\in y {
     assume x\in y\vee y\in x conclude y\in x\vee x\in y {}
   }
 }
 
-theorem test \forall x\forall y(x\in y\vee y\in x\to(x\in y\wedge x\in y)\vee(y\in x\wedge y\in x)) {
+theorem test13 \forall x\forall y(x\in y\vee y\in x\to(x\in y\wedge x\in y)\vee(y\in x\wedge y\in x)) {
   any x, y conclude x\in y\vee y\in x\to(x\in y\wedge x\in y)\vee(y\in x\wedge y\in x) {
     assume x\in y\vee y\in x conclude (x\in y\wedge x\in y)\vee(y\in x\wedge y\in x) {
       divide x\in y\vee y\in x conclude (x\in y\wedge x\in y)\vee(y\in x\wedge y\in x)
         case x\in y {}
         case y\in x {}
+    }
+  }
+}
+
+theorem test14 \forall x\forall y(x\in x\vee x\in y\vee y\in x\to x\in x\vee x\in y\vee y\in x) {
+  any x, y conclude x\in x\vee x\in y\vee y\in x\to x\in x\vee x\in y\vee y\in x {
+    assume x\in x\vee x\in y\vee y\in x conclude x\in x\vee x\in y\vee y\in x {
+      divide x\in x\vee x\in y\vee y\in x conclude x\in x\vee x\in y\vee y\in x
+        case x\in x {}
+        case y\in x {}
+        case x\in y {}
     }
   }
 }

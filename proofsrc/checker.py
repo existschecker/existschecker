@@ -6,6 +6,43 @@ from expr_parser import pretty_expr
 # === α同値判定 ===
 from itertools import permutations
 
+# 依存する AST ノード: Symbol, Forall, Implies, And, Or, Exists? を想定
+from typing import List
+
+def flatten_or(expr) -> List:
+    """Or を平坦化して葉のリストを返す"""
+    if isinstance(expr, Or):
+        return flatten_or(expr.left) + flatten_or(expr.right)
+    else:
+        return [expr]
+
+# alpha_equiv 内の Or 判定をこれに置き換える例
+def or_equiv(e1, e2, env=None):
+    """Or の順序と α同値を同時に無視して比較"""
+    if env is None:
+        env = {}
+
+    # flatten してリスト化
+    parts1 = flatten_or(e1)
+    parts2 = flatten_or(e2)
+
+    if len(parts1) != len(parts2):
+        return False
+
+    # 外側の env に従って α同値判定
+    matched = [False] * len(parts2)
+    for p1 in parts1:
+        found = False
+        for i, p2 in enumerate(parts2):
+            if not matched[i] and alpha_equiv(p1, p2, env):
+                matched[i] = True
+                found = True
+                break
+        if not found:
+            return False
+
+    return True
+
 def alpha_equiv(e1, e2, env=None):
     """束縛変数の順序も無視して α同値判定"""
     if env is None:
@@ -32,9 +69,9 @@ def alpha_equiv(e1, e2, env=None):
 
     if isinstance(e1, And) and isinstance(e2, And):
         return alpha_equiv(e1.left, e2.left, env) and alpha_equiv(e1.right, e2.right, env)
-    
+
     if isinstance(e1, Or) and isinstance(e2, Or):
-        return (alpha_equiv(e1.left, e2.left, env) and alpha_equiv(e1.right, e2.right, env)) or (alpha_equiv(e1.left, e2.right, env) and alpha_equiv(e1.right, e2.left, env))
+        return or_equiv(e1, e2, env)
 
     if isinstance(e1, Symbol) and isinstance(e2, Symbol):
         if e1.name != e2.name or len(e1.args) != len(e2.args):
@@ -150,10 +187,20 @@ def check_proof(node, context=None, indent=0):
         context.append(goal)
         print(f"{sp}✔ [Any] Generalized to {pretty_expr(goal)}")
         return True
-    
+
     if isinstance(node, Divide):
         if not derivable(node.fact, context):
-            print(f"{sp}❌ [Divide] Not fact: {node.fact}")
+            print(f"{sp}❌ [Divide] Not fact: {pretty_expr(node.fact)}")
+            return False
+        connected_premise = Or(node.cases[0].premise, node.cases[1].premise)
+        i = 2
+        while i < len(node.cases):
+            connected_premise = Or(connected_premise, node.cases[i].premise)
+            i += 1
+        if alpha_equiv(connected_premise, node.fact):
+            print(f"{sp}✔ [Divide] mathched: fact={pretty_expr(node.fact)}, connected_premise={pretty_expr(connected_premise)}")
+        else:
+            print(f"{sp}❌ [Divide] not matched: fact={pretty_expr(node.fact)}, conected_premise={pretty_expr(connected_premise)}")
             return False
         print(f"{sp}>> [Divide] fact={pretty_expr(node.fact)}, goal={pretty_expr(node.conclusion)}")
         local_ctx = list(context)

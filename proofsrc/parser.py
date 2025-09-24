@@ -142,6 +142,8 @@ class Parser:
         cases = []
         while self.peek().type == "CASE":
             cases.append(self.parse_case(conclusion))
+        if len(cases) < 2:
+            raise SyntaxError("At least two cases are necessary")
         return Divide(fact=fact, conclusion=conclusion, cases=cases)
     
     def parse_case(self, conclusion):
