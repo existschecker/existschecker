@@ -118,3 +118,21 @@ theorem test17 \exists x(x\in x)\to\exists x(x\in x) {
     }
   }
 }
+
+theorem test18 \exists x\exists y(x\in y\vee y\in x)\to\exists x\exists y(\neg(\neg(x\in y)\wedge\neg(y\in x))) {
+  assume \exists x\exists y(x\in y\vee y\in x) conclude \exists x\exists y(\neg(\neg(x\in y)\wedge\neg(y\in x))) {
+    some x, y such x\in y\vee y\in x conclude \neg(\neg(x\in y)\wedge\neg(y\in x)) {
+      divide x\in y\vee y\in x conclude \neg(\neg(x\in y)\wedge\neg(y\in x))
+        case x\in y {
+          deny \neg(x\in y)\wedge\neg(y\in x) {
+            contradict x\in y
+          }
+        }
+        case y\in x {
+          deny \neg(x\in y)\wedge\neg(y\in x) {
+            contradict y\in x
+          }
+        }
+    }
+  }
+}
