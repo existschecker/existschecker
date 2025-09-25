@@ -7,7 +7,7 @@ class Token:
     value: str
     pos: int
 
-KEYWORDS = {"theorem", "definition", "any", "assume", "conclude", "by", "divide", "case", "some", "such"}
+KEYWORDS = {"theorem", "definition", "any", "assume", "conclude", "by", "divide", "case", "some", "such", "deny", "contradict"}
 
 SYMBOLS = {
     "{": "LBRACE",
@@ -41,6 +41,9 @@ def lex(src: str) -> list[Token]:
         elif src[i:].startswith("\\vee"):
             tokens.append(Token("OR", "\\vee", i))
             i += len("\\vee")
+        elif src[i:].startswith("\\neg"):
+            tokens.append(Token("NOT", "\\neg", i))
+            i += len("\\neg")
         elif src[i:].startswith("\\to"):
             tokens.append(Token("IMPLIES", "\\to", i))
             i += len("\\to")

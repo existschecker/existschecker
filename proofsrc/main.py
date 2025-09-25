@@ -12,7 +12,7 @@ def main(args):
     for node in ast:
         pretty(node)
         if hasattr(node, "proof"):
-            result = check_proof(node, [])
+            result = check_proof(node)
             if result:
                 print(f"✔ theorem {node.name}: OK")
             else:

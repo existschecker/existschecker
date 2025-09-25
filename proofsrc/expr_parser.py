@@ -31,6 +31,10 @@ class Or:
     right: object
 
 @dataclass
+class Not:
+    body: object
+
+@dataclass
 class Iff:
     left: object
     right: object
@@ -49,6 +53,15 @@ def parse_primary(tokens, pos):
         if tokens[pos].type != "RPAREN":
             raise SyntaxError("missing )")
         return expr, pos+1
+    
+    elif tok.type == "NOT":
+        pos += 1
+        if pos >= len(tokens) or tokens[pos].type != "LPAREN":
+            raise SyntaxError("( is necessary after ¬")
+        body, pos = parse_expr(tokens, pos + 1)
+        if pos >= len(tokens) or tokens[pos].type != "RPAREN":
+            raise SyntaxError("missing )")
+        return Not(body), pos+1
 
     elif tok.type == "FORALL":
         vars = []
@@ -121,6 +134,8 @@ def pretty_expr(expr):
         return f"{pretty_expr(expr.left)} \\wedge {pretty_expr(expr.right)}"
     if isinstance(expr, Or):
         return f"{pretty_expr(expr.left)} \\vee {pretty_expr(expr.right)}"
+    if isinstance(expr, Not):
+        return f"\\neg({pretty_expr(expr.body)})"
     if isinstance(expr, Forall):
         return f"\\forall {expr.var}({pretty_expr(expr.body)})"
     if isinstance(expr, Exists):
@@ -129,7 +144,7 @@ def pretty_expr(expr):
 
 if __name__ == "__main__":
     from lexer import lex
-    src = r"\exists x\exists y(x\in y)\to\exists x\exists y(x\in y)"
+    src = r"\exists x\exists y(x\in y\vee y\in x)\to\exists x\exists y(\neg(\neg(x\in y)\wedge\neg(y\in x)))"
     tokens = lex(src)
     for t in tokens:
         print(t)

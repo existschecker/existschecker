@@ -49,6 +49,15 @@ class Some:
     body: list
 
 @dataclass
+class Deny:
+    premise: object
+    body: list
+
+@dataclass
+class Contradict:
+    contradiction: object
+
+@dataclass
 class Definition:
     name: str
     body: str  # TODO: 式パーサーに統合可能
@@ -115,6 +124,10 @@ class Parser:
                 body.append(self.parse_conclude())
             elif tok.type == "SOME":
                 body.append(self.parse_some())
+            elif tok.type == "DENY":
+                body.append(self.parse_deny())
+            elif tok.type == "CONTRADICT":
+                body.append(self.parse_contradict())
             else:
                 raise SyntaxError(f"Unexpected token in block: {tok}")
         return body
@@ -187,6 +200,19 @@ class Parser:
         body = self.parse_block()
         self.consume("RBRACE")
         return Some(vars=vars_, premise=premise, conclusion=conclusion, body=body)
+    
+    def parse_deny(self):
+        self.consume("DENY")
+        premise, self.pos = parse_expr(self.tokens, self.pos)
+        self.consume("LBRACE")
+        body = self.parse_block()
+        self.consume("RBRACE")
+        return Deny(premise=premise, body=body)
+    
+    def parse_contradict(self):
+        self.consume("CONTRADICT")
+        contradiction, self.pos = parse_expr(self.tokens, self.pos)
+        return Contradict(contradiction=contradiction)
 
     def parse_definition(self):
         self.consume("DEFINITION")
@@ -248,6 +274,14 @@ def pretty(node, indent=0):
             logger.debug(f"{sp}Conclude {pretty_expr(node.conclusion)}")
         for stmt in node.body:
             pretty(stmt, indent + 1)
+    
+    elif isinstance(node, Deny):
+        logger.debug(f"{sp}Deny {pretty_expr(node.premise)}")
+        for stmt in node.body:
+            pretty(stmt, indent + 1)
+    
+    elif isinstance(node, Contradict):
+        logger.debug(f"{sp}Contradict {pretty_expr(node.contradiction)}")        
 
     # elif isinstance(node, By):
     #     logger.debug(f"{sp}By {node.target} by {node.definition} using {node.using}")
