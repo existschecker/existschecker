@@ -1,5 +1,5 @@
 # checker.py
-from parser import Theorem, Any, Assume, Conclude, Divide, Case, Some, Deny, Contradict, parse_file_from_source, pretty
+from parser import Theorem, Any, Assume, Conclude, Divide, Case, Some, Deny, Contradict, Explode, parse_file_from_source, pretty
 from expr_parser import Symbol, And, Or, Implies, Forall, Exists, Not
 from expr_parser import pretty_expr
 
@@ -309,7 +309,7 @@ def check_proof(node, context=None, indent=0):
             logger.debug(f"{sp}✔ [Deny] contradiction is derived; added {pretty_expr(Not(node.premise))}")
             return True
         else:
-            logger.error(f"{sp}❌ [Deny] Cannt derive contradiction")
+            logger.error(f"{sp}❌ [Deny] conradiction has not been deried")
             return False
     
     if isinstance(node, Contradict):
@@ -322,6 +322,15 @@ def check_proof(node, context=None, indent=0):
         logger.debug(f"{sp}✔ [Contradict] Derived contradiction: {pretty_expr(node.contradiction)}, {pretty_expr(Not(node.contradiction))}")
         context.bot_derived = True
         return True
+    
+    if isinstance(node, Explode):
+        if context.bot_derived:
+            context.formulas.append(node.conclusion)
+            logger.debug(f"{sp}✔ [Explode] added {pretty_expr(node.conclusion)}")
+            return True
+        else:
+            logger.error(f"{sp}❌ [Explode] contradiction has not been derived")
+            return False
 
     logger.error(f"{sp}⚠ Unsupported node {node}")
     return False

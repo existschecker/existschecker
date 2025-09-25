@@ -136,3 +136,16 @@ theorem test18 \exists x\exists y(x\in y\vee y\in x)\to\exists x\exists y(\neg(\
     }
   }
 }
+
+theorem test19 \exists x\exists y((x\in y\vee y\in x)\wedge\neg(y\in x))\to\exists x\exists y(x\in y) {
+  assume \exists x\exists y((x\in y\vee y\in x)\wedge\neg(y\in x)) conclude \exists x\exists y(x\in y) {
+    some x, y such (x\in y\vee y\in x)\wedge\neg(y\in x) conclude x\in y {
+      divide x\in y\vee y\in x conclude x\in y
+        case x\in y {}
+        case y\in x {
+          contradict y\in x
+          explode x\in y
+        }
+    }
+  }
+}

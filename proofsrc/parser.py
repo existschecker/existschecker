@@ -58,6 +58,10 @@ class Contradict:
     contradiction: object
 
 @dataclass
+class Explode:
+    conclusion: object
+
+@dataclass
 class Definition:
     name: str
     body: str  # TODO: 式パーサーに統合可能
@@ -128,6 +132,8 @@ class Parser:
                 body.append(self.parse_deny())
             elif tok.type == "CONTRADICT":
                 body.append(self.parse_contradict())
+            elif tok.type == "EXPLODE":
+                body.append(self.parse_explode())
             else:
                 raise SyntaxError(f"Unexpected token in block: {tok}")
         return body
@@ -213,6 +219,11 @@ class Parser:
         self.consume("CONTRADICT")
         contradiction, self.pos = parse_expr(self.tokens, self.pos)
         return Contradict(contradiction=contradiction)
+    
+    def parse_explode(self):
+        self.consume("EXPLODE")
+        conclusion, self.pos = parse_expr(self.tokens, self.pos)
+        return Explode(conclusion=conclusion)
 
     def parse_definition(self):
         self.consume("DEFINITION")
@@ -282,6 +293,9 @@ def pretty(node, indent=0):
     
     elif isinstance(node, Contradict):
         logger.debug(f"{sp}Contradict {pretty_expr(node.contradiction)}")        
+
+    elif isinstance(node, Explode):
+        logger.debug(f"{sp}Explode {pretty_expr(node.conclusion)}")
 
     # elif isinstance(node, By):
     #     logger.debug(f"{sp}By {node.target} by {node.definition} using {node.using}")
