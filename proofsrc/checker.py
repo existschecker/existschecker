@@ -65,6 +65,9 @@ def alpha_equiv(e1, e2, env=None):
     if env is None:
         env = {}
 
+    e1 = normalize_neg(e1)
+    e2 = normalize_neg(e2)
+
     # e1, e2 が両方 Not の場合は中身を再帰的に比較
     if isinstance(e1, Not) and isinstance(e2, Not):
         return alpha_equiv(e1.body, e2.body, env)

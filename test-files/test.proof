@@ -174,3 +174,14 @@ theorem test21 \forall x\forall y(x\in y)\to\neg(\exists x\exists y(\neg(x\in y)
     }
   }
 }
+
+theorem test22 \neg(\exists x\exists y(\neg(x\in y)))\to\forall x\forall y(x\in y) {
+  assume \neg(\exists x\exists y(\neg(x\in y))) conclude \forall x\forall y(x\in y) {
+    any x, y conclude x\in y {
+      deny \neg(x\in y) {
+        lift \neg(x\in y) for x: x, y: y conclude \exists x\exists y(\neg(x\in y))
+        contradict \exists x\exists y(\neg(x\in y))
+      }
+    }
+  }
+}
