@@ -16,7 +16,7 @@
 		"keywords": {
 			"patterns": [{
 				"name": "keyword.control.proof",
-				"match": "\\b(any|assume|conclude|divide|case|some|such|deny|contradict|explode|apply|for|with)\\b"
+				"match": "\\b(any|assume|conclude|divide|case|some|such|deny|contradict|explode|apply|for|with|check)\\b"
 			}]
 		},
 		"definitions": {

@@ -1,5 +1,5 @@
 # checker.py
-from parser import Theorem, Any, Assume, Conclude, Divide, Case, Some, Deny, Contradict, Explode, Apply, parse_file_from_source, pretty
+from parser import Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, parse_file_from_source, pretty
 from expr_parser import Symbol, And, Or, Implies, Forall, Exists, Not
 from expr_parser import pretty_expr
 
@@ -220,14 +220,14 @@ def check_proof(node, context=None, indent=0):
             logger.error(f"{sp}❌ [Theorem] {node.name} not proved: {pretty_expr(node.conclusion)}")
             return False
 
-    # --- Conclude ---
-    if isinstance(node, Conclude):
-        logger.debug(f"{sp}[Conclude] Checking {pretty_expr(node.conclusion)}")
+    # --- Check ---
+    if isinstance(node, Check):
+        logger.debug(f"{sp}[Check] Checking {pretty_expr(node.conclusion)}")
         if derivable(node.conclusion, context.formulas):
-            logger.debug(f"{sp}[Conclude] goal {pretty_expr(node.conclusion)} derived")
+            logger.debug(f"{sp}[Check] goal {pretty_expr(node.conclusion)} derived")
             return True
         else:
-            logger.error(f"{sp}❌ [Conclude] goal {pretty_expr(node.conclusion)} not derivable")
+            logger.error(f"{sp}❌ [Check] goal {pretty_expr(node.conclusion)} not derivable")
             return False
 
     # --- Assume ---

@@ -14,7 +14,7 @@ class Theorem:
     proof: list
 
 @dataclass
-class Conclude:
+class Check:
     conclusion: object   # Expr AST
 
 @dataclass
@@ -113,11 +113,11 @@ class Parser:
         self.consume("RBRACE")
         return Theorem(name=name, conclusion=conclusion, proof=proof)
 
-    def parse_conclude(self):
-        self.consume("CONCLUDE")
+    def parse_check(self):
+        self.consume("CHECK")
         # conclusion 部分の式を読む
         conclusion, self.pos = parse_expr(self.tokens, self.pos)
-        return Conclude(conclusion=conclusion)
+        return Check(conclusion=conclusion)
 
     def parse_block(self):
         body = []
@@ -131,8 +131,8 @@ class Parser:
                 body.append(self.parse_assume())
             elif tok.type == "DIVIDE":
                 body.append(self.parse_divide())
-            elif tok.type == "CONCLUDE":
-                body.append(self.parse_conclude())
+            elif tok.type == "CHECK":
+                body.append(self.parse_check())
             elif tok.type == "SOME":
                 body.append(self.parse_some())
             elif tok.type == "DENY":
@@ -288,8 +288,8 @@ def pretty(node, indent=0):
         for stmt in node.proof:
             pretty(stmt, indent + 1)
 
-    elif isinstance(node, Conclude):
-        logger.debug(f"{sp}[Conclude] {pretty_expr(node.conclusion)}")
+    elif isinstance(node, Check):
+        logger.debug(f"{sp}[Check] {pretty_expr(node.conclusion)}")
 
     elif isinstance(node, Any):
         logger.debug(f"{sp}[Any] vars: {', '.join(node.vars)}")

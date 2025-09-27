@@ -57,7 +57,7 @@ theorem test08 \forall v\forall u(u\in v\to u\in v) {
 theorem test09 \forall v\forall u(u\in v\to u\in v) {
   any x, y conclude x\in y\to x\in y {
     assume x\in y conclude x\in y {}
-    conclude x\in y\to x\in y
+    check x\in y\to x\in y
   }
 }
 
@@ -65,7 +65,7 @@ theorem test10 \forall v\forall u(u\in v\to u\in v) {
   any x, y conclude x\in y\to x\in y {
     assume x\in y conclude x\in y {}
   }
-  conclude \forall x\forall y(x\in y\to x\in y)
+  check \forall x\forall y(x\in y\to x\in y)
 }
 
 theorem test11 \forall u\forall v(u\in v\to u\in v\vee v\in u) {
@@ -114,7 +114,7 @@ theorem test16 \forall x\forall y(x\in y)\to\forall x\forall y(x\in y) {
 theorem test17 \exists x(x\in x)\to\exists x(x\in x) {
   assume \exists x(x\in x) conclude \exists x(x\in x) {
     some x such x\in x {
-      conclude x\in x\wedge x\in x
+      check x\in x\wedge x\in x
     }
   }
 }
