@@ -197,3 +197,25 @@ theorem test23 \forall x(x\in x\to\neg(x\in x))\to(\forall x(x\in x)\to\forall x
     }
   }
 }
+
+theorem test24 \forall x\forall y(\neg(x\in y))\to\neg(\exists x\exists y(x\in y)) {
+  assume \forall x\forall y(\neg(x\in y)) conclude \neg(\exists x\exists y(x\in y)) {
+    deny \exists x\exists y(x\in y) {
+      some x, y such x\in y conclude \bot {
+        apply \forall x\forall y(\neg(x\in y)) for x: x, y: y conclude \neg(x\in y)
+        contradict x\in y
+      }
+    }
+  }
+}
+
+theorem test25 \neg(\exists x\exists y(x\in y))\to\forall x\forall y(\neg(x\in y)) {
+  assume \neg(\exists x\exists y(x\in y)) conclude \forall x\forall y(\neg(x\in y)) {
+    any x, y conclude \neg(x\in y) {
+      deny x\in y {
+        lift x\in y for x: x, y: y conclude \exists x\exists y(x\in y)
+        contradict \exists x\exists y(x\in y)
+      }
+    }
+  }
+}
