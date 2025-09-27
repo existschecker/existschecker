@@ -7,7 +7,7 @@ class Token:
     value: str
     pos: int
 
-KEYWORDS = {"theorem", "definition", "any", "assume", "conclude", "divide", "case", "some", "such", "deny", "contradict", "explode", "apply", "for", "with", "check"}
+KEYWORDS = {"theorem", "definition", "any", "assume", "conclude", "divide", "case", "some", "such", "deny", "contradict", "explode", "apply", "for", "with", "check", "lift"}
 
 SYMBOLS = {
     "{": "LBRACE",
@@ -50,6 +50,9 @@ def lex(src: str) -> list[Token]:
         elif src[i:].startswith("\\leftrightarrow"):
             tokens.append(Token("IFF", "\\leftrightarrow", i))
             i += len("\\leftrightarrow")
+        elif src[i:].startswith("\\bot"):
+            tokens.append(Token("BOT", "\\bot", i))
+            i += len("\\bot")
         else:
             m = re.match(r"(\\[A-Za-z][A-Za-z0-9_]*)|([A-Za-z_][A-Za-z0-9_]*)", src[i:])
             if m:

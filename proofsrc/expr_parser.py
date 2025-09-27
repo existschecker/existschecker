@@ -39,6 +39,10 @@ class Iff:
     left: object
     right: object
 
+@dataclass
+class Bottom:
+    pass
+
 def parse_primary(tokens, pos):
     tok = tokens[pos]
     if tok.type == "IDENT":
@@ -58,7 +62,7 @@ def parse_primary(tokens, pos):
         pos += 1
         if pos >= len(tokens) or tokens[pos].type != "LPAREN":
             raise SyntaxError("( is necessary after ¬")
-        body, pos = parse_expr(tokens, pos + 1)
+        body, pos = parse_recursion(tokens, pos + 1)
         if pos >= len(tokens) or tokens[pos].type != "RPAREN":
             raise SyntaxError("missing )")
         return Not(body), pos+1
@@ -72,7 +76,7 @@ def parse_primary(tokens, pos):
             pos += 2
         if pos >= len(tokens) or tokens[pos].type != "LPAREN":
             raise SyntaxError("( is necessary after ∀-variable")
-        body, pos = parse_expr(tokens, pos + 1)
+        body, pos = parse_recursion(tokens, pos + 1)
         if pos >= len(tokens) or tokens[pos].type != "RPAREN":
             raise SyntaxError("missing )")
         for var_tok in reversed(vars):
@@ -88,7 +92,7 @@ def parse_primary(tokens, pos):
             pos += 2
         if pos >= len(tokens) or tokens[pos].type != "LPAREN":
             raise SyntaxError("( is necessary after ∃-variable")
-        body, pos = parse_expr(tokens, pos + 1)
+        body, pos = parse_recursion(tokens, pos + 1)
         if pos >= len(tokens) or tokens[pos].type != "RPAREN":
             raise SyntaxError("missing )")
         for var_tok in reversed(vars):
@@ -99,6 +103,12 @@ def parse_primary(tokens, pos):
         raise SyntaxError(f"Unexpected token: {tok}")
 
 def parse_expr(tokens, pos=0):
+    if tokens[pos].type == "BOT":
+        return Bottom(), pos + 1
+    else:
+        return parse_recursion(tokens, pos)
+
+def parse_recursion(tokens, pos):
     return parse_implies(tokens, pos)
 
 def parse_implies(tokens, pos):
@@ -140,11 +150,13 @@ def pretty_expr(expr):
         return f"\\forall {expr.var}({pretty_expr(expr.body)})"
     if isinstance(expr, Exists):
         return f"\\exists {expr.var}({pretty_expr(expr.body)})"
+    if isinstance(expr, Bottom):
+        return "\\bot"
     raise TypeError(f"Unsupported node type: {type(expr)}")
 
 if __name__ == "__main__":
     from lexer import lex
-    src = r"\exists x\exists y(x\in y\vee y\in x)\to\exists x\exists y(\neg(\neg(x\in y)\wedge\neg(y\in x)))"
+    src = r"\bot"
     tokens = lex(src)
     for t in tokens:
         print(t)

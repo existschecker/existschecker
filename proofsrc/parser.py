@@ -69,6 +69,12 @@ class Apply:
     conclusion: object
 
 @dataclass
+class Lift:
+    fact: object
+    env: dict
+    conclusion: object
+
+@dataclass
 class Definition:
     name: str
     body: str  # TODO: 式パーサーに統合可能
@@ -143,6 +149,8 @@ class Parser:
                 body.append(self.parse_explode())
             elif tok.type == "APPLY":
                 body.append(self.parse_apply())
+            elif tok.type == "LIFT":
+                body.append(self.parse_lift())
             else:
                 raise SyntaxError(f"Unexpected token in block: {tok}")
         return body
@@ -206,11 +214,8 @@ class Parser:
             break
         self.consume("SUCH")
         premise, self.pos = parse_expr(self.tokens, self.pos)
-        if self.peek().type == "CONCLUDE":
-            self.consume("CONCLUDE")
-            conclusion, self.pos = parse_expr(self.tokens, self.pos)
-        else:
-            conclusion = None
+        self.consume("CONCLUDE")
+        conclusion, self.pos = parse_expr(self.tokens, self.pos)
         self.consume("LBRACE")
         body = self.parse_block()
         self.consume("RBRACE")
@@ -261,6 +266,24 @@ class Parser:
         self.consume("CONCLUDE")
         conclusion, self.pos = parse_expr(self.tokens, self.pos)
         return Apply(fact=fact, env=env, premise=premise, conclusion=conclusion)
+    
+    def parse_lift(self):
+        self.consume("LIFT")
+        fact, self.pos = parse_expr(self.tokens, self.pos)
+        self.consume("FOR")
+        env = {}
+        while True:
+            bound = self.consume("IDENT").value
+            self.consume("COLON")
+            free = self.consume("IDENT").value
+            env[bound] = free
+            if self.peek().type == "COMMA":
+                self.consume("COMMA")
+                continue
+            break
+        self.consume("CONCLUDE")
+        conclusion, self.pos = parse_expr(self.tokens, self.pos)
+        return Lift(fact=fact, env=env, conclusion=conclusion)
 
     def parse_definition(self):
         self.consume("DEFINITION")
@@ -318,8 +341,7 @@ def pretty(node, indent=0):
     elif isinstance(node, Some):
         logger.debug(f"{sp}[Some] vars: {','.join(node.vars)}")
         logger.debug(f"{sp}       premise: {pretty_expr(node.premise)}")
-        if node.conclusion is not None:
-            logger.debug(f"{sp}       conclusion: {pretty_expr(node.conclusion)}")
+        logger.debug(f"{sp}       conclusion: {pretty_expr(node.conclusion)}")
         for stmt in node.body:
             pretty(stmt, indent + 1)
     
@@ -341,6 +363,11 @@ def pretty(node, indent=0):
         if node.premise is not None:
             logger.debug(f"{sp}        premise: {pretty_expr(node.premise)}")
         logger.debug(f"{sp}        conclusion: {pretty_expr(node.conclusion)}")
+    
+    elif isinstance(node, Lift):
+        logger.debug(f"{sp}[Lift] fact: {pretty_expr(node.fact)}")
+        logger.debug(f"{sp}       env: {node.env}")
+        logger.debug(f"{sp}       conclusion: {pretty_expr(node.conclusion)}")
 
     elif isinstance(node, Definition):
         logger.debug(f"{sp}Definition {node.name}: {node.body}")

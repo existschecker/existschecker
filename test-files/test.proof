@@ -103,7 +103,9 @@ theorem test14 \forall x\forall y(x\in x\vee x\in y\vee y\in x\to x\in x\vee x\i
 
 theorem test15 \exists x\exists y(x\in y)\to\exists x\exists y(x\in y\wedge x\in y) {
   assume \exists x\exists y(x\in y) conclude \exists x\exists y(x\in y\wedge x\in y) {
-    some x, y such x\in y conclude x\in y\wedge x\in y {}
+    some x, y such x\in y conclude \exists x\exists y(x\in y\wedge x\in y) {
+      lift x\in y\wedge x\in y for x: x, y: y conclude \exists x\exists y(x\in y\wedge x\in y)
+    }
   }
 }
 
@@ -113,15 +115,15 @@ theorem test16 \forall x\forall y(x\in y)\to\forall x\forall y(x\in y) {
 
 theorem test17 \exists x(x\in x)\to\exists x(x\in x) {
   assume \exists x(x\in x) conclude \exists x(x\in x) {
-    some x such x\in x {
-      check x\in x\wedge x\in x
+    some x such x\in x conclude \exists x(x\in x) {
+      lift x\in x for x: x conclude \exists x(x\in x)
     }
   }
 }
 
 theorem test18 \exists x\exists y(x\in y\vee y\in x)\to\exists x\exists y(\neg(\neg(x\in y)\wedge\neg(y\in x))) {
   assume \exists x\exists y(x\in y\vee y\in x) conclude \exists x\exists y(\neg(\neg(x\in y)\wedge\neg(y\in x))) {
-    some x, y such x\in y\vee y\in x conclude \neg(\neg(x\in y)\wedge\neg(y\in x)) {
+    some x, y such x\in y\vee y\in x conclude \exists x\exists y(\neg(\neg(x\in y)\wedge\neg(y\in x))) {
       divide x\in y\vee y\in x conclude \neg(\neg(x\in y)\wedge\neg(y\in x))
         case x\in y {
           deny \neg(x\in y)\wedge\neg(y\in x) {
@@ -133,28 +135,42 @@ theorem test18 \exists x\exists y(x\in y\vee y\in x)\to\exists x\exists y(\neg(\
             contradict y\in x
           }
         }
+      lift \neg(\neg(x\in y)\wedge\neg(y\in x)) for x: x, y: y conclude \exists x\exists y(\neg(\neg(x\in y)\wedge\neg(y\in x)))
     }
   }
 }
 
 theorem test19 \exists x\exists y((x\in y\vee y\in x)\wedge\neg(y\in x))\to\exists x\exists y(x\in y) {
   assume \exists x\exists y((x\in y\vee y\in x)\wedge\neg(y\in x)) conclude \exists x\exists y(x\in y) {
-    some x, y such (x\in y\vee y\in x)\wedge\neg(y\in x) conclude x\in y {
+    some x, y such (x\in y\vee y\in x)\wedge\neg(y\in x) conclude \exists x\exists y(x\in y) {
       divide x\in y\vee y\in x conclude x\in y
         case x\in y {}
         case y\in x {
           contradict y\in x
           explode x\in y
         }
+      lift x\in y for x: x, y: y conclude \exists x\exists y(x\in y)
     }
   }
 }
 
 theorem test20 \forall x\forall y(x\in y\to\forall z(z\in x))\wedge\exists x\exists y(x\in y)\to\exists x\exists y(x\in y\wedge y\in x) {
   assume \forall x\forall y(x\in y\to\forall z(z\in x))\wedge\exists x\exists y(x\in y) conclude \exists x\exists y(x\in y\wedge y\in x) {
-    some x, y such x\in y conclude x\in y\wedge y\in x {
+    some x, y such x\in y conclude \exists x\exists y(x\in y\wedge y\in x) {
       apply \forall x\forall y(x\in y\to\forall z(z\in x)) for x: x, y: y with x\in y conclude \forall z(z\in x)
       apply \forall z(z\in x) for z: y conclude y\in x
+      lift x\in y\wedge y\in x for x: x, y: y conclude \exists x\exists y(x\in y\wedge y\in x)
+    }
+  }
+}
+
+theorem test21 \forall x\forall y(x\in y)\to\neg(\exists x\exists y(\neg(x\in y))) {
+  assume \forall x\forall y(x\in y) conclude \neg(\exists x\exists y(\neg(x\in y))) {
+    deny \exists x\exists y(\neg(x\in y)) {
+      some x, y such \neg(x\in y) conclude \bot {
+        apply \forall x\forall y(x\in y) for x: x, y: y conclude x\in y
+        contradict x\in y
+      }
     }
   }
 }

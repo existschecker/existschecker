@@ -1,6 +1,6 @@
 # checker.py
-from parser import Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, parse_file_from_source, pretty
-from expr_parser import Symbol, And, Or, Implies, Forall, Exists, Not
+from parser import Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, parse_file_from_source, pretty
+from expr_parser import Symbol, And, Or, Implies, Forall, Exists, Not, Bottom
 from expr_parser import pretty_expr
 
 # === α同値判定 ===
@@ -141,6 +141,35 @@ def collect_exists_vars(e):
         body = body.body
     return vars_, body
 
+def collect_vars(expr, bound=None):
+    """
+    式 expr から自由変数と束縛変数の集合を返す
+    戻り値: (free_vars, bound_vars)
+    """
+    if bound is None:
+        bound = set()
+
+    if isinstance(expr, Symbol):
+        if expr.name == "in":
+            return set(arg for arg in expr.args if arg not in bound), set()
+        else:
+            raise TypeError("Unexpected Symbol")
+
+    elif isinstance(expr, Not):
+        return collect_vars(expr.body, bound)
+
+    elif isinstance(expr, (And, Or, Implies)):
+        f1, b1 = collect_vars(expr.left, bound)
+        f2, b2 = collect_vars(expr.right, bound)
+        return f1 | f2, b1 | b2
+
+    elif isinstance(expr, (Forall, Exists)):
+        f_body, b_body = collect_vars(expr.body, bound | {expr.var})
+        return f_body, b_body | {expr.var}
+
+    else:
+        return set(), set()
+
 # === コンテキスト中の式検索 ===
 def expr_in_context(expr, context):
     return any(alpha_equiv(expr, c) for c in context)
@@ -162,10 +191,13 @@ def derivable_flat(goal, flat_ctx):
     return expr_in_context(goal, flat_ctx)
 
 def derivable(goal, context):
-    flat_ctx = []
-    for c in context:
-        flat_ctx.extend(split_conjunction(c))
-    return derivable_flat(goal, flat_ctx)
+    if isinstance(goal, Bottom):
+        return context.bot_derived
+    else:
+        flat_ctx = []
+        for c in context.formulas:
+            flat_ctx.extend(split_conjunction(c))
+        return derivable_flat(goal, flat_ctx)
 
 def substitute(expr, mapping):
     if isinstance(expr, Symbol):
@@ -198,6 +230,12 @@ def substitute(expr, mapping):
 
     return expr
 
+def add_conclusion(context, conclusion):
+    if isinstance(conclusion, Bottom):
+        context.bot_derived = True
+    else:
+        context.formulas.append(conclusion)
+
 # === 証明チェッカー ===
 def check_proof(node, context=None, indent=0):
     if context is None:
@@ -213,7 +251,7 @@ def check_proof(node, context=None, indent=0):
             if not check_proof(stmt, local_ctx, indent+1):
                 logger.error(f"{sp}❌ [Theorem] Failed")
                 return False
-        if derivable(node.conclusion, local_ctx.formulas):
+        if derivable(node.conclusion, local_ctx):
             logger.debug(f"{sp}[Theorem] {node.name} proved: {pretty_expr(node.conclusion)}")
             return True
         else:
@@ -223,7 +261,7 @@ def check_proof(node, context=None, indent=0):
     # --- Check ---
     if isinstance(node, Check):
         logger.debug(f"{sp}[Check] Checking {pretty_expr(node.conclusion)}")
-        if derivable(node.conclusion, context.formulas):
+        if derivable(node.conclusion, context):
             logger.debug(f"{sp}[Check] goal {pretty_expr(node.conclusion)} derived")
             return True
         else:
@@ -237,13 +275,13 @@ def check_proof(node, context=None, indent=0):
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
-        if derivable(node.conclusion, local_ctx.formulas):
+        if derivable(node.conclusion, local_ctx):
             logger.debug(f"{sp}[Assume] Derived conclusion {pretty_expr(node.conclusion)}")
         else:
             logger.error(f"{sp}❌ [Assume] Cannot derive {pretty_expr(node.conclusion)}")
             return False
         implication = Implies(node.premise, node.conclusion)
-        context.formulas.append(implication)
+        add_conclusion(context, implication)
         logger.debug(f"{sp}[Assume] Added implication {pretty_expr(implication)}")
         return True
 
@@ -254,7 +292,7 @@ def check_proof(node, context=None, indent=0):
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
-        if derivable(node.conclusion, local_ctx.formulas):
+        if derivable(node.conclusion, local_ctx):
             logger.debug(f"{sp}[Any] Derived conclusion {pretty_expr(node.conclusion)}")
         else:
             logger.error(f"{sp}❌ [Any] Cannot derive {pretty_expr(node.conclusion)}")
@@ -262,12 +300,12 @@ def check_proof(node, context=None, indent=0):
         goal = node.conclusion
         for v in reversed(node.vars):
             goal = Forall(v, goal)
-        context.formulas.append(goal)
+        add_conclusion(context, goal)
         logger.debug(f"{sp}[Any] Generalized to {pretty_expr(goal)}")
         return True
 
     if isinstance(node, Divide):
-        if not derivable(node.fact, context.formulas):
+        if not derivable(node.fact, context):
             logger.error(f"{sp}❌ [Divide] Not fact: {pretty_expr(node.fact)}")
             return False
         connected_premise = Or(node.cases[0].premise, node.cases[1].premise)
@@ -285,7 +323,7 @@ def check_proof(node, context=None, indent=0):
         for stmt in node.cases:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
-        context.formulas.append(node.conclusion)
+        add_conclusion(context, node.conclusion)
         logger.debug(f"{sp}[Divide] derived in all cases: {pretty_expr(node.conclusion)}")
         return True
 
@@ -295,7 +333,7 @@ def check_proof(node, context=None, indent=0):
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
-        if derivable(node.conclusion, local_ctx.formulas):
+        if derivable(node.conclusion, local_ctx):
             logger.debug(f"{sp}[Case] derived conclusion {pretty_expr(node.conclusion)}")
             return True
         else:
@@ -306,7 +344,7 @@ def check_proof(node, context=None, indent=0):
         fact = node.premise
         for v in reversed(node.vars):
             fact = Exists(v, fact)
-        if not derivable(fact, context.formulas):
+        if not derivable(fact, context):
             logger.error(f"{sp}❌ [Some] not derivable: {pretty_expr(fact)}")
             return False
         logger.debug(f"{sp}[Some] derivable: {pretty_expr(fact)}")
@@ -315,20 +353,13 @@ def check_proof(node, context=None, indent=0):
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
-        if node.conclusion is None:
-            return True
-        else:
-            if derivable(node.conclusion, local_ctx.formulas):
-                logger.debug(f"{sp}[Some] derived conclusion {pretty_expr(node.conclusion)}")
-            else:
-                logger.error(f"{sp}❌ [Some] Cannot derive {pretty_expr(node.conclusion)}")
-                return False
-            goal = node.conclusion
-            for v in reversed(node.vars):
-                goal = Exists(v, goal)
-            context.formulas.append(goal)
-            logger.debug(f"{sp}[Some] Added existence {pretty_expr(goal)}")
-            return True
+        if not derivable(node.conclusion, local_ctx):
+            logger.error(f"{sp}❌ [Some] Cannot derive {pretty_expr(node.conclusion)}")
+            return False
+        logger.debug(f"{sp}[Some] derived conclusion {pretty_expr(node.conclusion)}")
+        add_conclusion(context, node.conclusion)
+        logger.debug(f"{sp}[Some] Added {pretty_expr(node.conclusion)}")
+        return True
     
     if isinstance(node, Deny):
         logger.debug(f"{sp}[Deny] premise={pretty_expr(node.premise)}")
@@ -337,7 +368,7 @@ def check_proof(node, context=None, indent=0):
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
         if local_ctx.bot_derived:
-            context.formulas.append(Not(node.premise))
+            add_conclusion(context, Not(node.premise))
             logger.debug(f"{sp}[Deny] contradiction is derived; added {pretty_expr(Not(node.premise))}")
             return True
         else:
@@ -345,11 +376,11 @@ def check_proof(node, context=None, indent=0):
             return False
     
     if isinstance(node, Contradict):
-        if not derivable(node.contradiction, context.formulas):
-            logger.debug(f"{sp}❌ [Contradict] Cannot derive {pretty_expr(node.contradiction)}")
+        if not derivable(node.contradiction, context):
+            logger.error(f"{sp}❌ [Contradict] Cannot derive {pretty_expr(node.contradiction)}")
             return False
-        if not derivable(Not(node.contradiction), context.formulas):
-            logger.debug(f"{sp}❌ [Contradict] Cannot derive {pretty_expr(Not(node.contradiction))}")
+        if not derivable(Not(node.contradiction), context):
+            logger.error(f"{sp}❌ [Contradict] Cannot derive {pretty_expr(Not(node.contradiction))}")
             return False
         logger.debug(f"{sp}[Contradict] Derived contradiction: {pretty_expr(node.contradiction)}, {pretty_expr(Not(node.contradiction))}")
         context.bot_derived = True
@@ -357,7 +388,7 @@ def check_proof(node, context=None, indent=0):
     
     if isinstance(node, Explode):
         if context.bot_derived:
-            context.formulas.append(node.conclusion)
+            add_conclusion(context, node.conclusion)
             logger.debug(f"{sp}[Explode] added {pretty_expr(node.conclusion)}")
             return True
         else:
@@ -365,48 +396,69 @@ def check_proof(node, context=None, indent=0):
             return False
         
     if isinstance(node, Apply):
-        if not derivable(node.fact, context.formulas):
-            logger.debug(f"{sp}❌ [Apply] Cannot derive {pretty_expr(node.fact)}")
+        if not derivable(node.fact, context):
+            logger.error(f"{sp}❌ [Apply] Cannot derive {pretty_expr(node.fact)}")
             return False
         logger.debug(f"{sp}[Apply] Drivable fact: {pretty_expr(node.fact)}")
         if node.env is not None:
             vars, body = collect_forall_vars(node.fact)
             if set(vars) != set(node.env.keys()):
-                logger.debug(f"{sp}❌ [Apply] matched: vars={vars}, env={node.env}")
+                logger.error(f"{sp}❌ [Apply] matched: vars={vars}, env={node.env}")
                 return False
             logger.debug(f"{sp}[Apply] Instantiable: vars={vars}, env={node.env}")
             instantiation = substitute(body, node.env)
             logger.debug(f"{sp}[Apply] \\forall-elimination is done: instantiation={pretty_expr(instantiation)}")
             if node.premise is None:
                 if not alpha_equiv(node.conclusion, instantiation):
-                    logger.debug(f"{sp}❌ [Apply] Not matched: node.conclusion={pretty_expr(node.conclusion)}, instantiation={pretty_expr(instantiation)}")
+                    logger.error(f"{sp}❌ [Apply] Not matched: node.conclusion={pretty_expr(node.conclusion)}, instantiation={pretty_expr(instantiation)}")
                     return False
                 logger.debug(f"{sp}[Apply] Matched: node.conclusion={pretty_expr(node.conclusion)}, instantiation={pretty_expr(instantiation)}")
                 logger.debug(f"{sp}[Apply] Added node.conclusion={pretty_expr(node.conclusion)}")
-                context.formulas.append(node.conclusion)
+                add_conclusion(context, node.conclusion)
                 return True
             else:
                 implication = instantiation
         else:
             implication = node.fact
         if not isinstance(implication, Implies):
-            logger.debug(f"{sp}❌ [Apply] Not Implies object: {pretty_expr(implication)}")
+            logger.error(f"{sp}❌ [Apply] Not Implies object: {pretty_expr(implication)}")
             return False
         logger.debug(f"{sp}[Apply] Implies object: {pretty_expr(implication)}")
         if not alpha_equiv(implication.left, node.premise):
-            logger.debug(f"❌ {sp}[Apply] Not matched: implication.left={pretty_expr(implication.left)}, node.premise={pretty_expr(node.premise)}")
+            logger.error(f"{sp}❌ [Apply] Not matched: implication.left={pretty_expr(implication.left)}, node.premise={pretty_expr(node.premise)}")
             return False
         logger.debug(f"{sp}[Apply] Matched: implication.left={pretty_expr(implication.left)}, node.premise={pretty_expr(node.premise)}")
         logger.debug(f"{sp}[Apply] \\to-elimination is done: {pretty_expr(implication.right)}")
         if not alpha_equiv(node.conclusion, implication.right):
-            logger.debug(f"{sp}❌ [Apply] Not matched: node.conclusion={pretty_expr(node.conclusion)}, implication.right={pretty_expr(implication.right)}")
+            logger.error(f"{sp}❌ [Apply] Not matched: node.conclusion={pretty_expr(node.conclusion)}, implication.right={pretty_expr(implication.right)}")
             return False
         logger.debug(f"{sp}[Apply] Matched: node.conclusion={pretty_expr(node.conclusion)}, implication.right={pretty_expr(implication.right)}")
         logger.debug(f"{sp}[Apply] Added node.conclusion={pretty_expr(node.conclusion)}")
-        context.formulas.append(node.conclusion)
+        add_conclusion(context, node.conclusion)
+        return True
+    
+    if isinstance(node, Lift):
+        if not derivable(node.fact, context):
+            logger.error(f"{sp}❌ [Lift] Not fact: {pretty_expr(node.fact)}")
+            return False
+        logger.debug(f"{sp}[Lift] fact: {pretty_expr(node.fact)}")
+        free_vars, _ = collect_vars(node.fact)
+        if not set(node.env.values()).issubset(free_vars):
+            logger.error(f"{sp}❌ [Lift] Cannot be lifted: vars={free_vars}, env={node.env}")
+            return False
+        logger.debug(f"{sp}[Lift] Can be lifted: vars={free_vars}, env={node.env}")
+        lifted = substitute(node.fact, {v: k for k, v in node.env.items()})
+        for k in reversed(list(node.env.keys())):
+            lifted = Exists(k, lifted)
+        logger.debug(f"{sp}[Lift] lifted formula: {pretty_expr(lifted)}")
+        if not alpha_equiv(node.conclusion, lifted):
+            logger.error(f"{sp}❌ [Lift] Not matched: node.conclusion={pretty_expr(node.conclusion)}, lifted={pretty_expr(lifted)}")
+            return False
+        logger.debug(f"{sp}[Lift] Matched: node.conclusion={pretty_expr(node.conclusion)}, lifted={pretty_expr(lifted)}")        
+        add_conclusion(context, node.conclusion)
         return True
 
-    logger.error(f"{sp}⚠ Unsupported node {node}")
+    logger.error(f"{sp}❌ Unsupported node {node}")
     return False
 
 if __name__ == "__main__":
