@@ -62,6 +62,13 @@ class Explode:
     conclusion: object
 
 @dataclass
+class Apply:
+    fact: object
+    env: dict
+    premise: object
+    conclusion: object
+
+@dataclass
 class Definition:
     name: str
     body: str  # TODO: 式パーサーに統合可能
@@ -134,6 +141,8 @@ class Parser:
                 body.append(self.parse_contradict())
             elif tok.type == "EXPLODE":
                 body.append(self.parse_explode())
+            elif tok.type == "APPLY":
+                body.append(self.parse_apply())
             else:
                 raise SyntaxError(f"Unexpected token in block: {tok}")
         return body
@@ -224,6 +233,34 @@ class Parser:
         self.consume("EXPLODE")
         conclusion, self.pos = parse_expr(self.tokens, self.pos)
         return Explode(conclusion=conclusion)
+    
+    def parse_apply(self):
+        self.consume("APPLY")
+        fact, self.pos = parse_expr(self.tokens, self.pos)
+        if self.peek().type == "FOR":
+            self.consume("FOR")
+            env = {}
+            while True:
+                bound = self.consume("IDENT").value
+                self.consume("COLON")
+                free = self.consume("IDENT").value
+                env[bound] = free
+                if self.peek().type == "COMMA":
+                    self.consume("COMMA")
+                    continue
+                break
+        else:
+            env = None
+        if self.peek().type == "WITH":
+            self.consume("WITH")
+            premise, self.pos = parse_expr(self.tokens, self.pos)
+        else:
+            premise = None
+        if env is None and premise is None:
+            raise SyntaxError("APPLY needs FOR or WITH")
+        self.consume("CONCLUDE")
+        conclusion, self.pos = parse_expr(self.tokens, self.pos)
+        return Apply(fact=fact, env=env, premise=premise, conclusion=conclusion)
 
     def parse_definition(self):
         self.consume("DEFINITION")
@@ -246,59 +283,64 @@ def parse_file_from_source(src: str):
 def pretty(node, indent=0):
     sp = "  " * indent  # インデント幅2スペース
     if isinstance(node, Theorem):
-        logger.debug(f"{sp}Theorem {node.name}:")
-        logger.debug(f"{sp}Conclude {pretty_expr(node.conclusion)}")
+        logger.debug(f"{sp}[Theorem] name: {node.name}")
+        logger.debug(f"{sp}          conclusion: {pretty_expr(node.conclusion)}")
         for stmt in node.proof:
             pretty(stmt, indent + 1)
 
     elif isinstance(node, Conclude):
-        logger.debug(f"{sp}Conclude {pretty_expr(node.conclusion)}")
+        logger.debug(f"{sp}[Conclude] {pretty_expr(node.conclusion)}")
 
     elif isinstance(node, Any):
-        logger.debug(f"{sp}Any {', '.join(node.vars)}")
-        logger.debug(f"{sp}Conclude {pretty_expr(node.conclusion)}")
+        logger.debug(f"{sp}[Any] vars: {', '.join(node.vars)}")
+        logger.debug(f"{sp}      conclusion: {pretty_expr(node.conclusion)}")
         for stmt in node.body:
             pretty(stmt, indent + 1)
 
     elif isinstance(node, Assume):
-        logger.debug(f"{sp}Assume {pretty_expr(node.premise)}")
-        logger.debug(f"{sp}Conclude {pretty_expr(node.conclusion)}")
+        logger.debug(f"{sp}[Assume] premise: {pretty_expr(node.premise)}")
+        logger.debug(f"{sp}         conclusion: {pretty_expr(node.conclusion)}")
         for stmt in node.body:
             pretty(stmt, indent + 1)
     
     elif isinstance(node, Divide):
-        logger.debug(f"{sp}Divide {pretty_expr(node.fact)}")
-        logger.debug(f"{sp}Conclude {pretty_expr(node.conclusion)}")
+        logger.debug(f"{sp}[Divide] fact: {pretty_expr(node.fact)}")
+        logger.debug(f"{sp}         conclusion: {pretty_expr(node.conclusion)}")
         for stmt in node.cases:
             pretty(stmt, indent + 1)
 
     elif isinstance(node, Case):
-        logger.debug(f"{sp}Case {pretty_expr(node.premise)}")
-        logger.debug(f"{sp}Conclude {pretty_expr(node.conclusion)}")
+        logger.debug(f"{sp}[Case] case: {pretty_expr(node.premise)}")
+        logger.debug(f"{sp}       conclusion: {pretty_expr(node.conclusion)}")
         for stmt in node.body:
             pretty(stmt, indent + 1)
     
     elif isinstance(node, Some):
-        logger.debug(f"{sp}Some {','.join(node.vars)}")
-        logger.debug(f"{sp}Premise {pretty_expr(node.premise)}")
+        logger.debug(f"{sp}[Some] vars: {','.join(node.vars)}")
+        logger.debug(f"{sp}       premise: {pretty_expr(node.premise)}")
         if node.conclusion is not None:
-            logger.debug(f"{sp}Conclude {pretty_expr(node.conclusion)}")
+            logger.debug(f"{sp}       conclusion: {pretty_expr(node.conclusion)}")
         for stmt in node.body:
             pretty(stmt, indent + 1)
     
     elif isinstance(node, Deny):
-        logger.debug(f"{sp}Deny {pretty_expr(node.premise)}")
+        logger.debug(f"{sp}[Deny] premise: {pretty_expr(node.premise)}")
         for stmt in node.body:
             pretty(stmt, indent + 1)
     
     elif isinstance(node, Contradict):
-        logger.debug(f"{sp}Contradict {pretty_expr(node.contradiction)}")        
+        logger.debug(f"{sp}[Contradict] contradiction: {pretty_expr(node.contradiction)}")
 
     elif isinstance(node, Explode):
-        logger.debug(f"{sp}Explode {pretty_expr(node.conclusion)}")
+        logger.debug(f"{sp}[Explode] conclusion: {pretty_expr(node.conclusion)}")
 
-    # elif isinstance(node, By):
-    #     logger.debug(f"{sp}By {node.target} by {node.definition} using {node.using}")
+    elif isinstance(node, Apply):
+        logger.debug(f"{sp}[Apply] fact: {pretty_expr(node.conclusion)}")
+        if node.env is not None:
+            logger.debug(f"{sp}        env: {node.env}")
+        if node.premise is not None:
+            logger.debug(f"{sp}        premise: {pretty_expr(node.premise)}")
+        logger.debug(f"{sp}        conclusion: {pretty_expr(node.conclusion)}")
 
     elif isinstance(node, Definition):
         logger.debug(f"{sp}Definition {node.name}: {node.body}")
@@ -307,7 +349,7 @@ def pretty(node, indent=0):
         raise TypeError(f"Unsupported node type: {type(node)}")
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.DEBUG, format="%(message)s")
     import sys
     path = sys.argv[1]
     f = open(path)

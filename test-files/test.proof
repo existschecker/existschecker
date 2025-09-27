@@ -149,3 +149,12 @@ theorem test19 \exists x\exists y((x\in y\vee y\in x)\wedge\neg(y\in x))\to\exis
     }
   }
 }
+
+theorem test20 \forall x\forall y(x\in y\to\forall z(z\in x))\wedge\exists x\exists y(x\in y)\to\exists x\exists y(x\in y\wedge y\in x) {
+  assume \forall x\forall y(x\in y\to\forall z(z\in x))\wedge\exists x\exists y(x\in y) conclude \exists x\exists y(x\in y\wedge y\in x) {
+    some x, y such x\in y conclude x\in y\wedge y\in x {
+      apply \forall x\forall y(x\in y\to\forall z(z\in x)) for x: x, y: y with x\in y conclude \forall z(z\in x)
+      apply \forall z(z\in x) for z: y conclude y\in x
+    }
+  }
+}

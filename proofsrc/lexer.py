@@ -7,12 +7,12 @@ class Token:
     value: str
     pos: int
 
-KEYWORDS = {"theorem", "definition", "any", "assume", "conclude", "by", "divide", "case", "some", "such", "deny", "contradict", "explode"}
+KEYWORDS = {"theorem", "definition", "any", "assume", "conclude", "divide", "case", "some", "such", "deny", "contradict", "explode", "apply", "for", "with"}
 
 SYMBOLS = {
     "{": "LBRACE",
     "}": "RBRACE",
-    ";": "SEMI",
+    ":": "COLON",
     ",": "COMMA",
     "(": "LPAREN",
     ")": "RPAREN"

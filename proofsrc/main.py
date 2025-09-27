@@ -4,7 +4,7 @@ from checker import check_proof
 def main(args):
     import logging
     numeric_level = getattr(logging, args.log.upper(), None)
-    logging.basicConfig(level=numeric_level)
+    logging.basicConfig(level=numeric_level, format="%(message)s")
     f = open(args.input_file)
     src = f.read()
     f.close()
