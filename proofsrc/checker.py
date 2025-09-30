@@ -151,10 +151,7 @@ def collect_vars(expr, bound=None):
         bound = set()
 
     if isinstance(expr, Symbol):
-        if expr.name == "in":
-            return set(arg for arg in expr.args if arg not in bound), set()
-        else:
-            raise TypeError("Unexpected Symbol")
+        return set(arg for arg in expr.args if arg not in bound), set()
 
     elif isinstance(expr, Not):
         return collect_vars(expr.body, bound)
@@ -202,11 +199,8 @@ def derivable(goal, context):
 
 def substitute(expr, mapping):
     if isinstance(expr, Symbol):
-        # Symbol("in", ["x", "y"]) の形しかない想定
-        if expr.name == "in":
-            new_args = [mapping.get(arg, arg) for arg in expr.args]
-            return Symbol("in", new_args)
-        return expr
+        new_args = [mapping.get(arg, arg) for arg in expr.args]
+        return Symbol(expr.name, new_args)
 
     if isinstance(expr, Not):
         return Not(substitute(expr.body, mapping))

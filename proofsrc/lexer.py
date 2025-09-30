@@ -7,7 +7,7 @@ class Token:
     value: str
     pos: int
 
-KEYWORDS = {"theorem", "definition", "any", "assume", "conclude", "divide", "case", "some", "such", "deny", "contradict", "explode", "apply", "for", "with", "check", "lift"}
+KEYWORDS = {"theorem", "definition", "any", "assume", "conclude", "divide", "case", "some", "such", "deny", "contradict", "explode", "apply", "for", "with", "check", "lift", "atom", "predicate", "arity"}
 
 SYMBOLS = {
     "{": "LBRACE",
@@ -25,6 +25,14 @@ def lex(src: str) -> list[Token]:
         c = src[i]
         if c.isspace():
             i += 1
+            continue
+        if src[i:i+2] == "/*":
+            i += 2
+            while i < len(src) and src[i:i+2] != "*/":
+                i += 1
+            if i >= len(src):
+                raise SyntaxError("Unterminated comment")
+            i += 2
             continue
         if c in SYMBOLS:
             tokens.append(Token(SYMBOLS[c], c, i))
@@ -61,6 +69,11 @@ def lex(src: str) -> list[Token]:
                     tokens.append(Token(text.upper(), text, i))
                 else:
                     tokens.append(Token("IDENT", text, i))
+                i += len(text)
+            elif re.match(r"\d+", src[i:]):
+                m = re.match(r"\d+", src[i:])
+                text = m.group(0)
+                tokens.append(Token("NUMBER", text, i))
                 i += len(text)
             else:
                 raise SyntaxError(f"Unexpected character {c} at {i}")

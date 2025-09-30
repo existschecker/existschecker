@@ -7,6 +7,12 @@ logger = logging.getLogger(__name__)
 
 # === DSL ノード定義 ===
 @dataclass
+class Atom:
+    type: str
+    name: str
+    arity: int
+
+@dataclass
 class Theorem:
     name: str
     conclusion: object
@@ -140,16 +146,33 @@ class Parser:
         return tok
 
     def parse_file(self):
+        self.declared_atoms = {}  # name -> Atom
         ast = []
         while self.peek():
             tok = self.peek()
-            if tok.type == "THEOREM":
+            if tok.type == "ATOM":
+                ast.append(self.parse_atom())
+            elif tok.type == "THEOREM":
                 ast.append(self.parse_theorem())
             elif tok.type == "DEFINITION":
                 ast.append(self.parse_definition())
             else:
                 raise SyntaxError(f"Unexpected token {tok}")
         return ast
+
+    def parse_atom(self):
+        self.consume("ATOM")
+        tok = self.peek()
+        if tok.type == "PREDICATE":
+            self.consume(tok.type)
+            name = self.consume("IDENT").value
+            self.consume("ARITY")
+            arity = int(self.consume("NUMBER").value)
+            atom = Atom(type=tok.type, name=name, arity=arity)
+            self.declared_atoms[name] = atom
+            return atom
+        else:
+            raise SyntaxError(f"Unexpected token {tok}")
 
     def parse_theorem(self):
         self.consume("THEOREM")
@@ -340,11 +363,14 @@ class Parser:
     def parse_primary(self, tokens, pos):
         tok = tokens[pos]
         if tok.type == "IDENT":
-            # 単純なシンボル（引数なし or 2項述語 in）
-            # 今は簡単に "x \in y" を処理する
-            if pos+2 < len(tokens) and tokens[pos+1].value == "\\in" and tokens[pos+2].type == "IDENT":
-                return Symbol("in", [tok.value, tokens[pos+2].value]), pos+3
-            return Symbol(tok.value, []), pos+1
+            # 2項 atom を探す
+            if (pos + 2 < len(tokens) and tokens[pos+1].value in self.declared_atoms
+                and self.declared_atoms[tokens[pos+1].value].arity == 2
+                and tokens[pos+2].type == "IDENT"):
+                atom_name = tokens[pos+1].value
+                return Symbol(atom_name, [tok.value, tokens[pos+2].value]), pos+3
+            else:
+                raise SyntaxError("atom is not found")
 
         elif tok.type == "LPAREN":
             expr, pos = self.parse_expr(tokens, pos+1)
@@ -435,7 +461,12 @@ def parse_file_from_source(src: str):
 
 def pretty(node, indent=0):
     sp = "  " * indent  # インデント幅2スペース
-    if isinstance(node, Theorem):
+    if isinstance(node, Atom):
+        logger.debug(f"{sp}[Atom] type: {node.type}")
+        logger.debug(f"{sp}       name: {node.name}")
+        logger.debug(f"{sp}       arity: {node.arity}")
+
+    elif isinstance(node, Theorem):
         logger.debug(f"{sp}[Theorem] name: {node.name}")
         logger.debug(f"{sp}          conclusion: {pretty_expr(node.conclusion)}")
         for stmt in node.proof:
@@ -507,9 +538,7 @@ def pretty(node, indent=0):
 
 def pretty_expr(expr):
     if isinstance(expr, Symbol):
-        if expr.name == "in":
-            return f"{expr.args[0]} \\in {expr.args[1]}"
-        return expr.name
+        return f"{expr.args[0]} {expr.name} {expr.args[1]}"
     if isinstance(expr, Implies):
         return f"{pretty_expr(expr.left)} \\to {pretty_expr(expr.right)}"
     if isinstance(expr, And):

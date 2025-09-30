@@ -1,3 +1,5 @@
+atom predicate \in arity 2
+
 theorem test01 \forall x\forall y(x\in y\to x\in y) {
   any x, y conclude x\in y\to x\in y {
     assume x\in y conclude x\in y {}
