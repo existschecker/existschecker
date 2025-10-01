@@ -8,7 +8,7 @@ from itertools import permutations
 from typing import List
 
 import logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("proof")
 
 def flatten_or(expr) -> List:
     """Or を平坦化して葉のリストを返す"""
@@ -458,40 +458,3 @@ def check_proof(node, context=None, indent=0):
 
     logger.error(f"{sp}❌ Unsupported node {node}")
     return False
-
-if __name__ == "__main__":
-    import sys
-    path = sys.argv[1]
-    f = open(path)
-    src = f.read()
-    f.close()
-
-    import os
-    import logging
-
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.DEBUG)
-
-    # 標準出力用ハンドラ
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.DEBUG)
-
-    # ファイル出力用ハンドラ
-    file_handler = logging.FileHandler(os.path.join("logs", os.path.basename(path).replace(".proof", ".log")), mode='w', encoding='utf-8')
-    file_handler.setLevel(logging.DEBUG)
-
-    # 共通フォーマット
-    formatter = logging.Formatter("%(message)s")
-    console_handler.setFormatter(formatter)
-    file_handler.setFormatter(formatter)
-
-    # ハンドラ登録
-    logger.addHandler(console_handler)
-    logger.addHandler(file_handler)
-
-    ast = parse_file_from_source(src)
-    for node in ast:
-        pretty(node)
-        if hasattr(node, "proof"):
-            result = check_proof(node)
-            print(f"✔ theorem {node.name}: OK" if result else "❌ theorem {node.name}: Failed")

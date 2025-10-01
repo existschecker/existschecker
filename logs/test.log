@@ -1,3 +1,4 @@
+[Context] 
 [Theorem] test01: \forall x(\forall y(in(x,y) \to in(x,y)))
   [Any] Taking ['x', 'y']
     [Assume] premise=in(x,y), conclusion=in(x,y)
@@ -6,6 +7,7 @@
   [Any] Derived conclusion in(x,y) \to in(x,y)
   [Any] Generalized to \forall x(\forall y(in(x,y) \to in(x,y)))
 [Theorem] test01 proved: \forall x(\forall y(in(x,y) \to in(x,y)))
+[Context] 
 [Theorem] test02: \forall x(\forall y(in(x,y) \to in(x,y) \wedge in(x,y)))
   [Any] Taking ['x', 'y']
     [Assume] premise=in(x,y), conclusion=in(x,y) \wedge in(x,y)
@@ -14,6 +16,7 @@
   [Any] Derived conclusion in(x,y) \to in(x,y) \wedge in(x,y)
   [Any] Generalized to \forall x(\forall y(in(x,y) \to in(x,y) \wedge in(x,y)))
 [Theorem] test02 proved: \forall x(\forall y(in(x,y) \to in(x,y) \wedge in(x,y)))
+[Context] 
 [Theorem] test03: \forall x(\forall y(in(x,y) \to in(x,y) \wedge in(x,y) \to in(x,y)))
   [Any] Taking ['x', 'y']
     [Assume] premise=in(x,y), conclusion=in(x,y)
@@ -22,6 +25,7 @@
   [Any] Derived conclusion in(x,y) \to in(x,y) \wedge in(x,y) \to in(x,y)
   [Any] Generalized to \forall x(\forall y(in(x,y) \to in(x,y) \wedge in(x,y) \to in(x,y)))
 [Theorem] test03 proved: \forall x(\forall y(in(x,y) \to in(x,y) \wedge in(x,y) \to in(x,y)))
+[Context] 
 [Theorem] test04: \forall x(\forall y(in(x,y) \to in(x,y))) \wedge \forall z(\forall w(in(z,w) \to in(z,w)))
   [Any] Taking ['x', 'y']
     [Assume] premise=in(x,y), conclusion=in(x,y)
@@ -30,6 +34,7 @@
   [Any] Derived conclusion in(x,y) \to in(x,y)
   [Any] Generalized to \forall x(\forall y(in(x,y) \to in(x,y)))
 [Theorem] test04 proved: \forall x(\forall y(in(x,y) \to in(x,y))) \wedge \forall z(\forall w(in(z,w) \to in(z,w)))
+[Context] 
 [Theorem] test05: \forall x(\forall y(in(x,y) \to in(x,y) \wedge in(x,y) \to in(x,y) \wedge in(x,y)))
   [Any] Taking ['x', 'y']
     [Assume] premise=in(x,y), conclusion=in(x,y)
@@ -41,6 +46,7 @@
   [Any] Derived conclusion in(x,y) \to in(x,y) \wedge in(x,y) \to in(x,y) \wedge in(x,y)
   [Any] Generalized to \forall x(\forall y(in(x,y) \to in(x,y) \wedge in(x,y) \to in(x,y) \wedge in(x,y)))
 [Theorem] test05 proved: \forall x(\forall y(in(x,y) \to in(x,y) \wedge in(x,y) \to in(x,y) \wedge in(x,y)))
+[Context] 
 [Theorem] test06: \forall x(\forall y(in(x,y) \to in(x,y))) \wedge \forall x(\forall y(in(x,y) \to in(x,y) \wedge in(x,y)))
   [Any] Taking ['x', 'y']
     [Assume] premise=in(x,y), conclusion=in(x,y)
@@ -55,6 +61,7 @@
   [Any] Derived conclusion in(x,y) \to in(x,y) \wedge in(x,y)
   [Any] Generalized to \forall x(\forall y(in(x,y) \to in(x,y) \wedge in(x,y)))
 [Theorem] test06 proved: \forall x(\forall y(in(x,y) \to in(x,y))) \wedge \forall x(\forall y(in(x,y) \to in(x,y) \wedge in(x,y)))
+[Context] 
 [Theorem] test07: \forall x(\forall y(in(x,y) \to in(x,y) \wedge \forall z(in(z,x) \to in(z,x))))
   [Any] Taking ['x', 'y']
     [Assume] premise=in(x,y), conclusion=in(x,y) \wedge \forall z(in(z,x) \to in(z,x))
@@ -69,6 +76,7 @@
   [Any] Derived conclusion in(x,y) \to in(x,y) \wedge \forall z(in(z,x) \to in(z,x))
   [Any] Generalized to \forall x(\forall y(in(x,y) \to in(x,y) \wedge \forall z(in(z,x) \to in(z,x))))
 [Theorem] test07 proved: \forall x(\forall y(in(x,y) \to in(x,y) \wedge \forall z(in(z,x) \to in(z,x))))
+[Context] 
 [Theorem] test08: \forall v(\forall u(in(u,v) \to in(u,v)))
   [Any] Taking ['x', 'y']
     [Assume] premise=in(x,y), conclusion=in(x,y)
@@ -77,6 +85,7 @@
   [Any] Derived conclusion in(x,y) \to in(x,y)
   [Any] Generalized to \forall x(\forall y(in(x,y) \to in(x,y)))
 [Theorem] test08 proved: \forall v(\forall u(in(u,v) \to in(u,v)))
+[Context] 
 [Theorem] test09: \forall v(\forall u(in(u,v) \to in(u,v)))
   [Any] Taking ['x', 'y']
     [Assume] premise=in(x,y), conclusion=in(x,y)
@@ -87,6 +96,7 @@
   [Any] Derived conclusion in(x,y) \to in(x,y)
   [Any] Generalized to \forall x(\forall y(in(x,y) \to in(x,y)))
 [Theorem] test09 proved: \forall v(\forall u(in(u,v) \to in(u,v)))
+[Context] 
 [Theorem] test10: \forall v(\forall u(in(u,v) \to in(u,v)))
   [Any] Taking ['x', 'y']
     [Assume] premise=in(x,y), conclusion=in(x,y)
@@ -97,6 +107,7 @@
   [Check] Checking \forall x(\forall y(in(x,y) \to in(x,y)))
   [Check] goal \forall x(\forall y(in(x,y) \to in(x,y))) derived
 [Theorem] test10 proved: \forall v(\forall u(in(u,v) \to in(u,v)))
+[Context] 
 [Theorem] test11: \forall u(\forall v(in(u,v) \to in(u,v) \vee in(v,u)))
   [Any] Taking ['x', 'y']
     [Assume] premise=in(x,y), conclusion=in(x,y) \vee in(y,x)
@@ -105,6 +116,7 @@
   [Any] Derived conclusion in(x,y) \to in(x,y) \vee in(y,x)
   [Any] Generalized to \forall x(\forall y(in(x,y) \to in(x,y) \vee in(y,x)))
 [Theorem] test11 proved: \forall u(\forall v(in(u,v) \to in(u,v) \vee in(v,u)))
+[Context] 
 [Theorem] test12: \forall u(\forall v(in(u,v) \vee in(v,u) \to in(v,u) \vee in(u,v)))
   [Any] Taking ['x', 'y']
     [Assume] premise=in(x,y) \vee in(y,x), conclusion=in(y,x) \vee in(x,y)
@@ -113,6 +125,7 @@
   [Any] Derived conclusion in(x,y) \vee in(y,x) \to in(y,x) \vee in(x,y)
   [Any] Generalized to \forall x(\forall y(in(x,y) \vee in(y,x) \to in(y,x) \vee in(x,y)))
 [Theorem] test12 proved: \forall u(\forall v(in(u,v) \vee in(v,u) \to in(v,u) \vee in(u,v)))
+[Context] 
 [Theorem] test13: \forall x(\forall y(in(x,y) \vee in(y,x) \to in(x,y) \wedge in(x,y) \vee in(y,x) \wedge in(y,x)))
   [Any] Taking ['x', 'y']
     [Assume] premise=in(x,y) \vee in(y,x), conclusion=in(x,y) \wedge in(x,y) \vee in(y,x) \wedge in(y,x)
@@ -128,6 +141,7 @@
   [Any] Derived conclusion in(x,y) \vee in(y,x) \to in(x,y) \wedge in(x,y) \vee in(y,x) \wedge in(y,x)
   [Any] Generalized to \forall x(\forall y(in(x,y) \vee in(y,x) \to in(x,y) \wedge in(x,y) \vee in(y,x) \wedge in(y,x)))
 [Theorem] test13 proved: \forall x(\forall y(in(x,y) \vee in(y,x) \to in(x,y) \wedge in(x,y) \vee in(y,x) \wedge in(y,x)))
+[Context] 
 [Theorem] test14: \forall x(\forall y(in(x,x) \vee in(x,y) \vee in(y,x) \to in(x,x) \vee in(x,y) \vee in(y,x)))
   [Any] Taking ['x', 'y']
     [Assume] premise=in(x,x) \vee in(x,y) \vee in(y,x), conclusion=in(x,x) \vee in(x,y) \vee in(y,x)
@@ -145,6 +159,7 @@
   [Any] Derived conclusion in(x,x) \vee in(x,y) \vee in(y,x) \to in(x,x) \vee in(x,y) \vee in(y,x)
   [Any] Generalized to \forall x(\forall y(in(x,x) \vee in(x,y) \vee in(y,x) \to in(x,x) \vee in(x,y) \vee in(y,x)))
 [Theorem] test14 proved: \forall x(\forall y(in(x,x) \vee in(x,y) \vee in(y,x) \to in(x,x) \vee in(x,y) \vee in(y,x)))
+[Context] 
 [Theorem] test15: \exists x(\exists y(in(x,y))) \to \exists x(\exists y(in(x,y) \wedge in(x,y)))
   [Assume] premise=\exists x(\exists y(in(x,y))), conclusion=\exists x(\exists y(in(x,y) \wedge in(x,y)))
     [Some] derivable: \exists x(\exists y(in(x,y)))
@@ -158,11 +173,13 @@
   [Assume] Derived conclusion \exists x(\exists y(in(x,y) \wedge in(x,y)))
   [Assume] Added implication \exists x(\exists y(in(x,y))) \to \exists x(\exists y(in(x,y) \wedge in(x,y)))
 [Theorem] test15 proved: \exists x(\exists y(in(x,y))) \to \exists x(\exists y(in(x,y) \wedge in(x,y)))
+[Context] 
 [Theorem] test16: \forall x(\forall y(in(x,y))) \to \forall x(\forall y(in(x,y)))
   [Assume] premise=\forall x(\forall y(in(x,y))), conclusion=\forall x(\forall y(in(x,y)))
   [Assume] Derived conclusion \forall x(\forall y(in(x,y)))
   [Assume] Added implication \forall x(\forall y(in(x,y))) \to \forall x(\forall y(in(x,y)))
 [Theorem] test16 proved: \forall x(\forall y(in(x,y))) \to \forall x(\forall y(in(x,y)))
+[Context] 
 [Theorem] test17: \exists x(in(x,x)) \to \exists x(in(x,x))
   [Assume] premise=\exists x(in(x,x)), conclusion=\exists x(in(x,x))
     [Some] derivable: \exists x(in(x,x))
@@ -176,6 +193,7 @@
   [Assume] Derived conclusion \exists x(in(x,x))
   [Assume] Added implication \exists x(in(x,x)) \to \exists x(in(x,x))
 [Theorem] test17 proved: \exists x(in(x,x)) \to \exists x(in(x,x))
+[Context] 
 [Theorem] test18: \exists x(\exists y(in(x,y) \vee in(y,x))) \to \exists x(\exists y(\neg(\neg(in(x,y)) \wedge \neg(in(y,x)))))
   [Assume] premise=\exists x(\exists y(in(x,y) \vee in(y,x))), conclusion=\exists x(\exists y(\neg(\neg(in(x,y)) \wedge \neg(in(y,x)))))
     [Some] derivable: \exists x(\exists y(in(x,y) \vee in(y,x)))
@@ -202,6 +220,7 @@
   [Assume] Derived conclusion \exists x(\exists y(\neg(\neg(in(x,y)) \wedge \neg(in(y,x)))))
   [Assume] Added implication \exists x(\exists y(in(x,y) \vee in(y,x))) \to \exists x(\exists y(\neg(\neg(in(x,y)) \wedge \neg(in(y,x)))))
 [Theorem] test18 proved: \exists x(\exists y(in(x,y) \vee in(y,x))) \to \exists x(\exists y(\neg(\neg(in(x,y)) \wedge \neg(in(y,x)))))
+[Context] 
 [Theorem] test19: \exists x(\exists y(in(x,y) \vee in(y,x) \wedge \neg(in(y,x)))) \to \exists x(\exists y(in(x,y)))
   [Assume] premise=\exists x(\exists y(in(x,y) \vee in(y,x) \wedge \neg(in(y,x)))), conclusion=\exists x(\exists y(in(x,y)))
     [Some] derivable: \exists x(\exists y(in(x,y) \vee in(y,x) \wedge \neg(in(y,x))))
@@ -224,6 +243,7 @@
   [Assume] Derived conclusion \exists x(\exists y(in(x,y)))
   [Assume] Added implication \exists x(\exists y(in(x,y) \vee in(y,x) \wedge \neg(in(y,x)))) \to \exists x(\exists y(in(x,y)))
 [Theorem] test19 proved: \exists x(\exists y(in(x,y) \vee in(y,x) \wedge \neg(in(y,x)))) \to \exists x(\exists y(in(x,y)))
+[Context] 
 [Theorem] test20: \forall x(\forall y(in(x,y) \to \forall z(in(z,x)))) \wedge \exists x(\exists y(in(x,y))) \to \exists x(\exists y(in(x,y) \wedge in(y,x)))
   [Assume] premise=\forall x(\forall y(in(x,y) \to \forall z(in(z,x)))) \wedge \exists x(\exists y(in(x,y))), conclusion=\exists x(\exists y(in(x,y) \wedge in(y,x)))
     [Some] derivable: \exists x(\exists y(in(x,y)))
@@ -251,6 +271,7 @@
   [Assume] Derived conclusion \exists x(\exists y(in(x,y) \wedge in(y,x)))
   [Assume] Added implication \forall x(\forall y(in(x,y) \to \forall z(in(z,x)))) \wedge \exists x(\exists y(in(x,y))) \to \exists x(\exists y(in(x,y) \wedge in(y,x)))
 [Theorem] test20 proved: \forall x(\forall y(in(x,y) \to \forall z(in(z,x)))) \wedge \exists x(\exists y(in(x,y))) \to \exists x(\exists y(in(x,y) \wedge in(y,x)))
+[Context] 
 [Theorem] test21: \forall x(\forall y(in(x,y))) \to \neg(\exists x(\exists y(\neg(in(x,y)))))
   [Assume] premise=\forall x(\forall y(in(x,y))), conclusion=\neg(\exists x(\exists y(\neg(in(x,y)))))
     [Deny] premise=\exists x(\exists y(\neg(in(x,y))))
@@ -268,6 +289,7 @@
   [Assume] Derived conclusion \neg(\exists x(\exists y(\neg(in(x,y)))))
   [Assume] Added implication \forall x(\forall y(in(x,y))) \to \neg(\exists x(\exists y(\neg(in(x,y)))))
 [Theorem] test21 proved: \forall x(\forall y(in(x,y))) \to \neg(\exists x(\exists y(\neg(in(x,y)))))
+[Context] 
 [Theorem] test22: \neg(\exists x(\exists y(\neg(in(x,y))))) \to \forall x(\forall y(in(x,y)))
   [Assume] premise=\neg(\exists x(\exists y(\neg(in(x,y))))), conclusion=\forall x(\forall y(in(x,y)))
     [Any] Taking ['x', 'y']
@@ -283,6 +305,7 @@
   [Assume] Derived conclusion \forall x(\forall y(in(x,y)))
   [Assume] Added implication \neg(\exists x(\exists y(\neg(in(x,y))))) \to \forall x(\forall y(in(x,y)))
 [Theorem] test22 proved: \neg(\exists x(\exists y(\neg(in(x,y))))) \to \forall x(\forall y(in(x,y)))
+[Context] 
 [Theorem] test23: \forall x(in(x,x) \to \neg(in(x,x))) \to \forall x(in(x,x)) \to \forall x(\neg(in(x,x)))
   [Assume] premise=\forall x(in(x,x) \to \neg(in(x,x))), conclusion=\forall x(in(x,x)) \to \forall x(\neg(in(x,x)))
     [Assume] premise=\forall x(in(x,x)), conclusion=\forall x(\neg(in(x,x)))
@@ -311,6 +334,7 @@
   [Assume] Derived conclusion \forall x(in(x,x)) \to \forall x(\neg(in(x,x)))
   [Assume] Added implication \forall x(in(x,x) \to \neg(in(x,x))) \to \forall x(in(x,x)) \to \forall x(\neg(in(x,x)))
 [Theorem] test23 proved: \forall x(in(x,x) \to \neg(in(x,x))) \to \forall x(in(x,x)) \to \forall x(\neg(in(x,x)))
+[Context] 
 [Theorem] test24: \forall x(\forall y(\neg(in(x,y)))) \to \neg(\exists x(\exists y(in(x,y))))
   [Assume] premise=\forall x(\forall y(\neg(in(x,y)))), conclusion=\neg(\exists x(\exists y(in(x,y))))
     [Deny] premise=\exists x(\exists y(in(x,y)))
@@ -328,6 +352,7 @@
   [Assume] Derived conclusion \neg(\exists x(\exists y(in(x,y))))
   [Assume] Added implication \forall x(\forall y(\neg(in(x,y)))) \to \neg(\exists x(\exists y(in(x,y))))
 [Theorem] test24 proved: \forall x(\forall y(\neg(in(x,y)))) \to \neg(\exists x(\exists y(in(x,y))))
+[Context] 
 [Theorem] test25: \neg(\exists x(\exists y(in(x,y)))) \to \forall x(\forall y(\neg(in(x,y))))
   [Assume] premise=\neg(\exists x(\exists y(in(x,y)))), conclusion=\forall x(\forall y(\neg(in(x,y))))
     [Any] Taking ['x', 'y']
@@ -343,3 +368,33 @@
   [Assume] Derived conclusion \forall x(\forall y(\neg(in(x,y))))
   [Assume] Added implication \neg(\exists x(\exists y(in(x,y)))) \to \forall x(\forall y(\neg(in(x,y))))
 [Theorem] test25 proved: \neg(\exists x(\exists y(in(x,y)))) \to \forall x(\forall y(\neg(in(x,y))))
+[Context] \forall x(\forall y(subset(x,y) \leftrightarrow \forall z(in(z,x) \to in(z,y))))
+[Theorem] subset01: \forall z(\forall x(\forall y(in(z,x) \wedge subset(x,y) \to in(z,y))))
+  [Any] Taking ['x', 'y', 'z']
+    [Assume] premise=in(z,x) \wedge subset(x,y), conclusion=in(z,y)
+      [Apply] Drivable fact: \forall x(\forall y(subset(x,y) \leftrightarrow \forall z(in(z,x) \to in(z,y))))
+      [Apply] Instantiable: vars=['x', 'y'], env={'x': 'x', 'y': 'y'}
+      [Apply] \forall-elimination is done: instantiation=subset(x,y) \leftrightarrow \forall z(in(z,x) \to in(z,y))
+      [Apply] Matched: node.conclusion=subset(x,y) \leftrightarrow \forall z(in(z,x) \to in(z,y)), instantiation=subset(x,y) \leftrightarrow \forall z(in(z,x) \to in(z,y))
+      [Apply] Added node.conclusion=subset(x,y) \leftrightarrow \forall z(in(z,x) \to in(z,y))
+      [Apply] Drivable fact: subset(x,y) \to \forall z(in(z,x) \to in(z,y))
+      [Apply] Implies object: subset(x,y) \to \forall z(in(z,x) \to in(z,y))
+      [Apply] Derivable premise: subset(x,y)
+      [Apply] Matched: implication.left=subset(x,y), node.premise=subset(x,y)
+      [Apply] \to-elimination is done: \forall z(in(z,x) \to in(z,y))
+      [Apply] Matched: node.conclusion=\forall z(in(z,x) \to in(z,y)), implication.right=\forall z(in(z,x) \to in(z,y))
+      [Apply] Added node.conclusion=\forall z(in(z,x) \to in(z,y))
+      [Apply] Drivable fact: \forall z(in(z,x) \to in(z,y))
+      [Apply] Instantiable: vars=['z'], env={'z': 'z'}
+      [Apply] \forall-elimination is done: instantiation=in(z,x) \to in(z,y)
+      [Apply] Implies object: in(z,x) \to in(z,y)
+      [Apply] Derivable premise: in(z,x)
+      [Apply] Matched: implication.left=in(z,x), node.premise=in(z,x)
+      [Apply] \to-elimination is done: in(z,y)
+      [Apply] Matched: node.conclusion=in(z,y), implication.right=in(z,y)
+      [Apply] Added node.conclusion=in(z,y)
+    [Assume] Derived conclusion in(z,y)
+    [Assume] Added implication in(z,x) \wedge subset(x,y) \to in(z,y)
+  [Any] Derived conclusion in(z,x) \wedge subset(x,y) \to in(z,y)
+  [Any] Generalized to \forall x(\forall y(\forall z(in(z,x) \wedge subset(x,y) \to in(z,y))))
+[Theorem] subset01 proved: \forall z(\forall x(\forall y(in(z,x) \wedge subset(x,y) \to in(z,y))))

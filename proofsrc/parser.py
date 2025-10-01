@@ -36,8 +36,11 @@ class Parser:
                 formulas = []
                 for definition in self.declared_definitions.values():
                     formulas.append(definition.formula)
-                logger.debug(f"[Context] {[pretty_expr(formula) for formula in formulas]}")
-                check_proof(theorem, Context(formulas, False))
+                logger.debug("[Context] " + ", ".join(pretty_expr(formula) for formula in formulas))
+                if check_proof(theorem, Context(formulas, False)):
+                    print(f"[{theorem.name}] proved")
+                else:
+                    print(f"❌ [{theorem.name}] not proved")
             elif tok.type == "DEFINITION":
                 self.parse_definition()
             else:
@@ -347,10 +350,33 @@ def parse_file_from_source(src: str):
     parser.parse_file()
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG, format="%(message)s")
     import sys
     path = sys.argv[1]
     f = open(path)
     src = f.read()
     f.close()
+
+    import os
+    import logging
+
+    logger = logging.getLogger("proof")
+    logger.setLevel(logging.DEBUG)
+
+    # 標準出力用ハンドラ
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.DEBUG)
+
+    # ファイル出力用ハンドラ
+    file_handler = logging.FileHandler(os.path.join("logs", os.path.basename(path).replace(".proof", ".log")), mode='w', encoding='utf-8')
+    file_handler.setLevel(logging.DEBUG)
+
+    # 共通フォーマット
+    formatter = logging.Formatter("%(message)s")
+    console_handler.setFormatter(formatter)
+    file_handler.setFormatter(formatter)
+
+    # ハンドラ登録
+    logger.addHandler(console_handler)
+    logger.addHandler(file_handler)
+
     parse_file_from_source(src)
