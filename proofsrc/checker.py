@@ -1,5 +1,6 @@
 # checker.py
-from parser import Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, parse_file_from_source, pretty, pretty_expr
+from ast_types import Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, pretty, pretty_expr
+from parser import parse_file_from_source
 
 # === α同値判定 ===
 from itertools import permutations
