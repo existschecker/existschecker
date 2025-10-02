@@ -8,6 +8,7 @@ logger = logging.getLogger("proof")
 class Context:
     formulas: list        # 通常の論理式
     bot_derived: bool  # 矛盾導出フラグ
+    theorems: dict
     definitions: dict
 
 # === DSL ノード定義 ===
@@ -212,6 +213,8 @@ def pretty(node, indent=0):
         raise TypeError(f"Unsupported node type: {type(node)}")
 
 def pretty_expr(expr):
+    if isinstance(expr, Theorem):
+        return expr.name
     if isinstance(expr, Symbol):
         return f"{expr.name}({",".join(expr.args)})"
     if isinstance(expr, Implies):

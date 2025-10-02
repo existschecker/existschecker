@@ -26,7 +26,7 @@ class Parser:
 
     def parse_file(self):
         self.declared_atoms = {}  # name -> Atom
-        self.context = Context([], False, {})
+        self.context = Context([], False, {}, {})
         while self.peek():
             tok = self.peek()
             if tok.type == "ATOM":
@@ -38,6 +38,7 @@ class Parser:
                     print(f"[{theorem.name}] proved")
                 else:
                     print(f"❌ [{theorem.name}] not proved")
+                self.context.theorems[theorem.name] = theorem
             elif tok.type == "DEFINITION":
                 self.parse_definition()
             else:
@@ -255,7 +256,7 @@ class Parser:
             elif name in self.context.definitions:
                 arity = self.context.definitions[name].arity
             else:
-                raise SyntaxError("atom is not found")
+                raise SyntaxError(f"not found in atoms or definitions: {name}")
             self.consume("LPAREN")
             args = [self.consume("IDENT").value]
             while self.peek().type == "COMMA":
@@ -310,6 +311,8 @@ class Parser:
         if self.peek().type == "BOT":
             self.consume("BOT")
             return Bottom()
+        elif self.peek().type == "IDENT" and self.peek().value in self.context.theorems:
+            return self.context.theorems[self.consume("IDENT").value]
         else:
             return self.parse_recursion()
 

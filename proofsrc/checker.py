@@ -190,38 +190,72 @@ def derivable_flat(goal, flat_ctx):
 def derivable(goal, context):
     if isinstance(goal, Bottom):
         return context.bot_derived
+    elif isinstance(goal, Theorem):
+        return goal.name in context.theorems
     else:
         flat_ctx = []
         for c in context.formulas:
             flat_ctx.extend(split_conjunction(c))
-        return derivable_flat(goal, flat_ctx)
+        if isinstance(goal, Symbol) and goal.name in context.definitions:
+            vars, body = collect_forall_vars(context.definitions[goal.name].formula)
+            replacement = substitute(body, dict(zip(vars, goal.args))).right
+            return derivable_flat(goal, flat_ctx) or derivable_flat(replacement, flat_ctx)
+        else:
+            return derivable_flat(goal, flat_ctx)
 
-def substitute(expr, mapping):
+def fresh_var(var, used):
+    """used に含まれない新しい変数名を作る"""
+    i = 0
+    new_var = f"{var}_{i}"
+    while new_var in used:
+        i += 1
+        new_var = f"{var}_{i}"
+    return new_var
+
+def substitute(expr, mapping, used_vars=None):
+    """
+    expr の自由変数を mapping で置換
+    束縛変数は mapping に衝突しないよう自動リネーム
+    """
+    if used_vars is None:
+        used_vars = collect_vars(expr)[0] | set(mapping.values())
+
     if isinstance(expr, Symbol):
         new_args = [mapping.get(arg, arg) for arg in expr.args]
         return Symbol(expr.name, new_args)
 
     if isinstance(expr, Not):
-        return Not(substitute(expr.body, mapping))
+        return Not(substitute(expr.body, mapping, used_vars))
 
-    if isinstance(expr, And):
-        return And(substitute(expr.left, mapping), substitute(expr.right, mapping))
+    if isinstance(expr, (And, Or, Implies, Iff)):
+        return type(expr)(substitute(expr.left, mapping, used_vars), substitute(expr.right, mapping, used_vars))
 
-    if isinstance(expr, Or):
-        return Or(substitute(expr.left, mapping), substitute(expr.right, mapping))
+    if isinstance(expr, (Forall, Exists)):
+        var = expr.var
+        # 衝突する場合は束縛変数をリネーム
+        if var in mapping.values() or var in used_vars:
+            new_var = fresh_var(var, used_vars)
+            used_vars.add(new_var)
+            body = substitute(rename_var(expr.body, var, new_var), mapping, used_vars)
+            return type(expr)(new_var, body)
+        else:
+            used_vars.add(var)
+            return type(expr)(var, substitute(expr.body, mapping, used_vars))
 
-    if isinstance(expr, Implies):
-        return Implies(substitute(expr.left, mapping), substitute(expr.right, mapping))
+    return expr
 
-    if isinstance(expr, Forall):
-        # 束縛変数は mapping から除外
-        new_mapping = {k: v for k, v in mapping.items() if k != expr.var}
-        return Forall(expr.var, substitute(expr.body, new_mapping))
-
-    if isinstance(expr, Exists):
-        new_mapping = {k: v for k, v in mapping.items() if k != expr.var}
-        return Exists(expr.var, substitute(expr.body, new_mapping))
-
+def rename_var(expr, old_var, new_var):
+    """式 expr 内の束縛変数 old_var を new_var にリネーム"""
+    if isinstance(expr, Symbol):
+        new_args = [new_var if a == old_var else a for a in expr.args]
+        return Symbol(expr.name, new_args)
+    elif isinstance(expr, Not):
+        return Not(rename_var(expr.body, old_var, new_var))
+    elif isinstance(expr, (And, Or, Implies, Iff)):
+        return type(expr)(rename_var(expr.left, old_var, new_var), rename_var(expr.right, old_var, new_var))
+    elif isinstance(expr, (Forall, Exists)):
+        v = new_var if expr.var == old_var else expr.var
+        return type(expr)(v, rename_var(expr.body, old_var, new_var))
     return expr
 
 def add_conclusion(context, conclusion):
@@ -233,14 +267,14 @@ def add_conclusion(context, conclusion):
 # === 証明チェッカー ===
 def check_proof(node, context=None, indent=0):
     if context is None:
-        context = Context([], False, {})
+        context = Context([], False, {}, {})
 
     sp = "  " * indent
 
     # --- Theorem ---
     if isinstance(node, Theorem):
         logger.debug(f"{sp}[Theorem] {node.name}: {pretty_expr(node.conclusion)}")
-        local_ctx = Context(list(context.formulas), False, context.definitions)
+        local_ctx = Context(list(context.formulas), False, context.theorems, context.definitions)
         for stmt in node.proof:
             if not check_proof(stmt, local_ctx, indent+1):
                 logger.error(f"{sp}❌ [Theorem] Failed")
@@ -265,7 +299,7 @@ def check_proof(node, context=None, indent=0):
     # --- Assume ---
     if isinstance(node, Assume):
         logger.debug(f"{sp}[Assume] premise={pretty_expr(node.premise)}, conclusion={pretty_expr(node.conclusion)}")
-        local_ctx = Context(list(context.formulas + [node.premise]), False, context.definitions)
+        local_ctx = Context(list(context.formulas + [node.premise]), False, context.theorems, context.definitions)
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
@@ -282,7 +316,7 @@ def check_proof(node, context=None, indent=0):
     # --- Any ---
     if isinstance(node, Any):
         logger.debug(f"{sp}[Any] Taking {node.vars}")
-        local_ctx = Context(list(context.formulas), False, context.definitions)
+        local_ctx = Context(list(context.formulas), False, context.theorems, context.definitions)
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
@@ -313,7 +347,7 @@ def check_proof(node, context=None, indent=0):
             logger.error(f"{sp}❌ [Divide] not matched: fact={pretty_expr(node.fact)}, conected_premise={pretty_expr(connected_premise)}")
             return False
         logger.debug(f"{sp}[Divide] fact={pretty_expr(node.fact)}, goal={pretty_expr(node.conclusion)}")
-        local_ctx = Context(list(context.formulas), False, context.definitions)
+        local_ctx = Context(list(context.formulas), False, context.theorems, context.definitions)
         for stmt in node.cases:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
@@ -323,7 +357,7 @@ def check_proof(node, context=None, indent=0):
 
     if isinstance(node, Case):
         logger.debug(f"{sp}[Case] premise={pretty_expr(node.premise)}")
-        local_ctx = Context(list(context.formulas + [node.premise]), False, context.definitions)
+        local_ctx = Context(list(context.formulas + [node.premise]), False, context.theorems, context.definitions)
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
@@ -343,7 +377,7 @@ def check_proof(node, context=None, indent=0):
             return False
         logger.debug(f"{sp}[Some] derivable: {pretty_expr(fact)}")
         logger.debug(f"{sp}[Some] Taking {node.vars}, premise={pretty_expr(node.premise)}")
-        local_ctx = Context(list(context.formulas + [node.premise]), False, context.definitions)
+        local_ctx = Context(list(context.formulas + [node.premise]), False, context.theorems, context.definitions)
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
@@ -357,7 +391,7 @@ def check_proof(node, context=None, indent=0):
     
     if isinstance(node, Deny):
         logger.debug(f"{sp}[Deny] premise={pretty_expr(node.premise)}")
-        local_ctx = Context(list(context.formulas + [node.premise]), False, context.definitions)
+        local_ctx = Context(list(context.formulas + [node.premise]), False, context.theorems, context.definitions)
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
@@ -394,7 +428,9 @@ def check_proof(node, context=None, indent=0):
             logger.error(f"{sp}❌ [Apply] Cannot derive fact: {pretty_expr(node.fact)}")
             return False
         logger.debug(f"{sp}[Apply] Drivable fact: {pretty_expr(node.fact)}")
-        if isinstance(node.fact, Symbol):
+        if isinstance(node.fact, Theorem):
+            fact = node.fact.conclusion
+        elif isinstance(node.fact, Symbol):
             if node.fact.name not in context.definitions:
                 logger.error(f"{sp}❌ [Apply] Undefined name: {node.fact.name}")
                 return False

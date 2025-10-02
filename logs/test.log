@@ -387,3 +387,36 @@ context.definitions.keys(): subset
   [Any] Derived conclusion in(z,x) \wedge subset(x,y) \to in(z,y)
   [Any] Generalized to \forall x(\forall y(\forall z(in(z,x) \wedge subset(x,y) \to in(z,y))))
 [Theorem] subset01 proved: \forall z(\forall x(\forall y(in(z,x) \wedge subset(x,y) \to in(z,y))))
+context.definitions.keys(): subset
+[Theorem] subset02: \forall x(\forall y(\forall z(subset(x,y) \wedge subset(y,z) \to subset(x,z))))
+  [Any] Taking ['x', 'y', 'z']
+    [Assume] premise=subset(x,y) \wedge subset(y,z), conclusion=subset(x,z)
+      [Any] Taking ['w']
+        [Assume] premise=in(w,x), conclusion=in(w,z)
+          [Apply] Drivable fact: subset01
+          [Apply] Instantiable: vars=['z', 'x', 'y'], env={'z': 'w', 'x': 'x', 'y': 'y'}
+          [Apply] \forall-elimination is done: instantiation=in(w,x) \wedge subset(x,y) \to in(w,y)
+          [Apply] Implies object: in(w,x) \wedge subset(x,y) \to in(w,y)
+          [Apply] Derivable premise: in(w,x) \wedge subset(x,y)
+          [Apply] Matched: implication.left=in(w,x) \wedge subset(x,y), node.premise=in(w,x) \wedge subset(x,y)
+          [Apply] \to-elimination is done: in(w,y)
+          [Apply] Matched: node.conclusion=in(w,y), implication.right=in(w,y)
+          [Apply] Added node.conclusion=in(w,y)
+          [Apply] Drivable fact: subset01
+          [Apply] Instantiable: vars=['z', 'x', 'y'], env={'z': 'w', 'x': 'y', 'y': 'z'}
+          [Apply] \forall-elimination is done: instantiation=in(w,y) \wedge subset(y,z) \to in(w,z)
+          [Apply] Implies object: in(w,y) \wedge subset(y,z) \to in(w,z)
+          [Apply] Derivable premise: in(w,y) \wedge subset(y,z)
+          [Apply] Matched: implication.left=in(w,y) \wedge subset(y,z), node.premise=in(w,y) \wedge subset(y,z)
+          [Apply] \to-elimination is done: in(w,z)
+          [Apply] Matched: node.conclusion=in(w,z), implication.right=in(w,z)
+          [Apply] Added node.conclusion=in(w,z)
+        [Assume] Derived conclusion in(w,z)
+        [Assume] Added implication in(w,x) \to in(w,z)
+      [Any] Derived conclusion in(w,x) \to in(w,z)
+      [Any] Generalized to \forall w(in(w,x) \to in(w,z))
+    [Assume] Derived conclusion subset(x,z)
+    [Assume] Added implication subset(x,y) \wedge subset(y,z) \to subset(x,z)
+  [Any] Derived conclusion subset(x,y) \wedge subset(y,z) \to subset(x,z)
+  [Any] Generalized to \forall x(\forall y(\forall z(subset(x,y) \wedge subset(y,z) \to subset(x,z))))
+[Theorem] subset02 proved: \forall x(\forall y(\forall z(subset(x,y) \wedge subset(y,z) \to subset(x,z))))
