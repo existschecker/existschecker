@@ -1,5 +1,5 @@
 # checker.py
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, pretty, pretty_expr
 
 # === α同値判定 ===
 from itertools import permutations
@@ -190,6 +190,8 @@ def derivable_flat(goal, flat_ctx):
 def derivable(goal, context):
     if isinstance(goal, Bottom):
         return context.bot_derived
+    elif isinstance(goal, Axiom):
+        return goal.name in context.axioms
     elif isinstance(goal, Theorem):
         return goal.name in context.theorems
     else:
@@ -265,16 +267,13 @@ def add_conclusion(context, conclusion):
         context.formulas.append(conclusion)
 
 # === 証明チェッカー ===
-def check_proof(node, context=None, indent=0):
-    if context is None:
-        context = Context([], False, {}, {})
-
+def check_proof(node, context: Context, indent=0):
     sp = "  " * indent
 
     # --- Theorem ---
     if isinstance(node, Theorem):
         logger.debug(f"{sp}[Theorem] {node.name}: {pretty_expr(node.conclusion)}")
-        local_ctx = Context(list(context.formulas), False, context.theorems, context.definitions)
+        local_ctx = context.copy([], False)
         for stmt in node.proof:
             if not check_proof(stmt, local_ctx, indent+1):
                 logger.error(f"{sp}❌ [Theorem] Failed")
@@ -299,7 +298,7 @@ def check_proof(node, context=None, indent=0):
     # --- Assume ---
     if isinstance(node, Assume):
         logger.debug(f"{sp}[Assume] premise={pretty_expr(node.premise)}, conclusion={pretty_expr(node.conclusion)}")
-        local_ctx = Context(list(context.formulas + [node.premise]), False, context.theorems, context.definitions)
+        local_ctx = context.copy(list(context.formulas + [node.premise]), False)
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
@@ -316,7 +315,7 @@ def check_proof(node, context=None, indent=0):
     # --- Any ---
     if isinstance(node, Any):
         logger.debug(f"{sp}[Any] Taking {node.vars}")
-        local_ctx = Context(list(context.formulas), False, context.theorems, context.definitions)
+        local_ctx = context.copy(list(context.formulas), False)
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
@@ -347,7 +346,7 @@ def check_proof(node, context=None, indent=0):
             logger.error(f"{sp}❌ [Divide] not matched: fact={pretty_expr(node.fact)}, conected_premise={pretty_expr(connected_premise)}")
             return False
         logger.debug(f"{sp}[Divide] fact={pretty_expr(node.fact)}, goal={pretty_expr(node.conclusion)}")
-        local_ctx = Context(list(context.formulas), False, context.theorems, context.definitions)
+        local_ctx = context.copy(list(context.formulas), False)
         for stmt in node.cases:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
@@ -357,7 +356,7 @@ def check_proof(node, context=None, indent=0):
 
     if isinstance(node, Case):
         logger.debug(f"{sp}[Case] premise={pretty_expr(node.premise)}")
-        local_ctx = Context(list(context.formulas + [node.premise]), False, context.theorems, context.definitions)
+        local_ctx = context.copy(list(context.formulas + [node.premise]), False)
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
@@ -377,7 +376,7 @@ def check_proof(node, context=None, indent=0):
             return False
         logger.debug(f"{sp}[Some] derivable: {pretty_expr(fact)}")
         logger.debug(f"{sp}[Some] Taking {node.vars}, premise={pretty_expr(node.premise)}")
-        local_ctx = Context(list(context.formulas + [node.premise]), False, context.theorems, context.definitions)
+        local_ctx = context.copy(list(context.formulas + [node.premise]), False)
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
@@ -391,7 +390,7 @@ def check_proof(node, context=None, indent=0):
     
     if isinstance(node, Deny):
         logger.debug(f"{sp}[Deny] premise={pretty_expr(node.premise)}")
-        local_ctx = Context(list(context.formulas + [node.premise]), False, context.theorems, context.definitions)
+        local_ctx = context.copy(list(context.formulas + [node.premise]), False)
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
@@ -428,7 +427,9 @@ def check_proof(node, context=None, indent=0):
             logger.error(f"{sp}❌ [Apply] Cannot derive fact: {pretty_expr(node.fact)}")
             return False
         logger.debug(f"{sp}[Apply] Drivable fact: {pretty_expr(node.fact)}")
-        if isinstance(node.fact, Theorem):
+        if isinstance(node.fact, Axiom):
+            fact = node.fact.conclusion
+        elif isinstance(node.fact, Theorem):
             fact = node.fact.conclusion
         elif isinstance(node.fact, Symbol):
             if node.fact.name not in context.definitions:
@@ -502,6 +503,55 @@ def check_proof(node, context=None, indent=0):
             return False
         logger.debug(f"{sp}[Lift] Matched: node.conclusion={pretty_expr(node.conclusion)}, lifted={pretty_expr(lifted)}")        
         add_conclusion(context, node.conclusion)
+        return True
+
+    if isinstance(node, Invoke):
+        if not derivable(node.fact, context):
+            logger.error(f"{sp}❌ [Invoke] Not fact: {pretty_expr(node.fact)}")
+            return False
+        logger.debug(f"{sp}[Invoke] fact: {pretty_expr(node.fact)}")
+        if not isinstance(node.fact, Implies):
+            logger.error(f"{sp}❌ [Invoke] Not Implies object: {pretty_expr(node.fact)}")
+            return False
+        logger.debug(f"{sp}[Invoke] Implies object: {pretty_expr(node.fact)}")
+        if not derivable(node.fact.left, context):
+            logger.error(f"{sp}❌ [Invoke] Left of Implies object not derived: {pretty_expr(node.fact.left)}")
+            return False
+        logger.debug(f"{sp}[Invoke] Left of Implies object derived: {pretty_expr(node.fact.left)}")
+        if not alpha_equiv(node.conclusion, node.fact.right):
+            logger.error(f"{sp}❌ [Invoke] Not matched: node.conclusion={pretty_expr(node.conclusion)}, node.fact.right={pretty_expr(node.fact.right)}")
+            return False
+        logger.debug(f"{sp}[Invoke] Matched: node.conclusion={pretty_expr(node.conclusion)}, node.fact.right={pretty_expr(node.fact.right)}")
+        add_conclusion(context, node.conclusion)
+        logger.debug(f"{sp}[Invoke] conclusion added: {pretty_expr(node.conclusion)}")
+        return True
+
+    if isinstance(node, Expand):
+        if not derivable(node.fact, context):
+            logger.error(f"{sp}❌ [Expand] Not fact: {pretty_expr(node.fact)}")
+            return False
+        logger.debug(f"{sp}[Expand] fact: {pretty_expr(node.fact)}")
+        if not isinstance(node.fact, Symbol):
+            logger.error(f"{sp}❌ [Expand] Not Symbol object: {pretty_expr(node.fact)}")
+            return False
+        logger.debug(f"{sp}[Expand] Symbol object: {pretty_expr(node.fact)}")
+        if node.fact.name not in context.definitions:
+            logger.error(f"{sp}❌ [Expand] Not defined: {node.fact.name}")
+            return False
+        logger.debug(f"{sp}[Expand] Defined: {node.fact.name}")
+        vars, body = collect_forall_vars(context.definitions[node.fact.name].formula)
+        if len(vars) != len(node.fact.args):
+            logger.error(f"{sp}❌ [Expand] Length not matched: vars={vars}, node.fact.args={node.fact.args}")
+            return False
+        logger.debug(f"{sp}[Expand] Length matched: vars={vars}, node.fact.args={node.fact.args}")
+        expanded = substitute(body, dict(zip(vars, node.fact.args))).right
+        logger.debug(f"{sp}[Expand] Expanded: {pretty_expr(expanded)}")
+        if not alpha_equiv(node.conclusion, expanded):
+            logger.error(f"{sp}❌ [Expand] Not matched: node.conclusion={pretty_expr(node.conclusion)}, expanded={pretty_expr(expanded)}")
+            return False
+        logger.debug(f"{sp}[Expand] Matched: node.conclusion={pretty_expr(node.conclusion)}, expanded={pretty_expr(expanded)}")
+        add_conclusion(context, node.conclusion)
+        logger.debug(f"{sp}[Expand] Added: {pretty_expr(node.conclusion)}")
         return True
 
     logger.error(f"{sp}❌ Unsupported node {node}")

@@ -1,5 +1,5 @@
 from typing import List, Union
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, Definition, Iff, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, Definition, Iff, Axiom, Invoke, Expand, pretty, pretty_expr
 from lexer import Token, lex
 from checker import check_proof
 
@@ -20,25 +20,24 @@ class Parser:
         if tok is None:
             raise SyntaxError("Unexpected EOF")
         if expected_type and tok.type != expected_type:
-            raise SyntaxError(f"Expected {expected_type}, got {tok.type}")
+            raise SyntaxError(f"Expected {expected_type}, got {tok.type} at line {tok.line}")
         self.pos += 1
         return tok
 
     def parse_file(self):
         self.declared_atoms = {}  # name -> Atom
-        self.context = Context([], False, {}, {})
+        self.context = Context.init()
         while self.peek():
             tok = self.peek()
             if tok.type == "ATOM":
                 self.parse_atom()
+            elif tok.type == "AXIOM":
+                self.parse_axiom()
             elif tok.type == "THEOREM":
                 theorem = self.parse_theorem()
-                logger.debug("context.definitions.keys(): " + ", ".join([name for name in self.context.definitions.keys()]))
-                if check_proof(theorem, self.context):
-                    print(f"[{theorem.name}] proved")
-                else:
-                    print(f"❌ [{theorem.name}] not proved")
+                check_proof(theorem, self.context)
                 self.context.theorems[theorem.name] = theorem
+                print(f"[theorem proved] {theorem.name}")
             elif tok.type == "DEFINITION":
                 self.parse_definition()
             else:
@@ -54,8 +53,17 @@ class Parser:
             arity = int(self.consume("NUMBER").value)
             atom = Atom(type=tok.type, name=name, arity=arity)
             self.declared_atoms[name] = atom
+            print(f"[atom] {name}")
         else:
             raise SyntaxError(f"Unexpected token {tok}")
+
+    def parse_axiom(self):
+        self.consume("AXIOM")
+        name = self.consume("IDENT").value
+        conclusion = self.parse_expr()
+        axiom = Axiom(name=name, conclusion=conclusion)
+        self.context.axioms[name] = axiom
+        print(f"[axiom] {name}")
 
     def parse_theorem(self):
         self.consume("THEOREM")
@@ -98,6 +106,10 @@ class Parser:
                 body.append(self.parse_apply())
             elif tok.type == "LIFT":
                 body.append(self.parse_lift())
+            elif tok.type == "INVOKE":
+                body.append(self.parse_invoke())
+            elif tok.type == "EXPAND":
+                body.append(self.parse_expand())
             else:
                 raise SyntaxError(f"Unexpected token in block: {tok}")
         return body
@@ -232,6 +244,20 @@ class Parser:
         conclusion = self.parse_expr()
         return Lift(fact=fact, env=env, conclusion=conclusion)
 
+    def parse_invoke(self):
+        self.consume("INVOKE")
+        fact = self.parse_expr()
+        self.consume("CONCLUDE")
+        conclusion = self.parse_expr()
+        return Invoke(fact=fact, conclusion=conclusion)
+
+    def parse_expand(self):
+        self.consume("EXPAND")
+        fact = self.parse_expr()
+        self.consume("CONCLUDE")
+        conclusion = self.parse_expr()
+        return Expand(fact=fact, conclusion=conclusion)
+
     def parse_definition(self):
         self.consume("DEFINITION")
         tok = self.peek()
@@ -244,6 +270,7 @@ class Parser:
             formula = self.parse_expr()
             definition = Definition(type=tok.type, name=name, arity=arity, formula=formula)
             self.context.definitions[name] = definition
+            print(f"[definition] {name}")
         else:
             raise SyntaxError(f"Unexpected token {tok}")
 
@@ -311,6 +338,8 @@ class Parser:
         if self.peek().type == "BOT":
             self.consume("BOT")
             return Bottom()
+        elif self.peek().type == "IDENT" and self.peek().value in self.context.axioms:
+            return self.context.axioms[self.consume("IDENT").value]
         elif self.peek().type == "IDENT" and self.peek().value in self.context.theorems:
             return self.context.theorems[self.consume("IDENT").value]
         else:

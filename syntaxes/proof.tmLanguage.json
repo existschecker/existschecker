@@ -16,13 +16,13 @@
 		"keywords": {
 			"patterns": [{
 				"name": "keyword.control.proof",
-				"match": "\\b(any|assume|conclude|divide|case|some|such|deny|contradict|explode|apply|for|with|check|lift|atom|predicate|arity)\\b"
+				"match": "\\b(any|assume|conclude|divide|case|some|such|deny|contradict|explode|apply|for|with|check|lift|predicate|arity|invoke|expand)\\b"
 			}]
 		},
 		"definitions": {
 			"patterns": [
 				{
-					"match": "\\b(theorem|definition)\\s+(\\w+)",
+					"match": "\\b(atom|axiom|theorem|definition)\\s+(\\w+)",
 					"captures": {
 						"1": { "name": "keyword.declaration.proof"},
 						"2": { "name": "entity.name.function.proof" }

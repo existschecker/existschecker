@@ -6,8 +6,9 @@ class Token:
     type: str
     value: str
     pos: int
+    line: int
 
-KEYWORDS = {"theorem", "definition", "any", "assume", "conclude", "divide", "case", "some", "such", "deny", "contradict", "explode", "apply", "for", "with", "check", "lift", "atom", "predicate", "arity"}
+KEYWORDS = {"theorem", "definition", "any", "assume", "conclude", "divide", "case", "some", "such", "deny", "contradict", "explode", "apply", "for", "with", "check", "lift", "atom", "predicate", "arity", "axiom", "invoke", "expand"}
 
 SYMBOLS = {
     "{": "LBRACE",
@@ -21,8 +22,13 @@ SYMBOLS = {
 def lex(src: str) -> list[Token]:
     tokens = []
     i = 0
+    line = 1
     while i < len(src):
         c = src[i]
+        if c == "\n":
+            line += 1
+            i += 1
+            continue
         if c.isspace():
             i += 1
             continue
@@ -35,48 +41,48 @@ def lex(src: str) -> list[Token]:
             i += 2
             continue
         if c in SYMBOLS:
-            tokens.append(Token(SYMBOLS[c], c, i))
+            tokens.append(Token(SYMBOLS[c], c, i, line))
             i += 1
         elif src[i:].startswith("\\forall"):
-            tokens.append(Token("FORALL", "\\forall", i))
+            tokens.append(Token("FORALL", "\\forall", i, line))
             i += len("\\forall")
         elif src[i:].startswith("\\exists"):
-            tokens.append(Token("EXISTS", "\\exists", i))
+            tokens.append(Token("EXISTS", "\\exists", i, line))
             i += len("\\exists")
         elif src[i:].startswith("\\wedge"):
-            tokens.append(Token("AND", "\\wedge", i))
+            tokens.append(Token("AND", "\\wedge", i, line))
             i += len("\\wedge")
         elif src[i:].startswith("\\vee"):
-            tokens.append(Token("OR", "\\vee", i))
+            tokens.append(Token("OR", "\\vee", i, line))
             i += len("\\vee")
         elif src[i:].startswith("\\neg"):
-            tokens.append(Token("NOT", "\\neg", i))
+            tokens.append(Token("NOT", "\\neg", i, line))
             i += len("\\neg")
         elif src[i:].startswith("\\to"):
-            tokens.append(Token("IMPLIES", "\\to", i))
+            tokens.append(Token("IMPLIES", "\\to", i, line))
             i += len("\\to")
         elif src[i:].startswith("\\leftrightarrow"):
-            tokens.append(Token("IFF", "\\leftrightarrow", i))
+            tokens.append(Token("IFF", "\\leftrightarrow", i, line))
             i += len("\\leftrightarrow")
         elif src[i:].startswith("\\bot"):
-            tokens.append(Token("BOT", "\\bot", i))
+            tokens.append(Token("BOT", "\\bot", i, line))
             i += len("\\bot")
         else:
             m = re.match(r"(\\[A-Za-z][A-Za-z0-9_]*)|([A-Za-z_][A-Za-z0-9_]*)", src[i:])
             if m:
                 text = m.group(0)
                 if text in KEYWORDS:
-                    tokens.append(Token(text.upper(), text, i))
+                    tokens.append(Token(text.upper(), text, i, line))
                 else:
-                    tokens.append(Token("IDENT", text, i))
+                    tokens.append(Token("IDENT", text, i, line))
                 i += len(text)
             elif re.match(r"\d+", src[i:]):
                 m = re.match(r"\d+", src[i:])
                 text = m.group(0)
-                tokens.append(Token("NUMBER", text, i))
+                tokens.append(Token("NUMBER", text, i, line))
                 i += len(text)
             else:
-                raise SyntaxError(f"Unexpected character {c} at {i}")
+                raise SyntaxError(f"Unexpected character {c} at pos {i}, line {line}")
     return tokens
 
 if __name__ == "__main__":

@@ -1,4 +1,3 @@
-context.definitions.keys(): 
 [Theorem] test01: \forall x(\forall y(in(x,y) \to in(x,y)))
   [Any] Taking ['x', 'y']
     [Assume] premise=in(x,y), conclusion=in(x,y)
@@ -7,7 +6,6 @@ context.definitions.keys():
   [Any] Derived conclusion in(x,y) \to in(x,y)
   [Any] Generalized to \forall x(\forall y(in(x,y) \to in(x,y)))
 [Theorem] test01 proved: \forall x(\forall y(in(x,y) \to in(x,y)))
-context.definitions.keys(): 
 [Theorem] test02: \forall x(\forall y(in(x,y) \to in(x,y) \wedge in(x,y)))
   [Any] Taking ['x', 'y']
     [Assume] premise=in(x,y), conclusion=in(x,y) \wedge in(x,y)
@@ -16,7 +14,6 @@ context.definitions.keys():
   [Any] Derived conclusion in(x,y) \to in(x,y) \wedge in(x,y)
   [Any] Generalized to \forall x(\forall y(in(x,y) \to in(x,y) \wedge in(x,y)))
 [Theorem] test02 proved: \forall x(\forall y(in(x,y) \to in(x,y) \wedge in(x,y)))
-context.definitions.keys(): 
 [Theorem] test03: \forall x(\forall y(in(x,y) \to in(x,y) \wedge in(x,y) \to in(x,y)))
   [Any] Taking ['x', 'y']
     [Assume] premise=in(x,y), conclusion=in(x,y)
@@ -25,7 +22,6 @@ context.definitions.keys():
   [Any] Derived conclusion in(x,y) \to in(x,y) \wedge in(x,y) \to in(x,y)
   [Any] Generalized to \forall x(\forall y(in(x,y) \to in(x,y) \wedge in(x,y) \to in(x,y)))
 [Theorem] test03 proved: \forall x(\forall y(in(x,y) \to in(x,y) \wedge in(x,y) \to in(x,y)))
-context.definitions.keys(): 
 [Theorem] test04: \forall x(\forall y(in(x,y) \to in(x,y))) \wedge \forall z(\forall w(in(z,w) \to in(z,w)))
   [Any] Taking ['x', 'y']
     [Assume] premise=in(x,y), conclusion=in(x,y)
@@ -34,7 +30,6 @@ context.definitions.keys():
   [Any] Derived conclusion in(x,y) \to in(x,y)
   [Any] Generalized to \forall x(\forall y(in(x,y) \to in(x,y)))
 [Theorem] test04 proved: \forall x(\forall y(in(x,y) \to in(x,y))) \wedge \forall z(\forall w(in(z,w) \to in(z,w)))
-context.definitions.keys(): 
 [Theorem] test05: \forall x(\forall y(in(x,y) \to in(x,y) \wedge in(x,y) \to in(x,y) \wedge in(x,y)))
   [Any] Taking ['x', 'y']
     [Assume] premise=in(x,y), conclusion=in(x,y)
@@ -46,7 +41,6 @@ context.definitions.keys():
   [Any] Derived conclusion in(x,y) \to in(x,y) \wedge in(x,y) \to in(x,y) \wedge in(x,y)
   [Any] Generalized to \forall x(\forall y(in(x,y) \to in(x,y) \wedge in(x,y) \to in(x,y) \wedge in(x,y)))
 [Theorem] test05 proved: \forall x(\forall y(in(x,y) \to in(x,y) \wedge in(x,y) \to in(x,y) \wedge in(x,y)))
-context.definitions.keys(): 
 [Theorem] test06: \forall x(\forall y(in(x,y) \to in(x,y))) \wedge \forall x(\forall y(in(x,y) \to in(x,y) \wedge in(x,y)))
   [Any] Taking ['x', 'y']
     [Assume] premise=in(x,y), conclusion=in(x,y)
@@ -61,7 +55,6 @@ context.definitions.keys():
   [Any] Derived conclusion in(x,y) \to in(x,y) \wedge in(x,y)
   [Any] Generalized to \forall x(\forall y(in(x,y) \to in(x,y) \wedge in(x,y)))
 [Theorem] test06 proved: \forall x(\forall y(in(x,y) \to in(x,y))) \wedge \forall x(\forall y(in(x,y) \to in(x,y) \wedge in(x,y)))
-context.definitions.keys(): 
 [Theorem] test07: \forall x(\forall y(in(x,y) \to in(x,y) \wedge \forall z(in(z,x) \to in(z,x))))
   [Any] Taking ['x', 'y']
     [Assume] premise=in(x,y), conclusion=in(x,y) \wedge \forall z(in(z,x) \to in(z,x))
@@ -76,7 +69,6 @@ context.definitions.keys():
   [Any] Derived conclusion in(x,y) \to in(x,y) \wedge \forall z(in(z,x) \to in(z,x))
   [Any] Generalized to \forall x(\forall y(in(x,y) \to in(x,y) \wedge \forall z(in(z,x) \to in(z,x))))
 [Theorem] test07 proved: \forall x(\forall y(in(x,y) \to in(x,y) \wedge \forall z(in(z,x) \to in(z,x))))
-context.definitions.keys(): 
 [Theorem] test08: \forall v(\forall u(in(u,v) \to in(u,v)))
   [Any] Taking ['x', 'y']
     [Assume] premise=in(x,y), conclusion=in(x,y)
@@ -85,7 +77,6 @@ context.definitions.keys():
   [Any] Derived conclusion in(x,y) \to in(x,y)
   [Any] Generalized to \forall x(\forall y(in(x,y) \to in(x,y)))
 [Theorem] test08 proved: \forall v(\forall u(in(u,v) \to in(u,v)))
-context.definitions.keys(): 
 [Theorem] test09: \forall v(\forall u(in(u,v) \to in(u,v)))
   [Any] Taking ['x', 'y']
     [Assume] premise=in(x,y), conclusion=in(x,y)
@@ -96,7 +87,6 @@ context.definitions.keys():
   [Any] Derived conclusion in(x,y) \to in(x,y)
   [Any] Generalized to \forall x(\forall y(in(x,y) \to in(x,y)))
 [Theorem] test09 proved: \forall v(\forall u(in(u,v) \to in(u,v)))
-context.definitions.keys(): 
 [Theorem] test10: \forall v(\forall u(in(u,v) \to in(u,v)))
   [Any] Taking ['x', 'y']
     [Assume] premise=in(x,y), conclusion=in(x,y)
@@ -107,7 +97,6 @@ context.definitions.keys():
   [Check] Checking \forall x(\forall y(in(x,y) \to in(x,y)))
   [Check] goal \forall x(\forall y(in(x,y) \to in(x,y))) derived
 [Theorem] test10 proved: \forall v(\forall u(in(u,v) \to in(u,v)))
-context.definitions.keys(): 
 [Theorem] test11: \forall u(\forall v(in(u,v) \to in(u,v) \vee in(v,u)))
   [Any] Taking ['x', 'y']
     [Assume] premise=in(x,y), conclusion=in(x,y) \vee in(y,x)
@@ -116,7 +105,6 @@ context.definitions.keys():
   [Any] Derived conclusion in(x,y) \to in(x,y) \vee in(y,x)
   [Any] Generalized to \forall x(\forall y(in(x,y) \to in(x,y) \vee in(y,x)))
 [Theorem] test11 proved: \forall u(\forall v(in(u,v) \to in(u,v) \vee in(v,u)))
-context.definitions.keys(): 
 [Theorem] test12: \forall u(\forall v(in(u,v) \vee in(v,u) \to in(v,u) \vee in(u,v)))
   [Any] Taking ['x', 'y']
     [Assume] premise=in(x,y) \vee in(y,x), conclusion=in(y,x) \vee in(x,y)
@@ -125,7 +113,6 @@ context.definitions.keys():
   [Any] Derived conclusion in(x,y) \vee in(y,x) \to in(y,x) \vee in(x,y)
   [Any] Generalized to \forall x(\forall y(in(x,y) \vee in(y,x) \to in(y,x) \vee in(x,y)))
 [Theorem] test12 proved: \forall u(\forall v(in(u,v) \vee in(v,u) \to in(v,u) \vee in(u,v)))
-context.definitions.keys(): 
 [Theorem] test13: \forall x(\forall y(in(x,y) \vee in(y,x) \to in(x,y) \wedge in(x,y) \vee in(y,x) \wedge in(y,x)))
   [Any] Taking ['x', 'y']
     [Assume] premise=in(x,y) \vee in(y,x), conclusion=in(x,y) \wedge in(x,y) \vee in(y,x) \wedge in(y,x)
@@ -141,7 +128,6 @@ context.definitions.keys():
   [Any] Derived conclusion in(x,y) \vee in(y,x) \to in(x,y) \wedge in(x,y) \vee in(y,x) \wedge in(y,x)
   [Any] Generalized to \forall x(\forall y(in(x,y) \vee in(y,x) \to in(x,y) \wedge in(x,y) \vee in(y,x) \wedge in(y,x)))
 [Theorem] test13 proved: \forall x(\forall y(in(x,y) \vee in(y,x) \to in(x,y) \wedge in(x,y) \vee in(y,x) \wedge in(y,x)))
-context.definitions.keys(): 
 [Theorem] test14: \forall x(\forall y(in(x,x) \vee in(x,y) \vee in(y,x) \to in(x,x) \vee in(x,y) \vee in(y,x)))
   [Any] Taking ['x', 'y']
     [Assume] premise=in(x,x) \vee in(x,y) \vee in(y,x), conclusion=in(x,x) \vee in(x,y) \vee in(y,x)
@@ -159,7 +145,6 @@ context.definitions.keys():
   [Any] Derived conclusion in(x,x) \vee in(x,y) \vee in(y,x) \to in(x,x) \vee in(x,y) \vee in(y,x)
   [Any] Generalized to \forall x(\forall y(in(x,x) \vee in(x,y) \vee in(y,x) \to in(x,x) \vee in(x,y) \vee in(y,x)))
 [Theorem] test14 proved: \forall x(\forall y(in(x,x) \vee in(x,y) \vee in(y,x) \to in(x,x) \vee in(x,y) \vee in(y,x)))
-context.definitions.keys(): 
 [Theorem] test15: \exists x(\exists y(in(x,y))) \to \exists x(\exists y(in(x,y) \wedge in(x,y)))
   [Assume] premise=\exists x(\exists y(in(x,y))), conclusion=\exists x(\exists y(in(x,y) \wedge in(x,y)))
     [Some] derivable: \exists x(\exists y(in(x,y)))
@@ -173,13 +158,11 @@ context.definitions.keys():
   [Assume] Derived conclusion \exists x(\exists y(in(x,y) \wedge in(x,y)))
   [Assume] Added implication \exists x(\exists y(in(x,y))) \to \exists x(\exists y(in(x,y) \wedge in(x,y)))
 [Theorem] test15 proved: \exists x(\exists y(in(x,y))) \to \exists x(\exists y(in(x,y) \wedge in(x,y)))
-context.definitions.keys(): 
 [Theorem] test16: \forall x(\forall y(in(x,y))) \to \forall x(\forall y(in(x,y)))
   [Assume] premise=\forall x(\forall y(in(x,y))), conclusion=\forall x(\forall y(in(x,y)))
   [Assume] Derived conclusion \forall x(\forall y(in(x,y)))
   [Assume] Added implication \forall x(\forall y(in(x,y))) \to \forall x(\forall y(in(x,y)))
 [Theorem] test16 proved: \forall x(\forall y(in(x,y))) \to \forall x(\forall y(in(x,y)))
-context.definitions.keys(): 
 [Theorem] test17: \exists x(in(x,x)) \to \exists x(in(x,x))
   [Assume] premise=\exists x(in(x,x)), conclusion=\exists x(in(x,x))
     [Some] derivable: \exists x(in(x,x))
@@ -193,7 +176,6 @@ context.definitions.keys():
   [Assume] Derived conclusion \exists x(in(x,x))
   [Assume] Added implication \exists x(in(x,x)) \to \exists x(in(x,x))
 [Theorem] test17 proved: \exists x(in(x,x)) \to \exists x(in(x,x))
-context.definitions.keys(): 
 [Theorem] test18: \exists x(\exists y(in(x,y) \vee in(y,x))) \to \exists x(\exists y(\neg(\neg(in(x,y)) \wedge \neg(in(y,x)))))
   [Assume] premise=\exists x(\exists y(in(x,y) \vee in(y,x))), conclusion=\exists x(\exists y(\neg(\neg(in(x,y)) \wedge \neg(in(y,x)))))
     [Some] derivable: \exists x(\exists y(in(x,y) \vee in(y,x)))
@@ -220,7 +202,6 @@ context.definitions.keys():
   [Assume] Derived conclusion \exists x(\exists y(\neg(\neg(in(x,y)) \wedge \neg(in(y,x)))))
   [Assume] Added implication \exists x(\exists y(in(x,y) \vee in(y,x))) \to \exists x(\exists y(\neg(\neg(in(x,y)) \wedge \neg(in(y,x)))))
 [Theorem] test18 proved: \exists x(\exists y(in(x,y) \vee in(y,x))) \to \exists x(\exists y(\neg(\neg(in(x,y)) \wedge \neg(in(y,x)))))
-context.definitions.keys(): 
 [Theorem] test19: \exists x(\exists y(in(x,y) \vee in(y,x) \wedge \neg(in(y,x)))) \to \exists x(\exists y(in(x,y)))
   [Assume] premise=\exists x(\exists y(in(x,y) \vee in(y,x) \wedge \neg(in(y,x)))), conclusion=\exists x(\exists y(in(x,y)))
     [Some] derivable: \exists x(\exists y(in(x,y) \vee in(y,x) \wedge \neg(in(y,x))))
@@ -243,7 +224,6 @@ context.definitions.keys():
   [Assume] Derived conclusion \exists x(\exists y(in(x,y)))
   [Assume] Added implication \exists x(\exists y(in(x,y) \vee in(y,x) \wedge \neg(in(y,x)))) \to \exists x(\exists y(in(x,y)))
 [Theorem] test19 proved: \exists x(\exists y(in(x,y) \vee in(y,x) \wedge \neg(in(y,x)))) \to \exists x(\exists y(in(x,y)))
-context.definitions.keys(): 
 [Theorem] test20: \forall x(\forall y(in(x,y) \to \forall z(in(z,x)))) \wedge \exists x(\exists y(in(x,y))) \to \exists x(\exists y(in(x,y) \wedge in(y,x)))
   [Assume] premise=\forall x(\forall y(in(x,y) \to \forall z(in(z,x)))) \wedge \exists x(\exists y(in(x,y))), conclusion=\exists x(\exists y(in(x,y) \wedge in(y,x)))
     [Some] derivable: \exists x(\exists y(in(x,y)))
@@ -271,7 +251,6 @@ context.definitions.keys():
   [Assume] Derived conclusion \exists x(\exists y(in(x,y) \wedge in(y,x)))
   [Assume] Added implication \forall x(\forall y(in(x,y) \to \forall z(in(z,x)))) \wedge \exists x(\exists y(in(x,y))) \to \exists x(\exists y(in(x,y) \wedge in(y,x)))
 [Theorem] test20 proved: \forall x(\forall y(in(x,y) \to \forall z(in(z,x)))) \wedge \exists x(\exists y(in(x,y))) \to \exists x(\exists y(in(x,y) \wedge in(y,x)))
-context.definitions.keys(): 
 [Theorem] test21: \forall x(\forall y(in(x,y))) \to \neg(\exists x(\exists y(\neg(in(x,y)))))
   [Assume] premise=\forall x(\forall y(in(x,y))), conclusion=\neg(\exists x(\exists y(\neg(in(x,y)))))
     [Deny] premise=\exists x(\exists y(\neg(in(x,y))))
@@ -289,7 +268,6 @@ context.definitions.keys():
   [Assume] Derived conclusion \neg(\exists x(\exists y(\neg(in(x,y)))))
   [Assume] Added implication \forall x(\forall y(in(x,y))) \to \neg(\exists x(\exists y(\neg(in(x,y)))))
 [Theorem] test21 proved: \forall x(\forall y(in(x,y))) \to \neg(\exists x(\exists y(\neg(in(x,y)))))
-context.definitions.keys(): 
 [Theorem] test22: \neg(\exists x(\exists y(\neg(in(x,y))))) \to \forall x(\forall y(in(x,y)))
   [Assume] premise=\neg(\exists x(\exists y(\neg(in(x,y))))), conclusion=\forall x(\forall y(in(x,y)))
     [Any] Taking ['x', 'y']
@@ -305,7 +283,6 @@ context.definitions.keys():
   [Assume] Derived conclusion \forall x(\forall y(in(x,y)))
   [Assume] Added implication \neg(\exists x(\exists y(\neg(in(x,y))))) \to \forall x(\forall y(in(x,y)))
 [Theorem] test22 proved: \neg(\exists x(\exists y(\neg(in(x,y))))) \to \forall x(\forall y(in(x,y)))
-context.definitions.keys(): 
 [Theorem] test23: \forall x(in(x,x) \to \neg(in(x,x))) \to \forall x(in(x,x)) \to \forall x(\neg(in(x,x)))
   [Assume] premise=\forall x(in(x,x) \to \neg(in(x,x))), conclusion=\forall x(in(x,x)) \to \forall x(\neg(in(x,x)))
     [Assume] premise=\forall x(in(x,x)), conclusion=\forall x(\neg(in(x,x)))
@@ -334,7 +311,6 @@ context.definitions.keys():
   [Assume] Derived conclusion \forall x(in(x,x)) \to \forall x(\neg(in(x,x)))
   [Assume] Added implication \forall x(in(x,x) \to \neg(in(x,x))) \to \forall x(in(x,x)) \to \forall x(\neg(in(x,x)))
 [Theorem] test23 proved: \forall x(in(x,x) \to \neg(in(x,x))) \to \forall x(in(x,x)) \to \forall x(\neg(in(x,x)))
-context.definitions.keys(): 
 [Theorem] test24: \forall x(\forall y(\neg(in(x,y)))) \to \neg(\exists x(\exists y(in(x,y))))
   [Assume] premise=\forall x(\forall y(\neg(in(x,y)))), conclusion=\neg(\exists x(\exists y(in(x,y))))
     [Deny] premise=\exists x(\exists y(in(x,y)))
@@ -352,7 +328,6 @@ context.definitions.keys():
   [Assume] Derived conclusion \neg(\exists x(\exists y(in(x,y))))
   [Assume] Added implication \forall x(\forall y(\neg(in(x,y)))) \to \neg(\exists x(\exists y(in(x,y))))
 [Theorem] test24 proved: \forall x(\forall y(\neg(in(x,y)))) \to \neg(\exists x(\exists y(in(x,y))))
-context.definitions.keys(): 
 [Theorem] test25: \neg(\exists x(\exists y(in(x,y)))) \to \forall x(\forall y(\neg(in(x,y))))
   [Assume] premise=\neg(\exists x(\exists y(in(x,y)))), conclusion=\forall x(\forall y(\neg(in(x,y))))
     [Any] Taking ['x', 'y']
@@ -368,49 +343,249 @@ context.definitions.keys():
   [Assume] Derived conclusion \forall x(\forall y(\neg(in(x,y))))
   [Assume] Added implication \neg(\exists x(\exists y(in(x,y)))) \to \forall x(\forall y(\neg(in(x,y))))
 [Theorem] test25 proved: \neg(\exists x(\exists y(in(x,y)))) \to \forall x(\forall y(\neg(in(x,y))))
-context.definitions.keys(): subset
-[Theorem] subset01: \forall z(\forall x(\forall y(in(z,x) \wedge subset(x,y) \to in(z,y))))
+[Theorem] equal_reflection: \forall x(equal(x,x))
+  [Any] Taking ['x']
+    [Any] Taking ['y']
+      [Assume] premise=in(y,x), conclusion=in(y,x)
+      [Assume] Derived conclusion in(y,x)
+      [Assume] Added implication in(y,x) \to in(y,x)
+    [Any] Derived conclusion in(y,x) \leftrightarrow in(y,x)
+    [Any] Generalized to \forall y(in(y,x) \leftrightarrow in(y,x))
+  [Any] Derived conclusion equal(x,x)
+  [Any] Generalized to \forall x(equal(x,x))
+[Theorem] equal_reflection proved: \forall x(equal(x,x))
+[Theorem] equal_replacement: \forall x(\forall y(\forall u(\forall v(equal(x,y) \wedge equal(u,v) \to equal(x,u) \to equal(y,v)))))
+  [Any] Taking ['x', 'y', 'u', 'v']
+    [Assume] premise=equal(x,y) \wedge equal(u,v), conclusion=equal(x,u) \to equal(y,v)
+      [Assume] premise=equal(x,u), conclusion=equal(y,v)
+        [Any] Taking ['p']
+          [Assume] premise=in(p,y), conclusion=in(p,v)
+            [Apply] Drivable fact: equal(x,y)
+            [Apply] replace equal(x,y) to \forall z(in(z,x) \leftrightarrow in(z,y))
+            [Apply] Instantiable: vars=['z'], env={'z': 'p'}
+            [Apply] \forall-elimination is done: instantiation=in(p,x) \leftrightarrow in(p,y)
+            [Apply] Matched: node.conclusion=in(p,x) \leftrightarrow in(p,y), instantiation=in(p,x) \leftrightarrow in(p,y)
+            [Apply] Added node.conclusion=in(p,x) \leftrightarrow in(p,y)
+            [Invoke] fact: in(p,y) \to in(p,x)
+            [Invoke] Implies object: in(p,y) \to in(p,x)
+            [Invoke] Left of Implies object derived: in(p,y)
+            [Invoke] Matched: node.conclusion=in(p,x), node.fact.right=in(p,x)
+            [Invoke] conclusion added: in(p,x)
+            [Apply] Drivable fact: equal(x,u)
+            [Apply] replace equal(x,u) to \forall z(in(z,x) \leftrightarrow in(z,u))
+            [Apply] Instantiable: vars=['z'], env={'z': 'p'}
+            [Apply] \forall-elimination is done: instantiation=in(p,x) \leftrightarrow in(p,u)
+            [Apply] Matched: node.conclusion=in(p,x) \leftrightarrow in(p,u), instantiation=in(p,x) \leftrightarrow in(p,u)
+            [Apply] Added node.conclusion=in(p,x) \leftrightarrow in(p,u)
+            [Invoke] fact: in(p,x) \to in(p,u)
+            [Invoke] Implies object: in(p,x) \to in(p,u)
+            [Invoke] Left of Implies object derived: in(p,x)
+            [Invoke] Matched: node.conclusion=in(p,u), node.fact.right=in(p,u)
+            [Invoke] conclusion added: in(p,u)
+            [Apply] Drivable fact: equal(u,v)
+            [Apply] replace equal(u,v) to \forall z(in(z,u) \leftrightarrow in(z,v))
+            [Apply] Instantiable: vars=['z'], env={'z': 'p'}
+            [Apply] \forall-elimination is done: instantiation=in(p,u) \leftrightarrow in(p,v)
+            [Apply] Matched: node.conclusion=in(p,u) \leftrightarrow in(p,v), instantiation=in(p,u) \leftrightarrow in(p,v)
+            [Apply] Added node.conclusion=in(p,u) \leftrightarrow in(p,v)
+            [Invoke] fact: in(p,u) \to in(p,v)
+            [Invoke] Implies object: in(p,u) \to in(p,v)
+            [Invoke] Left of Implies object derived: in(p,u)
+            [Invoke] Matched: node.conclusion=in(p,v), node.fact.right=in(p,v)
+            [Invoke] conclusion added: in(p,v)
+          [Assume] Derived conclusion in(p,v)
+          [Assume] Added implication in(p,y) \to in(p,v)
+          [Assume] premise=in(p,v), conclusion=in(p,y)
+            [Apply] Drivable fact: equal(u,v)
+            [Apply] replace equal(u,v) to \forall z(in(z,u) \leftrightarrow in(z,v))
+            [Apply] Instantiable: vars=['z'], env={'z': 'p'}
+            [Apply] \forall-elimination is done: instantiation=in(p,u) \leftrightarrow in(p,v)
+            [Apply] Matched: node.conclusion=in(p,u) \leftrightarrow in(p,v), instantiation=in(p,u) \leftrightarrow in(p,v)
+            [Apply] Added node.conclusion=in(p,u) \leftrightarrow in(p,v)
+            [Invoke] fact: in(p,v) \to in(p,u)
+            [Invoke] Implies object: in(p,v) \to in(p,u)
+            [Invoke] Left of Implies object derived: in(p,v)
+            [Invoke] Matched: node.conclusion=in(p,u), node.fact.right=in(p,u)
+            [Invoke] conclusion added: in(p,u)
+            [Apply] Drivable fact: equal(x,u)
+            [Apply] replace equal(x,u) to \forall z(in(z,x) \leftrightarrow in(z,u))
+            [Apply] Instantiable: vars=['z'], env={'z': 'p'}
+            [Apply] \forall-elimination is done: instantiation=in(p,x) \leftrightarrow in(p,u)
+            [Apply] Matched: node.conclusion=in(p,x) \leftrightarrow in(p,u), instantiation=in(p,x) \leftrightarrow in(p,u)
+            [Apply] Added node.conclusion=in(p,x) \leftrightarrow in(p,u)
+            [Invoke] fact: in(p,u) \to in(p,x)
+            [Invoke] Implies object: in(p,u) \to in(p,x)
+            [Invoke] Left of Implies object derived: in(p,u)
+            [Invoke] Matched: node.conclusion=in(p,x), node.fact.right=in(p,x)
+            [Invoke] conclusion added: in(p,x)
+            [Apply] Drivable fact: equal(x,y)
+            [Apply] replace equal(x,y) to \forall z(in(z,x) \leftrightarrow in(z,y))
+            [Apply] Instantiable: vars=['z'], env={'z': 'p'}
+            [Apply] \forall-elimination is done: instantiation=in(p,x) \leftrightarrow in(p,y)
+            [Apply] Matched: node.conclusion=in(p,x) \leftrightarrow in(p,y), instantiation=in(p,x) \leftrightarrow in(p,y)
+            [Apply] Added node.conclusion=in(p,x) \leftrightarrow in(p,y)
+            [Invoke] fact: in(p,x) \to in(p,y)
+            [Invoke] Implies object: in(p,x) \to in(p,y)
+            [Invoke] Left of Implies object derived: in(p,x)
+            [Invoke] Matched: node.conclusion=in(p,y), node.fact.right=in(p,y)
+            [Invoke] conclusion added: in(p,y)
+          [Assume] Derived conclusion in(p,y)
+          [Assume] Added implication in(p,v) \to in(p,y)
+        [Any] Derived conclusion in(p,y) \leftrightarrow in(p,v)
+        [Any] Generalized to \forall p(in(p,y) \leftrightarrow in(p,v))
+      [Assume] Derived conclusion equal(y,v)
+      [Assume] Added implication equal(x,u) \to equal(y,v)
+    [Assume] Derived conclusion equal(x,u) \to equal(y,v)
+    [Assume] Added implication equal(x,y) \wedge equal(u,v) \to equal(x,u) \to equal(y,v)
+  [Any] Derived conclusion equal(x,y) \wedge equal(u,v) \to equal(x,u) \to equal(y,v)
+  [Any] Generalized to \forall x(\forall y(\forall u(\forall v(equal(x,y) \wedge equal(u,v) \to equal(x,u) \to equal(y,v)))))
+[Theorem] equal_replacement proved: \forall x(\forall y(\forall u(\forall v(equal(x,y) \wedge equal(u,v) \to equal(x,u) \to equal(y,v)))))
+[Theorem] in_replacement: \forall x(\forall y(\forall u(\forall v(equal(x,y) \wedge equal(u,v) \to in(x,u) \to in(y,v)))))
+  [Any] Taking ['x', 'y', 'u', 'v']
+    [Assume] premise=equal(x,y) \wedge equal(u,v), conclusion=in(x,u) \to in(y,v)
+      [Assume] premise=in(x,u), conclusion=in(y,v)
+        [Apply] Drivable fact: axiom_of_equal
+        [Apply] Instantiable: vars=['x', 'y'], env={'x': 'x', 'y': 'y'}
+        [Apply] \forall-elimination is done: instantiation=equal(x,y) \to \forall z(in(x,z) \to in(y,z))
+        [Apply] Matched: node.conclusion=equal(x,y) \to \forall z(in(x,z) \to in(y,z)), instantiation=equal(x,y) \to \forall z(in(x,z) \to in(y,z))
+        [Apply] Added node.conclusion=equal(x,y) \to \forall z(in(x,z) \to in(y,z))
+        [Invoke] fact: equal(x,y) \to \forall z(in(x,z) \to in(y,z))
+        [Invoke] Implies object: equal(x,y) \to \forall z(in(x,z) \to in(y,z))
+        [Invoke] Left of Implies object derived: equal(x,y)
+        [Invoke] Matched: node.conclusion=\forall z(in(x,z) \to in(y,z)), node.fact.right=\forall z(in(x,z) \to in(y,z))
+        [Invoke] conclusion added: \forall z(in(x,z) \to in(y,z))
+        [Apply] Drivable fact: \forall z(in(x,z) \to in(y,z))
+        [Apply] Instantiable: vars=['z'], env={'z': 'u'}
+        [Apply] \forall-elimination is done: instantiation=in(x,u) \to in(y,u)
+        [Apply] Matched: node.conclusion=in(x,u) \to in(y,u), instantiation=in(x,u) \to in(y,u)
+        [Apply] Added node.conclusion=in(x,u) \to in(y,u)
+        [Invoke] fact: in(x,u) \to in(y,u)
+        [Invoke] Implies object: in(x,u) \to in(y,u)
+        [Invoke] Left of Implies object derived: in(x,u)
+        [Invoke] Matched: node.conclusion=in(y,u), node.fact.right=in(y,u)
+        [Invoke] conclusion added: in(y,u)
+        [Expand] fact: equal(u,v)
+        [Expand] Symbol object: equal(u,v)
+        [Expand] Defined: equal
+        [Expand] Length matched: vars=['x', 'y'], node.fact.args=['u', 'v']
+        [Expand] Expanded: \forall z(in(z,u) \leftrightarrow in(z,v))
+        [Expand] Matched: node.conclusion=\forall z(in(z,u) \leftrightarrow in(z,v)), expanded=\forall z(in(z,u) \leftrightarrow in(z,v))
+        [Expand] Added: \forall z(in(z,u) \leftrightarrow in(z,v))
+        [Apply] Drivable fact: \forall z(in(z,u) \leftrightarrow in(z,v))
+        [Apply] Instantiable: vars=['z'], env={'z': 'y'}
+        [Apply] \forall-elimination is done: instantiation=in(y,u) \leftrightarrow in(y,v)
+        [Apply] Matched: node.conclusion=in(y,u) \leftrightarrow in(y,v), instantiation=in(y,u) \leftrightarrow in(y,v)
+        [Apply] Added node.conclusion=in(y,u) \leftrightarrow in(y,v)
+        [Invoke] fact: in(y,u) \to in(y,v)
+        [Invoke] Implies object: in(y,u) \to in(y,v)
+        [Invoke] Left of Implies object derived: in(y,u)
+        [Invoke] Matched: node.conclusion=in(y,v), node.fact.right=in(y,v)
+        [Invoke] conclusion added: in(y,v)
+      [Assume] Derived conclusion in(y,v)
+      [Assume] Added implication in(x,u) \to in(y,v)
+    [Assume] Derived conclusion in(x,u) \to in(y,v)
+    [Assume] Added implication equal(x,y) \wedge equal(u,v) \to in(x,u) \to in(y,v)
+  [Any] Derived conclusion equal(x,y) \wedge equal(u,v) \to in(x,u) \to in(y,v)
+  [Any] Generalized to \forall x(\forall y(\forall u(\forall v(equal(x,y) \wedge equal(u,v) \to in(x,u) \to in(y,v)))))
+[Theorem] in_replacement proved: \forall x(\forall y(\forall u(\forall v(equal(x,y) \wedge equal(u,v) \to in(x,u) \to in(y,v)))))
+[Theorem] subset_cor1: \forall z(\forall x(\forall y(in(z,x) \wedge subset(x,y) \to in(z,y))))
   [Any] Taking ['x', 'y', 'z']
     [Assume] premise=in(z,x) \wedge subset(x,y), conclusion=in(z,y)
-      [Apply] Drivable fact: subset(x,y)
-      [Apply] replace subset(x,y) to \forall z(in(z,x) \to in(z,y))
+      [Expand] fact: subset(x,y)
+      [Expand] Symbol object: subset(x,y)
+      [Expand] Defined: subset
+      [Expand] Length matched: vars=['x', 'y'], node.fact.args=['x', 'y']
+      [Expand] Expanded: \forall z(in(z,x) \to in(z,y))
+      [Expand] Matched: node.conclusion=\forall z(in(z,x) \to in(z,y)), expanded=\forall z(in(z,x) \to in(z,y))
+      [Expand] Added: \forall z(in(z,x) \to in(z,y))
+      [Apply] Drivable fact: \forall z(in(z,x) \to in(z,y))
       [Apply] Instantiable: vars=['z'], env={'z': 'z'}
       [Apply] \forall-elimination is done: instantiation=in(z,x) \to in(z,y)
-      [Apply] Implies object: in(z,x) \to in(z,y)
-      [Apply] Derivable premise: in(z,x)
-      [Apply] Matched: implication.left=in(z,x), node.premise=in(z,x)
-      [Apply] \to-elimination is done: in(z,y)
-      [Apply] Matched: node.conclusion=in(z,y), implication.right=in(z,y)
-      [Apply] Added node.conclusion=in(z,y)
+      [Apply] Matched: node.conclusion=in(z,x) \to in(z,y), instantiation=in(z,x) \to in(z,y)
+      [Apply] Added node.conclusion=in(z,x) \to in(z,y)
+      [Invoke] fact: in(z,x) \to in(z,y)
+      [Invoke] Implies object: in(z,x) \to in(z,y)
+      [Invoke] Left of Implies object derived: in(z,x)
+      [Invoke] Matched: node.conclusion=in(z,y), node.fact.right=in(z,y)
+      [Invoke] conclusion added: in(z,y)
     [Assume] Derived conclusion in(z,y)
     [Assume] Added implication in(z,x) \wedge subset(x,y) \to in(z,y)
   [Any] Derived conclusion in(z,x) \wedge subset(x,y) \to in(z,y)
   [Any] Generalized to \forall x(\forall y(\forall z(in(z,x) \wedge subset(x,y) \to in(z,y))))
-[Theorem] subset01 proved: \forall z(\forall x(\forall y(in(z,x) \wedge subset(x,y) \to in(z,y))))
-context.definitions.keys(): subset
-[Theorem] subset02: \forall x(\forall y(\forall z(subset(x,y) \wedge subset(y,z) \to subset(x,z))))
+[Theorem] subset_cor1 proved: \forall z(\forall x(\forall y(in(z,x) \wedge subset(x,y) \to in(z,y))))
+[Theorem] subset_reflection: \forall x(subset(x,x))
+  [Any] Taking ['x']
+    [Any] Taking ['y']
+      [Assume] premise=in(y,x), conclusion=in(y,x)
+      [Assume] Derived conclusion in(y,x)
+      [Assume] Added implication in(y,x) \to in(y,x)
+    [Any] Derived conclusion in(y,x) \to in(y,x)
+    [Any] Generalized to \forall y(in(y,x) \to in(y,x))
+  [Any] Derived conclusion subset(x,x)
+  [Any] Generalized to \forall x(subset(x,x))
+[Theorem] subset_reflection proved: \forall x(subset(x,x))
+[Theorem] subset_antisymmetry: \forall x(\forall y(subset(x,y) \wedge subset(y,x) \to equal(x,y)))
+  [Any] Taking ['x', 'y']
+    [Assume] premise=subset(x,y) \wedge subset(y,x), conclusion=equal(x,y)
+      [Any] Taking ['z']
+        [Assume] premise=in(z,x), conclusion=in(z,y)
+          [Apply] Drivable fact: subset_cor1
+          [Apply] Instantiable: vars=['z', 'x', 'y'], env={'z': 'z', 'x': 'x', 'y': 'y'}
+          [Apply] \forall-elimination is done: instantiation=in(z,x) \wedge subset(x,y) \to in(z,y)
+          [Apply] Matched: node.conclusion=in(z,x) \wedge subset(x,y) \to in(z,y), instantiation=in(z,x) \wedge subset(x,y) \to in(z,y)
+          [Apply] Added node.conclusion=in(z,x) \wedge subset(x,y) \to in(z,y)
+          [Invoke] fact: in(z,x) \wedge subset(x,y) \to in(z,y)
+          [Invoke] Implies object: in(z,x) \wedge subset(x,y) \to in(z,y)
+          [Invoke] Left of Implies object derived: in(z,x) \wedge subset(x,y)
+          [Invoke] Matched: node.conclusion=in(z,y), node.fact.right=in(z,y)
+          [Invoke] conclusion added: in(z,y)
+        [Assume] Derived conclusion in(z,y)
+        [Assume] Added implication in(z,x) \to in(z,y)
+        [Assume] premise=in(z,y), conclusion=in(z,x)
+          [Apply] Drivable fact: subset_cor1
+          [Apply] Instantiable: vars=['z', 'x', 'y'], env={'z': 'z', 'x': 'y', 'y': 'x'}
+          [Apply] \forall-elimination is done: instantiation=in(z,y) \wedge subset(y,x) \to in(z,x)
+          [Apply] Matched: node.conclusion=in(z,y) \wedge subset(y,x) \to in(z,x), instantiation=in(z,y) \wedge subset(y,x) \to in(z,x)
+          [Apply] Added node.conclusion=in(z,y) \wedge subset(y,x) \to in(z,x)
+          [Invoke] fact: in(z,y) \wedge subset(y,x) \to in(z,x)
+          [Invoke] Implies object: in(z,y) \wedge subset(y,x) \to in(z,x)
+          [Invoke] Left of Implies object derived: in(z,y) \wedge subset(y,x)
+          [Invoke] Matched: node.conclusion=in(z,x), node.fact.right=in(z,x)
+          [Invoke] conclusion added: in(z,x)
+        [Assume] Derived conclusion in(z,x)
+        [Assume] Added implication in(z,y) \to in(z,x)
+      [Any] Derived conclusion in(z,x) \leftrightarrow in(z,y)
+      [Any] Generalized to \forall z(in(z,x) \leftrightarrow in(z,y))
+    [Assume] Derived conclusion equal(x,y)
+    [Assume] Added implication subset(x,y) \wedge subset(y,x) \to equal(x,y)
+  [Any] Derived conclusion subset(x,y) \wedge subset(y,x) \to equal(x,y)
+  [Any] Generalized to \forall x(\forall y(subset(x,y) \wedge subset(y,x) \to equal(x,y)))
+[Theorem] subset_antisymmetry proved: \forall x(\forall y(subset(x,y) \wedge subset(y,x) \to equal(x,y)))
+[Theorem] subset_trans: \forall x(\forall y(\forall z(subset(x,y) \wedge subset(y,z) \to subset(x,z))))
   [Any] Taking ['x', 'y', 'z']
     [Assume] premise=subset(x,y) \wedge subset(y,z), conclusion=subset(x,z)
       [Any] Taking ['w']
         [Assume] premise=in(w,x), conclusion=in(w,z)
-          [Apply] Drivable fact: subset01
+          [Apply] Drivable fact: subset_cor1
           [Apply] Instantiable: vars=['z', 'x', 'y'], env={'z': 'w', 'x': 'x', 'y': 'y'}
           [Apply] \forall-elimination is done: instantiation=in(w,x) \wedge subset(x,y) \to in(w,y)
-          [Apply] Implies object: in(w,x) \wedge subset(x,y) \to in(w,y)
-          [Apply] Derivable premise: in(w,x) \wedge subset(x,y)
-          [Apply] Matched: implication.left=in(w,x) \wedge subset(x,y), node.premise=in(w,x) \wedge subset(x,y)
-          [Apply] \to-elimination is done: in(w,y)
-          [Apply] Matched: node.conclusion=in(w,y), implication.right=in(w,y)
-          [Apply] Added node.conclusion=in(w,y)
-          [Apply] Drivable fact: subset01
+          [Apply] Matched: node.conclusion=in(w,x) \wedge subset(x,y) \to in(w,y), instantiation=in(w,x) \wedge subset(x,y) \to in(w,y)
+          [Apply] Added node.conclusion=in(w,x) \wedge subset(x,y) \to in(w,y)
+          [Invoke] fact: in(w,x) \wedge subset(x,y) \to in(w,y)
+          [Invoke] Implies object: in(w,x) \wedge subset(x,y) \to in(w,y)
+          [Invoke] Left of Implies object derived: in(w,x) \wedge subset(x,y)
+          [Invoke] Matched: node.conclusion=in(w,y), node.fact.right=in(w,y)
+          [Invoke] conclusion added: in(w,y)
+          [Apply] Drivable fact: subset_cor1
           [Apply] Instantiable: vars=['z', 'x', 'y'], env={'z': 'w', 'x': 'y', 'y': 'z'}
           [Apply] \forall-elimination is done: instantiation=in(w,y) \wedge subset(y,z) \to in(w,z)
-          [Apply] Implies object: in(w,y) \wedge subset(y,z) \to in(w,z)
-          [Apply] Derivable premise: in(w,y) \wedge subset(y,z)
-          [Apply] Matched: implication.left=in(w,y) \wedge subset(y,z), node.premise=in(w,y) \wedge subset(y,z)
-          [Apply] \to-elimination is done: in(w,z)
-          [Apply] Matched: node.conclusion=in(w,z), implication.right=in(w,z)
-          [Apply] Added node.conclusion=in(w,z)
+          [Apply] Matched: node.conclusion=in(w,y) \wedge subset(y,z) \to in(w,z), instantiation=in(w,y) \wedge subset(y,z) \to in(w,z)
+          [Apply] Added node.conclusion=in(w,y) \wedge subset(y,z) \to in(w,z)
+          [Invoke] fact: in(w,y) \wedge subset(y,z) \to in(w,z)
+          [Invoke] Implies object: in(w,y) \wedge subset(y,z) \to in(w,z)
+          [Invoke] Left of Implies object derived: in(w,y) \wedge subset(y,z)
+          [Invoke] Matched: node.conclusion=in(w,z), node.fact.right=in(w,z)
+          [Invoke] conclusion added: in(w,z)
         [Assume] Derived conclusion in(w,z)
         [Assume] Added implication in(w,x) \to in(w,z)
       [Any] Derived conclusion in(w,x) \to in(w,z)
@@ -419,4 +594,4 @@ context.definitions.keys(): subset
     [Assume] Added implication subset(x,y) \wedge subset(y,z) \to subset(x,z)
   [Any] Derived conclusion subset(x,y) \wedge subset(y,z) \to subset(x,z)
   [Any] Generalized to \forall x(\forall y(\forall z(subset(x,y) \wedge subset(y,z) \to subset(x,z))))
-[Theorem] subset02 proved: \forall x(\forall y(\forall z(subset(x,y) \wedge subset(y,z) \to subset(x,z))))
+[Theorem] subset_trans proved: \forall x(\forall y(\forall z(subset(x,y) \wedge subset(y,z) \to subset(x,z))))

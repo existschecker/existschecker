@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List
+from typing import List, Dict
 
 import logging
 logger = logging.getLogger("proof")
@@ -8,8 +8,16 @@ logger = logging.getLogger("proof")
 class Context:
     formulas: list        # 通常の論理式
     bot_derived: bool  # 矛盾導出フラグ
+    axioms: dict
     theorems: dict
-    definitions: dict
+    definitions: Dict[str, "Definition"]
+
+    @staticmethod
+    def init():
+        return Context(formulas=[], bot_derived=False, axioms={}, theorems={}, definitions={})
+
+    def copy(self, formulas, bot_derived):
+        return Context(formulas=formulas, bot_derived=bot_derived, axioms=self.axioms, theorems=self.theorems, definitions=self.definitions)
 
 # === DSL ノード定義 ===
 @dataclass
@@ -17,6 +25,11 @@ class Atom:
     type: str
     name: str
     arity: int
+
+@dataclass
+class Axiom:
+    name: str
+    conclusion: object
 
 @dataclass
 class Theorem:
@@ -83,6 +96,16 @@ class Apply:
 class Lift:
     fact: object
     env: dict
+    conclusion: object
+
+@dataclass
+class Invoke:
+    fact: object
+    conclusion: object
+
+@dataclass
+class Expand:
+    fact: object
     conclusion: object
 
 @dataclass
@@ -213,6 +236,8 @@ def pretty(node, indent=0):
         raise TypeError(f"Unsupported node type: {type(node)}")
 
 def pretty_expr(expr):
+    if isinstance(expr, Axiom):
+        return expr.name
     if isinstance(expr, Theorem):
         return expr.name
     if isinstance(expr, Symbol):
