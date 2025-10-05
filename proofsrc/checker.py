@@ -126,7 +126,7 @@ def collect_vars(expr, bound=None):
     elif isinstance(expr, Not):
         return collect_vars(expr.body, bound)
 
-    elif isinstance(expr, (And, Or, Implies)):
+    elif isinstance(expr, (And, Or, Implies, Iff)):
         f1, b1 = collect_vars(expr.left, bound)
         f2, b2 = collect_vars(expr.right, bound)
         return f1 | f2, b1 | b2
@@ -144,6 +144,7 @@ def expr_in_context(expr, context):
 
 # And を分解
 def split_conjunction(expr):
+    expr = normalize_neg(expr)
     if isinstance(expr, And):
         return split_conjunction(expr.left) + split_conjunction(expr.right)
     if isinstance(expr, Iff):
@@ -158,6 +159,8 @@ def derivable_flat(goal, flat_ctx):
     if isinstance(goal, Or):
         return derivable_flat(goal.left, flat_ctx) or derivable_flat(goal.right, flat_ctx) or expr_in_context(goal, flat_ctx)
     if isinstance(goal, Iff):
+        if expr_in_context(goal, flat_ctx):
+            return True
         return derivable_flat(Implies(goal.left, goal.right), flat_ctx) and derivable_flat(Implies(goal.right, goal.left), flat_ctx)
     # α同値チェック
     return expr_in_context(goal, flat_ctx)

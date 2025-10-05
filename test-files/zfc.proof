@@ -59,8 +59,58 @@ definition predicate notin arity 2 \forall x\forall y(notin(x,y)\leftrightarrow\
 
 definition predicate neq arity 2 \forall x\forall y(neq(x,y)\leftrightarrow\neg(equal(x,y)))
 
-theorem neq_cor1 \forall x\forall y(\exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y)))\to neq(x,y)) {
-  any x, y conclude \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y)))\to neq(x,y) {
+theorem neq_cor1 \forall x\forall y(neq(x,y)\leftrightarrow\exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y)))) {
+  any x, y conclude neq(x,y)\leftrightarrow\exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))) {
+    assume neq(x,y) conclude \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))) {
+      deny \forall z(in(z,x)\leftrightarrow in(z,y)) {
+        contradict equal(x,y)
+      }
+      deny \neg(\exists z(\neg(in(z,x)\leftrightarrow in(z,y)))) {
+        any z conclude in(z,x)\leftrightarrow in(z,y) {
+          deny \neg(in(z,x)\leftrightarrow in(z,y)) {
+            lift \neg(in(z,x)\leftrightarrow in(z,y)) for z:z conclude \exists z(\neg(in(z,x)\leftrightarrow in(z,y)))
+            contradict \exists z(\neg(in(z,x)\leftrightarrow in(z,y)))
+          }
+        }
+        contradict \forall z(in(z,x)\leftrightarrow in(z,y))
+      }
+      some z:z such \exists z(\neg(in(z,x)\leftrightarrow in(z,y))) conclude \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))) {
+        deny (in(z,x)\to in(z,y))\wedge(in(z,y)\to in(z,x)) {
+          contradict in(z,x)\leftrightarrow in(z,y)
+        }
+        deny \neg(\neg(in(z,x)\to in(z,y))\vee\neg(in(z,y)\to in(z,x))) {
+          deny \neg(in(z,x)\to in(z,y)) {
+            contradict \neg(in(z,x)\to in(z,y))\vee\neg(in(z,y)\to in(z,x))
+          }
+          deny \neg(in(z,y)\to in(z,x)) {
+            contradict \neg(in(z,x)\to in(z,y))\vee\neg(in(z,y)\to in(z,x))
+          }
+          contradict (in(z,x)\to in(z,y))\wedge(in(z,y)\to in(z,x))
+        }
+        divide \neg(in(z,x)\to in(z,y))\vee\neg(in(z,y)\to in(z,x)) conclude (in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))
+          case \neg(in(z,x)\to in(z,y)) {
+            deny \neg(in(z,x)\wedge notin(z,y)) {
+              assume in(z,x) conclude in(z,y) {
+                deny notin(z,y) {
+                  contradict in(z,x)\wedge notin(z,y)
+                }
+              }
+              contradict in(z,x)\to in(z,y)
+            }
+          }
+          case \neg(in(z,y)\to in(z,x)) {
+            deny \neg(notin(z,x)\wedge in(z,y)) {
+              assume in(z,y) conclude in(z,x) {
+                deny notin(z,x) {
+                  contradict notin(z,x)\wedge in(z,y)
+                }
+              }
+              contradict in(z,y)\to in(z,x)
+            }
+          }
+        lift (in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y)) for z:z conclude \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y)))
+      }
+    }
     assume \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))) conclude neq(x,y) {
       some z:z such \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))) conclude neq(x,y) {
         deny equal(x,y) {
