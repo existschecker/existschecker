@@ -57,6 +57,30 @@ theorem in_replacement \forall x\forall y\forall u\forall v(equal(x,y)\wedge equ
 
 definition predicate notin arity 2 \forall x\forall y(notin(x,y)\leftrightarrow\neg(in(x,y)))
 
+definition predicate neq arity 2 \forall x\forall y(neq(x,y)\leftrightarrow\neg(equal(x,y)))
+
+theorem neq_cor1 \forall x\forall y(\exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y)))\to neq(x,y)) {
+  any x, y conclude \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y)))\to neq(x,y) {
+    assume \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))) conclude neq(x,y) {
+      some z:z such \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))) conclude neq(x,y) {
+        deny equal(x,y) {
+          expand equal(x,y) conclude \forall z(in(z,x)\leftrightarrow in(z,y))
+          apply \forall z(in(z,x)\leftrightarrow in(z,y)) for z:z conclude in(z,x)\leftrightarrow in(z,y)
+          divide (in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y)) conclude \bot
+            case in(z,x)\wedge notin(z,y) {
+              invoke in(z,x)\to in(z,y) conclude in(z,y)
+              contradict in(z,y)
+            }
+            case notin(z,x)\wedge in(z,y) {
+              invoke in(z,y)\to in(z,x) conclude in(z,x)
+              contradict in(z,x)
+            }
+        }
+      }
+    }
+  }
+}
+
 axiom axiom_of_emptyset \exists x\forall y(notin(y,x))
 
 theorem emptyset_exists_uniquely \exists!x\forall y(notin(y,x)) {

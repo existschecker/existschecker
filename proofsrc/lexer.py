@@ -94,6 +94,30 @@ if __name__ == "__main__":
     f = open(path)
     src = f.read()
     f.close()
+
+    import os
+    import logging
+
+    logger = logging.getLogger("proof")
+    logger.setLevel(logging.DEBUG)
+
+    # 標準出力用ハンドラ
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.DEBUG)
+
+    # ファイル出力用ハンドラ
+    file_handler = logging.FileHandler(os.path.join("logs", os.path.basename(path).replace(".proof", "_lexer.log")), mode='w', encoding='utf-8')
+    file_handler.setLevel(logging.DEBUG)
+
+    # 共通フォーマット
+    formatter = logging.Formatter("[%(filename)s] %(message)s")
+    console_handler.setFormatter(formatter)
+    file_handler.setFormatter(formatter)
+
+    # ハンドラ登録
+    logger.addHandler(console_handler)
+    logger.addHandler(file_handler)
+
     tokens = lex(src)
     for t in tokens:
-        print(t)
+        logger.debug(t)

@@ -168,7 +168,7 @@ def expand_definitions(expr, context):
             definition = context.definitions[expr.name].formula
             vars, body = collect_quantifier_vars(definition, Forall)
             expanded = substitute(body, dict(zip(vars, expr.args))).right
-            return expanded
+            return expand_definitions(expanded, context)
         else:
             return expr
     elif isinstance(expr, Not):
@@ -183,7 +183,10 @@ def expand_definitions(expr, context):
     else:
         return expr
 
-def derivable(goal, context):
+def derivable(goal, context, indent):
+    sp = '  ' * indent
+    logger.debug(f"{sp}[derivable] goal: {pretty_expr(goal)}")
+    logger.debug(f"{sp}[derivable] context.formulas: {",".join([pretty_expr(c) for c in context.formulas])}")
     if isinstance(goal, Bottom):
         return context.bot_derived
     elif isinstance(goal, Axiom):
@@ -285,7 +288,7 @@ def check_proof(node, context: Context, indent=0):
             if not check_proof(stmt, local_ctx, indent+1):
                 logger.error(f"{sp}❌ [Theorem] Failed")
                 return False
-        if derivable(node.conclusion, local_ctx):
+        if derivable(node.conclusion, local_ctx, indent+1):
             logger.debug(f"{sp}[Theorem] {node.name} proved: {pretty_expr(node.conclusion)}")
             context.theorems[node.name] = node
             return True
@@ -296,7 +299,7 @@ def check_proof(node, context: Context, indent=0):
     # --- Check ---
     if isinstance(node, Check):
         logger.debug(f"{sp}[Check] Checking {pretty_expr(node.conclusion)}")
-        if derivable(node.conclusion, context):
+        if derivable(node.conclusion, context, indent+1):
             logger.debug(f"{sp}[Check] goal {pretty_expr(node.conclusion)} derived")
             return True
         else:
@@ -310,7 +313,7 @@ def check_proof(node, context: Context, indent=0):
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
-        if derivable(node.conclusion, local_ctx):
+        if derivable(node.conclusion, local_ctx, indent+1):
             logger.debug(f"{sp}[Assume] Derived conclusion {pretty_expr(node.conclusion)}")
         else:
             logger.error(f"{sp}❌ [Assume] Cannot derive {pretty_expr(node.conclusion)}")
@@ -327,7 +330,7 @@ def check_proof(node, context: Context, indent=0):
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
-        if derivable(node.conclusion, local_ctx):
+        if derivable(node.conclusion, local_ctx, indent+1):
             logger.debug(f"{sp}[Any] Derived conclusion {pretty_expr(node.conclusion)}")
         else:
             logger.error(f"{sp}❌ [Any] Cannot derive {pretty_expr(node.conclusion)}")
@@ -340,7 +343,7 @@ def check_proof(node, context: Context, indent=0):
         return True
 
     if isinstance(node, Divide):
-        if not derivable(node.fact, context):
+        if not derivable(node.fact, context, indent+1):
             logger.error(f"{sp}❌ [Divide] Not fact: {pretty_expr(node.fact)}")
             return False
         connected_premise = Or(node.cases[0].premise, node.cases[1].premise)
@@ -368,7 +371,7 @@ def check_proof(node, context: Context, indent=0):
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
-        if derivable(node.conclusion, local_ctx):
+        if derivable(node.conclusion, local_ctx, indent+1):
             logger.debug(f"{sp}[Case] derived conclusion {pretty_expr(node.conclusion)}")
             return True
         else:
@@ -376,7 +379,7 @@ def check_proof(node, context: Context, indent=0):
             return False
 
     if isinstance(node, Some):
-        if not derivable(node.fact, context):
+        if not derivable(node.fact, context, indent+1):
             logger.error(f"{sp}❌ [Some] not derivable: {pretty_expr(node.fact)}")
             return False
         logger.debug(f"{sp}[Some] derivable: {pretty_expr(node.fact)}")
@@ -399,7 +402,7 @@ def check_proof(node, context: Context, indent=0):
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
-        if not derivable(node.conclusion, local_ctx):
+        if not derivable(node.conclusion, local_ctx, indent+1):
             logger.error(f"{sp}❌ [Some] Cannot derive {pretty_expr(node.conclusion)}")
             return False
         logger.debug(f"{sp}[Some] derived conclusion {pretty_expr(node.conclusion)}")
@@ -422,10 +425,10 @@ def check_proof(node, context: Context, indent=0):
             return False
     
     if isinstance(node, Contradict):
-        if not derivable(node.contradiction, context):
+        if not derivable(node.contradiction, context, indent+1):
             logger.error(f"{sp}❌ [Contradict] Cannot derive {pretty_expr(node.contradiction)}")
             return False
-        if not derivable(Not(node.contradiction), context):
+        if not derivable(Not(node.contradiction), context, indent+1):
             logger.error(f"{sp}❌ [Contradict] Cannot derive {pretty_expr(Not(node.contradiction))}")
             return False
         logger.debug(f"{sp}[Contradict] Derived contradiction: {pretty_expr(node.contradiction)}, {pretty_expr(Not(node.contradiction))}")
@@ -442,7 +445,7 @@ def check_proof(node, context: Context, indent=0):
             return False
         
     if isinstance(node, Apply):
-        if not derivable(node.fact, context):
+        if not derivable(node.fact, context, indent+1):
             logger.error(f"{sp}❌ [Apply] Cannot derive fact: {pretty_expr(node.fact)}")
             return False
         logger.debug(f"{sp}[Apply] Drivable fact: {pretty_expr(node.fact)}")
@@ -486,7 +489,7 @@ def check_proof(node, context: Context, indent=0):
             logger.error(f"{sp}❌ [Apply] Not Implies object: {pretty_expr(implication)}")
             return False
         logger.debug(f"{sp}[Apply] Implies object: {pretty_expr(implication)}")
-        if not derivable(node.premise, context):
+        if not derivable(node.premise, context, indent+1):
             logger.error(f"{sp}❌ [Apply] Cannot derive premise: {pretty_expr(node.premise)}")
             return False
         logger.debug(f"{sp}[Apply] Derivable premise: {pretty_expr(node.premise)}")
@@ -504,7 +507,7 @@ def check_proof(node, context: Context, indent=0):
         return True
     
     if isinstance(node, Lift):
-        if not derivable(node.fact, context):
+        if not derivable(node.fact, context, indent+1):
             logger.error(f"{sp}❌ [Lift] Not fact: {pretty_expr(node.fact)}")
             return False
         logger.debug(f"{sp}[Lift] fact: {pretty_expr(node.fact)}")
@@ -525,7 +528,7 @@ def check_proof(node, context: Context, indent=0):
         return True
 
     if isinstance(node, Invoke):
-        if not derivable(node.fact, context):
+        if not derivable(node.fact, context, indent+1):
             logger.error(f"{sp}❌ [Invoke] Not fact: {pretty_expr(node.fact)}")
             return False
         logger.debug(f"{sp}[Invoke] fact: {pretty_expr(node.fact)}")
@@ -533,7 +536,7 @@ def check_proof(node, context: Context, indent=0):
             logger.error(f"{sp}❌ [Invoke] Not Implies object: {pretty_expr(node.fact)}")
             return False
         logger.debug(f"{sp}[Invoke] Implies object: {pretty_expr(node.fact)}")
-        if not derivable(node.fact.left, context):
+        if not derivable(node.fact.left, context, indent+1):
             logger.error(f"{sp}❌ [Invoke] Left of Implies object not derived: {pretty_expr(node.fact.left)}")
             return False
         logger.debug(f"{sp}[Invoke] Left of Implies object derived: {pretty_expr(node.fact.left)}")
@@ -546,7 +549,7 @@ def check_proof(node, context: Context, indent=0):
         return True
 
     if isinstance(node, Expand):
-        if not derivable(node.fact, context):
+        if not derivable(node.fact, context, indent+1):
             logger.error(f"{sp}❌ [Expand] Not fact: {pretty_expr(node.fact)}")
             return False
         logger.debug(f"{sp}[Expand] fact: {pretty_expr(node.fact)}")
@@ -574,7 +577,7 @@ def check_proof(node, context: Context, indent=0):
         return True
 
     if isinstance(node, Characterize):
-        if not derivable(node.fact.left, context):
+        if not derivable(node.fact.left, context, indent+1):
             logger.error(f"{sp}❌ [Characterize] Not derived: {pretty_expr(node.fact.left)}")
             return False
         logger.debug(f"{sp}[Characterize] Derived: {pretty_expr(node.fact.left)}")
@@ -601,7 +604,7 @@ def check_proof(node, context: Context, indent=0):
         return True
 
     if isinstance(node, Identify):
-        if not derivable(node.fact, context):
+        if not derivable(node.fact, context, indent+1):
             logger.error(f"{sp}❌ [Identify] Not derivable: {pretty_expr(node.fact)}")
             return False
         logger.debug(f"{sp}[Identify] Derivable: {pretty_expr(node.fact)}")
