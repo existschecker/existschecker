@@ -8,16 +8,18 @@ logger = logging.getLogger("proof")
 class Context:
     formulas: list        # 通常の論理式
     bot_derived: bool  # 矛盾導出フラグ
+    atoms: dict
     axioms: dict
     theorems: dict
     definitions: Dict[str, "Definition"]
+    defcons: Dict[str, "DefCon"]
 
     @staticmethod
     def init():
-        return Context(formulas=[], bot_derived=False, axioms={}, theorems={}, definitions={})
+        return Context(formulas=[], bot_derived=False, atoms={}, axioms={}, theorems={}, definitions={}, defcons={})
 
     def copy(self, formulas, bot_derived):
-        return Context(formulas=formulas, bot_derived=bot_derived, axioms=self.axioms, theorems=self.theorems, definitions=self.definitions)
+        return Context(formulas=formulas, bot_derived=bot_derived, atoms=self.atoms, axioms=self.axioms, theorems=self.theorems, definitions=self.definitions, defcons=self.defcons)
 
 # === DSL ノード定義 ===
 @dataclass
@@ -115,10 +117,22 @@ class Characterize:
     conclusion: object
 
 @dataclass
+class Identify:
+    fact: object
+    env: dict
+    conclusion: object
+
+@dataclass
 class Definition:
     type: str
     name: str
     arity: int
+    formula: object
+
+@dataclass
+class DefCon:
+    name: str
+    theorem: str
     formula: object
 
 @dataclass

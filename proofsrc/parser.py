@@ -1,10 +1,9 @@
 from typing import List, Union
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, Definition, Iff, Axiom, Invoke, Expand, ExistsUniq, Characterize, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, Definition, Iff, Axiom, Invoke, Expand, ExistsUniq, Characterize, DefCon, Identify, pretty, pretty_expr
 from lexer import Token, lex
-from checker import check_proof
 
 import logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("proof")
 
 # === パーサー本体 ===
 class Parser:
@@ -25,25 +24,21 @@ class Parser:
         return tok
 
     def parse_file(self):
-        self.declared_atoms = {}  # name -> Atom
+        ast = []
         self.context = Context.init()
         while self.peek():
             tok = self.peek()
             if tok.type == "ATOM":
-                self.parse_atom()
+                ast.append(self.parse_atom())
             elif tok.type == "AXIOM":
-                self.parse_axiom()
+                ast.append(self.parse_axiom())
             elif tok.type == "THEOREM":
-                theorem = self.parse_theorem()
-                if check_proof(theorem, self.context):
-                    self.context.theorems[theorem.name] = theorem
-                    print(f"[theorem proved] {theorem.name}")
-                else:
-                    print(f"❌ [theorem not proved] {theorem.name}")
+                ast.append(self.parse_theorem())
             elif tok.type == "DEFINITION":
-                self.parse_definition()
+                ast.append(self.parse_definition())
             else:
                 raise SyntaxError(f"Unexpected token {tok}")
+        return ast
 
     def parse_atom(self):
         self.consume("ATOM")
@@ -54,8 +49,9 @@ class Parser:
             self.consume("ARITY")
             arity = int(self.consume("NUMBER").value)
             atom = Atom(type=tok.type, name=name, arity=arity)
-            self.declared_atoms[name] = atom
-            print(f"[atom] {name}")
+            self.context.atoms[name] = atom
+            logger.debug(f"[atom] {name}")
+            return atom
         else:
             raise SyntaxError(f"Unexpected token {tok}")
 
@@ -65,7 +61,8 @@ class Parser:
         conclusion = self.parse_expr()
         axiom = Axiom(name=name, conclusion=conclusion)
         self.context.axioms[name] = axiom
-        print(f"[axiom] {name}")
+        logger.debug(f"[axiom] {name}")
+        return axiom
 
     def parse_theorem(self):
         self.consume("THEOREM")
@@ -74,7 +71,10 @@ class Parser:
         self.consume("LBRACE")
         proof = self.parse_block()
         self.consume("RBRACE")
-        return Theorem(name=name, conclusion=conclusion, proof=proof)
+        theorem = Theorem(name=name, conclusion=conclusion, proof=proof)
+        self.context.theorems[name] = theorem
+        logger.debug(f"[theorem] {name}")
+        return theorem
 
     def parse_check(self):
         self.consume("CHECK")
@@ -114,6 +114,8 @@ class Parser:
                 body.append(self.parse_expand())
             elif tok.type == "CHARACTERIZE":
                 body.append(self.parse_characterize())
+            elif tok.type == "IDENTIFY":
+                body.append(self.parse_identify())
             else:
                 raise SyntaxError(f"Unexpected token in block: {tok}")
         return body
@@ -278,6 +280,22 @@ class Parser:
         conclusion = self.parse_expr()
         return Characterize(fact=fact, env=env, conclusion=conclusion)
 
+    def parse_identify(self):
+        self.consume("IDENTIFY")
+        fact = self.parse_expr()
+        self.consume("FOR")
+        free = self.consume("IDENT").value
+        self.consume("COLON")
+        constant = self.consume("IDENT").value
+        if constant not in self.context.defcons:
+            raise SyntaxError("[Identify] constant not defined")
+        env = {free: constant}
+        self.consume("CONCLUDE")
+        conclusion = self.parse_expr()
+        if not isinstance(conclusion, Symbol):
+            raise SyntaxError("[Identify] conclusion not Symbol")
+        return Identify(fact=fact, env=env, conclusion=conclusion)
+
     def parse_definition(self):
         self.consume("DEFINITION")
         tok = self.peek()
@@ -290,7 +308,18 @@ class Parser:
             formula = self.parse_expr()
             definition = Definition(type=tok.type, name=name, arity=arity, formula=formula)
             self.context.definitions[name] = definition
-            print(f"[definition] {name}")
+            logger.debug(f"[definition] {name}")
+            return definition
+        elif tok.type == "CONSTANT":
+            self.consume("CONSTANT")
+            name = self.consume("IDENT").value
+            self.consume("BY")
+            theorem = self.consume("IDENT").value
+            formula = self.parse_expr()
+            defcon = DefCon(name=name, theorem=theorem, formula=formula)
+            self.context.defcons[name] = defcon
+            logger.debug(f"[defcon] {name}")
+            return defcon
         else:
             raise SyntaxError(f"Unexpected token {tok}")
 
@@ -298,8 +327,8 @@ class Parser:
         tok = self.peek()
         if tok.type == "IDENT":
             name = self.consume("IDENT").value
-            if name in self.declared_atoms:
-                arity = self.declared_atoms[name].arity
+            if name in self.context.atoms:
+                arity = self.context.atoms[name].arity
             elif name in self.context.definitions:
                 arity = self.context.definitions[name].arity
             else:
@@ -387,12 +416,6 @@ class Parser:
                 left = Or(left, right)
         return left
 
-# === ヘルパー関数 ===
-def parse_file_from_source(src: str):
-    tokens = lex(src)
-    parser = Parser(tokens)
-    parser.parse_file()
-
 if __name__ == "__main__":
     import sys
     path = sys.argv[1]
@@ -410,17 +433,13 @@ if __name__ == "__main__":
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.DEBUG)
 
-    # ファイル出力用ハンドラ
-    file_handler = logging.FileHandler(os.path.join("logs", os.path.basename(path).replace(".proof", ".log")), mode='w', encoding='utf-8')
-    file_handler.setLevel(logging.DEBUG)
-
     # 共通フォーマット
-    formatter = logging.Formatter("%(message)s")
+    formatter = logging.Formatter("[%(filename)s] %(message)s")
     console_handler.setFormatter(formatter)
-    file_handler.setFormatter(formatter)
 
     # ハンドラ登録
     logger.addHandler(console_handler)
-    logger.addHandler(file_handler)
 
-    parse_file_from_source(src)
+    tokens = lex(src)
+    parser = Parser(tokens)
+    parser.parse_file()

@@ -303,6 +303,25 @@ theorem emptyset_exists_uniquely \exists!x\forall y(notin(y,x)) {
   }
 }
 
+definition constant emptyset by emptyset_exists_uniquely \forall y(notin(y,emptyset))
+
+theorem not_emptyset_has_a_member \forall x(\neg(equal(x, emptyset))\to\exists y(in(y,x))) {
+    any x conclude \neg(equal(x,emptyset))\to\exists y(in(y,x)) {
+        assume \neg(equal(x,emptyset)) conclude \exists y(in(y,x)) {
+            deny \neg(\exists y(in(y,x))) {
+                any y conclude notin(y,x) {
+                    deny in(y,x) {
+                        lift in(y,x) for y:y conclude \exists y(in(y,x))
+                        contradict \exists y(in(y,x))
+                    }
+                }
+                identify \forall y(notin(y,x)) for x:emptyset conclude equal(x,emptyset)
+                contradict equal(x,emptyset)
+            }
+        }
+    }
+}
+
 definition predicate subset arity 2 \forall x\forall y(subset(x,y)\leftrightarrow\forall z(in(z,x)\to in(z,y)))
 
 theorem subset_cor1 \forall z\forall x\forall y(in(z,x)\wedge subset(x,y)\to in(z,y)) {

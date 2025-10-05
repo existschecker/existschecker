@@ -1,5 +1,5 @@
 # checker.py
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, ExistsUniq, Characterize, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, ExistsUniq, Characterize, Atom, Definition, DefCon, Identify, pretty, pretty_expr
 
 # === α同値判定 ===
 from itertools import permutations
@@ -259,9 +259,23 @@ def add_conclusion(context, conclusion):
     else:
         context.formulas.append(conclusion)
 
+def check_ast(ast):
+    context = Context.init()
+    return all(check_proof(node, context) for node in ast)
+
 # === 証明チェッカー ===
 def check_proof(node, context: Context, indent=0):
     sp = "  " * indent
+
+    if isinstance(node, Atom):
+        logger.debug(f"{sp}[Atom] type: {node.type}, name: {node.name}, arity: {node.arity}")
+        context.atoms[node.name] = node
+        return True
+
+    if isinstance(node, Axiom):
+        logger.debug(f"{sp}[Axiom] name: {node.name}, conclusion: {pretty_expr(node.conclusion)}")
+        context.axioms[node.name] = node
+        return True
 
     # --- Theorem ---
     if isinstance(node, Theorem):
@@ -272,10 +286,11 @@ def check_proof(node, context: Context, indent=0):
                 logger.error(f"{sp}❌ [Theorem] Failed")
                 return False
         if derivable(node.conclusion, local_ctx):
-            logger.info(f"{sp}[Theorem] {node.name} proved: {pretty_expr(node.conclusion)}")
+            logger.debug(f"{sp}[Theorem] {node.name} proved: {pretty_expr(node.conclusion)}")
+            context.theorems[node.name] = node
             return True
         else:
-            logger.info(f"{sp}❌ [Theorem] {node.name} not proved: {pretty_expr(node.conclusion)}")
+            logger.error(f"{sp}❌ [Theorem] {node.name} not proved: {pretty_expr(node.conclusion)}")
             return False
 
     # --- Check ---
@@ -585,5 +600,64 @@ def check_proof(node, context: Context, indent=0):
         add_conclusion(context, node.conclusion)
         return True
 
+    if isinstance(node, Identify):
+        if not derivable(node.fact, context):
+            logger.error(f"{sp}❌ [Identify] Not derivable: {pretty_expr(node.fact)}")
+            return False
+        logger.debug(f"{sp}[Identify] Derivable: {pretty_expr(node.fact)}")
+        logger.debug(f"{sp}[Identify] Add conclusion: {pretty_expr(node.conclusion)}")
+        add_conclusion(context, node.conclusion)
+        return True
+
+    if isinstance(node, Definition):
+        logger.debug(f"{sp}[Definition] type: {node.type}, name: {node.name}, arity: {node.arity}, formula: {pretty_expr(node.formula)}")
+        context.definitions[node.name] = node
+        return True
+
+    if isinstance(node, DefCon):
+        logger.debug(f"{sp}[DefCon] name: {node.name}, theorem: {node.theorem}, formula: {node.formula}")
+        context.defcons[node.name] = node
+        return True
+
     logger.error(f"{sp}❌ Unsupported node {node}")
     return False
+
+if __name__ == "__main__":
+    import sys
+    path = sys.argv[1]
+    f = open(path)
+    src = f.read()
+    f.close()
+
+    import os
+    import logging
+
+    logger = logging.getLogger("proof")
+    logger.setLevel(logging.DEBUG)
+
+    # 標準出力用ハンドラ
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.DEBUG)
+
+    # ファイル出力用ハンドラ
+    file_handler = logging.FileHandler(os.path.join("logs", os.path.basename(path).replace(".proof", ".log")), mode='w', encoding='utf-8')
+    file_handler.setLevel(logging.DEBUG)
+
+    # 共通フォーマット
+    formatter = logging.Formatter("[%(filename)s] %(message)s")
+    console_handler.setFormatter(formatter)
+    file_handler.setFormatter(formatter)
+
+    # ハンドラ登録
+    logger.addHandler(console_handler)
+    logger.addHandler(file_handler)
+
+    from lexer import lex
+    tokens = lex(src)
+    from parser import Parser
+    parser = Parser(tokens)
+    ast = parser.parse_file()
+    if check_ast(ast):
+        print("All theorems proved")
+    else:
+        print("❌ Not all theorems proved")
