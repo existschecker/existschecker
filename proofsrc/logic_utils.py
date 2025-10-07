@@ -28,12 +28,6 @@ def op_equiv(e1, e2, env, op):
 
     return True
 
-def normalize_neg(e):
-    if isinstance(e, Not) and isinstance(e.body, Not):
-        return normalize_neg(e.body.body)
-    else:
-        return e
-
 def alpha_equiv(e1, e2, env=None):
     """束縛変数の順序も無視して α同値判定"""
     if env is None:
@@ -243,18 +237,18 @@ def to_nnf(expr, context: Context):
     else:
         raise Exception(f"Unexpected expr: {pretty_expr(expr)}")
 
-def normalize_neg2(expr):
+def normalize_neg(expr):
     if isinstance(expr, Symbol):
         return expr
     elif isinstance(expr, Not):
         if isinstance(expr.body, Not):
-            return normalize_neg2(expr.body.body)
+            return normalize_neg(expr.body.body)
         else:
-            return Not(normalize_neg2(expr.body))
+            return Not(normalize_neg(expr.body))
     elif isinstance(expr, (And, Or)):
-        return type(expr)(normalize_neg2(expr.left), normalize_neg2(expr.right))
+        return type(expr)(normalize_neg(expr.left), normalize_neg(expr.right))
     elif isinstance(expr, (Exists, Forall)):
-        return type(expr)(expr.var, normalize_neg2(expr.body))
+        return type(expr)(expr.var, normalize_neg(expr.body))
     else:
         Exception(f"Unexpected e: {pretty_expr(expr)}")
 
@@ -323,7 +317,7 @@ def to_neg_wedge_exists(expr, context):
     expr_norm = vee_to_neg_wedge(expr_norm)
     expr_norm = forall_to_exists(expr_norm)
     expr_norm = to_pnf(expr_norm, context)
-    expr_norm = normalize_neg2(expr_norm)
+    expr_norm = normalize_neg(expr_norm)
     return expr_norm
 
 def logic_equiv(expr1, expr2, context):

@@ -1,5 +1,5 @@
 from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, Atom, Definition, DefCon, Identify, Pad, Split, Connect, pretty, pretty_expr
-from logic_utils import normalize_neg, expr_in_context, logic_equiv, collect_quantifier_vars, substitute, collect_vars, flatten_op
+from logic_utils import expr_in_context, logic_equiv, collect_quantifier_vars, substitute, collect_vars, flatten_op
 
 import logging
 logger = logging.getLogger("proof")
