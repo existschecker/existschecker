@@ -1,5 +1,5 @@
 from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, ExistsUniq, Characterize, Atom, Definition, DefCon, Identify, pretty, pretty_expr
-from logic_utils import normalize_neg, expr_in_context, expand_definitions, logic_equiv, collect_quantifier_vars, substitute, collect_vars
+from logic_utils import normalize_neg, expr_in_context, logic_equiv, collect_quantifier_vars, substitute, collect_vars
 
 import logging
 logger = logging.getLogger("proof")
@@ -41,9 +41,7 @@ def derivable(goal, context, indent):
         flat_formulas = []
         for f in context.formulas:
             flat_formulas.extend(split_conjunction(f))
-        expanded_flat_formulas = [expand_definitions(f, context) for f in flat_formulas]
-        expanded_goal = expand_definitions(goal, context)
-        return derivable_flat(expanded_goal, expanded_flat_formulas, context)
+        return derivable_flat(goal, flat_formulas, context)
 
 def add_conclusion(context, conclusion):
     if isinstance(conclusion, Bottom):
