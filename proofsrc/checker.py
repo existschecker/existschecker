@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, ExistsUniq, Characterize, Atom, Definition, DefCon, Identify, Pad, Split, Connect, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, Atom, Definition, DefCon, Identify, Pad, Split, Connect, pretty, pretty_expr
 from logic_utils import normalize_neg, expr_in_context, logic_equiv, collect_quantifier_vars, substitute, collect_vars, flatten_op
 
 import logging
@@ -335,33 +335,6 @@ def check_proof(node, context: Context, indent=0):
         logger.debug(f"{sp}[Expand] Matched: node.conclusion={pretty_expr(node.conclusion)}, expanded={pretty_expr(expanded)}")
         add_conclusion(context, node.conclusion)
         logger.debug(f"{sp}[Expand] Added: {pretty_expr(node.conclusion)}")
-        return True
-
-    if isinstance(node, Characterize):
-        if not goal_in_context(node.fact.left, context, indent+1):
-            logger.error(f"{sp}❌ [Characterize] Not derived: {pretty_expr(node.fact.left)}")
-            return False
-        logger.debug(f"{sp}[Characterize] Derived: {pretty_expr(node.fact.left)}")
-        free_vars, _ = collect_vars(node.fact.left)
-        if not set(node.env.values()).issubset(free_vars):
-            logger.error(f"{sp}❌ [Characterize] Invalid env: vars={sorted(free_vars)}, env={node.env}")
-            return False
-        logger.debug(f"{sp}[Characterize] Valid env: vars={sorted(free_vars)}, env={node.env}")
-        if not logic_equiv(substitute(node.fact.left, {list(node.env.values())[0]: node.fact.right.var}), node.fact.right.body.left, context):
-            logger.error(f"{sp}❌ [Characterize] Not matched: node.fact.left={pretty_expr(node.fact.left)}, node.fact.right.body.left={pretty_expr(node.fact.right.body.left)}")
-            return False
-        logger.debug(f"{sp}[Characterize] Matched: node.fact.left={pretty_expr(node.fact.left)}, node.fact.right.body.left={pretty_expr(node.fact.right.body.left)}")
-        if not (node.fact.right.body.right.name == "equal" and set(node.fact.right.body.right.args) == set([list(node.env.values())[0], node.fact.right.var])):
-            logger.error(f"{sp}❌ [Characterized] Unexpected: node.fact.right.body.right={pretty_expr(node.fact.right.body.right)}")
-            return False
-        logger.debug(f"{sp}[Characterized] Expected: node.fact.right.body.right={pretty_expr(node.fact.right.body.right)}")
-        characterized = ExistsUniq(list(node.env.keys())[0], substitute(node.fact.left, {v: k for k, v in node.env.items()}))
-        logger.debug(f"{sp}[Characterize] derived formula: {pretty_expr(characterized)}")
-        if not logic_equiv(node.conclusion, characterized, context):
-            logger.error(f"{sp}❌ [Characterize] Not matched: node.conclusion={pretty_expr(node.conclusion)}, derived={pretty_expr(characterized)}")
-            return False
-        logger.debug(f"{sp}[Characterize] Matched: node.conclusion={pretty_expr(node.conclusion)}, derived={pretty_expr(characterized)}")
-        add_conclusion(context, node.conclusion)
         return True
 
     if isinstance(node, Identify):

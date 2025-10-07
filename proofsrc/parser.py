@@ -1,5 +1,5 @@
 from typing import List, Union
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, Definition, Iff, Axiom, Invoke, Expand, ExistsUniq, Characterize, DefCon, Identify, Pad, Split, Connect, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, Definition, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Identify, Pad, Split, Connect, pretty, pretty_expr
 from lexer import Token, lex
 
 import logging
@@ -112,8 +112,6 @@ class Parser:
                 body.append(self.parse_invoke())
             elif tok.type == "EXPAND":
                 body.append(self.parse_expand())
-            elif tok.type == "CHARACTERIZE":
-                body.append(self.parse_characterize())
             elif tok.type == "IDENTIFY":
                 body.append(self.parse_identify())
             elif tok.type == "PAD":
@@ -271,20 +269,6 @@ class Parser:
         self.consume("CONCLUDE")
         conclusion = self.parse_expr()
         return Expand(fact=fact, conclusion=conclusion)
-
-    def parse_characterize(self):
-        self.consume("CHARACTERIZE")
-        fact = self.parse_expr()
-        if not (isinstance(fact, And) and isinstance(fact.right, Forall) and isinstance(fact.right.body, Implies) and isinstance(fact.right.body.right, Symbol)):
-            raise SyntaxError("[Characterize] invalid fact format")
-        self.consume("FOR")
-        bound = self.consume("IDENT").value
-        self.consume("COLON")
-        free = self.consume("IDENT").value
-        env = {bound: free}
-        self.consume("CONCLUDE")
-        conclusion = self.parse_expr()
-        return Characterize(fact=fact, env=env, conclusion=conclusion)
 
     def parse_identify(self):
         self.consume("IDENTIFY")

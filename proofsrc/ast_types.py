@@ -111,12 +111,6 @@ class Expand:
     conclusion: object
 
 @dataclass
-class Characterize:
-    fact: object
-    env: dict
-    conclusion: object
-
-@dataclass
 class Identify:
     fact: object
     env: dict
