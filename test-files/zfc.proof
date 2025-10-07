@@ -5,7 +5,9 @@ definition predicate equal arity 2 \forall x\forall y(equal(x,y)\leftrightarrow\
 theorem equal_reflection \forall x(equal(x,x)) {
   any x conclude equal(x,x) {
     any y conclude in(y,x)\leftrightarrow in(y,x) {
-      assume in(y,x) conclude in(y,x) {}
+      assume in(y,x) conclude in(y,x) {
+      }
+      connect in(y,x)\leftrightarrow in(y,x)
     }
   }
 }
@@ -16,21 +18,30 @@ theorem equal_replacement \forall x\forall y\forall u\forall v(equal(x,y)\wedge 
       assume equal(x,u) conclude equal(y,v) {
         any p conclude in(p,y)\leftrightarrow in(p,v) {
           assume in(p,y) conclude in(p,v) {
+            split equal(x,y)\wedge equal(u,v)
             apply equal(x,y) for z:p conclude in(p,x)\leftrightarrow in(p,y)
+            split in(p,x)\leftrightarrow in(p,y)
             invoke in(p,y)\to in(p,x) conclude in(p,x)
             apply equal(x,u) for z:p conclude in(p,x)\leftrightarrow in(p,u)
+            split in(p,x)\leftrightarrow in(p,u)
             invoke in(p,x)\to in(p,u) conclude in(p,u)
             apply equal(u,v) for z:p conclude in(p,u)\leftrightarrow in(p,v)
+            split in(p,u)\leftrightarrow in(p,v)
             invoke in(p,u)\to in(p,v) conclude in(p,v)
           }
           assume in(p,v) conclude in(p,y) {
+            split equal(x,y)\wedge equal(u,v)
             apply equal(u,v) for z:p conclude in(p,u)\leftrightarrow in(p,v)
+            split in(p,u)\leftrightarrow in(p,v)
             invoke in(p,v)\to in(p,u) conclude in(p,u)
             apply equal(x,u) for z:p conclude in(p,x)\leftrightarrow in(p,u)
+            split in(p,x)\leftrightarrow in(p,u)
             invoke in(p,u)\to in(p,x) conclude in(p,x)
             apply equal(x,y) for z:p conclude in(p,x)\leftrightarrow in(p,y)
+            split in(p,x)\leftrightarrow in(p,y)
             invoke in(p,x)\to in(p,y) conclude in(p,y)
           }
+          connect in(p,y)\leftrightarrow in(p,v)
         }
       }
     }
@@ -44,11 +55,13 @@ theorem in_replacement \forall x\forall y\forall u\forall v(equal(x,y)\wedge equ
     assume equal(x,y)\wedge equal(u,v) conclude in(x,u)\to in(y,v) {
       assume in(x,u) conclude in(y,v) {
         apply axiom_of_equal for x:x,y:y conclude equal(x,y)\to\forall z(in(x,z)\to in(y,z))
+        split equal(x,y)\wedge equal(u,v)
         invoke equal(x,y)\to\forall z(in(x,z)\to in(y,z)) conclude \forall z(in(x,z)\to in(y,z))
         apply \forall z(in(x,z)\to in(y,z)) for z:u conclude in(x,u)\to in(y,u)
         invoke in(x,u)\to in(y,u) conclude in(y,u)
         expand equal(u,v) conclude \forall z(in(z,u)\leftrightarrow in(z,v))
         apply \forall z(in(z,u)\leftrightarrow in(z,v)) for z:y conclude in(y,u)\leftrightarrow in(y,v)
+        split in(y,u)\leftrightarrow in(y,v)
         invoke in(y,u)\to in(y,v) conclude in(y,v)
       }
     }
@@ -116,18 +129,22 @@ theorem neq_cor1 \forall x\forall y(neq(x,y)\leftrightarrow\exists z((in(z,x)\we
         deny equal(x,y) {
           expand equal(x,y) conclude \forall z(in(z,x)\leftrightarrow in(z,y))
           apply \forall z(in(z,x)\leftrightarrow in(z,y)) for z:z conclude in(z,x)\leftrightarrow in(z,y)
+          split in(z,x)\leftrightarrow in(z,y)
           divide (in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y)) conclude \bot
             case in(z,x)\wedge notin(z,y) {
+              split in(z,x)\wedge notin(z,y)
               invoke in(z,x)\to in(z,y) conclude in(z,y)
               contradict in(z,y)
             }
             case notin(z,x)\wedge in(z,y) {
+              split notin(z,x)\wedge in(z,y)
               invoke in(z,y)\to in(z,x) conclude in(z,x)
               contradict in(z,x)
             }
         }
       }
     }
+    connect neq(x,y)\leftrightarrow\exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y)))
   }
 }
 
@@ -148,6 +165,7 @@ theorem emptyset_exists_uniquely \exists!x\forall y(notin(y,x)) {
             contradict in(y,x)
             explode in(y,x')
           }
+          connect in(y,x')\leftrightarrow in(y,x)
         }
       }
     }
@@ -179,6 +197,7 @@ definition predicate subset arity 2 \forall x\forall y(subset(x,y)\leftrightarro
 theorem subset_cor1 \forall z\forall x\forall y(in(z,x)\wedge subset(x,y)\to in(z,y)) {
   any x,y,z conclude in(z,x)\wedge subset(x,y)\to in(z,y) {
     assume in(z,x)\wedge subset(x,y) conclude in(z,y) {
+      split in(z,x)\wedge subset(x,y)
       expand subset(x,y) conclude \forall z(in(z,x)\to in(z,y))
       apply \forall z(in(z,x)\to in(z,y)) for z:z conclude in(z,x)\to in(z,y)
       invoke in(z,x)\to in(z,y) conclude in(z,y)
@@ -200,12 +219,17 @@ theorem subset_antisymmetry \forall x\forall y(subset(x,y)\wedge subset(y,x)\to 
       any z conclude in(z,x)\leftrightarrow in(z,y) {
         assume in(z,x) conclude in(z,y) {
           apply subset_cor1 for z:z,x:x,y:y conclude in(z,x)\wedge subset(x,y)\to in(z,y)
+          split subset(x,y)\wedge subset(y,x)
+          connect in(z,x)\wedge subset(x,y)
           invoke in(z,x)\wedge subset(x,y)\to in(z,y) conclude in(z,y)
         }
         assume in(z,y) conclude in(z,x) {
           apply subset_cor1 for z:z,x:y,y:x conclude in(z,y)\wedge subset(y,x)\to in(z,x)
+          split subset(x,y)\wedge subset(y,x)
+          connect in(z,y)\wedge subset(y,x)
           invoke in(z,y)\wedge subset(y,x)\to in(z,x) conclude in(z,x)
         }
+        connect in(z,x)\leftrightarrow in(z,y)
       }
     }
   }
@@ -217,8 +241,11 @@ theorem subset_trans \forall x\forall y\forall z(subset(x,y)\wedge subset(y,z)\t
       any w conclude in(w,x)\to in(w,z) {
         assume in(w,x) conclude in(w,z) {
           apply subset_cor1 for z:w,x:x,y:y conclude in(w,x)\wedge subset(x,y)\to in(w,y)
+          split subset(x,y)\wedge subset(y,z)
+          connect in(w,x)\wedge subset(x,y)
           invoke in(w,x)\wedge subset(x,y)\to in(w,y) conclude in(w,y)
           apply subset_cor1 for z:w,x:y,y:z conclude in(w,y)\wedge subset(y,z)\to in(w,z)
+          connect in(w,y)\wedge subset(y,z)
           invoke in(w,y)\wedge subset(y,z)\to in(w,z) conclude in(w,z)
         }
       }

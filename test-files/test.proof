@@ -8,26 +8,33 @@ theorem test01 \forall x\forall y(in(x,y)\to in(x,y)) {
 
 theorem test02 \forall x\forall y(in(x,y)\to in(x,y)\wedge in(x,y)) {
   any x, y conclude in(x,y)\to in(x,y)\wedge in(x,y) {
-    assume in(x,y) conclude in(x,y)\wedge in(x,y) {}
+    assume in(x,y) conclude in(x,y)\wedge in(x,y) {
+      connect in(x,y)\wedge in(x,y)
+    }
   }
 }
 
 theorem test03 \forall x\forall y((in(x,y)\to in(x,y))\wedge(in(x,y)\to in(x,y))) {
   any x, y conclude (in(x,y)\to in(x,y))\wedge(in(x,y)\to in(x,y)) {
     assume in(x,y) conclude in(x,y) {}
+    connect (in(x,y)\to in(x,y))\wedge(in(x,y)\to in(x,y))
   }
 }
 
 theorem test04 (\forall x\forall y(in(x,y)\to in(x,y)))\wedge(\forall z\forall w(in(z,w)\to in(z,w))) {
-    any x, y conclude in(x,y)\to in(x,y) {
-      assume in(x,y) conclude in(x,y) {}
+  any x, y conclude in(x,y)\to in(x,y) {
+    assume in(x,y) conclude in(x,y) {}
   }
+  connect (\forall x\forall y(in(x,y)\to in(x,y)))\wedge(\forall z\forall w(in(z,w)\to in(z,w)))
 }
 
 theorem test05 \forall x\forall y((in(x,y)\to in(x,y))\wedge(in(x,y)\to in(x,y)\wedge in(x,y))) {
   any x, y conclude (in(x,y)\to in(x,y))\wedge(in(x,y)\to in(x,y)\wedge in(x,y)) {
     assume in(x,y) conclude in(x,y) {}
-    assume in(x,y) conclude in(x,y)\wedge in(x,y) {}
+    assume in(x,y) conclude in(x,y)\wedge in(x,y) {
+      connect in(x,y)\wedge in(x,y)
+    }
+    connect (in(x,y)\to in(x,y))\wedge(in(x,y)\to in(x,y)\wedge in(x,y))
   }
 }
 
@@ -36,8 +43,11 @@ theorem test06 (\forall x\forall y(in(x,y)\to in(x,y)))\wedge(\forall x\forall y
     assume in(x,y) conclude in(x,y) {}
   }
   any x, y conclude in(x,y)\to in(x,y)\wedge in(x,y) {
-    assume in(x,y) conclude in(x,y)\wedge in(x,y) {}
+    assume in(x,y) conclude in(x,y)\wedge in(x,y) {
+      connect in(x,y)\wedge in(x,y)
+    }
   }
+  connect (\forall x\forall y(in(x,y)\to in(x,y)))\wedge(\forall x\forall y(in(x,y)\to in(x,y)\wedge in(x,y)))
 }
 
 theorem test07 \forall x\forall y(in(x,y)\to in(x,y)\wedge\forall z(in(z,x)\to in(z,x))) {
@@ -46,6 +56,7 @@ theorem test07 \forall x\forall y(in(x,y)\to in(x,y)\wedge\forall z(in(z,x)\to i
       any z conclude in(z,x)\to in(z,x) {
         assume in(z,x) conclude in(z,x) {} 
       }
+      connect in(x,y)\wedge\forall z(in(z,x)\to in(z,x))
     } 
   }
 }
@@ -89,9 +100,11 @@ theorem test13 \forall x\forall y(in(x,y)\vee in(y,x)\to(in(x,y)\wedge in(x,y))\
     assume in(x,y)\vee in(y,x) conclude (in(x,y)\wedge in(x,y))\vee(in(y,x)\wedge in(y,x)) {
       divide in(x,y)\vee in(y,x) conclude (in(x,y)\wedge in(x,y))\vee(in(y,x)\wedge in(y,x))
         case in(x,y) {
+          connect in(x,y)\wedge in(x,y)
           pad in(x,y)\wedge in(x,y) conclude (in(x,y)\wedge in(x,y))\vee(in(y,x)\wedge in(y,x))
         }
         case in(y,x) {
+          connect in(y,x)\wedge in(y,x)
           pad in(y,x)\wedge in(y,x) conclude (in(x,y)\wedge in(x,y))\vee(in(y,x)\wedge in(y,x))
         }
     }
@@ -112,6 +125,7 @@ theorem test14 \forall x\forall y(in(x,x)\vee in(x,y)\vee in(y,x)\to in(x,x)\vee
 theorem test15 \exists x\exists y(in(x,y))\to\exists x\exists y(in(x,y)\wedge in(x,y)) {
   assume \exists x\exists y(in(x,y)) conclude \exists x\exists y(in(x,y)\wedge in(x,y)) {
     some x:x, y:y such \exists x\exists y(in(x,y)) conclude \exists x\exists y(in(x,y)\wedge in(x,y)) {
+      connect in(x,y)\wedge in(x,y)
       lift in(x,y)\wedge in(x,y) for x: x, y: y conclude \exists x\exists y(in(x,y)\wedge in(x,y))
     }
   }
@@ -135,11 +149,13 @@ theorem test18 \exists x\exists y(in(x,y)\vee in(y,x))\to\exists x\exists y(\neg
       divide in(x,y)\vee in(y,x) conclude \neg(\neg(in(x,y))\wedge\neg(in(y,x)))
         case in(x,y) {
           deny \neg(in(x,y))\wedge\neg(in(y,x)) {
+            split \neg(in(x,y))\wedge\neg(in(y,x))
             contradict in(x,y)
           }
         }
         case in(y,x) {
           deny \neg(in(x,y))\wedge\neg(in(y,x)) {
+            split \neg(in(x,y))\wedge\neg(in(y,x))
             contradict in(y,x)
           }
         }
@@ -151,6 +167,7 @@ theorem test18 \exists x\exists y(in(x,y)\vee in(y,x))\to\exists x\exists y(\neg
 theorem test19 \exists x\exists y((in(x,y)\vee in(y,x))\wedge\neg(in(y,x)))\to\exists x\exists y(in(x,y)) {
   assume \exists x\exists y((in(x,y)\vee in(y,x))\wedge\neg(in(y,x))) conclude \exists x\exists y(in(x,y)) {
     some x:x, y:y such \exists x\exists y((in(x,y)\vee in(y,x))\wedge\neg(in(y,x))) conclude \exists x\exists y(in(x,y)) {
+      split (in(x,y)\vee in(y,x))\wedge\neg(in(y,x))
       divide in(x,y)\vee in(y,x) conclude in(x,y)
         case in(x,y) {}
         case in(y,x) {
@@ -164,9 +181,11 @@ theorem test19 \exists x\exists y((in(x,y)\vee in(y,x))\wedge\neg(in(y,x)))\to\e
 
 theorem test20 \forall x\forall y(in(x,y)\to\forall z(in(z,x)))\wedge\exists x\exists y(in(x,y))\to\exists x\exists y(in(x,y)\wedge in(y,x)) {
   assume \forall x\forall y(in(x,y)\to\forall z(in(z,x)))\wedge\exists x\exists y(in(x,y)) conclude \exists x\exists y(in(x,y)\wedge in(y,x)) {
+    split \forall x\forall y(in(x,y)\to\forall z(in(z,x)))\wedge\exists x\exists y(in(x,y))
     some x:x, y:y such \exists x\exists y(in(x,y)) conclude \exists x\exists y(in(x,y)\wedge in(y,x)) {
       apply \forall x\forall y(in(x,y)\to\forall z(in(z,x))) for x: x, y: y with in(x,y) conclude \forall z(in(z,x))
       apply \forall z(in(z,x)) for z: y conclude in(y,x)
+      connect in(x,y)\wedge in(y,x)
       lift in(x,y)\wedge in(y,x) for x: x, y: y conclude \exists x\exists y(in(x,y)\wedge in(y,x))
     }
   }

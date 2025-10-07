@@ -1,5 +1,5 @@
 from typing import List, Union
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, Definition, Iff, Axiom, Invoke, Expand, ExistsUniq, Characterize, DefCon, Identify, Pad, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, Definition, Iff, Axiom, Invoke, Expand, ExistsUniq, Characterize, DefCon, Identify, Pad, Split, Connect, pretty, pretty_expr
 from lexer import Token, lex
 
 import logging
@@ -118,6 +118,10 @@ class Parser:
                 body.append(self.parse_identify())
             elif tok.type == "PAD":
                 body.append(self.parse_pad())
+            elif tok.type == "SPLIT":
+                body.append(self.parse_split())
+            elif tok.type == "CONNECT":
+                body.append(self.parse_connect())
             else:
                 raise SyntaxError(f"Unexpected token in block: {tok}")
         return body
@@ -304,6 +308,16 @@ class Parser:
         self.consume("CONCLUDE")
         conclusion = self.parse_expr()
         return Pad(fact=fact, conclusion=conclusion)
+
+    def parse_split(self):
+        self.consume("SPLIT")
+        fact = self.parse_expr()
+        return Split(fact=fact)
+
+    def parse_connect(self):
+        self.consume("CONNECT")
+        conclusion = self.parse_expr()
+        return Connect(conclusion=conclusion)
 
     def parse_definition(self):
         self.consume("DEFINITION")

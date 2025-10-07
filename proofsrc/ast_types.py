@@ -128,6 +128,14 @@ class Pad:
     conclusion: object
 
 @dataclass
+class Split:
+    fact: object
+
+@dataclass
+class Connect:
+    conclusion: object
+
+@dataclass
 class Definition:
     type: str
     name: str

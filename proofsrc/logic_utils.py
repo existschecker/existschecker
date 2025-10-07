@@ -120,8 +120,8 @@ def collect_vars(expr, bound=None):
         return set(), set()
 
 # === コンテキスト中の式検索 ===
-def expr_in_context(expr, formulas, context):
-    return any(logic_equiv(expr, f, context) for f in formulas)
+def expr_in_context(expr, context):
+    return any(logic_equiv(expr, f, context) for f in context.formulas)
 
 def expand_definitions(expr, context):
     if isinstance(expr, Symbol):
