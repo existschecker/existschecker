@@ -21,6 +21,30 @@ class Context:
     def copy(self, formulas, bot_derived):
         return Context(formulas=formulas, bot_derived=bot_derived, atoms=self.atoms, axioms=self.axioms, theorems=self.theorems, definitions=self.definitions, defcons=self.defcons)
 
+    def has_defcon_existence(self, existence_name):
+        for defcon in self.defcons.values():
+            if defcon.existence.name == existence_name:
+                return True
+        return False
+
+    def get_defcon_existence(self, existence_name):
+        for defcon in self.defcons.values():
+            if defcon.existence.name == existence_name:
+                return defcon.existence
+        raise KeyError(f"Unexpected existence_name: {existence_name}")
+
+    def has_defcon_uniqueness(self, uniqueness_name):
+        for defcon in self.defcons.values():
+            if defcon.uniqueness.name == uniqueness_name:
+                return True
+        return False
+
+    def get_defcon_uniqueness(self, uniqueness_name):
+        for defcon in self.defcons.values():
+            if defcon.uniqueness.name == uniqueness_name:
+                return defcon.uniqueness
+        raise KeyError(f"Unexpected uniqueness_name: {uniqueness_name}")
+
 # === DSL ノード定義 ===
 @dataclass
 class Atom:
@@ -140,6 +164,17 @@ class Definition:
 class DefCon:
     name: str
     theorem: str
+    existence: "DefConExist"
+    uniqueness: "DefConUniq"
+
+@dataclass
+class DefConExist:
+    name: str
+    formula: object
+
+@dataclass
+class DefConUniq:
+    name: str
     formula: object
 
 @dataclass
@@ -271,6 +306,10 @@ def pretty_expr(expr):
     if isinstance(expr, Axiom):
         return expr.name
     if isinstance(expr, Theorem):
+        return expr.name
+    if isinstance(expr, DefConExist):
+        return expr.name
+    if isinstance(expr, DefConUniq):
         return expr.name
     if isinstance(expr, Symbol):
         return f"{expr.name}({",".join(expr.args)})"

@@ -1,5 +1,5 @@
 from typing import List, Union
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, Definition, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Identify, Pad, Split, Connect, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, Definition, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Identify, Pad, Split, Connect, DefConExist, DefConUniq, pretty, pretty_expr
 from lexer import Token, lex
 
 import logging
@@ -322,8 +322,15 @@ class Parser:
             name = self.consume("IDENT").value
             self.consume("BY")
             theorem = self.consume("IDENT").value
-            formula = self.parse_expr()
-            defcon = DefCon(name=name, theorem=theorem, formula=formula)
+            self.consume("EXISTENCE")
+            existence_name = self.consume("IDENT").value
+            existence_formula = self.parse_expr()
+            existence = DefConExist(existence_name, existence_formula)
+            self.consume("UNIQUENESS")
+            uniqueness_name = self.consume("IDENT").value
+            uniqueness_formula = self.parse_expr()
+            uniqueness = DefConUniq(name=uniqueness_name, formula=uniqueness_formula)
+            defcon = DefCon(name=name, theorem=theorem, existence=existence, uniqueness=uniqueness)
             self.context.defcons[name] = defcon
             logger.debug(f"[defcon] {name}")
             return defcon
@@ -393,6 +400,10 @@ class Parser:
             return self.context.axioms[self.consume("IDENT").value]
         elif self.peek().type == "IDENT" and self.peek().value in self.context.theorems:
             return self.context.theorems[self.consume("IDENT").value]
+        elif self.peek().type == "IDENT" and self.context.has_defcon_existence(self.peek().value):
+            return self.context.get_defcon_existence(self.consume("IDENT").value)
+        elif self.peek().type == "IDENT" and self.context.has_defcon_uniqueness(self.peek().value):
+            return self.context.get_defcon_uniqueness(self.consume("IDENT").value)
         else:
             return self.parse_recursion()
 

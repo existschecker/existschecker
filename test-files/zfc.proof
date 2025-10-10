@@ -174,7 +174,9 @@ theorem emptyset_exists_uniquely \exists!x\forall y(notin(y,x)) {
   }
 }
 
-definition constant emptyset by emptyset_exists_uniquely \forall y(notin(y,emptyset))
+definition constant emptyset by emptyset_exists_uniquely
+  existence emptyset_existence \forall y(notin(y,emptyset))
+  uniqueness emptyset_uniqueness \forall x(\forall y(notin(y,x))\to equal(x,emptyset))
 
 theorem not_emptyset_has_a_member \forall x(\neg(equal(x, emptyset))\to\exists y(in(y,x))) {
     any x conclude \neg(equal(x,emptyset))\to\exists y(in(y,x)) {
@@ -186,7 +188,7 @@ theorem not_emptyset_has_a_member \forall x(\neg(equal(x, emptyset))\to\exists y
                         contradict \exists y(in(y,x))
                     }
                 }
-                identify \forall y(notin(y,x)) for x:emptyset conclude equal(x,emptyset)
+                apply emptyset_uniqueness for x:x with \forall y(notin(y,x)) conclude equal(x,emptyset)
                 contradict equal(x,emptyset)
             }
         }
