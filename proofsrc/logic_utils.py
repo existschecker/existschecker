@@ -1,6 +1,15 @@
 from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, Symbol, Context, pretty_expr
 from itertools import permutations
 from typing import List
+from dataclasses import dataclass
+
+@dataclass
+class BoolTrue:
+    pass
+
+@dataclass
+class BoolFalse:
+    pass
 
 def flatten_op(expr, op) -> List:
     if isinstance(expr, op):
@@ -29,18 +38,13 @@ def op_equiv(e1, e2, env, op):
     return True
 
 def alpha_equiv(e1, e2, env=None):
-    """束縛変数の順序も無視して α同値判定"""
     if env is None:
         env = {}
 
-    # e1, e2 が両方 Not の場合は中身を再帰的に比較
     if isinstance(e1, Not) and isinstance(e2, Not):
         return alpha_equiv(e1.body, e2.body, env)
-    # 片方が Not で片方が違う場合は不一致
-    if isinstance(e1, Not) != isinstance(e2, Not):
-        return False
 
-    for quantifier_type in (Forall, Exists, ExistsUniq):
+    for quantifier_type in (Forall, Exists):
         if isinstance(e1, quantifier_type) and isinstance(e2, quantifier_type):
             vars1, body1 = collect_quantifier_vars(e1, quantifier_type)
             vars2, body2 = collect_quantifier_vars(e2, quantifier_type)
@@ -56,12 +60,6 @@ def alpha_equiv(e1, e2, env=None):
                     return True
             return False
 
-    if isinstance(e1, Implies) and isinstance(e2, Implies):
-        return alpha_equiv(e1.left, e2.left, env) and alpha_equiv(e1.right, e2.right, env)
-    
-    if isinstance(e1, Iff) and isinstance(e2, Iff):
-        return alpha_equiv(e1.left, e2.left, env) and alpha_equiv(e1.right, e2.right, env)
-
     if isinstance(e1, And) and isinstance(e2, And):
         return op_equiv(e1, e2, env, And)
 
@@ -75,6 +73,12 @@ def alpha_equiv(e1, e2, env=None):
             mapped = env.get(a, a)
             if mapped != b:
                 return False
+        return True
+
+    if isinstance(e1, BoolTrue) and isinstance(e2, BoolTrue):
+        return True
+
+    if isinstance(e1, BoolFalse) and isinstance(e2, BoolFalse):
         return True
 
     return False
@@ -110,8 +114,11 @@ def collect_vars(expr, bound=None):
         f_body, b_body = collect_vars(expr.body, bound | {expr.var})
         return f_body, b_body | {expr.var}
 
-    else:
+    elif isinstance(expr, (BoolTrue, BoolFalse)):
         return set(), set()
+
+    else:
+        raise Exception(f"Unexpected expr {pretty_expr(expr)}")
 
 # === コンテキスト中の式検索 ===
 def expr_in_context(expr, context):
@@ -304,16 +311,84 @@ def to_cnf(expr):
     else:
         raise Exception(f"Unexpected expr: {expr}")
 
-def to_caconical_form(expr, context):
+def simplify_op(expr):
+    if not isinstance(expr, (And, Or)):
+        raise Exception(f"Unexpected expr: {pretty_expr(expr)}")
+    parts = flatten_op(expr, type(expr))
+    simplified_parts = []
+    for p in parts:
+        if isinstance(p, BoolTrue):
+            if isinstance(expr, Or):
+                return BoolTrue()
+            else:
+                continue
+        elif isinstance(p, BoolFalse):
+            if isinstance(expr, And):
+                return BoolFalse()
+            else:
+                continue
+        else:
+            contradiction = False
+            skip = False
+            for q in simplified_parts:
+                if alpha_equiv(p, Not(q)) or alpha_equiv(Not(p), q):
+                    contradiction = True
+                    break
+                if alpha_equiv(p, q):
+                    skip = True
+                    break
+            if contradiction:
+                if isinstance(expr, And):
+                    return BoolFalse()
+                else:
+                    return BoolTrue()
+            if skip:
+                continue
+            simplified_parts.append(p)
+    if len(simplified_parts) == 0:
+        if isinstance(expr, And):
+            return BoolTrue()
+        else:
+            return BoolFalse()
+    elif len(simplified_parts) == 1:
+        return simplified_parts[0]
+    else:
+        result = simplified_parts[0]
+        for part in simplified_parts[1:]:
+            result = type(expr)(result, part)
+        return result
+
+def simplify(expr):
+    if isinstance(expr, (Symbol, Not)):
+        return expr
+    elif isinstance(expr, And):
+        left_s = simplify(expr.left)
+        right_s = simplify(expr.right)
+        return simplify_op(And(left_s, right_s))
+    elif isinstance(expr, Or):
+        left_s = simplify(expr.left)
+        right_s = simplify(expr.right)
+        return simplify_op(Or(left_s, right_s))
+    elif isinstance(expr, (Exists, Forall)):
+        body_simplified = simplify(expr.body)
+        if expr.var not in collect_vars(body_simplified)[0]:
+            return body_simplified
+        else:
+            return type(expr)(expr.var, body_simplified)
+    else:
+        raise Exception(f"Unexpected expr: {expr}")
+
+def to_canonical_form(expr, context):
     expr_norm = to_core_logic_form(expr, context)
     expr_norm = to_nnf(expr_norm)
     expr_norm = to_pnf(expr_norm)
     expr_norm = to_cnf(expr_norm)
+    expr_norm = simplify(expr_norm)
     return expr_norm
 
 def logic_equiv(expr1, expr2, context):
-    expr1_norm = to_caconical_form(expr1, context)
-    expr2_norm = to_caconical_form(expr2, context)
+    expr1_norm = to_canonical_form(expr1, context)
+    expr2_norm = to_canonical_form(expr2, context)
     return alpha_equiv(expr1_norm, expr2_norm)
 
 def print_tree(expr, prefix="", is_root=True, is_last=True):
@@ -365,4 +440,9 @@ if __name__ == "__main__":
     print("to_cnf()")
     print()
     print_tree(expr_norm)
+    print()
+
+    print("simplify()")
+    print()
+    print(simplify(expr_norm))
     print()
