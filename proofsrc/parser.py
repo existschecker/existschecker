@@ -220,8 +220,8 @@ class Parser:
             while True:
                 bound = Var(self.consume("IDENT").value)
                 self.consume("COLON")
-                free = Var(self.consume("IDENT").value)
-                env[bound] = free
+                term = self.parse_term()
+                env[bound] = term
                 if self.peek().type == "COMMA":
                     self.consume("COMMA")
                     continue

@@ -206,56 +206,6 @@ theorem not_emptyset_has_a_member \forall x(\neg(equal(x, emptyset))\to\exists y
     }
 }
 
-axiom axiom_of_pair \forall x\forall y\exists z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))
-
-theorem pair_exists_uniquely \forall x\forall y\exists!z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)) {
-  any x, y conclude \exists!z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)) {
-    apply axiom_of_pair for x:x, y:y conclude \exists z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))
-    some z:z such \exists z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)) conclude \exists!z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)) {
-      any z' conclude \forall w(in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y))\to equal(z',z) {
-        assume \forall w(in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y)) conclude equal(z',z) {
-          any w conclude in(w,z')\leftrightarrow in(w,z) {
-            assume in(w,z') conclude in(w,z) {
-              apply \forall w(in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y)) for w:w conclude in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y)
-              split in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y)
-              invoke in(w,z')\to equal(w,x)\vee equal(w,y) conclude equal(w,x)\vee equal(w,y)
-              apply \forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)) for w:w conclude in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)
-              split in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)
-              invoke equal(w,x)\vee equal(w,y)\to in(w,z) conclude in(w,z)
-            }
-            assume in(w,z) conclude in(w,z') {
-              apply \forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)) for w:w conclude in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)
-              split in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)
-              invoke in(w,z)\to equal(w,x)\vee equal(w,y) conclude equal(w,x)\vee equal(w,y)
-              apply \forall w(in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y)) for w:w conclude in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y)
-              split in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y)
-              invoke equal(w,x)\vee equal(w,y)\to in(w,z') conclude in(w,z')
-            }
-            connect in(w,z')\leftrightarrow in(w,z)
-          }
-          fold \forall w(in(w,z')\leftrightarrow in(w,z)) conclude equal(z',z)
-        }
-      }
-      connect \forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))\wedge\forall z'(\forall w(in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y))\to equal(z',z))
-      lift \forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))\wedge\forall z'(\forall w(in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y))\to equal(z',z)) for z:z conclude \exists!z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))
-    }
-  }
-}
-
-definition function pair by pair_exists_uniquely
-  existence pair_existence \forall x\forall y\forall w(in(w,pair(x,y))\leftrightarrow equal(w,x)\vee equal(w,y))
-  uniqueness pair_uniqueness \forall x\forall y\forall z(\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))\to equal(z,pair(x,y)))
-
-theorem pair_cor1 \forall x\forall y(in(x,pair(x,y))) {
-  any x,y conclude in(x,pair(x,y)) {
-    apply pair_existence for x:x,y:y,w:x conclude in(x,pair(x,y))\leftrightarrow equal(x,x)\vee equal(x,y)
-    split in(x,pair(x,y))\leftrightarrow equal(x,x)\vee equal(x,y)
-    apply equal_reflection for x:x conclude equal(x,x)
-    pad equal(x,x) conclude equal(x,x)\vee equal(x,y)
-    invoke equal(x,x)\vee equal(x,y)\to in(x,pair(x,y)) conclude in(x,pair(x,y))
-  }
-}
-
 definition predicate subset(x,y) \forall z(in(z,x)\to in(z,y))
 
 theorem subset_cor1 \forall z\forall x\forall y(in(z,x)\wedge subset(x,y)\to in(z,y)) {
@@ -317,5 +267,91 @@ theorem subset_trans \forall x\forall y\forall z(subset(x,y)\wedge subset(y,z)\t
       }
       fold \forall w(in(w,x)\to in(w,z)) conclude subset(x,z)
     }
+  }
+}
+
+axiom axiom_of_pair \forall x\forall y\exists z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))
+
+theorem pair_exists_uniquely \forall x\forall y\exists!z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)) {
+  any x, y conclude \exists!z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)) {
+    apply axiom_of_pair for x:x, y:y conclude \exists z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))
+    some z:z such \exists z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)) conclude \exists!z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)) {
+      any z' conclude \forall w(in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y))\to equal(z',z) {
+        assume \forall w(in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y)) conclude equal(z',z) {
+          any w conclude in(w,z')\leftrightarrow in(w,z) {
+            assume in(w,z') conclude in(w,z) {
+              apply \forall w(in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y)) for w:w conclude in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y)
+              split in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y)
+              invoke in(w,z')\to equal(w,x)\vee equal(w,y) conclude equal(w,x)\vee equal(w,y)
+              apply \forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)) for w:w conclude in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)
+              split in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)
+              invoke equal(w,x)\vee equal(w,y)\to in(w,z) conclude in(w,z)
+            }
+            assume in(w,z) conclude in(w,z') {
+              apply \forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)) for w:w conclude in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)
+              split in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)
+              invoke in(w,z)\to equal(w,x)\vee equal(w,y) conclude equal(w,x)\vee equal(w,y)
+              apply \forall w(in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y)) for w:w conclude in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y)
+              split in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y)
+              invoke equal(w,x)\vee equal(w,y)\to in(w,z') conclude in(w,z')
+            }
+            connect in(w,z')\leftrightarrow in(w,z)
+          }
+          fold \forall w(in(w,z')\leftrightarrow in(w,z)) conclude equal(z',z)
+        }
+      }
+      connect \forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))\wedge\forall z'(\forall w(in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y))\to equal(z',z))
+      lift \forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))\wedge\forall z'(\forall w(in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y))\to equal(z',z)) for z:z conclude \exists!z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))
+    }
+  }
+}
+
+definition function pair by pair_exists_uniquely
+  existence pair_existence \forall x\forall y\forall w(in(w,pair(x,y))\leftrightarrow equal(w,x)\vee equal(w,y))
+  uniqueness pair_uniqueness \forall x\forall y\forall z(\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))\to equal(z,pair(x,y)))
+
+theorem pair_cor1 \forall x\forall y(in(x,pair(x,y))) {
+  any x,y conclude in(x,pair(x,y)) {
+    apply pair_existence for x:x,y:y,w:x conclude in(x,pair(x,y))\leftrightarrow equal(x,x)\vee equal(x,y)
+    split in(x,pair(x,y))\leftrightarrow equal(x,x)\vee equal(x,y)
+    apply equal_reflection for x:x conclude equal(x,x)
+    pad equal(x,x) conclude equal(x,x)\vee equal(x,y)
+    invoke equal(x,x)\vee equal(x,y)\to in(x,pair(x,y)) conclude in(x,pair(x,y))
+  }
+}
+
+theorem pair_cor2 \forall x\forall y(in(y,pair(x,y))) {
+  any x,y conclude in(y,pair(x,y)) {
+    apply pair_existence for x:x,y:y,w:y conclude in(y,pair(x,y))\leftrightarrow equal(y,x)\vee equal(y,y)
+    split in(y,pair(x,y))\leftrightarrow equal(y,x)\vee equal(y,y)
+    apply equal_reflection for x:y conclude equal(y,y)
+    pad equal(y,y) conclude equal(y,x)\vee equal(y,y)
+    invoke equal(y,x)\vee equal(y,y)\to in(y,pair(x,y)) conclude in(y,pair(x,y))
+  }
+}
+
+theorem pair_cor3 \forall x\forall y(subset(pair(x,y),pair(y,x))) {
+  any x,y conclude subset(pair(x,y),pair(y,x)) {
+    any z conclude in(z,pair(x,y))\to in(z,pair(y,x)) {
+      assume in(z,pair(x,y)) conclude in(z,pair(y,x)) {
+        apply pair_existence for x:x,y:y,w:z conclude in(z,pair(x,y))\leftrightarrow equal(z,x)\vee equal(z,y)
+        split in(z,pair(x,y))\leftrightarrow equal(z,x)\vee equal(z,y)
+        invoke in(z,pair(x,y))\to equal(z,x)\vee equal(z,y) conclude equal(z,x)\vee equal(z,y)
+        apply pair_existence for x:y,y:x,w:z conclude in(z,pair(y,x))\leftrightarrow equal(z,y)\vee equal(z,x)
+        split in(z,pair(y,x))\leftrightarrow equal(z,y)\vee equal(z,x)
+        invoke equal(z,y)\vee equal(z,x)\to in(z,pair(y,x)) conclude in(z,pair(y,x))
+      }
+    }
+    fold \forall z(in(z,pair(x,y))\to in(z,pair(y,x))) conclude subset(pair(x,y),pair(y,x))
+  }
+}
+
+theorem pair_commutativity \forall x\forall y(equal(pair(x,y),pair(y,x))) {
+  any x,y conclude equal(pair(x,y),pair(y,x)) {
+    apply pair_cor3 for x:x,y:y conclude subset(pair(x,y),pair(y,x))
+    apply pair_cor3 for x:y,y:x conclude subset(pair(y,x),pair(x,y))
+    connect subset(pair(x,y),pair(y,x))\wedge subset(pair(y,x),pair(x,y))
+    apply subset_antisymmetry for x:pair(x,y),y:pair(y,x) conclude subset(pair(x,y),pair(y,x))\wedge subset(pair(y,x),pair(x,y))\to equal(pair(x,y),pair(y,x))
+    invoke subset(pair(x,y),pair(y,x))\wedge subset(pair(y,x),pair(x,y))\to equal(pair(x,y),pair(y,x)) conclude equal(pair(x,y),pair(y,x))
   }
 }
