@@ -1,4 +1,3 @@
-from typing import List, Union
 from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, DefPre, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, Fold, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, pretty, pretty_expr
 from lexer import Token, lex
 from logic_utils import collect_quantifier_vars
@@ -8,14 +7,14 @@ logger = logging.getLogger("proof")
 
 # === パーサー本体 ===
 class Parser:
-    def __init__(self, tokens: List[Token]):
+    def __init__(self, tokens: list[Token]):
         self.tokens = tokens
         self.pos = 0
 
-    def peek(self):
+    def peek(self) -> Token | None:
         return self.tokens[self.pos] if self.pos < len(self.tokens) else None
 
-    def consume(self, expected_type=None):
+    def consume(self, expected_type: str | None = None) -> Token:
         tok = self.peek()
         if tok is None:
             raise SyntaxError("Unexpected EOF")
@@ -24,7 +23,7 @@ class Parser:
         self.pos += 1
         return tok
 
-    def parse_file(self):
+    def parse_file(self) -> list:
         ast = []
         self.context = Context.init()
         while self.peek():
@@ -41,7 +40,7 @@ class Parser:
                 raise SyntaxError(f"Unexpected token {tok}")
         return ast
 
-    def parse_atom(self):
+    def parse_atom(self) -> Atom:
         self.consume("ATOM")
         tok = self.peek()
         if tok.type == "PREDICATE":
@@ -56,7 +55,7 @@ class Parser:
         else:
             raise SyntaxError(f"Unexpected token {tok}")
 
-    def parse_axiom(self):
+    def parse_axiom(self) -> Axiom:
         self.consume("AXIOM")
         name = self.consume("IDENT").value
         conclusion = self.parse_expr()
@@ -65,7 +64,7 @@ class Parser:
         logger.debug(f"[axiom] {name}")
         return axiom
 
-    def parse_theorem(self):
+    def parse_theorem(self) -> Theorem:
         self.consume("THEOREM")
         name = self.consume("IDENT").value
         conclusion = self.parse_expr()
@@ -77,13 +76,13 @@ class Parser:
         logger.debug(f"[theorem] {name}")
         return theorem
 
-    def parse_check(self):
+    def parse_check(self) -> Check:
         self.consume("CHECK")
         # conclusion 部分の式を読む
         conclusion = self.parse_expr()
         return Check(conclusion=conclusion)
 
-    def parse_block(self):
+    def parse_block(self) -> list:
         body = []
         while True:
             tok = self.peek()
@@ -125,7 +124,7 @@ class Parser:
                 raise SyntaxError(f"Unexpected token in block: {tok}")
         return body
 
-    def parse_any(self):
+    def parse_any(self) -> Any:
         self.consume("ANY")
         vars_ = []
         while True:
@@ -142,7 +141,7 @@ class Parser:
         self.consume("RBRACE")
         return Any(vars=vars_, conclusion=conclusion, body=body)
 
-    def parse_assume(self):
+    def parse_assume(self) -> Assume:
         self.consume("ASSUME")
         premise = self.parse_expr()
         self.consume("CONCLUDE")
@@ -152,7 +151,7 @@ class Parser:
         self.consume("RBRACE")
         return Assume(premise=premise, conclusion=conclusion, body=body)
     
-    def parse_divide(self):
+    def parse_divide(self) -> Divide:
         self.consume("DIVIDE")
         fact = self.parse_expr()
         self.consume("CONCLUDE")
@@ -164,7 +163,7 @@ class Parser:
             raise SyntaxError("At least two cases are necessary")
         return Divide(fact=fact, conclusion=conclusion, cases=cases)
     
-    def parse_case(self, conclusion):
+    def parse_case(self, conclusion) -> Case:
         self.consume("CASE")
         premise = self.parse_expr()
         self.consume("LBRACE")
@@ -172,7 +171,7 @@ class Parser:
         self.consume("RBRACE")
         return Case(premise=premise, conclusion=conclusion, body=body)
     
-    def parse_some(self):
+    def parse_some(self) -> Some:
         self.consume("SOME")
         env = {}
         while True:
@@ -193,7 +192,7 @@ class Parser:
         self.consume("RBRACE")
         return Some(env=env, fact=fact, conclusion=conclusion, body=body)
     
-    def parse_deny(self):
+    def parse_deny(self) -> Deny:
         self.consume("DENY")
         premise = self.parse_expr()
         self.consume("LBRACE")
@@ -201,17 +200,17 @@ class Parser:
         self.consume("RBRACE")
         return Deny(premise=premise, body=body)
     
-    def parse_contradict(self):
+    def parse_contradict(self) -> Contradict:
         self.consume("CONTRADICT")
         contradiction = self.parse_expr()
         return Contradict(contradiction=contradiction)
     
-    def parse_explode(self):
+    def parse_explode(self) -> Explode:
         self.consume("EXPLODE")
         conclusion = self.parse_expr()
         return Explode(conclusion=conclusion)
     
-    def parse_apply(self):
+    def parse_apply(self) -> Apply:
         self.consume("APPLY")
         fact = self.parse_expr()
         if self.peek().type == "FOR":
@@ -239,7 +238,7 @@ class Parser:
         conclusion = self.parse_expr()
         return Apply(fact=fact, env=env, premise=premise, conclusion=conclusion)
     
-    def parse_lift(self):
+    def parse_lift(self) -> Lift:
         self.consume("LIFT")
         fact = self.parse_expr()
         self.consume("FOR")
@@ -257,28 +256,28 @@ class Parser:
         conclusion = self.parse_expr()
         return Lift(fact=fact, env=env, conclusion=conclusion)
 
-    def parse_invoke(self):
+    def parse_invoke(self) -> Invoke:
         self.consume("INVOKE")
         fact = self.parse_expr()
         self.consume("CONCLUDE")
         conclusion = self.parse_expr()
         return Invoke(fact=fact, conclusion=conclusion)
 
-    def parse_expand(self):
+    def parse_expand(self) -> Expand:
         self.consume("EXPAND")
         fact = self.parse_expr()
         self.consume("CONCLUDE")
         conclusion = self.parse_expr()
         return Expand(fact=fact, conclusion=conclusion)
 
-    def parse_pad(self):
+    def parse_pad(self) -> Pad:
         self.consume("PAD")
         fact = self.parse_expr()
         self.consume("CONCLUDE")
         conclusion = self.parse_expr()
         return Pad(fact=fact, conclusion=conclusion)
 
-    def parse_split(self):
+    def parse_split(self) -> Split:
         self.consume("SPLIT")
         fact = self.parse_expr()
         return Split(fact=fact)
@@ -288,14 +287,14 @@ class Parser:
         conclusion = self.parse_expr()
         return Connect(conclusion=conclusion)
 
-    def parse_fold(self):
+    def parse_fold(self) -> Fold:
         self.consume("FOLD")
         fact = self.parse_expr()
         self.consume("CONCLUDE")
         conclusion = self.parse_expr()
         return Fold(fact=fact, conclusion=conclusion)
 
-    def parse_definition(self):
+    def parse_definition(self) -> DefPre | DefCon | DefFun | DefFunTerm:
         self.consume("DEFINITION")
         tok = self.peek()
         if tok.type == "PREDICATE":
@@ -373,7 +372,7 @@ class Parser:
         else:
             raise SyntaxError(f"Unexpected token {tok}")
 
-    def parse_term(self):
+    def parse_term(self) -> Compound | Con | Var:
         tok = self.peek()
         if tok.type == "IDENT":
             name = self.consume("IDENT").value

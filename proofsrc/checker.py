@@ -4,7 +4,7 @@ from logic_utils import expr_in_context, logic_equiv, collect_quantifier_vars, s
 import logging
 logger = logging.getLogger("proof")
 
-def goal_in_context(goal, context):
+def goal_in_context(goal, context: Context) -> bool:
     if isinstance(goal, Bottom):
         return context.bot_derived
     elif isinstance(goal, Axiom):
@@ -22,18 +22,18 @@ def goal_in_context(goal, context):
     else:
         return expr_in_context(goal, context)
 
-def add_conclusion(context, conclusion):
+def add_conclusion(context: Context, conclusion) -> None:
     if isinstance(conclusion, Bottom):
         context.bot_derived = True
     else:
         context.formulas.append(conclusion)
 
-def check_ast(ast):
+def check_ast(ast: list) -> bool:
     context = Context.init()
     return all(check_proof(node, context) for node in ast)
 
 # === 証明チェッカー ===
-def check_proof(node, context: Context, indent=0):
+def check_proof(node, context: Context, indent: int = 0) -> bool:
     sp = "  " * indent
 
     if isinstance(node, Atom):

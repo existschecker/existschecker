@@ -1,6 +1,5 @@
 from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, Symbol, Context, Compound, Fun, Con, Var, pretty_expr
 from itertools import permutations
-from typing import List
 from dataclasses import dataclass
 
 @dataclass
@@ -11,13 +10,13 @@ class BoolTrue:
 class BoolFalse:
     pass
 
-def flatten_op(expr, op) -> List:
+def flatten_op(expr, op: type[And] | type[Or]) -> list:
     if isinstance(expr, op):
         return flatten_op(expr.left, op) + flatten_op(expr.right, op)
     else:
         return [expr]
 
-def op_equiv(e1, e2, env, op):
+def op_equiv(e1, e2, env: dict[Var, Var], op: type[And] | type[Or]) -> bool:
     parts1 = flatten_op(e1, op)
     parts2 = flatten_op(e2, op)
 
@@ -37,7 +36,7 @@ def op_equiv(e1, e2, env, op):
 
     return True
 
-def alpha_equiv(e1, e2, env=None):
+def alpha_equiv(e1, e2, env: dict[Var, Var] | None = None) -> bool:
     if env is None:
         env = {}
 
@@ -101,7 +100,7 @@ def alpha_equiv(e1, e2, env=None):
 
     return False
 
-def collect_quantifier_vars(e, quantifier_type):
+def collect_quantifier_vars(e, quantifier_type: type[Forall] | type[Exists]) -> tuple[list[Var], object]:
     vars_ = []
     body = e
     while isinstance(body, quantifier_type):
@@ -109,7 +108,7 @@ def collect_quantifier_vars(e, quantifier_type):
         body = body.body
     return vars_, body
 
-def collect_vars(expr, bound=None):
+def collect_vars(expr, bound: set[Var] | None = None) -> tuple[set[Var], set[Var]]:
     """
     式 expr から自由変数と束縛変数の集合を返す
     戻り値: (free_vars, bound_vars)
@@ -152,7 +151,7 @@ def collect_vars(expr, bound=None):
         raise Exception(f"Unexpected expr {pretty_expr(expr)}")
 
 # === コンテキスト中の式検索 ===
-def expr_in_context(expr, context):
+def expr_in_context(expr, context: Context) -> bool:
     return any(logic_equiv(expr, f, context) for f in context.formulas)
 
 def to_core_logic_form(expr, context: Context, expand_all: bool = False):
@@ -201,7 +200,7 @@ def to_core_logic_form(expr, context: Context, expand_all: bool = False):
     else:
         raise Exception(f"Unexpected expr: {pretty_expr(expr)}")
 
-def fresh_var(var, used):
+def fresh_var(var: Var, used: set[Var]) -> Var:
     if var in used:
         i = 0
         new_name = f"{var.name}_{i}"
@@ -212,7 +211,7 @@ def fresh_var(var, used):
     else:
         return var
 
-def substitute(expr, mapping, used_vars=None):
+def substitute(expr, mapping: dict[Var, Compound | Con | Var], used_vars: set[Var] | None = None):
     """
     expr の自由変数を mapping で置換
     束縛変数は mapping に衝突しないよう自動リネーム
@@ -283,7 +282,7 @@ def to_nnf(expr):
     else:
         raise Exception(f"Unexpected expr: {pretty_expr(expr)}")
 
-def strip_quantifiers(expr):
+def strip_quantifiers(expr) -> tuple[list[Forall | Exists], object]:
     qs = []
     body = expr
     while isinstance(body, (Exists, Forall)):
@@ -291,13 +290,13 @@ def strip_quantifiers(expr):
         body = body.body
     return qs, body
 
-def make_quantifiers(qs, body):
+def make_quantifiers(qs: list[Forall | Exists], body):
     expr = body
     for q in reversed(qs):
         expr = type(q)(q.var, expr)
     return expr
 
-def alpha_rename(expr, rename_map):
+def alpha_rename(expr, rename_map: dict[Var, Var]):
     if isinstance(expr, Symbol):
         new_args = [alpha_rename(a, rename_map) for a in expr.args]
         return Symbol(expr.name, new_args)
@@ -320,7 +319,7 @@ def alpha_rename(expr, rename_map):
     else:
         return expr
 
-def rename_bound(expr, bound_vars, used):
+def rename_bound(expr, bound_vars: set[Var], used: set[Var]):
     rename_map = {}
     for v in bound_vars:
         if v in used:
@@ -436,7 +435,7 @@ def simplify(expr):
     else:
         raise Exception(f"Unexpected expr: {expr}")
 
-def to_canonical_form(expr, context, expand_all: bool = False):
+def to_canonical_form(expr, context: Context, expand_all: bool = False):
     expr_norm = to_core_logic_form(expr, context, expand_all)
     expr_norm = to_nnf(expr_norm)
     expr_norm = to_pnf(expr_norm)
@@ -444,12 +443,12 @@ def to_canonical_form(expr, context, expand_all: bool = False):
     expr_norm = simplify(expr_norm)
     return expr_norm
 
-def logic_equiv(expr1, expr2, context, expand_all: bool = False):
+def logic_equiv(expr1, expr2, context: Context, expand_all: bool = False) -> bool:
     expr1_norm = to_canonical_form(expr1, context, expand_all)
     expr2_norm = to_canonical_form(expr2, context, expand_all)
     return alpha_equiv(expr1_norm, expr2_norm)
 
-def make_tree(expr, prefix="", is_root=True, is_last=True):
+def make_tree(expr, prefix: str = "", is_root: bool = True, is_last: bool = True) -> str:
     print_prefix = prefix + ("" if is_root else ("└─" if is_last else "├─"))
     child_pref = prefix + ("   " if is_last or is_root else "│  ")
     if isinstance(expr, Symbol):

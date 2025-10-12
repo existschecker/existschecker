@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import List, Dict
 
 import logging
 logger = logging.getLogger("proof")
@@ -8,64 +7,64 @@ logger = logging.getLogger("proof")
 class Context:
     formulas: list        # 通常の論理式
     bot_derived: bool  # 矛盾導出フラグ
-    atoms: dict
-    axioms: dict
-    theorems: dict
-    defpres: Dict[str, "DefPre"]
-    defcons: Dict[str, "DefCon"]
-    deffuns: Dict[str, "DefFun"]
-    deffunterms: Dict[str, "DefFunTerm"]
+    atoms: dict[str, "Atom"]
+    axioms: dict[str, "Axiom"]
+    theorems: dict[str, "Theorem"]
+    defpres: dict[str, "DefPre"]
+    defcons: dict[str, "DefCon"]
+    deffuns: dict[str, "DefFun"]
+    deffunterms: dict[str, "DefFunTerm"]
 
     @staticmethod
-    def init():
+    def init() -> "Context":
         return Context(formulas=[], bot_derived=False, atoms={}, axioms={}, theorems={}, defpres={}, defcons={}, deffuns={}, deffunterms={})
 
-    def copy(self, formulas, bot_derived):
+    def copy(self, formulas, bot_derived: bool) -> "Context":
         return Context(formulas=formulas, bot_derived=bot_derived, atoms=self.atoms, axioms=self.axioms, theorems=self.theorems, defpres=self.defpres, defcons=self.defcons, deffuns=self.deffuns, deffunterms=self.deffunterms)
 
-    def has_defcon_existence(self, existence_name):
+    def has_defcon_existence(self, existence_name: str) -> bool:
         for defcon in self.defcons.values():
             if defcon.existence.name == existence_name:
                 return True
         return False
 
-    def get_defcon_existence(self, existence_name):
+    def get_defcon_existence(self, existence_name: str):
         for defcon in self.defcons.values():
             if defcon.existence.name == existence_name:
                 return defcon.existence
         raise KeyError(f"Unexpected existence_name: {existence_name}")
 
-    def has_defcon_uniqueness(self, uniqueness_name):
+    def has_defcon_uniqueness(self, uniqueness_name: str) -> bool:
         for defcon in self.defcons.values():
             if defcon.uniqueness.name == uniqueness_name:
                 return True
         return False
 
-    def get_defcon_uniqueness(self, uniqueness_name):
+    def get_defcon_uniqueness(self, uniqueness_name: str):
         for defcon in self.defcons.values():
             if defcon.uniqueness.name == uniqueness_name:
                 return defcon.uniqueness
         raise KeyError(f"Unexpected uniqueness_name: {uniqueness_name}")
 
-    def has_deffun_existence(self, existence_name):
+    def has_deffun_existence(self, existence_name: str) -> bool:
         for deffun in self.deffuns.values():
             if deffun.existence.name == existence_name:
                 return True
         return False
 
-    def get_deffun_existence(self, existence_name):
+    def get_deffun_existence(self, existence_name: str):
         for deffun in self.deffuns.values():
             if deffun.existence.name == existence_name:
                 return deffun.existence
         raise KeyError(f"Unexpected existence_name: {existence_name}")
 
-    def has_deffun_uniqueness(self, uniqueness_name):
+    def has_deffun_uniqueness(self, uniqueness_name: str) -> bool:
         for deffun in self.deffuns.values():
             if deffun.uniqueness.name == uniqueness_name:
                 return True
         return False
 
-    def get_deffun_uniqueness(self, uniqueness_name):
+    def get_deffun_uniqueness(self, uniqueness_name: str):
         for deffun in self.deffuns.values():
             if deffun.uniqueness.name == uniqueness_name:
                 return deffun.uniqueness
@@ -101,7 +100,7 @@ class Assume:
 
 @dataclass
 class Any:
-    vars: List[str]
+    vars: list["Var"]
     conclusion: object
     body: list
 
@@ -119,7 +118,7 @@ class Case:
 
 @dataclass
 class Some:
-    env: Dict[str, str]
+    env: dict["Var", "Var"]
     fact: object
     conclusion: object
     body: list
@@ -140,14 +139,14 @@ class Explode:
 @dataclass
 class Apply:
     fact: object
-    env: dict
+    env: dict["Var", "Compound | Con | Var"]
     premise: object
     conclusion: object
 
 @dataclass
 class Lift:
     fact: object
-    env: dict
+    env: dict["Var", "Compound | Con | Var"]
     conclusion: object
 
 @dataclass
@@ -181,7 +180,7 @@ class Fold:
 @dataclass
 class DefPre:
     name: str
-    args: list[str]
+    args: list["Var"]
     formula: object
     autoexpand: bool
 
@@ -223,7 +222,7 @@ class DefFunUniq:
 @dataclass
 class DefFunTerm:
     name: str
-    args: list
+    args: list["Var"]
     term: object
 
 @dataclass
