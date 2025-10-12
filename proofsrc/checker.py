@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, Atom, DefPre, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Fold, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, Atom, DefPre, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Fold, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, pretty, pretty_expr
 from logic_utils import expr_in_context, logic_equiv, collect_quantifier_vars, substitute, collect_vars, flatten_op, fresh_var
 
 import logging
@@ -320,25 +320,10 @@ def check_proof(node, context: Context, indent=0):
             logger.error(f"{sp}❌ [Expand] Not fact: {pretty_expr(node.fact)}")
             return False
         logger.debug(f"{sp}[Expand] fact: {pretty_expr(node.fact)}")
-        if not isinstance(node.fact, Symbol):
-            logger.error(f"{sp}❌ [Expand] Not Symbol object: {pretty_expr(node.fact)}")
+        if not logic_equiv(node.conclusion, node.fact, context, True):
+            logger.error(f"{sp}❌ [Expand] Not matched: node.conclusion={pretty_expr(node.conclusion)}")
             return False
-        logger.debug(f"{sp}[Expand] Symbol object: {pretty_expr(node.fact)}")
-        if node.fact.name not in context.defpres:
-            logger.error(f"{sp}❌ [Expand] Not defined: {node.fact.name}")
-            return False
-        logger.debug(f"{sp}[Expand] Defined: {node.fact.name}")
-        defpre = context.defpres[node.fact.name]
-        if len(defpre.args) != len(node.fact.args):
-            logger.error(f"{sp}❌ [Expand] Length not matched: defpre.args={defpre.args}, node.fact.args={node.fact.args}")
-            return False
-        logger.debug(f"{sp}[Expand] Length matched: defpre.args={defpre.args}, node.fact.args={node.fact.args}")
-        expanded = substitute(defpre.formula, dict(zip(defpre.args, node.fact.args)))
-        logger.debug(f"{sp}[Expand] Expanded: {pretty_expr(expanded)}")
-        if not logic_equiv(node.conclusion, expanded, context):
-            logger.error(f"{sp}❌ [Expand] Not matched: node.conclusion={pretty_expr(node.conclusion)}, expanded={pretty_expr(expanded)}")
-            return False
-        logger.debug(f"{sp}[Expand] Matched: node.conclusion={pretty_expr(node.conclusion)}, expanded={pretty_expr(expanded)}")
+        logger.debug(f"{sp}[Expand] Matched: node.conclusion={pretty_expr(node.conclusion)}")
         add_conclusion(context, node.conclusion)
         logger.debug(f"{sp}[Expand] Added: {pretty_expr(node.conclusion)}")
         return True
@@ -471,6 +456,7 @@ def check_proof(node, context: Context, indent=0):
 
     if isinstance(node, DefFun):
         logger.debug(f"{sp}[DefFun] name: {node.name}, theorem: {node.theorem}")
+        context.deffuns[node.name] = None
         args, existsuniq = collect_quantifier_vars(context.theorems[node.theorem].conclusion, Forall)
         existence_formula = substitute(existsuniq.body, {existsuniq.var: Compound(Fun(node.name), args)})
         for arg in reversed(args):
@@ -487,6 +473,16 @@ def check_proof(node, context: Context, indent=0):
             return False
         logger.debug(f"{sp}[DefFun] uniqueness_formula is matched with theorem: {pretty_expr(node.uniqueness.formula)}")
         context.deffuns[node.name] = node
+        return True
+
+    if isinstance(node, DefFunTerm):
+        logger.debug(f"{sp}[DefFunTerm] name: {node.name}, args: {node.args}, term: {pretty_expr(node.term)}")
+        free, _ = collect_vars(node.term)
+        if set(node.args) != set(free):
+            logger.error(f"{sp}❌ [DefFunTerm] args are not matched with free vars: {free}")
+            return False
+        logger.debug(f"{sp}[DefFunTerm] args are mathced with free vars of term: {free}")
+        context.deffunterms[node.name] = node
         return True
 
     logger.error(f"{sp}❌ Unsupported node {node}")

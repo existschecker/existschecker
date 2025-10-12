@@ -355,3 +355,23 @@ theorem pair_commutativity \forall x\forall y(equal(pair(x,y),pair(y,x))) {
     invoke subset(pair(x,y),pair(y,x))\wedge subset(pair(y,x),pair(x,y))\to equal(pair(x,y),pair(y,x)) conclude equal(pair(x,y),pair(y,x))
   }
 }
+
+definition function singleton(x) pair(x,x)
+
+theorem singleton_characterization \forall x\forall y(in(y,singleton(x))\leftrightarrow equal(y,x)) {
+  any x,y conclude in(y,singleton(x))\leftrightarrow equal(y,x) {
+    assume in(y,singleton(x)) conclude equal(y,x) {
+      expand in(y,singleton(x)) conclude in(y,pair(x,x))
+      apply pair_existence for x:x,y:x,w:y conclude in(y,pair(x,x))\leftrightarrow equal(y,x)\vee equal(y,x)
+      split in(y,pair(x,x))\leftrightarrow equal(y,x)\vee equal(y,x)
+      invoke in(y,pair(x,x))\to equal(y,x)\vee equal(y,x) conclude equal(y,x)
+    }
+    assume equal(y,x) conclude in(y,singleton(x)) {
+      apply pair_existence for x:x,y:x,w:y conclude in(y,pair(x,x))\leftrightarrow equal(y,x)\vee equal(y,x)
+      split in(y,pair(x,x))\leftrightarrow equal(y,x)\vee equal(y,x)
+      invoke equal(y,x)\vee equal(y,x)\to in(y,pair(x,x)) conclude in(y,pair(x,x))
+      expand in(y,pair(x,x)) conclude in(y,singleton(x))
+    }
+    connect in(y,singleton(x))\leftrightarrow equal(y,x)
+  }
+}

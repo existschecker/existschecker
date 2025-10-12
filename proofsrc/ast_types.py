@@ -14,13 +14,14 @@ class Context:
     defpres: Dict[str, "DefPre"]
     defcons: Dict[str, "DefCon"]
     deffuns: Dict[str, "DefFun"]
+    deffunterms: Dict[str, "DefFunTerm"]
 
     @staticmethod
     def init():
-        return Context(formulas=[], bot_derived=False, atoms={}, axioms={}, theorems={}, defpres={}, defcons={}, deffuns={})
+        return Context(formulas=[], bot_derived=False, atoms={}, axioms={}, theorems={}, defpres={}, defcons={}, deffuns={}, deffunterms={})
 
     def copy(self, formulas, bot_derived):
-        return Context(formulas=formulas, bot_derived=bot_derived, atoms=self.atoms, axioms=self.axioms, theorems=self.theorems, defpres=self.defpres, defcons=self.defcons, deffuns=self.deffuns)
+        return Context(formulas=formulas, bot_derived=bot_derived, atoms=self.atoms, axioms=self.axioms, theorems=self.theorems, defpres=self.defpres, defcons=self.defcons, deffuns=self.deffuns, deffunterms=self.deffunterms)
 
     def has_defcon_existence(self, existence_name):
         for defcon in self.defcons.values():
@@ -218,6 +219,12 @@ class DefFunExist:
 class DefFunUniq:
     name: str
     formula: object
+
+@dataclass
+class DefFunTerm:
+    name: str
+    args: list
+    term: object
 
 @dataclass
 class Symbol:

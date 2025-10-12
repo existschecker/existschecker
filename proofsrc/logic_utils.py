@@ -155,35 +155,49 @@ def collect_vars(expr, bound=None):
 def expr_in_context(expr, context):
     return any(logic_equiv(expr, f, context) for f in context.formulas)
 
-def to_core_logic_form(expr, context):
+def to_core_logic_form(expr, context: Context, expand_all: bool = False):
     if isinstance(expr, Symbol):
         if expr.name in context.atoms:
-            return expr
+            return Symbol(expr.name, [to_core_logic_form(arg, context, expand_all) for arg in expr.args])
         if expr.name in context.defpres:
             defpre = context.defpres[expr.name]
-            if defpre.autoexpand:
+            if defpre.autoexpand or expand_all:
                 expanded = substitute(defpre.formula, dict(zip(defpre.args, expr.args)))
-                return to_core_logic_form(expanded, context)
+                return to_core_logic_form(expanded, context, expand_all)
             else:
-                return expr
+                return Symbol(expr.name, [to_core_logic_form(arg, context, expand_all) for arg in expr.args])
         else:
             raise Exception(f"Unexpected expr (Symbol): {pretty_expr(expr)}")
+    elif isinstance(expr, Compound):
+        if expr.fun.name in context.deffuns:
+            return Compound(to_core_logic_form(expr.fun, context, expand_all), [to_core_logic_form(arg, context, expand_all) for arg in expr.args])
+        elif expr.fun.name in context.deffunterms:
+            deffunterm = context.deffunterms[expr.fun.name]
+            if expand_all:
+                expanded = substitute(deffunterm.term, dict(zip(deffunterm.args, expr.args)))
+                return to_core_logic_form(expanded, context, expand_all)
+            else:
+                return Compound(to_core_logic_form(expr.fun, context, expand_all), [to_core_logic_form(arg, context, expand_all) for arg in expr.args])
+        else:
+            raise Exception(f"Unexpected expr (Compound): {pretty_expr(expr)}")
+    elif isinstance(expr, (Fun, Con, Var)):
+        return expr
     elif isinstance(expr, Not):
-        return Not(to_core_logic_form(expr.body, context))
+        return Not(to_core_logic_form(expr.body, context, expand_all))
     elif isinstance(expr, (And, Or)):
-        return type(expr)(to_core_logic_form(expr.left, context), to_core_logic_form(expr.right, context))
+        return type(expr)(to_core_logic_form(expr.left, context, expand_all), to_core_logic_form(expr.right, context, expand_all))
     elif isinstance(expr, Implies):
-        return to_core_logic_form(Or(Not(expr.left), expr.right), context)
+        return to_core_logic_form(Or(Not(expr.left), expr.right), context, expand_all)
     elif isinstance(expr, Iff):
-        return to_core_logic_form(And(Implies(expr.left, expr.right), Implies(expr.right, expr.left)), context)
+        return to_core_logic_form(And(Implies(expr.left, expr.right), Implies(expr.right, expr.left)), context, expand_all)
     elif isinstance(expr, (Exists, Forall)):
-        return type(expr)(expr.var, to_core_logic_form(expr.body, context))
+        return type(expr)(expr.var, to_core_logic_form(expr.body, context, expand_all))
     elif isinstance(expr, ExistsUniq):
         used_vars = {expr.var} | collect_vars(expr.body)[0] | collect_vars(expr.body)[1]
         vardash = fresh_var(Var(expr.var.name + "'"), used_vars)
         body_subst = substitute(expr.body, {expr.var: vardash})
         expanded = Exists(expr.var, And(expr.body, Forall(vardash, Implies(body_subst, Symbol("equal", [vardash, expr.var])))))
-        return to_core_logic_form(expanded, context)
+        return to_core_logic_form(expanded, context, expand_all)
     else:
         raise Exception(f"Unexpected expr: {pretty_expr(expr)}")
 
@@ -422,17 +436,17 @@ def simplify(expr):
     else:
         raise Exception(f"Unexpected expr: {expr}")
 
-def to_canonical_form(expr, context):
-    expr_norm = to_core_logic_form(expr, context)
+def to_canonical_form(expr, context, expand_all: bool = False):
+    expr_norm = to_core_logic_form(expr, context, expand_all)
     expr_norm = to_nnf(expr_norm)
     expr_norm = to_pnf(expr_norm)
     expr_norm = to_cnf(expr_norm)
     expr_norm = simplify(expr_norm)
     return expr_norm
 
-def logic_equiv(expr1, expr2, context):
-    expr1_norm = to_canonical_form(expr1, context)
-    expr2_norm = to_canonical_form(expr2, context)
+def logic_equiv(expr1, expr2, context, expand_all: bool = False):
+    expr1_norm = to_canonical_form(expr1, context, expand_all)
+    expr2_norm = to_canonical_form(expr2, context, expand_all)
     return alpha_equiv(expr1_norm, expr2_norm)
 
 def make_tree(expr, prefix="", is_root=True, is_last=True):
@@ -467,7 +481,7 @@ def make_tree(expr, prefix="", is_root=True, is_last=True):
 
 if __name__ == "__main__":
     from ast_types import Atom, DefPre
-    context = Context([], False, {"in": Atom("PREDICATE", "in", 2)}, {}, {}, {"equal": DefPre("equal", [Var("x"), Var("y")], Forall(Var("z"), Iff(Symbol("in", [Var("z"), Var("x")]), Symbol("in", [Var("z"), Var("y")]))), False)}, {}, {})
+    context = Context([], False, {"in": Atom("PREDICATE", "in", 2)}, {}, {}, {"equal": DefPre("equal", [Var("x"), Var("y")], Forall(Var("z"), Iff(Symbol("in", [Var("z"), Var("x")]), Symbol("in", [Var("z"), Var("y")]))), False)}, {}, {}, {})
 
     expr = Forall(Var("x"), Forall(Var("y"), ExistsUniq(Var("z"), Forall(Var("w"), Iff(Symbol("in", [Var("w"), Var("z")]), Or(Symbol("in", [Var("w"), Var("x")]), Symbol("in", [Var("w"), Var("y")])))))))
     print("expr")

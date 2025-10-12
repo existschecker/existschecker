@@ -1,5 +1,5 @@
 from typing import List, Union
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, DefPre, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, Fold, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, DefPre, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, Fold, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, pretty, pretty_expr
 from lexer import Token, lex
 from logic_utils import collect_quantifier_vars
 
@@ -338,25 +338,38 @@ class Parser:
         elif tok.type == "FUNCTION":
             self.consume("FUNCTION")
             name = self.consume("IDENT").value
-            self.consume("BY")
-            theorem = self.consume("IDENT").value
-            vars_, body = collect_quantifier_vars(self.context.theorems[theorem].conclusion, Forall)
-            if not (len(vars_) > 0 and isinstance(body, ExistsUniq)):
-                raise SyntaxError(f"theorem cannot be used for function definition: {pretty_expr(theorem)}")
-            arity = len(vars_)
-            self.context.deffuns[name] = DefFun(name=name, arity=arity, theorem=theorem, existence=None, uniqueness=None)
-            self.consume("EXISTENCE")
-            existence_name = self.consume("IDENT").value
-            existence_formula = self.parse_expr()
-            existence = DefFunExist(name=existence_name, formula=existence_formula)
-            self.consume("UNIQUENESS")
-            uniqueness_name = self.consume("IDENT").value
-            uniqueness_formula = self.parse_expr()
-            uniqueness = DefFunUniq(name=uniqueness_name, formula=uniqueness_formula)
-            deffun = DefFun(name=name, arity=arity, theorem=theorem, existence=existence, uniqueness=uniqueness)
-            self.context.deffuns[name] = deffun
-            logger.debug(f"[deffun] {name}")
-            return deffun
+            if self.peek().type == "BY":
+                self.consume("BY")
+                theorem = self.consume("IDENT").value
+                vars_, body = collect_quantifier_vars(self.context.theorems[theorem].conclusion, Forall)
+                if not (len(vars_) > 0 and isinstance(body, ExistsUniq)):
+                    raise SyntaxError(f"theorem cannot be used for function definition: {pretty_expr(theorem)}")
+                arity = len(vars_)
+                self.context.deffuns[name] = DefFun(name=name, arity=arity, theorem=theorem, existence=None, uniqueness=None)
+                self.consume("EXISTENCE")
+                existence_name = self.consume("IDENT").value
+                existence_formula = self.parse_expr()
+                existence = DefFunExist(name=existence_name, formula=existence_formula)
+                self.consume("UNIQUENESS")
+                uniqueness_name = self.consume("IDENT").value
+                uniqueness_formula = self.parse_expr()
+                uniqueness = DefFunUniq(name=uniqueness_name, formula=uniqueness_formula)
+                deffun = DefFun(name=name, arity=arity, theorem=theorem, existence=existence, uniqueness=uniqueness)
+                self.context.deffuns[name] = deffun
+                logger.debug(f"[deffun] {name}")
+                return deffun
+            else:
+                self.consume("LPAREN")
+                args = [Var(self.consume("IDENT").value)]
+                while self.peek().type == "COMMA":
+                    self.consume("COMMA")
+                    args.append(Var(self.consume("IDENT").value))
+                self.consume("RPAREN")
+                term = self.parse_term()
+                deffunterm = DefFunTerm(name=name, args=args, term=term)
+                self.context.deffunterms[name] = deffunterm
+                logger.debug(f"[deffunterm] {name}")
+                return deffunterm
         else:
             raise SyntaxError(f"Unexpected token {tok}")
 
@@ -365,7 +378,7 @@ class Parser:
         if tok.type == "IDENT":
             name = self.consume("IDENT").value
             if self.peek().type == "LPAREN":
-                if name not in self.context.deffuns:
+                if not (name in self.context.deffuns or name in self.context.deffunterms):
                     raise SyntaxError(f"Unexpected token (fun): {tok}")
                 self.consume("LPAREN")
                 args = [self.parse_term()]
@@ -373,8 +386,10 @@ class Parser:
                     self.consume("COMMA")
                     args.append(self.parse_term())
                 self.consume("RPAREN")
-                if len(args) != self.context.deffuns[name].arity:
-                    raise SyntaxError("arity is different")
+                if name in self.context.deffuns and len(args) != self.context.deffuns[name].arity:
+                    raise SyntaxError("arity is different (deffun)")
+                if name in self.context.deffunterms and len(args) != len(self.context.deffunterms[name].args):
+                    raise SyntaxError("arity is different (deffunterm)")
                 return Compound(Fun(name), args)
             elif name in self.context.defcons:
                 return Con(name)
