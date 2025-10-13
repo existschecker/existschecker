@@ -372,6 +372,27 @@ theorem pair_cor4 \forall x\forall y\forall z\forall w(equal(pair(x,y),pair(z,w)
   }
 }
 
+theorem pair_cor5 \forall x\forall y\forall z\forall w(equal(pair(x,y),pair(z,w))\to equal(y,z)\vee equal(y,w)) {
+  any x,y,z,w conclude equal(pair(x,y),pair(z,w))\to equal(y,z)\vee equal(y,w) {
+    assume equal(pair(x,y),pair(z,w)) conclude equal(y,z)\vee equal(y,w) {
+      apply pair_cor2 for x:x,y:y conclude in(y,pair(x,y))
+      substitute in(y,pair(x,y)) conclude in(y,pair(z,w))
+      apply pair_existence for x:z,y:w,w:y conclude in(y,pair(z,w))\leftrightarrow equal(y,z)\vee equal(y,w)
+      split in(y,pair(z,w))\leftrightarrow equal(y,z)\vee equal(y,w)
+      invoke in(y,pair(z,w))\to equal(y,z)\vee equal(y,w) conclude equal(y,z)\vee equal(y,w)
+    }
+  }
+}
+
+theorem pair_cor6 \forall x\forall y\forall z(equal(pair(x,x),pair(y,z))\to equal(x,y)) {
+  any x,y,z conclude equal(pair(x,x),pair(y,z))\to equal(x,y) {
+    assume equal(pair(x,x),pair(y,z)) conclude equal(x,y) {
+      apply pair_cor4 for x:y,y:z,z:x,w:x conclude equal(pair(y,z),pair(x,x))\to equal(y,x)\vee equal(y,x)
+      invoke equal(pair(y,z),pair(x,x))\to equal(y,x)\vee equal(y,x) conclude equal(y,x)
+    }
+  }
+}
+
 definition function singleton(x) pair(x,x)
 
 theorem singleton_characterization \forall x\forall y(in(y,singleton(x))\leftrightarrow equal(y,x)) {

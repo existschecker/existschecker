@@ -1,6 +1,6 @@
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, Atom, DefPre, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Fold, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, Var, Substitute, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, Atom, DefPre, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Fold, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, Var, Substitute, Symbol, pretty, pretty_expr
 from logic_utils import expr_in_context, logic_equiv, collect_quantifier_vars, substitute, collect_vars, flatten_op, fresh_var
-from equal_utils import equal_norm
+from equal_utils import EGraph, equal_norm, recurse_term
 
 import logging
 logger = logging.getLogger("proof")
@@ -20,6 +20,14 @@ def goal_in_context(goal, context: Context) -> bool:
         return context.has_deffun_existence(goal.name)
     elif isinstance(goal, DefFunUniq):
         return context.has_deffun_uniqueness(goal.name)
+    elif isinstance(goal, Symbol) and context.equality is not None and goal.name == context.equality.equal.name:
+        g = EGraph()
+        for f in context.formulas:
+            if isinstance(f, Symbol) and f.name == context.equality.equal.name:
+                g.union(f.args[0], f.args[1])
+        t1 = recurse_term(g, goal.args[0])
+        t2 = recurse_term(g, goal.args[1])
+        return t1 == t2
     else:
         return expr_in_context(goal, context)
 
