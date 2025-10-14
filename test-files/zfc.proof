@@ -484,21 +484,21 @@ theorem op_characterization \forall x\forall y\forall x'\forall y'(equal(op(x,y)
   any x,y,x',y' {
     assume equal(op(x,y),op(x',y')) conclude equal(x,x')\wedge equal(y,y') {
       expand equal(op(x,y),op(x',y')) conclude equal(pair(singleton(x),pair(x,y)),pair(singleton(x'),pair(x',y')))
-      apply pair_cor4 for x:singleton(x),y:pair(x,y),z:singleton(x'),w:pair(x',y') conclude equal(pair(singleton(x),pair(x,y)),pair(singleton(x'),pair(x',y')))\to equal(singleton(x),singleton(x'))\vee equal(singleton(x),pair(x',y'))
+      apply pair_cor4 for x:singleton(x),y:pair(x,y),z:singleton(x'),w:pair(x',y')
       invoke equal(pair(singleton(x),pair(x,y)),pair(singleton(x'),pair(x',y')))\to equal(singleton(x),singleton(x'))\vee equal(singleton(x),pair(x',y')) conclude equal(singleton(x),singleton(x'))\vee equal(singleton(x),pair(x',y'))
       divide equal(singleton(x),singleton(x'))\vee equal(singleton(x),pair(x',y')) conclude equal(x,x')
         case equal(singleton(x),singleton(x')) {
-          apply singleton_cor2 for x:x,y:x' conclude equal(singleton(x),singleton(x'))\to equal(x,x')
+          apply singleton_cor2 for x:x,y:x'
           invoke equal(singleton(x),singleton(x'))\to equal(x,x') conclude equal(x,x')
         }
         case equal(singleton(x),pair(x',y')) {
-          apply pair_singleton_cor1 for x:x,y:x',z:y' conclude equal(singleton(x),pair(x',y'))\to equal(x,x')
+          apply pair_singleton_cor1 for x:x,y:x',z:y'
           invoke equal(singleton(x),pair(x',y'))\to equal(x,x') conclude equal(x,x')
         }
       substitute equal(pair(singleton(x),pair(x,y)),pair(singleton(x'),pair(x',y'))) conclude equal(pair(singleton(x),pair(x,y)),pair(singleton(x),pair(x,y')))
-      apply pair_cor8 for x:singleton(x),y:pair(x,y),z:pair(x,y') conclude equal(pair(singleton(x),pair(x,y)),pair(singleton(x),pair(x,y')))\to equal(pair(x,y),pair(x,y'))
+      apply pair_cor8 for x:singleton(x),y:pair(x,y),z:pair(x,y')
       invoke equal(pair(singleton(x),pair(x,y)),pair(singleton(x),pair(x,y')))\to equal(pair(x,y),pair(x,y')) conclude equal(pair(x,y),pair(x,y'))
-      apply pair_cor8 for x:x,y:y,z:y' conclude equal(pair(x,y),pair(x,y'))\to equal(y,y')
+      apply pair_cor8 for x:x,y:y,z:y'
       invoke equal(pair(x,y),pair(x,y'))\to equal(y,y') conclude equal(y,y')
       connect equal(x,x')\wedge equal(y,y')
     }

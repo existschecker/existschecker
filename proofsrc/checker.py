@@ -252,12 +252,13 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             instantiation = substitute(body, node.env)
             logger.debug(f"{sp}[Apply] \\forall-elimination is done: instantiation={pretty_expr(instantiation)}")
             if node.premise is None:
-                if not logic_equiv(node.conclusion, instantiation, context):
-                    logger.error(f"{sp}❌ [Apply] Not matched: node.conclusion={pretty_expr(node.conclusion)}, instantiation={pretty_expr(instantiation)}")
-                    return False
-                logger.debug(f"{sp}[Apply] Matched: node.conclusion={pretty_expr(node.conclusion)}, instantiation={pretty_expr(instantiation)}")
-                logger.debug(f"{sp}[Apply] Added node.conclusion={pretty_expr(node.conclusion)}")
-                add_conclusion(context, node.conclusion)
+                if node.conclusion is not None:
+                    if not logic_equiv(node.conclusion, instantiation, context):
+                        logger.error(f"{sp}❌ [Apply] Not matched: node.conclusion={pretty_expr(node.conclusion)}, instantiation={pretty_expr(instantiation)}")
+                        return False
+                    logger.debug(f"{sp}[Apply] Matched: node.conclusion={pretty_expr(node.conclusion)}, instantiation={pretty_expr(instantiation)}")
+                logger.debug(f"{sp}[Apply] Added {pretty_expr(instantiation)}")
+                add_conclusion(context, instantiation)
                 return True
             else:
                 implication = instantiation

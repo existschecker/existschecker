@@ -241,8 +241,11 @@ class Parser:
             premise = None
         if env is None and premise is None:
             raise SyntaxError("APPLY needs FOR or WITH")
-        self.consume("CONCLUDE")
-        conclusion = self.parse_expr()
+        if self.peek().type == "CONCLUDE":
+            self.consume("CONCLUDE")
+            conclusion = self.parse_expr()
+        else:
+            conclusion = None
         return Apply(fact=fact, env=env, premise=premise, conclusion=conclusion)
     
     def parse_lift(self) -> Lift:
