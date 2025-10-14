@@ -43,7 +43,7 @@ def alpha_equiv(e1, e2, env: dict[Var, Var] | None = None) -> bool:
     if isinstance(e1, Not) and isinstance(e2, Not):
         return alpha_equiv(e1.body, e2.body, env)
 
-    for quantifier_type in (Forall, Exists):
+    for quantifier_type in (Forall, Exists, ExistsUniq):
         if isinstance(e1, quantifier_type) and isinstance(e2, quantifier_type):
             vars1, body1 = collect_quantifier_vars(e1, quantifier_type)
             vars2, body2 = collect_quantifier_vars(e2, quantifier_type)
@@ -159,6 +159,27 @@ def collect_vars(expr, bound: set[Var] | None = None) -> tuple[set[Var], set[Var
 # === コンテキスト中の式検索 ===
 def expr_in_context(expr, context: Context) -> bool:
     return any(logic_equiv(expr, f, context) for f in context.formulas)
+
+def alpha_equiv_with_defs(e1, e2, context: Context) -> bool:
+    e1_exp = expand_basic_defs(e1, context)
+    e2_exp = expand_basic_defs(e2, context)
+    return alpha_equiv(e1_exp, e2_exp)
+
+def expand_basic_defs(expr, context: Context):
+    if isinstance(expr, Symbol):
+        if expr.name in context.defpres and context.defpres[expr.name].autoexpand:
+            expanded = substitute(context.defpres[expr.name].formula, dict(zip(context.defpres[expr.name].args, expr.args)))
+            return expand_basic_defs(expanded, context)
+        else:
+            return expr
+    elif isinstance(expr, Not):
+        return Not(expand_basic_defs(expr.body, context))
+    elif isinstance(expr, (And, Or, Implies, Iff)):
+        return type(expr)(expand_basic_defs(expr.left, context), expand_basic_defs(expr.right, context))
+    elif isinstance(expr, (Exists, Forall, ExistsUniq)):
+        return type(expr)(expr.var, expand_basic_defs(expr.body, context))
+    else:
+        raise Exception(f"Unexpected expr: {pretty_expr(expr)}")
 
 def to_core_logic_form(expr, context: Context, expand_all: bool = False):
     if isinstance(expr, Symbol):

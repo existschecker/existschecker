@@ -1,5 +1,5 @@
 from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, Atom, DefPre, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Fold, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, Var, Substitute, Symbol, pretty, pretty_expr
-from logic_utils import expr_in_context, logic_equiv, collect_quantifier_vars, substitute, collect_vars, flatten_op, fresh_var, alpha_equiv
+from logic_utils import expr_in_context, logic_equiv, collect_quantifier_vars, substitute, collect_vars, flatten_op, fresh_var, alpha_equiv, alpha_equiv_with_defs
 from equal_utils import EGraph, equal_norm, recurse_term
 
 import logging
@@ -111,7 +111,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
         goal = local_ctx.formulas[-1]
         logger.debug(f"{sp}[Any] derived goal: {pretty_expr(goal)}")
         if node.conclusion is not None:
-            if logic_equiv(node.conclusion, goal, context):
+            if alpha_equiv_with_defs(node.conclusion, goal, context):
                 logger.debug(f"{sp}[Any] Mathched with conclusion: {pretty_expr(node.conclusion)}")
             else:
                 logger.error(f"{sp}❌ [Any] Not matched with conclusion: {pretty_expr(node.conclusion)}")
@@ -197,8 +197,12 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
         if local_ctx.bot_derived:
-            add_conclusion(context, Not(node.premise))
-            logger.debug(f"{sp}[Deny] contradiction is derived; added {pretty_expr(Not(node.premise))}")
+            if isinstance(node.premise, Not):
+                add_conclusion(context, node.premise.body)
+                logger.debug(f"{sp}[Deny] contradiction is derived; added {pretty_expr(node.premise.body)}")
+            else:
+                add_conclusion(context, Not(node.premise))
+                logger.debug(f"{sp}[Deny] contradiction is derived; added {pretty_expr(Not(node.premise))}")
             return True
         else:
             logger.error(f"{sp}❌ [Deny] conradiction has not been deried")
@@ -320,7 +324,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             return False
         logger.debug(f"{sp}[Invoke] Left of Implies object derived: {pretty_expr(node.fact.left)}")
         if node.conclusion is not None:
-            if not alpha_equiv(node.conclusion, node.fact.right):
+            if not alpha_equiv_with_defs(node.conclusion, node.fact.right, context):
                 logger.error(f"{sp}❌ [Invoke] Not matched: node.conclusion={pretty_expr(node.conclusion)}, node.fact.right={pretty_expr(node.fact.right)}")
                 return False
             logger.debug(f"{sp}[Invoke] Matched: node.conclusion={pretty_expr(node.conclusion)}, node.fact.right={pretty_expr(node.fact.right)}")
