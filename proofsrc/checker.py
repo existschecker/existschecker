@@ -257,7 +257,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             logger.debug(f"{sp}[Apply] \\forall-elimination is done: instantiation={pretty_expr(instantiation)}")
             if node.premise is None:
                 if node.conclusion is not None:
-                    if not logic_equiv(node.conclusion, instantiation, context):
+                    if not alpha_equiv_with_defs(node.conclusion, instantiation, context):
                         logger.error(f"{sp}❌ [Apply] Not matched: node.conclusion={pretty_expr(node.conclusion)}, instantiation={pretty_expr(instantiation)}")
                         return False
                     logger.debug(f"{sp}[Apply] Matched: node.conclusion={pretty_expr(node.conclusion)}, instantiation={pretty_expr(instantiation)}")
