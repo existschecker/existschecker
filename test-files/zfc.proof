@@ -481,7 +481,7 @@ theorem pair_singleton_cor2 \forall x\forall y\forall z(equal(singleton(x),pair(
 definition function op(x,y) pair(singleton(x),pair(x,y))
 
 theorem op_characterization \forall x\forall y\forall x'\forall y'(equal(op(x,y),op(x',y'))\to equal(x,x')\wedge equal(y,y')) {
-  any x,y,x',y' conclude equal(op(x,y),op(x',y'))\to equal(x,x')\wedge equal(y,y') {
+  any x,y,x',y' {
     assume equal(op(x,y),op(x',y')) conclude equal(x,x')\wedge equal(y,y') {
       expand equal(op(x,y),op(x',y')) conclude equal(pair(singleton(x),pair(x,y)),pair(singleton(x'),pair(x',y')))
       apply pair_cor4 for x:singleton(x),y:pair(x,y),z:singleton(x'),w:pair(x',y') conclude equal(pair(singleton(x),pair(x,y)),pair(singleton(x'),pair(x',y')))\to equal(singleton(x),singleton(x'))\vee equal(singleton(x),pair(x',y'))

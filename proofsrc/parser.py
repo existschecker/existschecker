@@ -138,8 +138,11 @@ class Parser:
                 self.consume("COMMA")
                 continue
             break
-        self.consume("CONCLUDE")
-        conclusion = self.parse_expr()
+        if self.peek().type == "CONCLUDE":
+            self.consume("CONCLUDE")
+            conclusion = self.parse_expr()
+        else:
+            conclusion = None
         self.consume("LBRACE")
         body = self.parse_block()
         self.consume("RBRACE")

@@ -102,7 +102,7 @@ class Assume:
 @dataclass
 class Any:
     vars: list["Var"]
-    conclusion: object
+    conclusion: object | None
     body: list
 
 @dataclass
