@@ -159,7 +159,7 @@ def collect_vars(expr, bound: set[Var] | None = None) -> tuple[set[Var], set[Var
 
 # === コンテキスト中の式検索 ===
 def expr_in_context(expr, context: Context) -> bool:
-    return any(logic_equiv(expr, f, context) for f in context.formulas)
+    return any(alpha_equiv_with_defs(expr, f, context) for f in context.formulas)
 
 def alpha_equiv_with_defs(e1, e2, context: Context, expand_all: bool = False) -> bool:
     if isinstance(e1, Bottom) and isinstance(e2, Bottom):

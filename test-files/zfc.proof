@@ -101,15 +101,20 @@ theorem neq_cor1 \forall x\forall y(neq(x,y)\leftrightarrow\exists z((in(z,x)\we
       }
       some z:z such \exists z(\neg(in(z,x)\leftrightarrow in(z,y))) conclude \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))) {
         deny (in(z,x)\to in(z,y))\wedge(in(z,y)\to in(z,x)) {
+          split (in(z,x)\to in(z,y))\wedge(in(z,y)\to in(z,x))
+          connect in(z,x)\leftrightarrow in(z,y)
           contradict in(z,x)\leftrightarrow in(z,y)
         }
         deny \neg(\neg(in(z,x)\to in(z,y))\vee\neg(in(z,y)\to in(z,x))) {
           deny \neg(in(z,x)\to in(z,y)) {
+            pad \neg(in(z,x)\to in(z,y)) conclude \neg(in(z,x)\to in(z,y))\vee\neg(in(z,y)\to in(z,x))
             contradict \neg(in(z,x)\to in(z,y))\vee\neg(in(z,y)\to in(z,x))
           }
           deny \neg(in(z,y)\to in(z,x)) {
+            pad \neg(in(z,y)\to in(z,x)) conclude \neg(in(z,x)\to in(z,y))\vee\neg(in(z,y)\to in(z,x))
             contradict \neg(in(z,x)\to in(z,y))\vee\neg(in(z,y)\to in(z,x))
           }
+          connect (in(z,x)\to in(z,y))\wedge(in(z,y)\to in(z,x))
           contradict (in(z,x)\to in(z,y))\wedge(in(z,y)\to in(z,x))
         }
         divide \neg(in(z,x)\to in(z,y))\vee\neg(in(z,y)\to in(z,x)) conclude (in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))
@@ -446,6 +451,7 @@ theorem singleton_characterization \forall x\forall y(in(y,singleton(x))\leftrig
     assume equal(y,x) conclude in(y,singleton(x)) {
       apply pair_existence for x:x,y:x,w:y conclude in(y,pair(x,x))\leftrightarrow equal(y,x)\vee equal(y,x)
       split in(y,pair(x,x))\leftrightarrow equal(y,x)\vee equal(y,x)
+      pad equal(y,x) conclude equal(y,x)\vee equal(y,x)
       invoke equal(y,x)\vee equal(y,x)\to in(y,pair(x,x)) conclude in(y,pair(x,x))
       expand in(y,pair(x,x)) conclude in(y,singleton(x))
     }
