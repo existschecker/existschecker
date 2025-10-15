@@ -150,6 +150,12 @@ class Lift:
     conclusion: object
 
 @dataclass
+class Characterize:
+    fact: object
+    env: dict["Var", "Term"]
+    conclusion: object | None
+
+@dataclass
 class Invoke:
     fact: object
     conclusion: object | None

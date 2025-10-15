@@ -518,3 +518,39 @@ theorem op_characterization \forall x\forall y\forall x'\forall y'(equal(op(x,y)
     }
   }
 }
+
+axiom axiom_of_union \forall x\exists y\forall z(in(z,y)\leftrightarrow\exists w(in(z,w)\wedge in(w,x)))
+
+theorem union_exists_uniquely \forall x\exists!y\forall z(in(z,y)\leftrightarrow\exists w(in(z,w)\wedge in(w,x))) {
+  any x {
+    apply axiom_of_union for x:x
+    some y:y such \exists y\forall z(in(z,y)\leftrightarrow\exists w(in(z,w)\wedge in(w,x))) conclude \exists!y\forall z(in(z,y)\leftrightarrow\exists w(in(z,w)\wedge in(w,x))) {
+      any y' {
+        assume \forall z(in(z,y')\leftrightarrow\exists w(in(z,w)\wedge in(w,x))) {
+          any z {
+            assume in(z,y') {
+              apply \forall z(in(z,y')\leftrightarrow\exists w(in(z,w)\wedge in(w,x))) for z:z
+              split in(z,y')\leftrightarrow\exists w(in(z,w)\wedge in(w,x))
+              invoke in(z,y')\to\exists w(in(z,w)\wedge in(w,x))
+              apply \forall z(in(z,y)\leftrightarrow\exists w(in(z,w)\wedge in(w,x))) for z:z
+              split in(z,y)\leftrightarrow\exists w(in(z,w)\wedge in(w,x))
+              invoke \exists w(in(z,w)\wedge in(w,x))\to in(z,y)
+            }
+            assume in(z,y) {
+              apply \forall z(in(z,y)\leftrightarrow\exists w(in(z,w)\wedge in(w,x))) for z:z
+              split in(z,y)\leftrightarrow\exists w(in(z,w)\wedge in(w,x))
+              invoke in(z,y)\to\exists w(in(z,w)\wedge in(w,x))
+              apply \forall z(in(z,y')\leftrightarrow\exists w(in(z,w)\wedge in(w,x))) for z:z
+              split in(z,y')\leftrightarrow\exists w(in(z,w)\wedge in(w,x))
+              invoke \exists w(in(z,w)\wedge in(w,x))\to in(z,y')
+            }
+            connect in(z,y')\leftrightarrow in(z,y)
+          }
+          expand \forall z(in(z,y')\leftrightarrow in(z,y)) conclude equal(y',y)
+        }
+      }
+      connect \forall z(in(z,y)\leftrightarrow\exists w(in(z,w)\wedge in(w,x)))\wedge\forall y'(\forall z(in(z,y')\leftrightarrow\exists w(in(z,w)\wedge in(w,x)))\to equal(y',y))
+      characterize \forall z(in(z,y)\leftrightarrow\exists w(in(z,w)\wedge in(w,x)))\wedge\forall y'(\forall z(in(z,y')\leftrightarrow\exists w(in(z,w)\wedge in(w,x)))\to equal(y',y)) for y:y
+    }
+  }
+}

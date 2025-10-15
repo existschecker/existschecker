@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, DefPre, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, Fold, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, DefPre, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, Fold, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, pretty, pretty_expr
 from lexer import Token, lex
 from logic_utils import collect_quantifier_vars
 
@@ -110,6 +110,8 @@ class Parser:
                 body.append(self.parse_apply())
             elif tok.type == "LIFT":
                 body.append(self.parse_lift())
+            elif tok.type == "CHARACTERIZE":
+                body.append(self.parse_characterize())
             elif tok.type == "INVOKE":
                 body.append(self.parse_invoke())
             elif tok.type == "EXPAND":
@@ -271,6 +273,21 @@ class Parser:
         self.consume("CONCLUDE")
         conclusion = self.parse_expr()
         return Lift(fact=fact, env=env, conclusion=conclusion)
+
+    def parse_characterize(self) -> Characterize:
+        self.consume("CHARACTERIZE")
+        fact = self.parse_expr()
+        self.consume("FOR")
+        bound = Var(self.consume("IDENT").value)
+        self.consume("COLON")
+        term = self.parse_term()
+        env = {bound: term}
+        if self.peek().type == "CONCLUDE":
+            self.consume("CONCLUDE")
+            conclusion = self.parse_expr()
+        else:
+            conclusion = None
+        return Characterize(fact=fact, env=env, conclusion=conclusion)
 
     def parse_invoke(self) -> Invoke:
         self.consume("INVOKE")

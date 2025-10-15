@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, Atom, DefPre, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Fold, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, Var, Substitute, Symbol, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, Atom, DefPre, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Fold, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, Var, Substitute, Symbol, Characterize, pretty, pretty_expr
 from logic_utils import expr_in_context, logic_equiv, collect_quantifier_vars, substitute, collect_vars, flatten_op, fresh_var, alpha_equiv, alpha_equiv_with_defs
 from equal_utils import EGraph, equal_norm, recurse_term
 
@@ -333,6 +333,31 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             return False
         logger.debug(f"{sp}[Lift] Matched: node.conclusion={pretty_expr(node.conclusion)}, lifted={pretty_expr(lifted)}")        
         add_conclusion(context, node.conclusion)
+        return True
+
+    if isinstance(node, Characterize):
+        if not goal_in_context(node.fact, context):
+            logger.error(f"{sp}❌ [Characterize] Not fact: {pretty_expr(node.fact)}")
+            return False
+        logger.debug(f"{sp}[Characterize] Fact: {pretty_expr(node.fact)}")
+        if not (isinstance(node.fact, And)
+                and isinstance(node.fact.right, Forall)
+                and isinstance(node.fact.right.body, Implies)
+                and isinstance(node.fact.right.body.right, Symbol)
+                and node.fact.right.body.right.name == context.equality.equal.name
+                and node.fact.right.body.right.args[0] == node.fact.right.var
+                and node.fact.right.body.right.args[1] == list(node.env.keys())[0]
+                and alpha_equiv_with_defs(substitute(node.fact.left, {list(node.env.values())[0]: node.fact.right.var}), node.fact.right.body.left, context)):
+            logger.error(f"{sp}❌ [Characterize] Fact is not form of And(phi(x), Forall(y, Implies(phi(y), y=x))): {pretty_expr(node.fact)}")
+            return False
+        logger.debug(f"{sp}[Characterize] Fact is form of And(phi(x), Forall(y, Implies(phi(y), y=x))): {pretty_expr(node.fact)}")
+        goal = ExistsUniq(list(node.env.keys())[0], substitute(node.fact.left, {list(node.env.values())[0]: list(node.env.keys())[0]}))
+        logger.debug(f"{sp}[Characterize] derived goal: {pretty_expr(goal)}")
+        if node.conclusion is not None:
+            if not alpha_equiv_with_defs(node.conclusion, goal, context):
+                logger.error(f"{sp}❌ [Characterize] Not matched with conclusion: {pretty_expr(node.conclusion)}")
+                return False
+        add_conclusion(context, goal)
         return True
 
     if isinstance(node, Invoke):

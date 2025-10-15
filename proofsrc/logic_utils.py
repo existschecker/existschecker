@@ -1,6 +1,7 @@
-from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, Symbol, Context, Compound, Fun, Con, Var, Bottom, pretty_expr
+from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, Symbol, Context, Compound, Fun, Con, Var, Bottom, Term, pretty_expr
 from itertools import permutations
 from dataclasses import dataclass
+from copy import deepcopy
 
 @dataclass
 class BoolTrue:
@@ -260,13 +261,13 @@ def fresh_var(var: Var, used: set[Var]) -> Var:
     else:
         return var
 
-def substitute(expr, mapping: dict[Var, Compound | Con | Var], used_vars: set[Var] | None = None):
-    """
-    expr の自由変数を mapping で置換
-    束縛変数は mapping に衝突しないよう自動リネーム
-    """
+def substitute(expr, mapping: dict[Term, Term], used_vars: set[Var] | None = None):
     if used_vars is None:
         used_vars = collect_vars(expr)[0] | collect_vars(expr)[1] | {v for v in mapping.values() if isinstance(v, Var)}
+
+    for k, v in mapping.items():
+        if expr == k:
+            return deepcopy(v)
 
     if isinstance(expr, Symbol):
         new_args = [substitute(arg, mapping, used_vars) for arg in expr.args]
@@ -274,16 +275,10 @@ def substitute(expr, mapping: dict[Var, Compound | Con | Var], used_vars: set[Va
 
     if isinstance(expr, Compound):
         new_args = [substitute(arg, mapping, used_vars) for arg in expr.args]
-        return Compound(substitute(expr.fun, mapping), new_args)
+        return Compound(substitute(expr.fun, mapping, used_vars), new_args)
 
-    if isinstance(expr, Fun):
+    if isinstance(expr, (Fun, Con, Var)):
         return expr
-
-    if isinstance(expr, Con):
-        return expr
-
-    if isinstance(expr, Var):
-        return mapping.get(expr, expr)
 
     if isinstance(expr, Not):
         return Not(substitute(expr.body, mapping, used_vars))
