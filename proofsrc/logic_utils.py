@@ -161,7 +161,7 @@ def collect_vars(expr, bound: set[Var] | None = None) -> tuple[set[Var], set[Var
 def expr_in_context(expr, context: Context) -> bool:
     return any(logic_equiv(expr, f, context) for f in context.formulas)
 
-def alpha_equiv_with_defs(e1, e2, context: Context) -> bool:
+def alpha_equiv_with_defs(e1, e2, context: Context, expand_all: bool = False) -> bool:
     if isinstance(e1, Bottom) and isinstance(e2, Bottom):
         return True
     elif isinstance(e1, Bottom) and not isinstance(e2, Bottom):
@@ -169,23 +169,43 @@ def alpha_equiv_with_defs(e1, e2, context: Context) -> bool:
     elif not isinstance(e1, Bottom) and isinstance(e2, Bottom):
         return False
     else:
-        e1_exp = normalize_neg(expand_basic_defs(e1, context))
-        e2_exp = normalize_neg(expand_basic_defs(e2, context))
+        e1_exp = normalize_neg(expand_basic_defs(e1, context, expand_all))
+        e2_exp = normalize_neg(expand_basic_defs(e2, context, expand_all))
         return alpha_equiv(e1_exp, e2_exp)
 
-def expand_basic_defs(expr, context: Context):
+def expand_basic_defs(expr, context: Context, expand_all: bool):
     if isinstance(expr, Symbol):
-        if expr.name in context.defpres and context.defpres[expr.name].autoexpand:
-            expanded = substitute(context.defpres[expr.name].formula, dict(zip(context.defpres[expr.name].args, expr.args)))
-            return expand_basic_defs(expanded, context)
+        if expr.name in context.atoms:
+            return Symbol(expr.name, [expand_basic_defs(arg, context, expand_all) for arg in expr.args])
+        if expr.name in context.defpres:
+            defpre = context.defpres[expr.name]
+            if defpre.autoexpand or expand_all:
+                expanded = substitute(defpre.formula, dict(zip(defpre.args, expr.args)))
+                return expand_basic_defs(expanded, context, expand_all)
+            else:
+                return Symbol(expr.name, [expand_basic_defs(arg, context, expand_all) for arg in expr.args])
         else:
-            return expr
+            raise Exception(f"Unexpected expr (Symbol): {pretty_expr(expr)}")
+    elif isinstance(expr, Compound):
+        if expr.fun.name in context.deffuns:
+            return Compound(expand_basic_defs(expr.fun, context, expand_all), [expand_basic_defs(arg, context, expand_all) for arg in expr.args])
+        elif expr.fun.name in context.deffunterms:
+            deffunterm = context.deffunterms[expr.fun.name]
+            if expand_all:
+                expanded = substitute(deffunterm.term, dict(zip(deffunterm.args, expr.args)))
+                return expand_basic_defs(expanded, context, expand_all)
+            else:
+                return Compound(expand_basic_defs(expr.fun, context, expand_all), [expand_basic_defs(arg, context, expand_all) for arg in expr.args])
+        else:
+            raise Exception(f"Unexpected expr (Compound): {pretty_expr(expr)}")
+    elif isinstance(expr, (Fun, Con, Var)):
+        return expr
     elif isinstance(expr, Not):
-        return Not(expand_basic_defs(expr.body, context))
+        return Not(expand_basic_defs(expr.body, context, expand_all))
     elif isinstance(expr, (And, Or, Implies, Iff)):
-        return type(expr)(expand_basic_defs(expr.left, context), expand_basic_defs(expr.right, context))
+        return type(expr)(expand_basic_defs(expr.left, context, expand_all), expand_basic_defs(expr.right, context, expand_all))
     elif isinstance(expr, (Exists, Forall, ExistsUniq)):
-        return type(expr)(expr.var, expand_basic_defs(expr.body, context))
+        return type(expr)(expr.var, expand_basic_defs(expr.body, context, expand_all))
     else:
         raise Exception(f"Unexpected expr: {pretty_expr(expr)}")
 

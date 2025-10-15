@@ -367,7 +367,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             logger.error(f"{sp}❌ [Expand] Not fact: {pretty_expr(node.fact)}")
             return False
         logger.debug(f"{sp}[Expand] fact: {pretty_expr(node.fact)}")
-        if not logic_equiv(node.conclusion, node.fact, context, True):
+        if not alpha_equiv_with_defs(node.conclusion, node.fact, context, True):
             logger.error(f"{sp}❌ [Expand] Not matched: node.conclusion={pretty_expr(node.conclusion)}")
             return False
         logger.debug(f"{sp}[Expand] Matched: node.conclusion={pretty_expr(node.conclusion)}")
