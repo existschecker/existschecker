@@ -202,12 +202,18 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
-        if not goal_in_context(node.conclusion, local_ctx):
-            logger.error(f"{sp}❌ [Some] Cannot derive {pretty_expr(node.conclusion)}")
+        if not (len(context.formulas) < len(local_ctx.formulas) and context.formulas == local_ctx.formulas[:len(context.formulas)]):
+            logger.error(f"{sp}❌ [Some] Local context must extend the parent context")
             return False
-        logger.debug(f"{sp}[Some] derived conclusion {pretty_expr(node.conclusion)}")
-        add_conclusion(context, node.conclusion)
-        logger.debug(f"{sp}[Some] Added {pretty_expr(node.conclusion)}")
+        goal = local_ctx.formulas[-1]
+        logger.debug(f"{sp}[Some] derived goal: {pretty_expr(goal)}")
+        if node.conclusion is not None:
+            if not alpha_equiv_with_defs(node.conclusion, goal, context):
+                logger.error(f"{sp}❌ [Some] Not matched with conclusion: {pretty_expr(node.conclusion)}")
+                return False
+            logger.debug(f"{sp}[Some] Mathched with conclusion: {pretty_expr(node.conclusion)}")
+        add_conclusion(context, goal)
+        logger.debug(f"{sp}[Some] Added goal {pretty_expr(goal)}")
         return True
     
     if isinstance(node, Deny):

@@ -120,7 +120,7 @@ class Case:
 class Some:
     env: dict["Var", "Var"]
     fact: object
-    conclusion: object
+    conclusion: object | None
     body: list
 
 @dataclass

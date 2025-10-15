@@ -524,7 +524,7 @@ axiom axiom_of_union \forall x\exists y\forall z(in(z,y)\leftrightarrow\exists w
 theorem union_exists_uniquely \forall x\exists!y\forall z(in(z,y)\leftrightarrow\exists w(in(z,w)\wedge in(w,x))) {
   any x {
     apply axiom_of_union for x:x
-    some y:y such \exists y\forall z(in(z,y)\leftrightarrow\exists w(in(z,w)\wedge in(w,x))) conclude \exists!y\forall z(in(z,y)\leftrightarrow\exists w(in(z,w)\wedge in(w,x))) {
+    some y:y such \exists y\forall z(in(z,y)\leftrightarrow\exists w(in(z,w)\wedge in(w,x))) {
       any y' {
         assume \forall z(in(z,y')\leftrightarrow\exists w(in(z,w)\wedge in(w,x))) {
           any z {
