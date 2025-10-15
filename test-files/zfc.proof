@@ -187,7 +187,7 @@ theorem emptyset_exists_uniquely \exists!x\forall y(notin(y,x)) {
       }
     }
     connect \forall y(notin(y,x))\wedge\forall x'(\forall y(notin(y,x'))\to equal(x',x))
-    lift \forall y(notin(y,x))\wedge\forall x'(\forall y(notin(y,x'))\to equal(x',x)) for x:x conclude \exists!x\forall y(notin(y,x))
+    characterize \forall y(notin(y,x))\wedge\forall x'(\forall y(notin(y,x'))\to equal(x',x)) for x:x conclude \exists!x\forall y(notin(y,x))
   }
 }
 
@@ -308,7 +308,7 @@ theorem pair_exists_uniquely \forall x\forall y\exists!z\forall w(in(w,z)\leftri
         }
       }
       connect \forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))\wedge\forall z'(\forall w(in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y))\to equal(z',z))
-      lift \forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))\wedge\forall z'(\forall w(in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y))\to equal(z',z)) for z:z conclude \exists!z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))
+      characterize \forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))\wedge\forall z'(\forall w(in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y))\to equal(z',z)) for z:z conclude \exists!z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))
     }
   }
 }

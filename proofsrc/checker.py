@@ -308,7 +308,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
         for k in reversed(list(node.env.keys())):
             lifted = Exists(k, lifted)
         logger.debug(f"{sp}[Lift] lifted formula: {pretty_expr(lifted)}")
-        if not logic_equiv(node.conclusion, lifted, context):
+        if not alpha_equiv_with_defs(node.conclusion, lifted, context):
             logger.error(f"{sp}❌ [Lift] Not matched: node.conclusion={pretty_expr(node.conclusion)}, lifted={pretty_expr(lifted)}")
             return False
         logger.debug(f"{sp}[Lift] Matched: node.conclusion={pretty_expr(node.conclusion)}, lifted={pretty_expr(lifted)}")        
