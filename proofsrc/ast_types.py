@@ -146,7 +146,7 @@ class Apply:
 class Lift:
     fact: object
     env: dict["Var", "Compound | Con | Var"]
-    conclusion: object
+    conclusion: object | None
 
 @dataclass
 class Characterize:

@@ -561,3 +561,24 @@ theorem union_exists_uniquely \forall x\exists!y\forall z(in(z,y)\leftrightarrow
     }
   }
 }
+
+definition function bigcup by union_exists_uniquely
+  existence bigcup_existence \forall x\forall z(in(z,bigcup(x))\leftrightarrow\exists w(in(z,w)\wedge in(w,x)))
+  uniqueness bigcup_uniqueness \forall x(\forall y(\forall z(in(z,y)\leftrightarrow\exists w(in(z,w)\wedge in(w,x)))\to equal(y,bigcup(x))))
+
+theorem bigcup_cor1 \forall x\forall y(in(y,x)\to subset(y,bigcup(x))) {
+  any x,y {
+    assume in(y,x) {
+      any z {
+        assume in(z,y) {
+          connect in(z,y)\wedge in(y,x)
+          lift in(z,y)\wedge in(y,x) for y:y
+          apply bigcup_existence for x:x,z:z
+          split in(z,bigcup(x))\leftrightarrow\exists w(in(z,w)\wedge in(w,x))
+          invoke \exists y(in(z,y)\wedge in(y,x))\to in(z,bigcup(x))
+        }
+      }
+      expand \forall z(in(z,y)\to in(z,bigcup(x))) conclude subset(y,bigcup(x))
+    }
+  }
+}

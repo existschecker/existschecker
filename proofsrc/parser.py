@@ -261,8 +261,11 @@ class Parser:
                 self.consume("COMMA")
                 continue
             break
-        self.consume("CONCLUDE")
-        conclusion = self.parse_expr()
+        if self.peek().type == "CONCLUDE":
+            self.consume("CONCLUDE")
+            conclusion = self.parse_expr()
+        else:
+            conclusion = None
         return Lift(fact=fact, env=env, conclusion=conclusion)
 
     def parse_characterize(self) -> Characterize:
