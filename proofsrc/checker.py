@@ -1,5 +1,5 @@
 from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, Atom, DefPre, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, Var, Substitute, Symbol, Characterize, pretty, pretty_expr
-from logic_utils import expr_in_context, logic_equiv, collect_quantifier_vars, substitute, collect_vars, flatten_op, fresh_var, alpha_equiv, alpha_equiv_with_defs
+from logic_utils import expr_in_context, collect_quantifier_vars, substitute, collect_vars, flatten_op, fresh_var, alpha_equiv, alpha_equiv_with_defs
 from equal_utils import EGraph, equal_norm, recurse_term
 
 import logging
@@ -132,7 +132,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
         while i < len(node.cases):
             connected_premise = Or(connected_premise, node.cases[i].premise)
             i += 1
-        if logic_equiv(connected_premise, node.fact, context):
+        if alpha_equiv_with_defs(connected_premise, node.fact, context):
             logger.debug(f"{sp}[Divide] mathched: fact={pretty_expr(node.fact)}, connected_premise={pretty_expr(connected_premise)}")
         else:
             logger.error(f"{sp}❌ [Divide] not matched: fact={pretty_expr(node.fact)}, conected_premise={pretty_expr(connected_premise)}")
@@ -386,7 +386,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
         logger.debug(f"{sp}[Pad] Or object: {pretty_expr(node.conclusion)}")
         fact_parts = flatten_op(node.fact, Or)
         conclusion_parts = flatten_op(node.conclusion, Or)
-        if not all(any(logic_equiv(c, f, context) for c in conclusion_parts) for f in fact_parts):
+        if not all(any(alpha_equiv_with_defs(c, f, context) for c in conclusion_parts) for f in fact_parts):
             logger.error(f"{sp}❌ [Pad] neither left or right not derivable: {pretty_expr(node.conclusion)}")
             return False
         add_conclusion(context, node.conclusion)
@@ -455,7 +455,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
         fact_norm, conclusion_norm = equal_norm(node.fact, node.conclusion, context)
         logger.debug(f"{sp}[Substitute] fact_norm: {pretty_expr(fact_norm)}")
         logger.debug(f"{sp}[Substitute] conclusion_norm: {pretty_expr(conclusion_norm)}")
-        if not logic_equiv(fact_norm, conclusion_norm, context):
+        if not alpha_equiv_with_defs(fact_norm, conclusion_norm, context):
             logger.error(f"{sp}❌ [Substitute] Not matched")
             return False
         add_conclusion(context, node.conclusion)
@@ -475,14 +475,14 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             return False
         logger.debug(f"{sp}[DefCon] Theorem conclusion is ExistsUniq object: {pretty_expr(existsuniq)}")
         existence_formula = substitute(existsuniq.body, {existsuniq.var: Con(node.name)})
-        if not logic_equiv(node.existence.formula, existence_formula, context):
+        if not alpha_equiv_with_defs(node.existence.formula, existence_formula, context):
             logger.error(f"{sp}❌ [DefCon] existence_formula is not matched with theorem: {pretty_expr(node.existence.formula)}")
             return False
         logger.debug(f"{sp}[DefCon] existence_formula is matched with theorem: {pretty_expr(node.existence.formula)}")
         var = fresh_var(existsuniq.var, [Con(node.name)])
         body = substitute(existsuniq.body, {existsuniq.var: var})
         uniqueness_formula = Forall(var, Implies(body, Symbol(context.equality.equal.name, [var, Con(node.name)])))
-        if not logic_equiv(node.uniqueness.formula, uniqueness_formula, context):
+        if not alpha_equiv_with_defs(node.uniqueness.formula, uniqueness_formula, context):
             logger.error(f"{sp}❌ [DefCon] uniqueness_formula is not matched with theorem: {pretty_expr(node.uniqueness.formula)}")
             return False
         logger.debug(f"{sp}[DefCon] uniqueness_formula is matched with theorem: {pretty_expr(node.uniqueness.formula)}")
@@ -496,14 +496,14 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
         existence_formula = substitute(existsuniq.body, {existsuniq.var: Compound(Fun(node.name), args)})
         for arg in reversed(args):
             existence_formula = Forall(arg, existence_formula)
-        if not logic_equiv(node.existence.formula, existence_formula, context):
+        if not alpha_equiv_with_defs(node.existence.formula, existence_formula, context):
             logger.error(f"{sp}❌ [DefFun] existence_formula is not matched with theorem: {pretty_expr(node.existence.formula)}")
             return False
         logger.debug(f"{sp}[DefFun] existence_formula is matched with theorem: {pretty_expr(node.existence.formula)}")
         uniqueness_formula = Forall(existsuniq.var, Implies(existsuniq.body, Symbol(context.equality.equal.name, [existsuniq.var, Compound(Fun(node.name), args)])))
         for arg in reversed(args):
             uniqueness_formula = Forall(arg, uniqueness_formula)
-        if not logic_equiv(node.uniqueness.formula, uniqueness_formula, context):
+        if not alpha_equiv_with_defs(node.uniqueness.formula, uniqueness_formula, context):
             logger.error(f"{sp}❌ [DefFun] uniqueness_formula is not matched with theorem: {pretty_expr(node.uniqueness.formula)}")
             return False
         logger.debug(f"{sp}[DefFun] uniqueness_formula is matched with theorem: {pretty_expr(node.uniqueness.formula)}")
@@ -524,7 +524,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
         logger.debug(f"{sp}[Equality] name: {node.equal.name}")
         logger.debug(f"{sp}[Equality] Checking {node.equal.name} reflection theorem: {pretty_expr(node.reflection.conclusion)}")
         reflection = Forall(Var("x"), Symbol(node.equal.name, [Var("x"), Var("x")]))
-        if not logic_equiv(node.reflection.conclusion, reflection, context):
+        if not alpha_equiv_with_defs(node.reflection.conclusion, reflection, context):
             logger.error(f"{sp}❌ [Equality] Not matched with expected formula: {pretty_expr(reflection)}")
             return False
         logger.debug(f"{sp}[Equality] Matched with expected formula: {pretty_expr(reflection)}")
@@ -551,7 +551,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
                 replacement = Forall(arg, replacement)
             for arg in reversed(args_x):
                 replacement = Forall(arg, replacement)
-            if not logic_equiv(node.replacement[predicate].conclusion, replacement, context):
+            if not alpha_equiv_with_defs(node.replacement[predicate].conclusion, replacement, context):
                 logger.error(f"{sp}❌ [Equality] Not matched with expected formula: {pretty_expr(replacement)}")
                 return False
             logger.debug(f"{sp}[Equality] Matched with expected formula: {pretty_expr(replacement)}")
