@@ -320,9 +320,23 @@ class Parser:
     def parse_substitute(self) -> Substitute:
         self.consume("SUBSTITUTE")
         fact = self.parse_expr()
-        self.consume("CONCLUDE")
-        conclusion = self.parse_expr()
-        return Substitute(fact=fact, conclusion=conclusion)
+        self.consume("FOR")
+        env = {}
+        while True:
+            key = self.parse_term()
+            self.consume("COLON")
+            value = self.parse_term()
+            env[key] = value
+            if self.peek().type == "COMMA":
+                self.consume("COMMA")
+            else:
+                break
+        if self.peek().type == "CONCLUDE":
+            self.consume("CONCLUDE")
+            conclusion = self.parse_expr()
+        else:
+            conclusion = None
+        return Substitute(fact=fact, env=env, conclusion=conclusion)
 
     def parse_definition(self) -> DefPre | DefCon | DefFun | DefFunTerm:
         self.consume("DEFINITION")

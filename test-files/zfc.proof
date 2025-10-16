@@ -326,7 +326,6 @@ theorem pair_cor1 \forall x\forall y(in(x,pair(x,y))) {
   any x,y conclude in(x,pair(x,y)) {
     apply pair_existence for x:x,y:y,w:x conclude in(x,pair(x,y))\leftrightarrow equal(x,x)\vee equal(x,y)
     split in(x,pair(x,y))\leftrightarrow equal(x,x)\vee equal(x,y)
-    apply equal_reflection for x:x conclude equal(x,x)
     pad equal(x,x) conclude equal(x,x)\vee equal(x,y)
     invoke equal(x,x)\vee equal(x,y)\to in(x,pair(x,y)) conclude in(x,pair(x,y))
   }
@@ -336,7 +335,6 @@ theorem pair_cor2 \forall x\forall y(in(y,pair(x,y))) {
   any x,y conclude in(y,pair(x,y)) {
     apply pair_existence for x:x,y:y,w:y conclude in(y,pair(x,y))\leftrightarrow equal(y,x)\vee equal(y,y)
     split in(y,pair(x,y))\leftrightarrow equal(y,x)\vee equal(y,y)
-    apply equal_reflection for x:y conclude equal(y,y)
     pad equal(y,y) conclude equal(y,x)\vee equal(y,y)
     invoke equal(y,x)\vee equal(y,y)\to in(y,pair(x,y)) conclude in(y,pair(x,y))
   }
@@ -372,7 +370,7 @@ theorem pair_cor4 \forall x\forall y\forall z\forall w(equal(pair(x,y),pair(z,w)
   any x,y,z,w conclude equal(pair(x,y),pair(z,w))\to equal(x,z)\vee equal(x,w) {
     assume equal(pair(x,y),pair(z,w)) conclude equal(x,z)\vee equal(x,w) {
       apply pair_cor1 for x:x,y:y conclude in(x,pair(x,y))
-      substitute in(x,pair(x,y)) conclude in(x,pair(z,w))
+      substitute in(x,pair(x,y)) for pair(x,y):pair(z,w) conclude in(x,pair(z,w))
       apply pair_existence for x:z,y:w,w:x conclude in(x,pair(z,w))\leftrightarrow equal(x,z)\vee equal(x,w)
       split in(x,pair(z,w))\leftrightarrow equal(x,z)\vee equal(x,w)
       invoke in(x,pair(z,w))\to equal(x,z)\vee equal(x,w) conclude equal(x,z)\vee equal(x,w)
@@ -384,7 +382,7 @@ theorem pair_cor5 \forall x\forall y\forall z\forall w(equal(pair(x,y),pair(z,w)
   any x,y,z,w conclude equal(pair(x,y),pair(z,w))\to equal(y,z)\vee equal(y,w) {
     assume equal(pair(x,y),pair(z,w)) conclude equal(y,z)\vee equal(y,w) {
       apply pair_cor2 for x:x,y:y conclude in(y,pair(x,y))
-      substitute in(y,pair(x,y)) conclude in(y,pair(z,w))
+      substitute in(y,pair(x,y)) for pair(x,y):pair(z,w) conclude in(y,pair(z,w))
       apply pair_existence for x:z,y:w,w:y conclude in(y,pair(z,w))\leftrightarrow equal(y,z)\vee equal(y,w)
       split in(y,pair(z,w))\leftrightarrow equal(y,z)\vee equal(y,w)
       invoke in(y,pair(z,w))\to equal(y,z)\vee equal(y,w) conclude equal(y,z)\vee equal(y,w)
@@ -400,7 +398,6 @@ theorem pair_cor6 \forall x\forall y\forall z(equal(pair(x,x),pair(y,z))\to equa
       divide equal(y,x)\vee equal(y,x) conclude equal(y,x)
         case equal(y,x) {}
         case equal(y,x) {}
-      substitute equal(y,x) conclude equal(x,y)
     }
   }
 }
@@ -413,7 +410,6 @@ theorem pair_cor7 \forall x\forall y\forall z(equal(pair(x,x),pair(y,z))\to equa
       divide equal(z,x)\vee equal(z,x) conclude equal(z,x)
         case equal(z,x) {}
         case equal(z,x) {}
-      substitute equal(z,x) conclude equal(x,z)
     }
   }
 }
@@ -425,10 +421,10 @@ theorem pair_cor8 \forall x\forall y\forall z(equal(pair(x,y),pair(x,z))\to equa
       invoke equal(pair(x,y),pair(x,z))\to equal(y,x)\vee equal(y,z) conclude equal(y,x)\vee equal(y,z)
       divide equal(y,x)\vee equal(y,z) conclude equal(y,z)
         case equal(y,x) {
-          substitute equal(pair(x,y),pair(x,z)) conclude equal(pair(x,x),pair(x,z))
+          substitute equal(pair(x,y),pair(x,z)) for y:x conclude equal(pair(x,x),pair(x,z))
           apply pair_cor7 for x:x,y:x,z:z conclude equal(pair(x,x),pair(x,z))\to equal(x,z)
           invoke equal(pair(x,x),pair(x,z))\to equal(x,z) conclude equal(x,z)
-          substitute equal(y,x) conclude equal(y,z)
+          substitute equal(y,x) for x:z conclude equal(y,z)
         }
         case equal(y,z) {}
     }
@@ -471,7 +467,7 @@ theorem singleton_cor2 \forall x\forall y(equal(singleton(x),singleton(y))\to eq
   any x,y conclude equal(singleton(x),singleton(y))\to equal(x,y) {
     assume equal(singleton(x),singleton(y)) conclude equal(x,y) {
       apply singleton_cor1 for x:x conclude in(x,singleton(x))
-      substitute in(x,singleton(x)) conclude in(x,singleton(y))
+      substitute in(x,singleton(x)) for singleton(x):singleton(y) conclude in(x,singleton(y))
       apply singleton_characterization for x:y,y:x conclude in(x,singleton(y))\leftrightarrow equal(x,y)
       split in(x,singleton(y))\leftrightarrow equal(x,y)
       invoke in(x,singleton(y))\to equal(x,y) conclude equal(x,y)
@@ -516,7 +512,7 @@ theorem op_characterization \forall x\forall y\forall x'\forall y'(equal(op(x,y)
           apply pair_singleton_cor1 for x:x,y:x',z:y'
           invoke equal(singleton(x),pair(x',y'))\to equal(x,x')
         }
-      substitute equal(pair(singleton(x),pair(x,y)),pair(singleton(x'),pair(x',y'))) conclude equal(pair(singleton(x),pair(x,y)),pair(singleton(x),pair(x,y')))
+      substitute equal(pair(singleton(x),pair(x,y)),pair(singleton(x'),pair(x',y'))) for x':x
       apply pair_cor8 for x:singleton(x),y:pair(x,y),z:pair(x,y')
       invoke equal(pair(singleton(x),pair(x,y)),pair(singleton(x),pair(x,y')))\to equal(pair(x,y),pair(x,y'))
       apply pair_cor8 for x:x,y:y,z:y'
@@ -581,4 +577,21 @@ theorem bigcup_cor1 \forall x\forall y(in(y,x)\to subset(y,bigcup(x))) {
       expand \forall z(in(z,y)\to in(z,bigcup(x))) conclude subset(y,bigcup(x))
     }
   }
+}
+
+theorem bigcup_cor2 equal(bigcup(emptyset),emptyset) {
+  any x {
+    deny in(x,bigcup(emptyset)) {
+      apply bigcup_existence for x:emptyset,z:x
+      split in(x,bigcup(emptyset))\leftrightarrow\exists w(in(x,w)\wedge in(w,emptyset))
+      invoke in(x,bigcup(emptyset))\to\exists w(in(x,w)\wedge in(w,emptyset))
+      some w:w such \exists w(in(x,w)\wedge in(w,emptyset)) {
+        split in(x,w)\wedge in(w,emptyset)
+        apply emptyset_existence for y:w
+        contradict in(w,emptyset)
+      }
+    }
+  }
+  apply emptyset_uniqueness for x:bigcup(emptyset)
+  invoke \forall y(notin(y,bigcup(emptyset)))\to equal(bigcup(emptyset),emptyset)
 }

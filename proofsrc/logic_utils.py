@@ -17,7 +17,7 @@ def flatten_op(expr, op: type[And] | type[Or]) -> list:
     else:
         return [expr]
 
-def op_equiv(e1, e2, env: dict[Var, Var], op: type[And] | type[Or]) -> bool:
+def op_equiv(e1, e2, context: Context, env: dict[Var, Var], op: type[And] | type[Or]) -> bool:
     parts1 = flatten_op(e1, op)
     parts2 = flatten_op(e2, op)
 
@@ -28,7 +28,7 @@ def op_equiv(e1, e2, env: dict[Var, Var], op: type[And] | type[Or]) -> bool:
     for p1 in parts1:
         found = False
         for i, p2 in enumerate(parts2):
-            if not matched[i] and alpha_equiv(p1, p2, env):
+            if not matched[i] and alpha_equiv(p1, p2, context, env):
                 matched[i] = True
                 found = True
                 break
@@ -37,12 +37,12 @@ def op_equiv(e1, e2, env: dict[Var, Var], op: type[And] | type[Or]) -> bool:
 
     return True
 
-def alpha_equiv(e1, e2, env: dict[Var, Var] | None = None) -> bool:
+def alpha_equiv(e1, e2, context: Context, env: dict[Var, Var] | None = None) -> bool:
     if env is None:
         env = {}
 
     if isinstance(e1, Not) and isinstance(e2, Not):
-        return alpha_equiv(e1.body, e2.body, env)
+        return alpha_equiv(e1.body, e2.body, context, env)
 
     for quantifier_type in (Forall, Exists, ExistsUniq):
         if isinstance(e1, quantifier_type) and isinstance(e2, quantifier_type):
@@ -56,37 +56,41 @@ def alpha_equiv(e1, e2, env: dict[Var, Var] | None = None) -> bool:
                 newenv = env.copy()
                 for v1, v2 in zip(vars1, perm):
                     newenv[v1] = v2
-                if alpha_equiv(body1, body2, newenv):
+                if alpha_equiv(body1, body2, context, newenv):
                     return True
             return False
 
     if isinstance(e1, And) and isinstance(e2, And):
-        return op_equiv(e1, e2, env, And)
+        return op_equiv(e1, e2, context, env, And)
 
     if isinstance(e1, Or) and isinstance(e2, Or):
-        return op_equiv(e1, e2, env, Or)
+        return op_equiv(e1, e2, context, env, Or)
 
     if isinstance(e1, Implies) and isinstance(e2, Implies):
-        return alpha_equiv(e1.left, e2.left, env) and alpha_equiv(e1.right, e2.right, env)
+        return alpha_equiv(e1.left, e2.left, context, env) and alpha_equiv(e1.right, e2.right, context, env)
 
     if isinstance(e1, Iff) and isinstance(e2, Iff):
-        return alpha_equiv(e1.left, e2.left, env) and alpha_equiv(e1.right, e2.right, env)
+        return alpha_equiv(e1.left, e2.left, context, env) and alpha_equiv(e1.right, e2.right, context, env)
 
     if isinstance(e1, Symbol) and isinstance(e2, Symbol):
         if e1.name != e2.name or len(e1.args) != len(e2.args):
             return False
+        if context.equality is not None and e1.name == context.equality.equal.name:
+            a1, b1 = e1.args
+            a2, b2 = e2.args
+            return (alpha_equiv(a1, a2, context, env) and alpha_equiv(b1, b2, context, env)) or (alpha_equiv(a1, b2, context, env) and alpha_equiv(b1, a2, context, env))
         for a, b in zip(e1.args, e2.args):
-            if not alpha_equiv(a, b, env):
+            if not alpha_equiv(a, b, context, env):
                 return False
         return True
 
     if isinstance(e1, Compound) and isinstance(e2, Compound):
-        if not alpha_equiv(e1.fun, e2.fun):
+        if not alpha_equiv(e1.fun, e2.fun, context, env):
             return False
         if len(e1.args) != len(e2.args):
             return False
         for a, b in zip(e1.args, e2.args):
-            if not alpha_equiv(a, b, env):
+            if not alpha_equiv(a, b, context, env):
                 return False
         return True
 
@@ -171,7 +175,7 @@ def alpha_equiv_with_defs(e1, e2, context: Context, expand_all: bool = False) ->
     else:
         e1_exp = normalize_neg(expand_basic_defs(e1, context, expand_all))
         e2_exp = normalize_neg(expand_basic_defs(e2, context, expand_all))
-        return alpha_equiv(e1_exp, e2_exp)
+        return alpha_equiv(e1_exp, e2_exp, context)
 
 def expand_basic_defs(expr, context: Context, expand_all: bool):
     if isinstance(expr, Symbol):
@@ -294,7 +298,7 @@ def substitute(expr, mapping: dict[Term, Term], used_vars: set[Var] | None = Non
         return Symbol(expr.name, new_args)
 
     if isinstance(expr, Compound):
-        new_args = [substitute(arg, mapping, used_vars) for arg in expr.args]
+        new_args = tuple(substitute(arg, mapping, used_vars) for arg in expr.args)
         return Compound(substitute(expr.fun, mapping, used_vars), new_args)
 
     if isinstance(expr, (Fun, Con, Var)):

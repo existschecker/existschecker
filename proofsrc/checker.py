@@ -18,14 +18,8 @@ def goal_in_context(goal, context: Context) -> bool:
         return context.has_deffun_existence(goal.name)
     elif isinstance(goal, DefFunUniq):
         return context.has_deffun_uniqueness(goal.name)
-    elif isinstance(goal, Symbol) and context.equality is not None and goal.name == context.equality.equal.name:
-        g = EGraph()
-        for f in context.formulas:
-            if isinstance(f, Symbol) and f.name == context.equality.equal.name:
-                g.union(f.args[0], f.args[1])
-        t1 = recurse_term(g, goal.args[0])
-        t2 = recurse_term(g, goal.args[1])
-        return t1 == t2
+    elif isinstance(goal, Symbol) and context.equality is not None and goal.name == context.equality.equal.name and goal.args[0] == goal.args[1]:
+        return True
     else:
         return expr_in_context(goal, context)
 
@@ -452,15 +446,20 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             logger.error(f"{sp}❌ [Substitute] Not fact: {pretty_expr(node.fact)}")
             return False
         logger.debug(f"{sp}[Substitute] Fact: {pretty_expr(node.fact)}")
-        logger.debug(f"{sp}[Substitute] Target conclusion: {pretty_expr(node.conclusion)}")
-        fact_norm, conclusion_norm = equal_norm(node.fact, node.conclusion, context)
-        logger.debug(f"{sp}[Substitute] fact_norm: {pretty_expr(fact_norm)}")
-        logger.debug(f"{sp}[Substitute] conclusion_norm: {pretty_expr(conclusion_norm)}")
-        if not alpha_equiv_with_defs(fact_norm, conclusion_norm, context):
-            logger.error(f"{sp}❌ [Substitute] Not matched")
-            return False
-        add_conclusion(context, node.conclusion)
-        logger.debug(f"{sp}[Substitute] Matched, added conclusion")
+        for k, v in node.env.items():
+            if not goal_in_context(Symbol(context.equality.equal.name, [k, v]), context):
+                logger.error(f"{sp}❌ [Substitute] Not equal: {k}, {v}")
+                return False
+            logger.debug(f"{sp}[Substitute] Equal: {k}, {v}")
+        goal = substitute(node.fact, node.env)
+        logger.debug(f"{sp}[Substitute] derived goal: {pretty_expr(goal)}")
+        if node.conclusion is not None:
+            if not alpha_equiv_with_defs(node.conclusion, goal, context):
+                logger.error(f"{sp}❌ [Substitute] Not matched with conclusion: {pretty_expr(node.conclusion)}")
+                return False
+            logger.debug(f"{sp}[Substitute] Matched with conclusion: {pretty_expr(node.conclusion)}")
+        add_conclusion(context, goal)
+        logger.debug(f"{sp}[Substitute] Added {pretty_expr(goal)}")
         return True
 
     if isinstance(node, DefPre):

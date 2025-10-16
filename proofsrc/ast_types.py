@@ -180,7 +180,8 @@ class Connect:
 @dataclass
 class Substitute:
     fact: object
-    conclusion: object
+    env: dict["Term", "Term"]
+    conclusion: object | None
 
 @dataclass
 class DefPre:
