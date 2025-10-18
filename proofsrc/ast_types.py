@@ -252,8 +252,12 @@ class Formula:
 
 @dataclass
 class Symbol(Formula):
-    name: str
+    pred: "Pred"
     args: list[Term]
+
+@dataclass
+class Pred:
+    name: str
 
 @dataclass(frozen=True)
 class Compound(Term):
@@ -406,7 +410,9 @@ def pretty_expr(expr):
     if isinstance(expr, DefFunUniq):
         return expr.name
     if isinstance(expr, Symbol):
-        return f"{expr.name}({",".join([pretty_expr(arg) for arg in expr.args])})"
+        return f"{pretty_expr(expr.pred)}({",".join([pretty_expr(arg) for arg in expr.args])})"
+    if isinstance(expr, Pred):
+        return expr.name
     if isinstance(expr, Compound):
         return f"{pretty_expr(expr.fun)}({','.join([pretty_expr(arg) for arg in expr.args])})"
     if isinstance(expr, Fun):

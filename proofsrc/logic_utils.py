@@ -1,4 +1,4 @@
-from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, Symbol, Context, Compound, Fun, Con, Var, Bottom, Term, pretty_expr
+from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, Symbol, Context, Compound, Fun, Con, Var, Bottom, Term, Pred, pretty_expr
 from itertools import permutations
 from dataclasses import dataclass
 from copy import deepcopy
@@ -83,9 +83,11 @@ def alpha_equiv(e1, e2, context: Context, env: dict[Var, Var] | None = None) -> 
         return alpha_equiv(e1.left, e2.left, context, env) and alpha_equiv(e1.right, e2.right, context, env)
 
     if isinstance(e1, Symbol) and isinstance(e2, Symbol):
-        if e1.name != e2.name or len(e1.args) != len(e2.args):
+        if not alpha_equiv(e1.pred, e2.pred, context, env):
             return False
-        if context.equality is not None and e1.name == context.equality.equal.name:
+        if len(e1.args) != len(e2.args):
+            return False
+        if context.equality is not None and e1.pred.name == context.equality.equal.name:
             a1, b1 = e1.args
             a2, b2 = e2.args
             return (alpha_equiv(a1, a2, context, env) and alpha_equiv(b1, b2, context, env)) or (alpha_equiv(a1, b2, context, env) and alpha_equiv(b1, a2, context, env))
@@ -93,6 +95,9 @@ def alpha_equiv(e1, e2, context: Context, env: dict[Var, Var] | None = None) -> 
             if not alpha_equiv(a, b, context, env):
                 return False
         return True
+
+    if isinstance(e1, Pred) and isinstance(e2, Pred):
+        return e1.name == e2.name
 
     if isinstance(e1, Compound) and isinstance(e2, Compound):
         if not alpha_equiv(e1.fun, e2.fun, context, env):
@@ -189,15 +194,15 @@ def alpha_equiv_with_defs(e1, e2, context: Context, expand_all: bool = False) ->
 
 def expand_basic_defs(expr, context: Context, expand_all: bool):
     if isinstance(expr, Symbol):
-        if expr.name in context.atoms:
-            return Symbol(expr.name, [expand_basic_defs(arg, context, expand_all) for arg in expr.args])
-        if expr.name in context.defpres:
-            defpre = context.defpres[expr.name]
+        if expr.pred.name in context.atoms:
+            return Symbol(expand_basic_defs(expr.pred, context, expand_all), [expand_basic_defs(arg, context, expand_all) for arg in expr.args])
+        if expr.pred.name in context.defpres:
+            defpre = context.defpres[expr.pred.name]
             if defpre.autoexpand or expand_all:
                 expanded = substitute(defpre.formula, dict(zip(defpre.args, expr.args)))
                 return expand_basic_defs(expanded, context, expand_all)
             else:
-                return Symbol(expr.name, [expand_basic_defs(arg, context, expand_all) for arg in expr.args])
+                return Symbol(expand_basic_defs(expr.pred, context, expand_all), [expand_basic_defs(arg, context, expand_all) for arg in expr.args])
         else:
             raise Exception(f"Unexpected expr (Symbol): {pretty_expr(expr)}")
     elif isinstance(expr, Compound):
@@ -212,7 +217,7 @@ def expand_basic_defs(expr, context: Context, expand_all: bool):
                 return Compound(expand_basic_defs(expr.fun, context, expand_all), [expand_basic_defs(arg, context, expand_all) for arg in expr.args])
         else:
             raise Exception(f"Unexpected expr (Compound): {pretty_expr(expr)}")
-    elif isinstance(expr, (Fun, Con, Var)):
+    elif isinstance(expr, (Pred, Fun, Con, Var)):
         return expr
     elif isinstance(expr, Not):
         return Not(expand_basic_defs(expr.body, context, expand_all))
@@ -305,13 +310,13 @@ def substitute(expr, mapping: dict[Term, Term], used_vars: set[Var] | None = Non
 
     if isinstance(expr, Symbol):
         new_args = [substitute(arg, mapping, used_vars) for arg in expr.args]
-        return Symbol(expr.name, new_args)
+        return Symbol(substitute(expr.pred, mapping, used_vars), new_args)
 
     if isinstance(expr, Compound):
         new_args = tuple(substitute(arg, mapping, used_vars) for arg in expr.args)
         return Compound(substitute(expr.fun, mapping, used_vars), new_args)
 
-    if isinstance(expr, (Fun, Con, Var)):
+    if isinstance(expr, (Pred, Fun, Con, Var)):
         return expr
 
     if isinstance(expr, Not):
@@ -377,7 +382,9 @@ def make_quantifiers(qs: list[Forall | Exists], body):
 def alpha_rename(expr, rename_map: dict[Var, Var]):
     if isinstance(expr, Symbol):
         new_args = [alpha_rename(a, rename_map) for a in expr.args]
-        return Symbol(expr.name, new_args)
+        return Symbol(alpha_rename(expr.pred, rename_map), new_args)
+    elif isinstance(expr, Pred):
+        return expr
     elif isinstance(expr, Compound):
         new_args = [alpha_rename(a, rename_map) for a in expr.args]
         return Compound(alpha_rename(expr.fun, rename_map), new_args)
@@ -569,8 +576,9 @@ if __name__ == "__main__":
     z = Var("z")
     w = Var("w")
     pair = Fun("pair")
-    e1 = Exists(w, And(Symbol("in", [z, w]), Symbol("in", [w, Compound(pair, [x, y])])))
-    e2 = Exists(x, And(Symbol("in", [z, x]), Symbol("in", [x, Compound(pair, [x, y])])))
+    predin = Pred("in")
+    e1 = Exists(w, And(Symbol(predin, [z, w]), Symbol(predin, [w, Compound(pair, [x, y])])))
+    e2 = Exists(x, And(Symbol(predin, [z, x]), Symbol(predin, [x, Compound(pair, [x, y])])))
     print(f"e1: {pretty_expr(e1)}")
     print(f"e2: {pretty_expr(e2)}")
     print(f"alpha_equiv(e1, e2, Context.init()): {alpha_equiv(e1, e2, Context.init())}")

@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, Atom, DefPre, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, Var, Substitute, Symbol, Characterize, Show, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, Atom, DefPre, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, Var, Substitute, Symbol, Characterize, Show, Pred, pretty, pretty_expr
 from logic_utils import expr_in_context, collect_quantifier_vars, substitute, collect_vars, flatten_op, fresh_var, alpha_equiv, alpha_equiv_with_defs
 from equal_utils import EGraph, equal_norm, recurse_term
 
@@ -18,7 +18,7 @@ def goal_in_context(goal, context: Context) -> bool:
         return context.has_deffun_existence(goal.name)
     elif isinstance(goal, DefFunUniq):
         return context.has_deffun_uniqueness(goal.name)
-    elif isinstance(goal, Symbol) and context.equality is not None and goal.name == context.equality.equal.name and goal.args[0] == goal.args[1]:
+    elif isinstance(goal, Symbol) and context.equality is not None and goal.pred.name == context.equality.equal.name and goal.args[0] == goal.args[1]:
         return True
     else:
         return expr_in_context(goal, context)
@@ -318,7 +318,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
                 and isinstance(node.fact.right, Forall)
                 and isinstance(node.fact.right.body, Implies)
                 and isinstance(node.fact.right.body.right, Symbol)
-                and node.fact.right.body.right.name == context.equality.equal.name
+                and node.fact.right.body.right.pred.name == context.equality.equal.name
                 and node.fact.right.body.right.args[0] == node.fact.right.var
                 and node.fact.right.body.right.args[1] == list(node.env.keys())[0]
                 and alpha_equiv_with_defs(substitute(node.fact.left, {list(node.env.values())[0]: node.fact.right.var}), node.fact.right.body.left, context)):
@@ -446,7 +446,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             return False
         logger.debug(f"{sp}[Substitute] Fact: {pretty_expr(node.fact)}")
         for k, v in node.env.items():
-            if not goal_in_context(Symbol(context.equality.equal.name, [k, v]), context):
+            if not goal_in_context(Symbol(Pred(context.equality.equal.name), [k, v]), context):
                 logger.error(f"{sp}❌ [Substitute] Not equal: {k}, {v}")
                 return False
             logger.debug(f"{sp}[Substitute] Equal: {k}, {v}")
@@ -499,7 +499,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
         logger.debug(f"{sp}[DefCon] existence_formula is matched with theorem: {pretty_expr(node.existence.formula)}")
         var = fresh_var(existsuniq.var, [Con(node.name)])
         body = substitute(existsuniq.body, {existsuniq.var: var})
-        uniqueness_formula = Forall(var, Implies(body, Symbol(context.equality.equal.name, [var, Con(node.name)])))
+        uniqueness_formula = Forall(var, Implies(body, Symbol(Pred(context.equality.equal.name), [var, Con(node.name)])))
         if not alpha_equiv_with_defs(node.uniqueness.formula, uniqueness_formula, context):
             logger.error(f"{sp}❌ [DefCon] uniqueness_formula is not matched with theorem: {pretty_expr(node.uniqueness.formula)}")
             return False
@@ -518,7 +518,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             logger.error(f"{sp}❌ [DefFun] existence_formula is not matched with theorem: {pretty_expr(node.existence.formula)}")
             return False
         logger.debug(f"{sp}[DefFun] existence_formula is matched with theorem: {pretty_expr(node.existence.formula)}")
-        uniqueness_formula = Forall(existsuniq.var, Implies(existsuniq.body, Symbol(context.equality.equal.name, [existsuniq.var, Compound(Fun(node.name), args)])))
+        uniqueness_formula = Forall(existsuniq.var, Implies(existsuniq.body, Symbol(Pred(context.equality.equal.name), [existsuniq.var, Compound(Fun(node.name), args)])))
         for arg in reversed(args):
             uniqueness_formula = Forall(arg, uniqueness_formula)
         if not alpha_equiv_with_defs(node.uniqueness.formula, uniqueness_formula, context):
@@ -541,7 +541,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
     if isinstance(node, Equality):
         logger.debug(f"{sp}[Equality] name: {node.equal.name}")
         logger.debug(f"{sp}[Equality] Checking {node.equal.name} reflection theorem: {pretty_expr(node.reflection.conclusion)}")
-        reflection = Forall(Var("x"), Symbol(node.equal.name, [Var("x"), Var("x")]))
+        reflection = Forall(Var("x"), Symbol(Pred(node.equal.name), [Var("x"), Var("x")]))
         if not alpha_equiv_with_defs(node.reflection.conclusion, reflection, context):
             logger.error(f"{sp}❌ [Equality] Not matched with expected formula: {pretty_expr(reflection)}")
             return False
@@ -560,10 +560,10 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             for i in range(arity):
                 args_x.append(Var(f"x_{i}"))
                 args_y.append(Var(f"y_{i}"))
-            premise = Symbol(node.equal.name, [args_x[0], args_y[0]])
+            premise = Symbol(Pred(node.equal.name), [args_x[0], args_y[0]])
             for i in range(1, arity):
-                premise = And(premise, Symbol(node.equal.name, [args_x[i], args_y[i]]))
-            conclusion = Implies(Symbol(predicate, args_x), Symbol(predicate, args_y))
+                premise = And(premise, Symbol(Pred(node.equal.name), [args_x[i], args_y[i]]))
+            conclusion = Implies(Symbol(Pred(predicate), args_x), Symbol(Pred(predicate), args_y))
             replacement = Implies(premise, conclusion)
             for arg in reversed(args_y):
                 replacement = Forall(arg, replacement)
