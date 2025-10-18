@@ -568,7 +568,7 @@ theorem bigcup_cor1 \forall x\forall y(in(y,x)\to subset(y,bigcup(x))) {
       any z {
         assume in(z,y) {
           connect in(z,y)\wedge in(y,x)
-          lift in(z,y)\wedge in(y,x) for y:y
+          lift for y:y conclude \exists y(in(z,y)\wedge in(y,x))
           apply bigcup_existence for x:x,z:z
           split in(z,bigcup(x))\leftrightarrow\exists w(in(z,w)\wedge in(w,x))
           invoke \exists y(in(z,y)\wedge in(y,x))\to in(z,bigcup(x))
@@ -631,7 +631,7 @@ theorem cup_cor1 \forall x\forall y\forall z(in(z,cup(x,y))\leftrightarrow in(z,
           show \exists w(in(z,w)\wedge in(w,pair(x,y))) {
             apply pair_cor1 for x:x,y:y
             connect in(z,x)\wedge in(x,pair(x,y))
-            lift in(z,x)\wedge in(x,pair(x,y)) for x:x
+            lift for w:x conclude \exists w(in(z,w)\wedge in(w,pair(x,y)))
           }
           show in(z,cup(x,y)) {
             apply bigcup_existence for x:pair(x,y),z:z
@@ -644,7 +644,7 @@ theorem cup_cor1 \forall x\forall y\forall z(in(z,cup(x,y))\leftrightarrow in(z,
           show \exists w(in(z,w)\wedge in(w,pair(x,y))) {
             apply pair_cor2 for x:x,y:y
             connect in(z,y)\wedge in(y,pair(x,y))
-            lift in(z,y)\wedge in(y,pair(x,y)) for y:y
+            lift for w:y conclude \exists w(in(z,w)\wedge in(w,pair(x,y)))
           }
           show in(z,cup(x,y)) {
             apply bigcup_existence for x:pair(x,y),z:z

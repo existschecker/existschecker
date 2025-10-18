@@ -52,6 +52,16 @@ def alpha_equiv(e1, e2, context: Context, env: dict[Var, Var] | None = None) -> 
             if len(vars1) != len(vars2):
                 return False
 
+            free_vars2, _ = collect_vars(e2)
+            for v1 in vars1:
+                if v1 in free_vars2:
+                    return False
+
+            free_vars1, _ = collect_vars(e1)
+            for v2 in vars2:
+                if v2 in free_vars1:
+                    return False
+
             for perm in permutations(vars2):
                 newenv = env.copy()
                 for v1, v2 in zip(vars1, perm):
@@ -151,7 +161,7 @@ def collect_vars(expr, bound: set[Var] | None = None) -> tuple[set[Var], set[Var
         f2, b2 = collect_vars(expr.right, bound)
         return f1 | f2, b1 | b2
 
-    elif isinstance(expr, (Forall, Exists)):
+    elif isinstance(expr, (Forall, Exists, ExistsUniq)):
         f_body, b_body = collect_vars(expr.body, bound | {expr.var})
         return f_body, b_body | {expr.var}
 
@@ -554,40 +564,14 @@ def make_tree(expr, prefix: str = "", is_root: bool = True, is_last: bool = True
         raise Exception(f"Unexpected expr: {expr}")
 
 if __name__ == "__main__":
-    from ast_types import Atom, DefPre
-    context = Context([], False, {"in": Atom("PREDICATE", "in", 2)}, {}, {}, {}, {}, {}, {}, None)
-
-    expr = Forall(Var("x"), Forall(Var("y"), Exists(Var("z"), Forall(Var("w"), Iff(Symbol("in", [Var("w"), Var("z")]), Or(Symbol("in", [Var("w"), Var("x")]), Symbol("in", [Var("w"), Var("y")])))))))
-    print("expr")
-    print()
-    print(make_tree(expr))
-    print()
-
-    expr_norm = to_core_logic_form(expr, context)
-    print("to_core_logic_form()")
-    print()
-    print(make_tree(expr_norm))
-    print()
-
-    expr_norm = to_nnf(expr_norm)
-    print("to_nnf()")
-    print()
-    print(make_tree(expr_norm))
-    print()
-
-    expr_norm = to_pnf(expr_norm)
-    print("to_pnf()")
-    print()
-    print(make_tree(expr_norm))
-    print()
-
-    expr_norm = to_cnf(expr_norm)
-    print("to_cnf()")
-    print()
-    print(make_tree(expr_norm))
-    print()
-
-    print("simplify()")
-    print()
-    print(make_tree(expr_norm))
-    print()
+    x = Var("x")
+    y = Var("y")
+    z = Var("z")
+    w = Var("w")
+    pair = Fun("pair")
+    e1 = Exists(w, And(Symbol("in", [z, w]), Symbol("in", [w, Compound(pair, [x, y])])))
+    e2 = Exists(x, And(Symbol("in", [z, x]), Symbol("in", [x, Compound(pair, [x, y])])))
+    print(f"e1: {pretty_expr(e1)}")
+    print(f"e2: {pretty_expr(e2)}")
+    print(f"alpha_equiv(e1, e2, Context.init()): {alpha_equiv(e1, e2, Context.init())}")
+    print(f"alpha_equiv(e2, e1, Context.init()): {alpha_equiv(e2, e1, Context.init())}")

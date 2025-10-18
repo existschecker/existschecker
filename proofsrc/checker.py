@@ -289,25 +289,24 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
         return True
     
     if isinstance(node, Lift):
-        if not goal_in_context(node.fact, context):
-            logger.error(f"{sp}❌ [Lift] Not fact: {pretty_expr(node.fact)}")
+        logger.debug(f"{sp}[Lift] Target conclusion: {pretty_expr(node.conclusion)}")
+        vars, body = collect_quantifier_vars(node.conclusion, Exists)
+        if set(vars) != set(node.env):
+            logger.error(f"{sp}❌ [Lift] Not matched: vars: {vars}, node.env: {node.env}")
             return False
-        logger.debug(f"{sp}[Lift] fact: {pretty_expr(node.fact)}")
-        free_vars, _ = collect_vars(node.fact)
-        if not set(node.env.values()).issubset(free_vars):
-            logger.error(f"{sp}❌ [Lift] Cannot be lifted: vars={sorted(free_vars, key=lambda v: v.name)}, env={node.env}")
+        logger.debug(f"{sp}[Lift] Matched: vars: {vars}, node.env: {node.env}")
+        fact = substitute(body, node.env)
+        if not goal_in_context(fact, context):
+            logger.error(f"{sp}❌ [Lift] Not fact: {pretty_expr(fact)}")
             return False
-        logger.debug(f"{sp}[Lift] Can be lifted: vars={sorted(free_vars, key=lambda v: v.name)}, env={node.env}")
-        lifted = substitute(node.fact, {v: k for k, v in node.env.items()})
-        for k in reversed(list(node.env.keys())):
-            lifted = Exists(k, lifted)
-        logger.debug(f"{sp}[Lift] lifted formula: {pretty_expr(lifted)}")
-        if node.conclusion is not None:
-            if not alpha_equiv_with_defs(node.conclusion, lifted, context):
-                logger.error(f"{sp}❌ [Lift] Not matched: node.conclusion={pretty_expr(node.conclusion)}, lifted={pretty_expr(lifted)}")
+        logger.debug(f"{sp}[Lift] Fact: {pretty_expr(fact)}")
+        if node.fact is not None:
+            if not alpha_equiv_with_defs(node.fact, fact, context):
+                logger.error(f"{sp}❌ [Lift] Not matched: node.fact={pretty_expr(node.fact)}, fact={pretty_expr(fact)}")
                 return False
-            logger.debug(f"{sp}[Lift] Matched: node.conclusion={pretty_expr(node.conclusion)}, lifted={pretty_expr(lifted)}")
-        add_conclusion(context, lifted)
+            logger.debug(f"{sp}[Lift] Matched: node.fact={pretty_expr(node.fact)}, fact={pretty_expr(fact)}")
+        add_conclusion(context, node.conclusion)
+        logger.debug(f"{sp}[Lift] Added {pretty_expr(node.conclusion)}")
         return True
 
     if isinstance(node, Characterize):

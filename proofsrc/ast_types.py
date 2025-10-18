@@ -144,9 +144,9 @@ class Apply:
 
 @dataclass
 class Lift:
-    fact: object
-    env: dict["Var", "Compound | Con | Var"]
-    conclusion: object | None
+    fact: object | None
+    env: dict["Var", "Term"]
+    conclusion: object
 
 @dataclass
 class Characterize:
