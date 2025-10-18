@@ -300,34 +300,6 @@ def alpha_rename(expr, rename_map: dict[Var, Var]):
     else:
         return expr
 
-def make_tree(expr, prefix: str = "", is_root: bool = True, is_last: bool = True) -> str:
-    print_prefix = prefix + ("" if is_root else ("└─" if is_last else "├─"))
-    child_pref = prefix + ("   " if is_last or is_root else "│  ")
-    if isinstance(expr, Symbol):
-        args_str = ", ".join(make_tree(arg, "", True) for arg in expr.args)
-        return f"{print_prefix}Symbol({expr.name}, [{args_str}])"
-    elif isinstance(expr, Compound):
-        args_str = ", ".join(make_tree(arg, "", True) for arg in expr.args)
-        return f"{print_prefix}Compound({make_tree(expr.fun, "", True)}, [{args_str}])"
-    elif isinstance(expr, Fun):
-        return f"{print_prefix}{expr.name}"
-    elif isinstance(expr, Con):
-        return f"{print_prefix}{expr.name}"
-    elif isinstance(expr, Var):
-        return f"{print_prefix}{expr.name}"
-    elif isinstance(expr, Not):
-        body_str = make_tree(expr.body, child_pref, False, True)
-        return f"{print_prefix}Not\n{body_str}"
-    elif isinstance(expr, (And, Or, Implies, Iff)):
-        left_str = make_tree(expr.left, child_pref, False, False)
-        right_str = make_tree(expr.right, child_pref, False, True)
-        return f"{print_prefix}{type(expr).__name__}\n{left_str}\n{right_str}"
-    elif isinstance(expr, (Exists, Forall, ExistsUniq)):
-        body_str = make_tree(expr.body, child_pref, False, True)
-        return f"{print_prefix}{type(expr).__name__}({expr.var.name})\n{body_str}"
-    else:
-        raise Exception(f"Unexpected expr: {expr}")
-
 if __name__ == "__main__":
     x = Var("x")
     y = Var("y")
