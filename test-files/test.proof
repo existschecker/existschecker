@@ -1,4 +1,4 @@
-atom predicate in arity 2
+primitive predicate in arity 2
 
 theorem test01 \forall x\forall y(in(x,y)\to in(x,y)) {
   any x, y conclude in(x,y)\to in(x,y) {

@@ -1,5 +1,5 @@
 from html import escape
-from ast_types import Atom, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Check, pretty_expr
+from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Check, pretty_expr
 
 HTML_TEMPLATE = """<!doctype html>
 <html lang="en">
@@ -82,9 +82,9 @@ def render_node(node) -> str:
     bullet = "<button class='bullet'>•</button>"
     toggle = "<button class='toggle'>▼</button>"
 
-    if isinstance(node, Atom):
+    if isinstance(node, PrimPred):
         header_parts = [bullet,
-                        render_keyword("atom"),
+                        render_keyword("primitive predicate"),
                         render_identifier(node.name)]
     elif isinstance(node, Axiom):
         header_parts = [bullet,

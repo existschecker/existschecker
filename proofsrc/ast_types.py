@@ -6,7 +6,7 @@ logger = logging.getLogger("proof")
 @dataclass
 class Context:
     formulas: list        # 通常の論理式
-    atoms: dict[str, "Atom"]
+    primpreds: dict[str, "PrimPred"]
     axioms: dict[str, "Axiom"]
     theorems: dict[str, "Theorem"]
     defpreds: dict[str, "DefPred"]
@@ -17,10 +17,10 @@ class Context:
 
     @staticmethod
     def init() -> "Context":
-        return Context(formulas=[], atoms={}, axioms={}, theorems={}, defpreds={}, defcons={}, deffuns={}, deffunterms={}, equality=None)
+        return Context(formulas=[], primpreds={}, axioms={}, theorems={}, defpreds={}, defcons={}, deffuns={}, deffunterms={}, equality=None)
 
     def copy(self, formulas) -> "Context":
-        return Context(formulas=formulas, atoms=self.atoms, axioms=self.axioms, theorems=self.theorems, defpreds=self.defpreds, defcons=self.defcons, deffuns=self.deffuns, deffunterms=self.deffunterms, equality=self.equality)
+        return Context(formulas=formulas, primpreds=self.primpreds, axioms=self.axioms, theorems=self.theorems, defpreds=self.defpreds, defcons=self.defcons, deffuns=self.deffuns, deffunterms=self.deffunterms, equality=self.equality)
 
     def has_defcon_existence(self, existence_name: str) -> bool:
         for defcon in self.defcons.values():
@@ -72,7 +72,7 @@ class Context:
 
 # === DSL ノード定義 ===
 @dataclass
-class Atom:
+class PrimPred:
     type: str
     name: str
     arity: int
@@ -238,7 +238,7 @@ class DefFunTerm:
 
 @dataclass
 class Equality:
-    equal: Atom | DefPred
+    equal: PrimPred | DefPred
     reflection: Axiom | Theorem
     replacement: dict[str, Axiom | Theorem]
 
@@ -321,10 +321,10 @@ class Bottom:
 
 def pretty(node, indent=0):
     sp = "  " * indent  # インデント幅2スペース
-    if isinstance(node, Atom):
-        logger.debug(f"{sp}[Atom] type: {node.type}")
-        logger.debug(f"{sp}       name: {node.name}")
-        logger.debug(f"{sp}       arity: {node.arity}")
+    if isinstance(node, PrimPred):
+        logger.debug(f"{sp}[PrimPred] type: {node.type}")
+        logger.debug(f"{sp}           name: {node.name}")
+        logger.debug(f"{sp}           arity: {node.arity}")
 
     elif isinstance(node, Theorem):
         logger.debug(f"{sp}[Theorem] name: {node.name}")

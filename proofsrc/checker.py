@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, Atom, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, Var, Substitute, Symbol, Characterize, Show, Pred, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, Var, Substitute, Symbol, Characterize, Show, Pred, pretty, pretty_expr
 from logic_utils import expr_in_context, collect_quantifier_vars, substitute, collect_vars, flatten_op, fresh_var, alpha_equiv, alpha_equiv_with_defs
 
 import logging
@@ -33,9 +33,9 @@ def check_ast(ast: list) -> bool:
 def check_proof(node, context: Context, indent: int = 0) -> bool:
     sp = "  " * indent
 
-    if isinstance(node, Atom):
-        logger.debug(f"{sp}[Atom] type: {node.type}, name: {node.name}, arity: {node.arity}")
-        context.atoms[node.name] = node
+    if isinstance(node, PrimPred):
+        logger.debug(f"{sp}[PrimPred] type: {node.type}, name: {node.name}, arity: {node.arity}")
+        context.primpreds[node.name] = node
         return True
 
     if isinstance(node, Axiom):
@@ -548,12 +548,12 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
         for predicate in node.replacement:
             logger.debug(f"{sp}[Equality] Checking {predicate} replacement theorem: {pretty_expr(node.replacement[predicate].conclusion)}")
             if predicate == node.equal.name:
-                if isinstance(node.equal, Atom):
+                if isinstance(node.equal, PrimPred):
                     arity = node.equal.arity
                 elif isinstance(node.equal, DefPred):
                     arity = len(node.equal.args)
             else:
-                arity = context.atoms[predicate].arity
+                arity = context.primpreds[predicate].arity
             args_x = []
             args_y = []
             for i in range(arity):

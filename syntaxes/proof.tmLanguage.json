@@ -22,7 +22,7 @@
 		"definitions": {
 			"patterns": [
 				{
-					"match": "\\b(atom|axiom|theorem|definition|equality)\\s+(\\w+)",
+					"match": "\\b(primitive|axiom|theorem|definition|equality)\\s+(\\w+)",
 					"captures": {
 						"1": { "name": "keyword.declaration.proof"},
 						"2": { "name": "entity.name.function.proof" }

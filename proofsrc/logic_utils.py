@@ -176,7 +176,7 @@ def alpha_equiv_with_defs(e1, e2, context: Context, expand_all: bool = False) ->
 
 def expand_basic_defs(expr, context: Context, expand_all: bool):
     if isinstance(expr, Symbol):
-        if expr.pred.name in context.atoms:
+        if expr.pred.name in context.primpreds:
             return Symbol(expand_basic_defs(expr.pred, context, expand_all), [expand_basic_defs(arg, context, expand_all) for arg in expr.args])
         if expr.pred.name in context.defpreds:
             defpred = context.defpreds[expr.pred.name]

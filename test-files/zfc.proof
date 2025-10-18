@@ -1,4 +1,4 @@
-atom predicate in arity 2
+primitive predicate in arity 2
 
 definition predicate equal(x,y) \forall z(in(z,x)\leftrightarrow in(z,y))
 

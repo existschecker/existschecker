@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, pretty, pretty_expr
 from lexer import Token, lex
 from logic_utils import collect_quantifier_vars
 
@@ -28,8 +28,8 @@ class Parser:
         self.context = Context.init()
         while True:
             tok = self.peek()
-            if tok.type == "ATOM":
-                ast.append(self.parse_atom())
+            if tok.type == "PRIMITIVE":
+                ast.append(self.parse_primitive())
             elif tok.type == "AXIOM":
                 ast.append(self.parse_axiom())
             elif tok.type == "THEOREM":
@@ -44,18 +44,18 @@ class Parser:
                 raise SyntaxError(f"Unexpected token {tok}")
         return ast
 
-    def parse_atom(self) -> Atom:
-        self.consume("ATOM")
+    def parse_primitive(self) -> PrimPred:
+        self.consume("PRIMITIVE")
         tok = self.peek()
         if tok.type == "PREDICATE":
             self.consume(tok.type)
             name = self.consume("IDENT").value
             self.consume("ARITY")
             arity = int(self.consume("NUMBER").value)
-            atom = Atom(type=tok.type, name=name, arity=arity)
-            self.context.atoms[name] = atom
-            logger.debug(f"[atom] {name}")
-            return atom
+            primpred = PrimPred(type=tok.type, name=name, arity=arity)
+            self.context.primpreds[name] = primpred
+            logger.debug(f"[primpred] {name}")
+            return primpred
         else:
             raise SyntaxError(f"Unexpected token {tok}")
 
@@ -431,16 +431,16 @@ class Parser:
     def parse_equality(self) -> Equality:
         self.consume("EQUALITY")
         name = self.consume("IDENT").value
-        if name in self.context.atoms:
-            equal = self.context.atoms[name]
+        if name in self.context.primpreds:
+            equal = self.context.primpreds[name]
             if equal.arity != 2:
-                raise Exception(f"arity of atom {name} is not 2")
+                raise Exception(f"arity of primpred {name} is not 2")
         elif name in self.context.defpreds:
             equal = self.context.defpreds[name]
             if len(equal.args) != 2:
                 raise Exception(f"arity of defpred {name} is not 2")
         else:
-            raise Exception(f"{name} is not atom or defpred")
+            raise Exception(f"{name} is not primpred or defpred")
         self.consume("REFLECTION")
         name = self.consume("IDENT").value
         if name in self.context.axioms:
@@ -453,8 +453,8 @@ class Parser:
         replacement = {}
         while True:
             predicate = self.consume("IDENT").value
-            if not (predicate == equal.name or predicate in self.context.atoms):
-                raise Exception(f"{predicate} is not {equal.name} or atom")
+            if not (predicate == equal.name or predicate in self.context.primpreds):
+                raise Exception(f"{predicate} is not {equal.name} or primpred")
             self.consume("COLON")
             name = self.consume("IDENT").value
             if name in self.context.axioms:
@@ -503,12 +503,12 @@ class Parser:
         tok = self.peek()
         if tok.type == "IDENT":
             name = self.consume("IDENT").value
-            if name in self.context.atoms:
-                arity = self.context.atoms[name].arity
+            if name in self.context.primpreds:
+                arity = self.context.primpreds[name].arity
             elif name in self.context.defpreds:
                 arity = len(self.context.defpreds[name].args)
             else:
-                raise SyntaxError(f"not found in atoms or defpreds: {name}")
+                raise SyntaxError(f"not found in primpreds or defpreds: {name}")
             self.consume("LPAREN")
             args = [self.parse_term()]
             while self.peek().type == "COMMA":
