@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, DefPre, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Atom, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, pretty, pretty_expr
 from lexer import Token, lex
 from logic_utils import collect_quantifier_vars
 
@@ -350,7 +350,7 @@ class Parser:
         self.consume("RBRACE")
         return Show(conclusion=conclusion, body=body)
 
-    def parse_definition(self) -> DefPre | DefCon | DefFun | DefFunTerm:
+    def parse_definition(self) -> DefPred | DefCon | DefFun | DefFunTerm:
         self.consume("DEFINITION")
         tok = self.peek()
         if tok.type == "PREDICATE":
@@ -368,10 +368,10 @@ class Parser:
                 args.append(Var(self.consume("IDENT").value))
             self.consume("RPAREN")
             formula = self.parse_expr()
-            defpre = DefPre(name=name, args=args, formula=formula, autoexpand=autoexpand)
-            self.context.defpres[name] = defpre
-            logger.debug(f"[defpre] {name}")
-            return defpre
+            defpred = DefPred(name=name, args=args, formula=formula, autoexpand=autoexpand)
+            self.context.defpreds[name] = defpred
+            logger.debug(f"[defpred] {name}")
+            return defpred
         elif tok.type == "CONSTANT":
             self.consume("CONSTANT")
             name = self.consume("IDENT").value
@@ -435,12 +435,12 @@ class Parser:
             equal = self.context.atoms[name]
             if equal.arity != 2:
                 raise Exception(f"arity of atom {name} is not 2")
-        elif name in self.context.defpres:
-            equal = self.context.defpres[name]
+        elif name in self.context.defpreds:
+            equal = self.context.defpreds[name]
             if len(equal.args) != 2:
-                raise Exception(f"arity of defpre {name} is not 2")
+                raise Exception(f"arity of defpred {name} is not 2")
         else:
-            raise Exception(f"{name} is not atom or defpre")
+            raise Exception(f"{name} is not atom or defpred")
         self.consume("REFLECTION")
         name = self.consume("IDENT").value
         if name in self.context.axioms:
@@ -505,10 +505,10 @@ class Parser:
             name = self.consume("IDENT").value
             if name in self.context.atoms:
                 arity = self.context.atoms[name].arity
-            elif name in self.context.defpres:
-                arity = len(self.context.defpres[name].args)
+            elif name in self.context.defpreds:
+                arity = len(self.context.defpreds[name].args)
             else:
-                raise SyntaxError(f"not found in atoms or defpres: {name}")
+                raise SyntaxError(f"not found in atoms or defpreds: {name}")
             self.consume("LPAREN")
             args = [self.parse_term()]
             while self.peek().type == "COMMA":

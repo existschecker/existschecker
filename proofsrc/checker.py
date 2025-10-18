@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, Atom, DefPre, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, Var, Substitute, Symbol, Characterize, Show, Pred, pretty, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, Atom, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, Var, Substitute, Symbol, Characterize, Show, Pred, pretty, pretty_expr
 from logic_utils import expr_in_context, collect_quantifier_vars, substitute, collect_vars, flatten_op, fresh_var, alpha_equiv, alpha_equiv_with_defs
 
 import logging
@@ -479,9 +479,9 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
         logger.debug(f"{sp}[Show] Added {pretty_expr(goal)}")
         return True
 
-    if isinstance(node, DefPre):
-        logger.debug(f"{sp}[DefPre] name: {node.name}, args: {node.args}, formula: {pretty_expr(node.formula)}")
-        context.defpres[node.name] = node
+    if isinstance(node, DefPred):
+        logger.debug(f"{sp}[DefPred] name: {node.name}, args: {node.args}, formula: {pretty_expr(node.formula)}")
+        context.defpreds[node.name] = node
         return True
 
     if isinstance(node, DefCon):
@@ -550,7 +550,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             if predicate == node.equal.name:
                 if isinstance(node.equal, Atom):
                     arity = node.equal.arity
-                elif isinstance(node.equal, DefPre):
+                elif isinstance(node.equal, DefPred):
                     arity = len(node.equal.args)
             else:
                 arity = context.atoms[predicate].arity

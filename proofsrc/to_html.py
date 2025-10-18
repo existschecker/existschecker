@@ -1,5 +1,5 @@
 from html import escape
-from ast_types import Atom, Axiom, Theorem, DefPre, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Check, pretty_expr
+from ast_types import Atom, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Check, pretty_expr
 
 HTML_TEMPLATE = """<!doctype html>
 <html lang="en">
@@ -97,7 +97,7 @@ def render_node(node) -> str:
                         render_identifier(node.name),
                         render_expr(node.conclusion)]
         body_html = "".join(render_node(s) for s in node.proof)
-    elif isinstance(node, DefPre):
+    elif isinstance(node, DefPred):
         header_parts = [bullet,
                         render_keyword("definition predicate"),
                         render_keyword("autoexpand") if node.autoexpand else "",

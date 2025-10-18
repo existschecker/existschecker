@@ -178,10 +178,10 @@ def expand_basic_defs(expr, context: Context, expand_all: bool):
     if isinstance(expr, Symbol):
         if expr.pred.name in context.atoms:
             return Symbol(expand_basic_defs(expr.pred, context, expand_all), [expand_basic_defs(arg, context, expand_all) for arg in expr.args])
-        if expr.pred.name in context.defpres:
-            defpre = context.defpres[expr.pred.name]
-            if defpre.autoexpand or expand_all:
-                expanded = substitute(defpre.formula, dict(zip(defpre.args, expr.args)))
+        if expr.pred.name in context.defpreds:
+            defpred = context.defpreds[expr.pred.name]
+            if defpred.autoexpand or expand_all:
+                expanded = substitute(defpred.formula, dict(zip(defpred.args, expr.args)))
                 return expand_basic_defs(expanded, context, expand_all)
             else:
                 return Symbol(expand_basic_defs(expr.pred, context, expand_all), [expand_basic_defs(arg, context, expand_all) for arg in expr.args])

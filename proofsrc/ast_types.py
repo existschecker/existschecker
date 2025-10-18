@@ -9,7 +9,7 @@ class Context:
     atoms: dict[str, "Atom"]
     axioms: dict[str, "Axiom"]
     theorems: dict[str, "Theorem"]
-    defpres: dict[str, "DefPre"]
+    defpreds: dict[str, "DefPred"]
     defcons: dict[str, "DefCon"]
     deffuns: dict[str, "DefFun"]
     deffunterms: dict[str, "DefFunTerm"]
@@ -17,10 +17,10 @@ class Context:
 
     @staticmethod
     def init() -> "Context":
-        return Context(formulas=[], atoms={}, axioms={}, theorems={}, defpres={}, defcons={}, deffuns={}, deffunterms={}, equality=None)
+        return Context(formulas=[], atoms={}, axioms={}, theorems={}, defpreds={}, defcons={}, deffuns={}, deffunterms={}, equality=None)
 
     def copy(self, formulas) -> "Context":
-        return Context(formulas=formulas, atoms=self.atoms, axioms=self.axioms, theorems=self.theorems, defpres=self.defpres, defcons=self.defcons, deffuns=self.deffuns, deffunterms=self.deffunterms, equality=self.equality)
+        return Context(formulas=formulas, atoms=self.atoms, axioms=self.axioms, theorems=self.theorems, defpreds=self.defpreds, defcons=self.defcons, deffuns=self.deffuns, deffunterms=self.deffunterms, equality=self.equality)
 
     def has_defcon_existence(self, existence_name: str) -> bool:
         for defcon in self.defcons.values():
@@ -189,7 +189,7 @@ class Show:
     body: list
 
 @dataclass
-class DefPre:
+class DefPred:
     name: str
     args: list["Var"]
     formula: object
@@ -238,7 +238,7 @@ class DefFunTerm:
 
 @dataclass
 class Equality:
-    equal: Atom | DefPre
+    equal: Atom | DefPred
     reflection: Axiom | Theorem
     replacement: dict[str, Axiom | Theorem]
 
@@ -390,7 +390,7 @@ def pretty(node, indent=0):
         logger.debug(f"{sp}       env: {node.env}")
         logger.debug(f"{sp}       conclusion: {pretty_expr(node.conclusion)}")
 
-    elif isinstance(node, DefPre):
+    elif isinstance(node, DefPred):
         logger.debug(f"{sp}Definition {node.name}: {node.body}")
 
     else:
