@@ -282,6 +282,24 @@ theorem subset_trans \forall x\forall y\forall z(subset(x,y)\wedge subset(y,z)\t
   }
 }
 
+theorem emptyset_subset_cor1 \forall x(subset(x,emptyset)\to equal(x,emptyset)) {
+  any x {
+    assume subset(x,emptyset) {
+      expand subset(x,emptyset) conclude \forall z(in(z,x)\to in(z,emptyset))
+      any y {
+        deny in(y,x) {
+          apply \forall z(in(z,x)\to in(z,emptyset)) for z:y
+          invoke in(y,x)\to in(y,emptyset)
+          apply emptyset_existence for y:y
+          contradict in(y,emptyset)
+        }
+      }
+      apply emptyset_uniqueness for x:x
+      invoke \forall y(notin(y,x))\to equal(x,emptyset)
+    }
+  }
+}
+
 axiom axiom_of_pair \forall x\forall y\exists z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))
 
 theorem pair_exists_uniquely \forall x\forall y\exists!z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)) {
@@ -721,5 +739,54 @@ theorem cup_cor4 \forall x\forall y(subset(y,cup(x,y))) {
     apply cup_commutativity for x:x,y:y
     apply cup_cor3 for x:y,y:x
     substitute subset(y,cup(y,x)) for cup(y,x):cup(x,y)
+  }
+}
+
+axiom axiom_of_powerset \forall x\exists y\forall z(in(z,y)\leftrightarrow subset(z,x))
+
+theorem powerset_exists_uniquely \forall x\exists!y\forall z(in(z,y)\leftrightarrow subset(z,x)) {
+  any x {
+    apply axiom_of_powerset for x:x
+    some y:y such \exists y\forall z(in(z,y)\leftrightarrow subset(z,x)) {
+      any y' {
+        assume \forall z(in(z,y')\leftrightarrow subset(z,x)) {
+          any z {
+            assume in(z,y') {
+              apply \forall z(in(z,y')\leftrightarrow subset(z,x)) for z:z
+              split in(z,y')\leftrightarrow subset(z,x)
+              invoke in(z,y')\to subset(z,x)
+              apply \forall z(in(z,y)\leftrightarrow subset(z,x)) for z:z
+              split in(z,y)\leftrightarrow subset(z,x)
+              invoke subset(z,x)\to in(z,y)
+            }
+            assume in(z,y) {
+              apply \forall z(in(z,y)\leftrightarrow subset(z,x)) for z:z
+              split in(z,y)\leftrightarrow subset(z,x)
+              invoke in(z,y)\to subset(z,x)
+              apply \forall z(in(z,y')\leftrightarrow subset(z,x)) for z:z
+              split in(z,y')\leftrightarrow subset(z,x)
+              invoke subset(z,x)\to in(z,y')
+            }
+            connect in(z,y')\leftrightarrow in(z,y)
+          }
+          expand \forall z(in(z,y')\leftrightarrow in(z,y)) conclude equal(y',y)
+        }
+      }
+      connect \forall z(in(z,y)\leftrightarrow subset(z,x))\wedge\forall y'(\forall z(in(z,y')\leftrightarrow subset(z,x))\to equal(y',y))
+      characterize \forall z(in(z,y)\leftrightarrow subset(z,x))\wedge\forall y'(\forall z(in(z,y')\leftrightarrow subset(z,x))\to equal(y',y)) for y:y
+    }
+  }
+}
+
+definition function powerset by powerset_exists_uniquely tex "\mathcal{P}(",")"
+  existence powerset_existence \forall x\forall z(in(z,powerset(x))\leftrightarrow subset(z,x))
+  uniqueness powerset_uniqueness \forall x\forall y(\forall z(in(z,y)\leftrightarrow subset(z,x))\to equal(y,powerset(x)))
+
+theorem powerset_cor1 \forall x(in(x,powerset(x))) {
+  any x {
+    apply subset_reflection for x:x
+    apply powerset_existence for x:x,z:x
+    split in(x,powerset(x))\leftrightarrow subset(x,x)
+    invoke subset(x,x)\to in(x,powerset(x))
   }
 }
