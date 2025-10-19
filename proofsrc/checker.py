@@ -449,15 +449,16 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
                 logger.error(f"{sp}❌ [Substitute] Not equal: {k}, {v}")
                 return False
             logger.debug(f"{sp}[Substitute] Equal: {k}, {v}")
-        goal = substitute(node.fact, node.env)
-        logger.debug(f"{sp}[Substitute] derived goal: {pretty_expr(goal, context)}")
-        if node.conclusion is not None:
-            if not alpha_equiv_with_defs(node.conclusion, goal, context):
-                logger.error(f"{sp}❌ [Substitute] Not matched with conclusion: {pretty_expr(node.conclusion, context)}")
-                return False
-            logger.debug(f"{sp}[Substitute] Matched with conclusion: {pretty_expr(node.conclusion, context)}")
-        add_conclusion(context, goal)
-        logger.debug(f"{sp}[Substitute] Added {pretty_expr(goal, context)}")
+        fact_subst = substitute(node.fact, node.env)
+        conclusion_subst = substitute(node.conclusion, node.env)
+        logger.debug(f"{sp}[Substitute] fact_subst: {pretty_expr(fact_subst, context)}")
+        logger.debug(f"{sp}[Substitute] conclusion_subst: {pretty_expr(conclusion_subst, context)}")
+        if not alpha_equiv_with_defs(conclusion_subst, fact_subst, context):
+            logger.error(f"{sp}❌ [Substitute] Not matched")
+            return False
+        logger.debug(f"{sp}[Substitute] Matched")
+        add_conclusion(context, node.conclusion)
+        logger.debug(f"{sp}[Substitute] Added {pretty_expr(node.conclusion, context)}")
         return True
 
     if isinstance(node, Show):

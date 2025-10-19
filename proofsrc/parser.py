@@ -349,11 +349,8 @@ class Parser:
                 self.consume("COMMA")
             else:
                 break
-        if self.peek().type == "CONCLUDE":
-            self.consume("CONCLUDE")
-            conclusion = self.parse_expr()
-        else:
-            conclusion = None
+        self.consume("CONCLUDE")
+        conclusion = self.parse_expr()
         return Substitute(fact=fact, env=env, conclusion=conclusion)
 
     def parse_show(self) -> Show:

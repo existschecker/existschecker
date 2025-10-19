@@ -530,7 +530,7 @@ theorem op_characterization \forall x\forall y\forall x'\forall y'(equal(op(x,y)
           apply pair_singleton_cor1 for x:x,y:x',z:y'
           invoke equal(singleton(x),pair(x',y'))\to equal(x,x')
         }
-      substitute equal(pair(singleton(x),pair(x,y)),pair(singleton(x'),pair(x',y'))) for x':x
+      substitute equal(pair(singleton(x),pair(x,y)),pair(singleton(x'),pair(x',y'))) for x':x conclude equal(pair(singleton(x),pair(x,y)),pair(singleton(x),pair(x,y')))
       apply pair_cor8 for x:singleton(x),y:pair(x,y),z:pair(x,y')
       invoke equal(pair(singleton(x),pair(x,y)),pair(singleton(x),pair(x,y')))\to equal(pair(x,y),pair(x,y'))
       apply pair_cor8 for x:x,y:y,z:y'
@@ -634,11 +634,11 @@ theorem cup_characterization \forall x\forall y\forall z(in(z,cup(x,y))\leftrigh
         }
         divide equal(w,x)\vee equal(w,y) conclude in(z,x)\vee in(z,y)
           case equal(w,x) {
-            substitute in(z,w) for w:x
+            substitute in(z,w) for w:x conclude in(z,x)
             pad in(z,x) conclude in(z,x)\vee in(z,y)
           }
           case equal(w,y) {
-            substitute in(z,w) for w:y
+            substitute in(z,w) for w:y conclude in(z,y)
             pad in(z,y) conclude in(z,x)\vee in(z,y)
           }
       }
@@ -680,7 +680,7 @@ theorem cup_commutativity \forall x\forall y(equal(cup(x,y),cup(y,x))) {
   any x,y {
     expand equal(cup(x,y),cup(x,y)) conclude equal(cup(x,y),bigcup(pair(x,y)))
     apply pair_commutativity for x:x,y:y
-    substitute equal(cup(x,y),bigcup(pair(x,y))) for pair(x,y):pair(y,x)
+    substitute equal(cup(x,y),bigcup(pair(x,y))) for pair(x,y):pair(y,x) conclude equal(cup(x,y),bigcup(pair(y,x)))
     expand equal(cup(x,y),bigcup(pair(y,x))) conclude equal(cup(x,y),cup(y,x))
   }
 }
@@ -716,7 +716,7 @@ theorem cup_cor2 \forall x(equal(cup(emptyset,x),x)) {
   any x {
     apply cup_commutativity for x:x,y:emptyset
     apply cup_cor1 for x:x
-    substitute equal(cup(x,emptyset),x) for cup(x,emptyset):cup(emptyset,x)
+    substitute equal(cup(x,emptyset),x) for cup(x,emptyset):cup(emptyset,x) conclude equal(cup(emptyset,x),x)
   }
 }
 
@@ -738,7 +738,7 @@ theorem cup_cor4 \forall x\forall y(subset(y,cup(x,y))) {
   any x,y {
     apply cup_commutativity for x:x,y:y
     apply cup_cor3 for x:y,y:x
-    substitute subset(y,cup(y,x)) for cup(y,x):cup(x,y)
+    substitute subset(y,cup(y,x)) for cup(y,x):cup(x,y) conclude subset(y,cup(x,y))
   }
 }
 
@@ -789,4 +789,27 @@ theorem powerset_cor1 \forall x(in(x,powerset(x))) {
     split in(x,powerset(x))\leftrightarrow subset(x,x)
     invoke subset(x,x)\to in(x,powerset(x))
   }
+}
+
+theorem powerset_cor2 equal(powerset(emptyset),singleton(emptyset)) {
+  any x {
+    assume in(x,powerset(emptyset)) {
+      apply powerset_existence for x:emptyset,z:x
+      split in(x,powerset(emptyset))\leftrightarrow subset(x,emptyset)
+      invoke in(x,powerset(emptyset))\to subset(x,emptyset)
+      apply emptyset_subset_cor1 for x:x
+      invoke subset(x,emptyset)\to equal(x,emptyset)
+      apply singleton_cor1 for x:emptyset
+      substitute in(emptyset,singleton(emptyset)) for emptyset:x conclude in(x,singleton(emptyset))
+    }
+    assume in(x,singleton(emptyset)) {
+      apply singleton_characterization for x:emptyset,y:x
+      split in(x,singleton(emptyset))\leftrightarrow equal(x,emptyset)
+      invoke in(x,singleton(emptyset))\to equal(x,emptyset)
+      apply powerset_cor1 for x:emptyset
+      substitute in(emptyset,powerset(emptyset)) for emptyset:x conclude in(x,powerset(emptyset))
+    }
+    connect in(x,powerset(emptyset))\leftrightarrow in(x,singleton(emptyset))
+  }
+  expand \forall x(in(x,powerset(emptyset))\leftrightarrow in(x,singleton(emptyset))) conclude equal(powerset(emptyset),singleton(emptyset))
 }

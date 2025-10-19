@@ -256,10 +256,9 @@ def render_node(node, context: Context) -> str:
                         render_keyword("substitute"),
                         render_expr(node.fact, context),
                         render_keyword("for"),
-                        render_expr_dict(node.env, context)]
-        if node.conclusion is not None:
-            header_parts.extend([render_keyword("conclude"),
-                                 render_expr(node.conclusion, context)])
+                        render_expr_dict(node.env, context),
+                        render_keyword("conclude"),
+                        render_expr(node.conclusion, context)]
     elif isinstance(node, Show):
         header_parts = [toggle,
                         render_keyword("show"),

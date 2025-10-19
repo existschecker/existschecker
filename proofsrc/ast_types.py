@@ -182,7 +182,7 @@ class Connect:
 class Substitute:
     fact: object
     env: dict["Term", "Term"]
-    conclusion: object | None
+    conclusion: object
 
 @dataclass
 class Show:
