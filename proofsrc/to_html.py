@@ -66,8 +66,11 @@ def render_keyword(keyword: str) -> str:
 def render_identifier(name: str) -> str:
     return f"<span class='identifier'>{escape(name)}</span>"
 
-def render_expr(expr, context: Context) -> str:
-    return f"\\({pretty_expr(expr, context)}\\)"
+def render_expr(node, context: Context) -> str:
+    if isinstance(node, (Axiom, Theorem, DefConExist, DefConUniq, DefFunExist, DefFunUniq)):
+        return render_identifier(node.name)
+    else:
+        return f"\\({pretty_expr(node, context)}\\)"
 
 def render_expr_list(expr_list: list, context: Context) -> str:
     return f"\\({",".join(pretty_expr(expr, context) for expr in expr_list)}\\)"
@@ -164,10 +167,7 @@ def render_node(node, context: Context) -> str:
                         render_keyword("split"),
                         render_expr(node.fact, context)]
     elif isinstance(node, Apply):
-        if isinstance(node.fact, (Axiom, Theorem, DefConExist, DefConUniq, DefFunExist, DefFunUniq)):
-            fact = render_identifier(node.fact.name)
-        else:
-            fact = render_expr(node.fact, context)
+        fact = render_expr(node.fact, context)
         header_parts = [bullet,
                         render_keyword("apply"),
                         fact,
