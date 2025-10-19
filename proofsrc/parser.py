@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement
 from lexer import Token, lex
 from logic_utils import collect_quantifier_vars
 
@@ -467,13 +467,14 @@ class Parser:
         self.consume("REFLECTION")
         name = self.consume("IDENT").value
         if name in self.context.axioms:
-            reflection = self.context.axioms[name]
+            reflection_evidence = self.context.axioms[name]
         elif name in self.context.theorems:
-            reflection = self.context.theorems[name]
+            reflection_evidence = self.context.theorems[name]
         else:
             raise Exception(f"{name} is not axiom or theorem")
+        reflection = EqualityReflection(evidence=reflection_evidence)
         self.consume("REPLACEMENT")
-        replacement = {}
+        replacement_evidence = {}
         while True:
             predicate = self.consume("IDENT").value
             if not (predicate == equal.name or predicate in self.context.primpreds):
@@ -486,11 +487,12 @@ class Parser:
                 formula = self.context.theorems[name]
             else:
                 raise Exception(f"{name} is not axiom or theorem")
-            replacement[predicate] = formula
+            replacement_evidence[predicate] = formula
             if self.peek().type == "COMMA":
                 self.consume("COMMA")
             else:
                 break
+        replacement = EqualityReplacement(replacement_evidence)
         equality = Equality(equal=equal, reflection=reflection, replacement=replacement)
         self.context.equality = equality
         logger.debug(f"[equality] {type(equal)}: {equal.name}")

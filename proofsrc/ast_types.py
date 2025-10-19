@@ -244,8 +244,16 @@ class DefFunTerm:
 @dataclass
 class Equality:
     equal: PrimPred | DefPred
-    reflection: Axiom | Theorem
-    replacement: dict[str, Axiom | Theorem]
+    reflection: "EqualityReflection"
+    replacement: "EqualityReplacement"
+
+@dataclass
+class EqualityReflection:
+    evidence: Axiom | Theorem
+
+@dataclass
+class EqualityReplacement:
+    evidence: dict[str, Axiom | Theorem]
 
 @dataclass(frozen=True)
 class Term():

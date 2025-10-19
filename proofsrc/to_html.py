@@ -1,5 +1,5 @@
 from html import escape
-from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Check, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, pretty_expr
+from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Check, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, pretty_expr
 
 HTML_TEMPLATE = """<!doctype html>
 <html lang="en">
@@ -141,12 +141,18 @@ def render_node(node, context: Context) -> str:
                         render_identifier(node.name) + "(" + ",".join(arg.name for arg in node.args) + ")",
                         render_expr(node.term, context)]
     elif isinstance(node, Equality):
-        header_parts = [bullet,
+        header_parts = [toggle,
                         render_keyword("equality"),
-                        render_identifier(node.equal.name),
+                        render_identifier(node.equal.name)]
+        body_html = render_node(node.reflection, context) + render_node(node.replacement, context)
+    elif isinstance(node, EqualityReflection):
+        header_parts = [bullet,
                         render_keyword("reflection"),
-                        render_identifier(node.reflection.name),
-                        render_keyword("replacement")]
+                        render_identifier(node.evidence.name)]
+    elif isinstance(node, EqualityReplacement):
+        header_parts = [bullet,
+                        render_keyword("replacement"),
+                        ",".join([render_identifier(k) + ":" + render_identifier(v.name) for k, v in node.evidence.items()])]
     elif isinstance(node, Any):
         header_parts = [toggle,
                         render_keyword("any"),

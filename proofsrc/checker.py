@@ -539,14 +539,14 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
 
     if isinstance(node, Equality):
         logger.debug(f"{sp}[Equality] name: {node.equal.name}")
-        logger.debug(f"{sp}[Equality] Checking {node.equal.name} reflection theorem: {pretty_expr(node.reflection.conclusion, context)}")
+        logger.debug(f"{sp}[Equality] Checking {node.equal.name} reflection theorem: {pretty_expr(node.reflection.evidence.conclusion, context)}")
         reflection = Forall(Var("x"), Symbol(Pred(node.equal.name), [Var("x"), Var("x")]))
-        if not alpha_equiv_with_defs(node.reflection.conclusion, reflection, context):
+        if not alpha_equiv_with_defs(node.reflection.evidence.conclusion, reflection, context):
             logger.error(f"{sp}❌ [Equality] Not matched with expected formula: {pretty_expr(reflection, context)}")
             return False
         logger.debug(f"{sp}[Equality] Matched with expected formula: {pretty_expr(reflection, context)}")
-        for predicate in node.replacement:
-            logger.debug(f"{sp}[Equality] Checking {predicate} replacement theorem: {pretty_expr(node.replacement[predicate].conclusion, context)}")
+        for predicate in node.replacement.evidence:
+            logger.debug(f"{sp}[Equality] Checking {predicate} replacement theorem: {pretty_expr(node.replacement.evidence[predicate].conclusion, context)}")
             if predicate == node.equal.name:
                 if isinstance(node.equal, PrimPred):
                     arity = node.equal.arity
@@ -568,7 +568,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
                 replacement = Forall(arg, replacement)
             for arg in reversed(args_x):
                 replacement = Forall(arg, replacement)
-            if not alpha_equiv_with_defs(node.replacement[predicate].conclusion, replacement, context):
+            if not alpha_equiv_with_defs(node.replacement.evidence[predicate].conclusion, replacement, context):
                 logger.error(f"{sp}❌ [Equality] Not matched with expected formula: {pretty_expr(replacement, context)}")
                 return False
             logger.debug(f"{sp}[Equality] Matched with expected formula: {pretty_expr(replacement, context)}")
