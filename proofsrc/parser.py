@@ -288,17 +288,17 @@ class Parser:
 
     def parse_characterize(self) -> Characterize:
         self.consume("CHARACTERIZE")
-        fact = self.parse_expr()
+        if self.peek().type == "FOR":
+            fact = None
+        else:
+            fact = self.parse_expr()
         self.consume("FOR")
         bound = Var(self.consume("IDENT").value)
         self.consume("COLON")
         term = self.parse_term()
         env = {bound: term}
-        if self.peek().type == "CONCLUDE":
-            self.consume("CONCLUDE")
-            conclusion = self.parse_expr()
-        else:
-            conclusion = None
+        self.consume("CONCLUDE")
+        conclusion = self.parse_expr()
         return Characterize(fact=fact, env=env, conclusion=conclusion)
 
     def parse_invoke(self) -> Invoke:

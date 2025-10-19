@@ -151,9 +151,9 @@ class Lift:
 
 @dataclass
 class Characterize:
-    fact: object
+    fact: object | None
     env: dict["Var", "Term"]
-    conclusion: object | None
+    conclusion: object
 
 @dataclass
 class Invoke:

@@ -244,13 +244,13 @@ def render_node(node, context: Context) -> str:
                         render_expr(node.conclusion, context)]
     elif isinstance(node, Characterize):
         header_parts = [bullet,
-                        render_keyword("characterize"),
-                        render_expr(node.fact, context),
-                        render_keyword("for"),
-                        render_expr_dict(node.env, context)]
-        if node.conclusion is not None:
-            header_parts.extend([render_keyword("conclude"),
-                                 render_expr(node.conclusion, context)])
+                        render_keyword("characterize")]
+        if node.fact is not None:
+            header_parts.append(render_expr(node.fact, context))
+        header_parts.extend([render_keyword("for"),
+                             render_expr_dict(node.env, context),
+                             render_keyword("conclude"),
+                             render_expr(node.conclusion, context)])
     elif isinstance(node, Substitute):
         header_parts = [bullet,
                         render_keyword("substitute"),

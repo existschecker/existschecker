@@ -309,28 +309,26 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
         return True
 
     if isinstance(node, Characterize):
-        if not goal_in_context(node.fact, context):
-            logger.error(f"{sp}❌ [Characterize] Not fact: {pretty_expr(node.fact, context)}")
+        if not isinstance(node.conclusion, ExistsUniq):
+            logger.error(f"{sp}❌ [Characterize] Target conclusion is not ExistsUniq object: {pretty_expr(node.conclusion, context)}")
             return False
-        logger.debug(f"{sp}[Characterize] Fact: {pretty_expr(node.fact, context)}")
-        if not (isinstance(node.fact, And)
-                and isinstance(node.fact.right, Forall)
-                and isinstance(node.fact.right.body, Implies)
-                and isinstance(node.fact.right.body.right, Symbol)
-                and node.fact.right.body.right.pred.name == context.equality.equal.name
-                and node.fact.right.body.right.args[0] == node.fact.right.var
-                and node.fact.right.body.right.args[1] == list(node.env.keys())[0]
-                and alpha_equiv_with_defs(substitute(node.fact.left, {list(node.env.values())[0]: node.fact.right.var}), node.fact.right.body.left, context)):
-            logger.error(f"{sp}❌ [Characterize] Fact is not form of And(phi(x), Forall(y, Implies(phi(y), y=x))): {pretty_expr(node.fact, context)}")
+        logger.debug(f"{sp}[Characterize] Target conclusion is ExistsUniq object: {pretty_expr(node.conclusion, context)}")
+        if node.conclusion.var != list(node.env.keys())[0]:
+            logger.error(f"{sp}❌ [Characterize] node.conclusion.var {node.conclusion.var} is not matched with node.env {node.env}")
             return False
-        logger.debug(f"{sp}[Characterize] Fact is form of And(phi(x), Forall(y, Implies(phi(y), y=x))): {pretty_expr(node.fact, context)}")
-        goal = ExistsUniq(list(node.env.keys())[0], substitute(node.fact.left, {list(node.env.values())[0]: list(node.env.keys())[0]}))
-        logger.debug(f"{sp}[Characterize] derived goal: {pretty_expr(goal, context)}")
-        if node.conclusion is not None:
-            if not alpha_equiv_with_defs(node.conclusion, goal, context):
-                logger.error(f"{sp}❌ [Characterize] Not matched with conclusion: {pretty_expr(node.conclusion, context)}")
+        logger.debug(f"{sp}[Characterize] node.conclusion.var {node.conclusion.var} is matched with node.env {node.env}")
+        free, bound = collect_vars(node.conclusion.body)
+        vardash = fresh_var(Var(node.conclusion.var.name + "'"), free | bound)
+        fact = And(substitute(node.conclusion.body, node.env), Forall(vardash, Implies(substitute(node.conclusion.body, {node.conclusion.var: vardash}), Symbol(Pred(context.equality.equal.name), [vardash, list(node.env.values())[0]]))))
+        if not goal_in_context(fact, context):
+            logger.error(f"{sp}❌ [Characterize] Not fact: {pretty_expr(fact, context)}")
+            return False
+        logger.debug(f"{sp}[Characterize] Fact: {pretty_expr(fact, context)}")
+        if node.fact is not None:
+            if not alpha_equiv_with_defs(node.fact, fact, context):
+                logger.error(f"{sp}❌ [Characterize] Not matched with node.fact: {pretty_expr(node.fact, context)}")
                 return False
-        add_conclusion(context, goal)
+        add_conclusion(context, node.conclusion)
         return True
 
     if isinstance(node, Invoke):

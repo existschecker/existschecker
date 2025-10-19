@@ -571,7 +571,7 @@ theorem union_exists_uniquely \forall x\exists!y\forall z(in(z,y)\leftrightarrow
         }
       }
       connect \forall z(in(z,y)\leftrightarrow\exists w(in(z,w)\wedge in(w,x)))\wedge\forall y'(\forall z(in(z,y')\leftrightarrow\exists w(in(z,w)\wedge in(w,x)))\to equal(y',y))
-      characterize \forall z(in(z,y)\leftrightarrow\exists w(in(z,w)\wedge in(w,x)))\wedge\forall y'(\forall z(in(z,y')\leftrightarrow\exists w(in(z,w)\wedge in(w,x)))\to equal(y',y)) for y:y
+      characterize for y:y conclude \exists!y\forall z(in(z,y)\leftrightarrow\exists w(in(z,w)\wedge in(w,x)))
     }
   }
 }
@@ -773,7 +773,7 @@ theorem powerset_exists_uniquely \forall x\exists!y\forall z(in(z,y)\leftrightar
         }
       }
       connect \forall z(in(z,y)\leftrightarrow subset(z,x))\wedge\forall y'(\forall z(in(z,y')\leftrightarrow subset(z,x))\to equal(y',y))
-      characterize \forall z(in(z,y)\leftrightarrow subset(z,x))\wedge\forall y'(\forall z(in(z,y')\leftrightarrow subset(z,x))\to equal(y',y)) for y:y
+      characterize for y:y conclude \exists!y\forall z(in(z,y)\leftrightarrow subset(z,x))
     }
   }
 }
