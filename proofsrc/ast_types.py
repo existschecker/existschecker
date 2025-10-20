@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import logging
 logger = logging.getLogger("proof")
@@ -90,102 +90,106 @@ class Theorem:
     proof: list
 
 @dataclass
-class Check:
+class Control:
+    context_formulas: list = field(init=False)
+
+@dataclass
+class Check(Control):
     conclusion: object   # Expr AST
 
 @dataclass
-class Assume:
+class Assume(Control):
     premise: object      # Expr AST
     conclusion: object | None  # Expr AST
     body: list
 
 @dataclass
-class Any:
+class Any(Control):
     vars: list["Var"]
     conclusion: object | None
     body: list
 
 @dataclass
-class Divide:
+class Divide(Control):
     fact: object
     conclusion: object | None
     cases: list
 
 @dataclass
-class Case:
+class Case(Control):
     premise: object
     conclusion: object | None
     body: list
 
 @dataclass
-class Some:
+class Some(Control):
     env: dict["Var", "Var"]
     fact: object
     conclusion: object | None
     body: list
 
 @dataclass
-class Deny:
+class Deny(Control):
     premise: object
     body: list
 
 @dataclass
-class Contradict:
+class Contradict(Control):
     contradiction: object
 
 @dataclass
-class Explode:
+class Explode(Control):
     conclusion: object
 
 @dataclass
-class Apply:
+class Apply(Control):
     fact: object
     env: dict["Var", "Compound | Con | Var"]
     conclusion: object | None
 
 @dataclass
-class Lift:
+class Lift(Control):
     fact: object | None
     env: dict["Var", "Term"]
     conclusion: object
 
 @dataclass
-class Characterize:
+class Characterize(Control):
     fact: object | None
     env: dict["Var", "Term"]
     conclusion: object
 
 @dataclass
-class Invoke:
+class Invoke(Control):
     fact: object
     conclusion: object | None
 
 @dataclass
-class Expand:
+class Expand(Control):
     fact: object
     conclusion: object
 
 @dataclass
-class Pad:
+class Pad(Control):
     fact: object
     conclusion: object
 
 @dataclass
-class Split:
+class Split(Control):
     fact: object
 
 @dataclass
-class Connect:
+class Connect(Control):
     conclusion: object
 
 @dataclass
-class Substitute:
+class Substitute(Control):
     fact: object
     env: dict["Term", "Term"]
     conclusion: object
 
 @dataclass
-class Show:
+class Show(Control):
     conclusion: object
     body: list
 

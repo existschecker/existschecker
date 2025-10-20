@@ -1,5 +1,5 @@
 from html import escape
-from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Check, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Symbol, Pred, Compound, Fun, pretty_expr
+from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Check, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Symbol, Pred, Compound, Fun, Control, pretty_expr
 
 HTML_TEMPLATE = """<!doctype html>
 <html lang="en">
@@ -55,7 +55,7 @@ document.addEventListener('click', (e) => {{
   }}
   const header = e.target.closest('.block-header');
   if (header) {{
-    infoContent.innerHTML = `[${{header.dataset.info}}] ${{header.innerHTML}}`;
+    infoContent.innerHTML = `Clicked line: ${{header.innerHTML}}<br>context.formulas: ${{header.dataset.info}}`;
     MathJax.typesetPromise();
   }}
 }});
@@ -306,7 +306,8 @@ def render_node(node, context: Context) -> str:
     else:
         raise Exception(f"Unexpected node: {type(node)}")
 
-    header_html = f"<div class='block-header' data-info='{type(node).__name__}'>" + " ".join(header_parts) + "</div>"
+    data_info = render_expr_list(node.context_formulas, context) if isinstance(node, Control) else "No information"
+    header_html = f"<div class='block-header' data-info='{data_info}'>" + " ".join(header_parts) + "</div>"
     content_html = f"<div class='block-content'>{body_html}</div>"
     return f"  <div class='block'>{header_html}{content_html}</div>"
 

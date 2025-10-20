@@ -1,5 +1,6 @@
-from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, Var, Substitute, Symbol, Characterize, Show, Pred, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Check, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, Var, Substitute, Symbol, Characterize, Show, Pred, Control, pretty_expr
 from logic_utils import expr_in_context, collect_quantifier_vars, substitute, collect_vars, flatten_op, fresh_var, alpha_equiv, alpha_equiv_with_defs
+from copy import deepcopy
 
 import logging
 logger = logging.getLogger("proof")
@@ -25,13 +26,16 @@ def goal_in_context(goal, context: Context) -> bool:
 def add_conclusion(context: Context, conclusion) -> None:
     context.formulas.append(conclusion)
 
-def check_ast(ast: list) -> bool:
+def check_ast(ast: list) -> tuple[bool, list, Context]:
     context = Context.init()
-    return all(check_proof(node, context) for node in ast)
+    return all(check_proof(node, context) for node in ast), ast, context
 
 # === 証明チェッカー ===
 def check_proof(node, context: Context, indent: int = 0) -> bool:
     sp = "  " * indent
+
+    if isinstance(node, Control):
+        node.context_formulas = deepcopy(context.formulas)
 
     if isinstance(node, PrimPred):
         logger.debug(f"{sp}[PrimPred] type: {node.type}, name: {node.name}, arity: {node.arity}")
@@ -614,7 +618,8 @@ if __name__ == "__main__":
     from parser import Parser
     parser = Parser(tokens)
     ast, _ = parser.parse_file()
-    if check_ast(ast):
+    result, _, _ = check_ast(ast)
+    if result:
         print("All theorems proved")
     else:
         print("❌ Not all theorems proved")
