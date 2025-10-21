@@ -1,3 +1,4 @@
+from datetime import datetime
 from html import escape
 from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Check, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Symbol, Pred, Compound, Fun, Control, pretty_expr
 
@@ -10,6 +11,7 @@ HTML_TEMPLATE = """<!doctype html>
   src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <style>
   html, body {{ height: 100%; margin: 0; display: flex; flex-direction: column; }}
+  header {{ font-size: 0.9em; color: gray; margin-left: 1em; }}
   .proof {{ flex: 1; overflow-y: auto; padding: 1rem; border: 1px solid #ccc; }}
   .info-panel {{ height: 120px; border-top: 1px solid #aaa; padding: 0.5rem; }}
   footer {{ height: 40px; border-top: 1px solid #888; text-align: center; }}
@@ -26,6 +28,9 @@ HTML_TEMPLATE = """<!doctype html>
 </style>
 </head>
 <body>
+<header>
+  Rendered at {now_str}
+</header>
 <div class="proof">
   <div class="controls">
     <button id="expandAll">Expand all</button>
@@ -55,7 +60,9 @@ document.addEventListener('click', (e) => {{
   }}
   const header = e.target.closest('.block-header');
   if (header) {{
-    infoContent.innerHTML = `Clicked line: ${{header.innerHTML}}<br>context.formulas: ${{header.dataset.info}}`;
+    const context_vars = header.nextElementSibling.innerHTML;
+    const context_formulas = header.nextElementSibling.nextElementSibling.innerHTML;
+    infoContent.innerHTML = `Clicked line: ${{header.innerHTML}}<br>context.vars: ${{context_vars}}<br>context.formulas: ${{context_formulas}}`;
     MathJax.typesetPromise();
   }}
 }});
@@ -306,14 +313,18 @@ def render_node(node, context: Context) -> str:
     else:
         raise Exception(f"Unexpected node: {type(node)}")
 
-    data_info = render_expr_list(node.context_formulas, context) if isinstance(node, Control) else "No information"
-    header_html = f"<div class='block-header' data-info='{data_info}'>" + " ".join(header_parts) + "</div>"
+    header_html = f"<div class='block-header'>" + " ".join(header_parts) + "</div>"
+    context_vars = render_expr_list(node.context_vars, context) if isinstance(node, Control) else "No information"
+    context_vars_html = f"<div class='context-vars' hidden>{context_vars}</div>"
+    context_formulas = render_expr_list(node.context_formulas, context) if isinstance(node, Control) else "No information"
+    context_formulas_html = f"<div class='context-formulas' hidden>{context_formulas}</div>"
     content_html = f"<div class='block-content'>{body_html}</div>"
-    return f"  <div class='block'>{header_html}{content_html}</div>"
+    return f"  <div class='block'>{header_html}{context_vars_html}{context_formulas_html}{content_html}</div>"
 
 def to_html(ast: list, context: Context, title: str):
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     body_html = "\n".join(render_node(node, context) for node in ast)
-    return HTML_TEMPLATE.format(title=escape(title), body=body_html)
+    return HTML_TEMPLATE.format(title=escape(title), now_str=now_str, body=body_html)
 
 if __name__ == "__main__":
     import sys
@@ -325,7 +336,13 @@ if __name__ == "__main__":
     tokens = lex(src)
     from parser import Parser
     parser = Parser(tokens)
-    ast, context = parser.parse_file()
+    ast, _ = parser.parse_file()
+    from checker import check_ast
+    result, ast, context = check_ast(ast)
+    if result:
+        print("All theorems proved")
+    else:
+        print("❌ Not all theorems proved")
     import os
     title = os.path.splitext(os.path.basename(path))[0]
     html = to_html(ast, context, title)

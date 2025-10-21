@@ -5,6 +5,7 @@ logger = logging.getLogger("proof")
 
 @dataclass
 class Context:
+    vars: list["Var"]
     formulas: list        # 通常の論理式
     primpreds: dict[str, "PrimPred"]
     axioms: dict[str, "Axiom"]
@@ -17,10 +18,10 @@ class Context:
 
     @staticmethod
     def init() -> "Context":
-        return Context(formulas=[], primpreds={}, axioms={}, theorems={}, defpreds={}, defcons={}, deffuns={}, deffunterms={}, equality=None)
+        return Context(vars=[], formulas=[], primpreds={}, axioms={}, theorems={}, defpreds={}, defcons={}, deffuns={}, deffunterms={}, equality=None)
 
-    def copy(self, formulas) -> "Context":
-        return Context(formulas=formulas, primpreds=self.primpreds, axioms=self.axioms, theorems=self.theorems, defpreds=self.defpreds, defcons=self.defcons, deffuns=self.deffuns, deffunterms=self.deffunterms, equality=self.equality)
+    def copy(self, vars, formulas) -> "Context":
+        return Context(vars=vars, formulas=formulas, primpreds=self.primpreds, axioms=self.axioms, theorems=self.theorems, defpreds=self.defpreds, defcons=self.defcons, deffuns=self.deffuns, deffunterms=self.deffunterms, equality=self.equality)
 
     def has_defcon_existence(self, existence_name: str) -> bool:
         for defcon in self.defcons.values():
@@ -91,6 +92,7 @@ class Theorem:
 
 @dataclass
 class Control:
+    context_vars: list = field(init=False)
     context_formulas: list = field(init=False)
 
 @dataclass
