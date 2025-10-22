@@ -50,6 +50,7 @@ MATHJAX_HEAD = """
   .keyword {{ font-weight:600; color:#064; margin-right:0.3rem; }}
   .identifier {{ color:#094; font-weight:600; margin-right:0.4rem; }}
   .collapsed {{ display:none; }}
+  .selected {{ background-color: #def; }}
 </style>
 """
 
@@ -78,6 +79,7 @@ SVG_HEAD = """
   .math {{ display: inline-block; height: 2.0em; vertical-align: middle; }}
   .math svg {{ display: inline; vertical-align: middle; height: 2.0em; }}
   .collapsed {{ display:none; }}
+  .selected {{ background-color: #def; }}
 </style>
 """
 
