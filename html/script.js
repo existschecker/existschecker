@@ -51,17 +51,60 @@ document.addEventListener('keydown', (e) => {
 
   if (allHeaders.length === 0) return;
 
-  // 前の選択を解除
-  allHeaders[selectedIndex].classList.remove('selected');
+  let targetIndex = selectedIndex;
 
-  if (e.key === 'ArrowDown') {
-    selectedIndex = Math.min(selectedIndex + 1, allHeaders.length - 1);
-  } else if (e.key === 'ArrowUp') {
-    selectedIndex = Math.max(selectedIndex - 1, 0);
+  if (e.ctrlKey) {
+    if (e.key === 'ArrowUp') {
+      // 親をたどってトップノードを見つける
+      let block = allHeaders[selectedIndex].closest('.block');
+      while (block.parentElement.closest('.block')) {
+        block = block.parentElement.closest('.block');
+      }
+      const topHeader = block.querySelector('.block-header');
+      if (allHeaders[selectedIndex] === topHeader) {
+        // すでにトップノードなら、1つ前のトップノードへ
+        let prevBlock = block.previousElementSibling;
+        while (prevBlock && !prevBlock.querySelector('.block-header')) {
+          prevBlock = prevBlock.previousElementSibling;
+        }
+        if (prevBlock) {
+          targetIndex = allHeaders.indexOf(prevBlock.querySelector('.block-header'));
+        } else {
+          targetIndex = selectedIndex; // 最初のトップノードなら移動なし
+        }
+      } else {
+        // 親をたどってトップノードに移動
+        targetIndex = allHeaders.indexOf(topHeader);
+      }
+    } else if (e.key === 'ArrowDown') {
+      // 親をたどってトップノードを見つける
+      let block = allHeaders[selectedIndex].closest('.block');
+      while (block.parentElement.closest('.block')) {
+        block = block.parentElement.closest('.block');
+      }
+      // 次のトップノードがあれば移動
+      const nextTopBlock = block.nextElementSibling;
+      if (nextTopBlock) {
+        targetIndex = allHeaders.indexOf(nextTopBlock.querySelector('.block-header'));
+      }
+    }
+  } else {
+    // 通常の上下移動
+    if (e.key === 'ArrowDown') {
+      targetIndex = Math.min(selectedIndex + 1, allHeaders.length - 1);
+    } else if (e.key === 'ArrowUp') {
+      targetIndex = Math.max(selectedIndex - 1, 0);
+    }
   }
 
+  if (targetIndex === selectedIndex) return; // 移動先が同じなら何もしない
+
+  // 選択更新
+  allHeaders[selectedIndex].classList.remove('selected');
+  selectedIndex = targetIndex;
   const header = allHeaders[selectedIndex];
   header.classList.add('selected');
+
   const proofContainer = document.querySelector('.proof'); // スクロールコンテナ
   scrollIfNeeded(header, proofContainer);
 
