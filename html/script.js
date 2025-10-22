@@ -1,10 +1,13 @@
-function scrollIfNeeded(element, container) {
+function scrollIfNeeded(element, container, ctrl) {
   const elRect = element.getBoundingClientRect();
   const contRect = container.getBoundingClientRect();
 
   // element が container の表示範囲内に完全に収まっているか
   if (elRect.top < contRect.top || elRect.bottom > contRect.bottom) {
-    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    element.scrollIntoView({
+      behavior: 'smooth',
+      block: ctrl ? 'start' : 'center'  // Ctrlなら一番上、それ以外は中央
+    });
   }
 }
 
@@ -106,7 +109,7 @@ document.addEventListener('keydown', (e) => {
   header.classList.add('selected');
 
   const proofContainer = document.querySelector('.proof'); // スクロールコンテナ
-  scrollIfNeeded(header, proofContainer);
+  scrollIfNeeded(header, proofContainer, e.ctrlKey);
 
   // infoPanel 更新
   const context_vars = header.nextElementSibling.innerHTML;
