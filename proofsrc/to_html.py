@@ -70,24 +70,28 @@ def render_expr_dict_mathjax(expr_dict: dict, context: Context) -> str:
 def render_tex_mathjax(tex: list[str]):
     return escape(f"\\({"".join(tex)}\\)")
 
-def img_src(svg_path: str) -> str:
-    return f"<img src={svg_path}>"
+def img_tag(svg_path: str, latex_code: str) -> str:
+    return f"<img src='{escape(svg_path)}' alt='{escape(latex_code)}'>"
 
 def render_expr_svg(node, context: Context) -> str:
     if isinstance(node, (Axiom, Theorem, DefConExist, DefConUniq, DefFunExist, DefFunUniq)):
         return render_identifier(node.name)
     else:
-        return img_src(output_svg(f"{pretty_expr(node, context)}"))
+        latex_code = pretty_expr(node, context)
+        svg_path = output_svg(latex_code)
+        return img_tag(svg_path, latex_code)
 
 def render_expr_list_svg(expr_list: list, context: Context) -> str:
-    return ",".join((img_src(output_svg(pretty_expr(expr, context)))) for expr in expr_list)
+    return ",".join((render_expr_svg(expr, context) for expr in expr_list))
 
 def render_expr_dict_svg(expr_dict: dict, context: Context) -> str:
-    parts = [f"{(img_src(output_svg(pretty_expr(k, context))))}:{(img_src(output_svg(pretty_expr(v, context))))}" for k, v in expr_dict.items()]
+    parts = [f"{render_expr_svg(k, context)}:{render_expr_svg(v, context)}" for k, v in expr_dict.items()]
     return f"{",".join(parts)}"
 
 def render_tex_svg(tex: list[str]):
-    return img_src(output_svg(f"{"".join(tex)}"))
+    latex_code = "".join(tex)
+    svg_path = output_svg(latex_code)
+    return img_tag(svg_path, latex_code)
 
 def render_node(node, context: Context, mode: bool) -> str:
     if mode == "mathjax":

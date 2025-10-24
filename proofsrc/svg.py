@@ -21,7 +21,7 @@ def output_svg(latex_code: str) -> str:
         )
         subprocess.run(["latex", "-interaction=nonstopmode", tex_file.name], check=True, cwd=str(tex_dir), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         subprocess.run(["dvisvgm", str(dvi_file), "-n", "-o", str(svg_file)], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    return svg_file.relative_to(html_dir)
+    return str(svg_file.relative_to(html_dir))
 
 if __name__ == "__main__":
     latex_code = r"\exists x\forall y(y\notin x)"
