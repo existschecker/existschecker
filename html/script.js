@@ -1,3 +1,44 @@
+// infoPanel 要素を一度だけ取得
+const infoContent = document.getElementById('infoPanel');
+const allHeaders = Array.from(document.querySelectorAll('.block-header'));
+let selectedIndex = 0;
+
+// 選択状態を更新する関数
+function selectHeader(index) {
+  const header = allHeaders[index];
+  if (!header) return;
+  // 選択クラスを更新
+  allHeaders.forEach(h => h.classList.remove('selected'));
+  header.classList.add('selected');
+  selectedIndex = index;
+  return header;
+}
+
+// infoPanel を更新する関数
+function updateInfoPanel(header) {
+  const content = header.nextElementSibling;
+  const formulas = content.nextElementSibling;
+  infoContent.innerHTML = `
+    Selected line: ${header.innerHTML}<br>
+    context.vars: ${content.innerHTML}<br>
+    context.formulas: ${formulas.innerHTML}
+  `;
+}
+
+// 必要ならスクロールする関数
+function scrollToHeader(header, ctrl) {
+  const proofContainer = document.querySelector('.proof');
+  const elRect = header.getBoundingClientRect();
+  const contRect = proofContainer.getBoundingClientRect();
+
+  if (elRect.top < contRect.top || elRect.bottom > contRect.bottom) {
+    header.scrollIntoView({
+      behavior: 'smooth',
+      block: ctrl ? 'start' : 'center'
+    });
+  }
+}
+
 let isScrolling = false;
 
 function scrollIfNeeded(element, container, ctrl) {
@@ -17,13 +58,10 @@ function scrollIfNeeded(element, container, ctrl) {
   }
 }
 
-// ページ上の全ての block-header をフラット配列にする
-const allHeaders = Array.from(document.querySelectorAll('.block-header'));
-let selectedIndex = 0;
-
 // 初期選択
 if (allHeaders.length > 0) {
-  allHeaders[selectedIndex].classList.add('selected');
+  const header = selectHeader(0);
+  updateInfoPanel(header);
 }
 
 document.addEventListener('click', (e) => {
@@ -35,22 +73,12 @@ document.addEventListener('click', (e) => {
     if (!content || !content.classList.contains('block-content')) return;
     content.classList.toggle('collapsed');
     btn.textContent = content.classList.contains('collapsed') ? '▶' : '▼';
-    MathJax.typesetPromise();
   }
   const header = e.target.closest('.block-header');
   if (header) {
-    // 前の選択を解除
-    allHeaders.forEach(h => h.classList.remove('selected'));
-    header.classList.add('selected');
-
-    // 配列のインデックスを同期
-    selectedIndex = allHeaders.indexOf(header);
-
-    // infoPanel 更新
-    const context_vars = header.nextElementSibling.innerHTML;
-    const context_formulas = header.nextElementSibling.nextElementSibling.innerHTML;
-    infoContent.innerHTML = `Clicked line: ${header.innerHTML}<br>context.vars: ${context_vars}<br>context.formulas: ${context_formulas}`;
-    MathJax.typesetPromise();
+    const index = allHeaders.indexOf(header);
+    const h = selectHeader(index);
+    updateInfoPanel(h);
   }
 });
 
@@ -113,26 +141,14 @@ document.addEventListener('keydown', (e) => {
 
   if (targetIndex === selectedIndex) return; // 移動先が同じなら何もしない
 
-  // 選択更新
-  allHeaders[selectedIndex].classList.remove('selected');
-  selectedIndex = targetIndex;
-  const header = allHeaders[selectedIndex];
-  header.classList.add('selected');
-
-  const proofContainer = document.querySelector('.proof'); // スクロールコンテナ
-  scrollIfNeeded(header, proofContainer, e.ctrlKey);
-
-  // infoPanel 更新
-  const context_vars = header.nextElementSibling.innerHTML;
-  const context_formulas = header.nextElementSibling.nextElementSibling.innerHTML;
-  infoContent.innerHTML = `Selected line: ${header.innerHTML}<br>context.vars: ${context_vars}<br>context.formulas: ${context_formulas}`;
-  MathJax.typesetPromise();
+  const h = selectHeader(targetIndex);
+  scrollToHeader(h, e.ctrlKey);
+  updateInfoPanel(h);
 });
 
 document.getElementById('expandAll').addEventListener('click', () => {
   document.querySelectorAll('.block-content').forEach(c => c.classList.remove('collapsed'));
   document.querySelectorAll('.toggle').forEach(b => b.textContent='▼');
-  MathJax.typesetPromise();
 });
 document.getElementById('collapseAll').addEventListener('click', () => {
   document.querySelectorAll('.block-content').forEach(c => c.classList.add('collapsed'));
