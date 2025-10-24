@@ -238,7 +238,7 @@ def fresh_var(var: Var, used: set[Var]) -> Var:
 
 def substitute(expr, mapping: dict[Term, Term], used_vars: set[Var] | None = None):
     if used_vars is None:
-        used_vars = collect_vars(expr)[0] | collect_vars(expr)[1] | {v for v in mapping.values() if isinstance(v, Var)}
+        used_vars = collect_vars(expr)[0] | {v for v in mapping.values() if isinstance(v, Var)}
 
     for k, v in mapping.items():
         if expr == k:
