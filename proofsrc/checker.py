@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, Var, Substitute, Symbol, Characterize, Show, Pred, Control, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, Var, Substitute, Symbol, Characterize, Show, Pred, Control, ProofInfo, pretty_expr
 from logic_utils import expr_in_context, collect_quantifier_vars, substitute, collect_vars, flatten_op, fresh_var, alpha_equiv, alpha_equiv_with_defs
 from copy import deepcopy
 
@@ -35,8 +35,9 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
     sp = "  " * indent
 
     if isinstance(node, Control):
-        node.context_vars = deepcopy(context.vars)
-        node.context_formulas = deepcopy(context.formulas)
+        node.proofinfo = ProofInfo()
+        node.proofinfo.context_vars = deepcopy(context.vars)
+        node.proofinfo.context_formulas = deepcopy(context.formulas)
 
     if isinstance(node, PrimPred):
         logger.debug(f"{sp}[PrimPred] type: {node.type}, name: {node.name}, arity: {node.arity}")
@@ -83,6 +84,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
                 logger.error(f"{sp}❌ [Assume] Not matched with conclusion: {pretty_expr(node.conclusion, context)}")
                 return False
         implication = Implies(node.premise, goal)
+        node.proofinfo.conclusions = [implication]
         add_conclusion(context, implication)
         logger.debug(f"{sp}[Assume] Added implication {pretty_expr(implication, context)}")
         return True
@@ -111,6 +113,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
                 return False
         for v in reversed(node.vars):
             goal = Forall(v, goal)
+        node.proofinfo.conclusions = [goal]
         add_conclusion(context, goal)
         logger.debug(f"{sp}[Any] Generalized to {pretty_expr(goal, context)}")
         return True
@@ -146,6 +149,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
                 if not alpha_equiv_with_defs(goals[i], goals[i + 1], context):
                     logger.error(f"{sp}❌ [Divide] Not matched: goals[{i}]={pretty_expr(goals[i], context)}, goals[{i + 1}]={pretty_expr(goals[i + 1], context)}")
                     return False
+        node.proofinfo.conclusions = [goals[0]]
         add_conclusion(context, goals[0])
         logger.debug(f"{sp}[Divide] derived in all cases: {pretty_expr(goals[0], context)}")
         return True
@@ -166,6 +170,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
                 logger.error(f"{sp}❌ [Case] Not matched with conclusion: {pretty_expr(node.conclusion, context)}")
                 return False
             logger.debug(f"{sp}[Case] Mathched with conclusion: {pretty_expr(node.conclusion, context)}")
+        node.proofinfo.conclusions = [goal]
         add_conclusion(context, goal)
         logger.debug(f"{sp}[Case] Added goal {pretty_expr(goal, context)}")
         return True
@@ -207,6 +212,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
                 logger.error(f"{sp}❌ [Some] Not matched with conclusion: {pretty_expr(node.conclusion, context)}")
                 return False
             logger.debug(f"{sp}[Some] Mathched with conclusion: {pretty_expr(node.conclusion, context)}")
+        node.proofinfo.conclusions = [goal]
         add_conclusion(context, goal)
         logger.debug(f"{sp}[Some] Added goal {pretty_expr(goal, context)}")
         return True
@@ -224,11 +230,12 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
         logger.debug(f"{sp}[Deny] derived goal: {pretty_expr(goal, context)}")
         if isinstance(goal, Bottom):
             if isinstance(node.premise, Not):
-                add_conclusion(context, node.premise.body)
-                logger.debug(f"{sp}[Deny] contradiction is derived; added {pretty_expr(node.premise.body, context)}")
+                conclusion = node.premise.body
             else:
-                add_conclusion(context, Not(node.premise))
-                logger.debug(f"{sp}[Deny] contradiction is derived; added {pretty_expr(Not(node.premise), context)}")
+                conclusion = Not(node.premise)
+            node.proofinfo.conclusions = [conclusion]
+            add_conclusion(context, conclusion)
+            logger.debug(f"{sp}[Deny] contradiction is derived; added {pretty_expr(conclusion, context)}")
             return True
         else:
             logger.error(f"{sp}❌ [Deny] conradiction has not been deried")
@@ -242,11 +249,14 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             logger.error(f"{sp}❌ [Contradict] Cannot derive {pretty_expr(Not(node.contradiction), context)}")
             return False
         logger.debug(f"{sp}[Contradict] Derived contradiction: {pretty_expr(node.contradiction, context)}, {pretty_expr(Not(node.contradiction), context)}")
-        add_conclusion(context, Bottom())
+        conclusion = Bottom()
+        node.proofinfo.conclusions = [conclusion]
+        add_conclusion(context, conclusion)
         return True
     
     if isinstance(node, Explode):
         if len(context.formulas) > 0 and isinstance(context.formulas[-1], Bottom):
+            node.proofinfo.conclusions = [node.conclusion]
             add_conclusion(context, node.conclusion)
             logger.debug(f"{sp}[Explode] added {pretty_expr(node.conclusion, context)}")
             return True
@@ -286,6 +296,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
                 return False
             logger.debug(f"{sp}[Apply] Matched: node.conclusion={pretty_expr(node.conclusion, context)}, instantiation={pretty_expr(instantiation, context)}")
         logger.debug(f"{sp}[Apply] Added {pretty_expr(instantiation, context)}")
+        node.proofinfo.conclusions = [instantiation]
         add_conclusion(context, instantiation)
         return True
     
@@ -306,6 +317,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
                 logger.error(f"{sp}❌ [Lift] Not matched: node.fact={pretty_expr(node.fact, context)}, fact={pretty_expr(fact, context)}")
                 return False
             logger.debug(f"{sp}[Lift] Matched: node.fact={pretty_expr(node.fact, context)}, fact={pretty_expr(fact, context)}")
+        node.proofinfo.conclusions = [node.conclusion]
         add_conclusion(context, node.conclusion)
         logger.debug(f"{sp}[Lift] Added {pretty_expr(node.conclusion, context)}")
         return True
@@ -330,6 +342,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             if not alpha_equiv_with_defs(node.fact, fact, context):
                 logger.error(f"{sp}❌ [Characterize] Not matched with node.fact: {pretty_expr(node.fact, context)}")
                 return False
+        node.proofinfo.conclusions = [node.conclusion]
         add_conclusion(context, node.conclusion)
         return True
 
@@ -351,6 +364,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
                 logger.error(f"{sp}❌ [Invoke] Not matched: node.conclusion={pretty_expr(node.conclusion, context)}, node.fact.right={pretty_expr(node.fact.right, context)}")
                 return False
             logger.debug(f"{sp}[Invoke] Matched: node.conclusion={pretty_expr(node.conclusion, context)}, node.fact.right={pretty_expr(node.fact.right, context)}")
+        node.proofinfo.conclusions = [node.fact.right]
         add_conclusion(context, node.fact.right)
         logger.debug(f"{sp}[Invoke] Right of Implies object added: {pretty_expr(node.fact.right, context)}")
         return True
@@ -364,6 +378,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             logger.error(f"{sp}❌ [Expand] Not matched: node.conclusion={pretty_expr(node.conclusion, context)}")
             return False
         logger.debug(f"{sp}[Expand] Matched: node.conclusion={pretty_expr(node.conclusion, context)}")
+        node.proofinfo.conclusions = [node.conclusion]
         add_conclusion(context, node.conclusion)
         logger.debug(f"{sp}[Expand] Added: {pretty_expr(node.conclusion, context)}")
         return True
@@ -382,6 +397,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
         if not all(any(alpha_equiv_with_defs(c, f, context) for c in conclusion_parts) for f in fact_parts):
             logger.error(f"{sp}❌ [Pad] neither left or right not derivable: {pretty_expr(node.conclusion, context)}")
             return False
+        node.proofinfo.conclusions = [node.conclusion]
         add_conclusion(context, node.conclusion)
         logger.debug(f"{sp}[Pad] Derivable, added {pretty_expr(node.conclusion, context)}")
         return True
@@ -394,18 +410,20 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
         if isinstance(node.fact, And):
             logger.debug(f"{sp}[Split] And object: {pretty_expr(node.fact, context)}")
             fact_parts = flatten_op(node.fact, And)
+            node.proofinfo.conclusions = fact_parts
             for f in fact_parts:
                 add_conclusion(context, f)
                 logger.debug(f"{sp}[Split] added {pretty_expr(f, context)}")
             return True
         elif isinstance(node.fact, Iff):
             logger.debug(f"{sp}[Split] Iff object: {pretty_expr(node.fact, context)}")
-            implication = Implies(node.fact.left, node.fact.right)
-            add_conclusion(context, implication)
-            logger.debug(f"{sp}[Split] added {pretty_expr(implication, context)}")
-            implication = Implies(node.fact.right, node.fact.left)
-            add_conclusion(context, implication)
-            logger.debug(f"{sp}[Split] added {pretty_expr(implication, context)}")
+            implication_rightward = Implies(node.fact.left, node.fact.right)
+            implication_leftward = Implies(node.fact.right, node.fact.left)
+            node.proofinfo.conclusions = [implication_rightward, implication_leftward]
+            add_conclusion(context, implication_rightward)
+            add_conclusion(context, implication_leftward)
+            logger.debug(f"{sp}[Split] added {pretty_expr(implication_rightward, context)}")
+            logger.debug(f"{sp}[Split] added {pretty_expr(implication_leftward, context)}")
             return True
         else:
             logger.error(f"{sp}❌ [Split] Not And or Iff object: {pretty_expr(node.fact, context)}")
@@ -419,6 +437,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
                 if not goal_in_context(c, context):
                     logger.error(f"{sp}❌ [Connect] Not derivable: {pretty_expr(c, context)}")
                     return False
+            node.proofinfo.conclusions = [node.conclusion]
             add_conclusion(context, node.conclusion)
             logger.debug(f"{sp}[Connect] Derivable, added {pretty_expr(node.conclusion, context)}")
             return True
@@ -432,6 +451,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             if not goal_in_context(implication, context):
                 logger.error(f"{sp}❌ [Connect] Not derivable: {pretty_expr(implication, context)}")
                 return False
+            node.proofinfo.conclusions = [node.conclusion]
             add_conclusion(context, node.conclusion)
             logger.debug(f"{sp}[Connect] derivable, added {pretty_expr(node.conclusion, context)}")
             return True
@@ -457,6 +477,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             logger.error(f"{sp}❌ [Substitute] Not matched")
             return False
         logger.debug(f"{sp}[Substitute] Matched")
+        node.proofinfo.conclusions = [node.conclusion]
         add_conclusion(context, node.conclusion)
         logger.debug(f"{sp}[Substitute] Added {pretty_expr(node.conclusion, context)}")
         return True
@@ -476,6 +497,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             logger.error(f"{sp}❌ [Show] Not matched with target conclusion: {pretty_expr(node.conclusion, context)}")
             return False
         logger.debug(f"{sp}[Show] Matched with target conclusion: {pretty_expr(node.conclusion, context)}")
+        node.proofinfo.conclusions = [goal]
         add_conclusion(context, goal)
         logger.debug(f"{sp}[Show] Added {pretty_expr(goal, context)}")
         return True

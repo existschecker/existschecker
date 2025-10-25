@@ -91,9 +91,14 @@ class Theorem:
     proof: list
 
 @dataclass
-class Control:
+class ProofInfo:
     context_vars: list = field(init=False)
     context_formulas: list = field(init=False)
+    conclusions: list = field(init=False)
+
+@dataclass
+class Control:
+    proofinfo: ProofInfo = field(init=False)
 
 @dataclass
 class Assume(Control):

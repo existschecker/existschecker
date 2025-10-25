@@ -16,12 +16,14 @@ function selectHeader(index) {
 
 // infoPanel を更新する関数
 function updateInfoPanel(header) {
-  const content = header.nextElementSibling;
-  const formulas = content.nextElementSibling;
+  const context_vars = header.nextElementSibling;
+  const context_formulas = context_vars.nextElementSibling;
+  const conclusions = context_formulas.nextElementSibling;
   infoContent.innerHTML = `
     Selected line: ${header.innerHTML}<br>
-    context.vars: ${content.innerHTML}<br>
-    context.formulas: ${formulas.innerHTML}
+    context_vars: ${context_vars.innerHTML}<br>
+    context_formulas: ${context_formulas.innerHTML}<br>
+    conclusions: ${conclusions.innerHTML}
   `;
 }
 

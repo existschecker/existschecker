@@ -304,12 +304,14 @@ def render_node(node, context: Context, mode: bool) -> str:
         raise Exception(f"Unexpected node: {type(node)}")
 
     header_html = f"<div class='block-header'>" + " ".join(header_parts) + "</div>"
-    context_vars = render_expr_list(node.context_vars, context) if isinstance(node, Control) else "No information"
+    context_vars = render_expr_list(node.proofinfo.context_vars, context) if isinstance(node, Control) else "No information"
     context_vars_html = f"<div class='context-vars' hidden>{context_vars}</div>"
-    context_formulas = render_expr_list(node.context_formulas, context) if isinstance(node, Control) else "No information"
+    context_formulas = render_expr_list(node.proofinfo.context_formulas, context) if isinstance(node, Control) else "No information"
     context_formulas_html = f"<div class='context-formulas' hidden>{context_formulas}</div>"
+    conclusions = render_expr_list(node.proofinfo.conclusions, context) if isinstance(node, Control) else "No information"
+    conclusions_html = f"<div class='conclusions' hidden>{conclusions}</div>"
     content_html = f"<div class='block-content'>{body_html}</div>"
-    return f"  <div class='block'>{header_html}{context_vars_html}{context_formulas_html}{content_html}</div>"
+    return f"  <div class='block'>{header_html}{context_vars_html}{context_formulas_html}{conclusions_html}{content_html}</div>"
 
 def to_html(ast: list, context: Context, title: str, mode: str):
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
