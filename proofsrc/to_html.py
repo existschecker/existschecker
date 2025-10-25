@@ -198,17 +198,11 @@ def render_node(node, context: Context, mode: bool) -> str:
         header_parts = [toggle,
                         render_keyword("any"),
                         render_expr_list(node.vars, context)]
-        if node.conclusion is not None:
-            header_parts.extend([render_keyword("show"),
-                                 render_expr(node.conclusion, context)])
         body_html = "".join(render_node(s, context, mode) for s in node.body)
     elif isinstance(node, Assume):
         header_parts = [toggle,
                         render_keyword("assume"),
                         render_expr(node.premise, context)]
-        if node.conclusion is not None:
-            header_parts.extend([render_keyword("show"),
-                                 render_expr(node.conclusion, context)])
         body_html = "".join(render_node(s, context, mode) for s in node.body)
     elif isinstance(node, Connect):
         header_parts = [bullet,
@@ -250,8 +244,6 @@ def render_node(node, context: Context, mode: bool) -> str:
                         render_expr_dict(node.env, context),
                         render_keyword("such"),
                         render_expr(node.fact, context)]
-        if node.conclusion is not None:
-            header_parts.append(f"<span class='keyword'>show</span> {render_expr(node.conclusion, context)}")
         body_html = "".join(render_node(s, context, mode) for s in node.body)
     elif isinstance(node, Contradict):
         header_parts = [bullet,
@@ -276,9 +268,6 @@ def render_node(node, context: Context, mode: bool) -> str:
         header_parts = [toggle,
                         render_keyword("divide"),
                         render_expr(node.fact, context)]
-        if node.conclusion is not None:
-            header_parts.extend([render_keyword("show"),
-                                 render_expr(node.conclusion, context)])
         body_html = "".join(render_node(s, context, mode) for s in node.cases)
     elif isinstance(node, Case):
         header_parts = [toggle,
