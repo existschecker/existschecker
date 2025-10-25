@@ -25,13 +25,13 @@ function updateInfoPanel(header) {
   const local_conclusion = local_premise.nextElementSibling;
   infoContent.innerHTML = `
     Selected line: ${header.innerHTML}<br>
-    context_vars: ${context_vars.innerHTML}<br>
-    context_formulas: ${context_formulas.innerHTML}<br>
-    premises: ${premises.innerHTML}<br>
-    conclusions: ${conclusions.innerHTML}<br>
-    local_vars: ${local_vars.innerHTML}<br>
-    local_premise: ${local_premise.innerHTML}<br>
-    local_conclusion: ${local_conclusion.innerHTML}
+    ${context_vars.innerHTML}<br>
+    ${context_formulas.innerHTML}<br>
+    ${premises.innerHTML}<br>
+    ${conclusions.innerHTML}<br>
+    ${local_vars.innerHTML}<br>
+    ${local_premise.innerHTML}<br>
+    ${local_conclusion.innerHTML}
   `;
 }
 
