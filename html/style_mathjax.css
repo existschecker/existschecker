@@ -7,12 +7,13 @@ header { font-size: 0.9em; color: gray; margin-left: 1em; }
 .block { margin-left: 1rem; padding-left: 0.8rem; margin-top:0.4rem; }
 .block-header { display:flex; align-items:center; gap:0.5rem; cursor:pointer; }
 .block-header:hover { background:#f7f7f7; }
-.block-header.selected { background-color: #def !important; }
+.block-header.selected { background-color: rgb(190, 210, 255) !important; }
+.block-header.selectedblock { background-color: rgb(221, 238, 255); }
 .block-content { margin-top:0.25rem; }
 .toggle { all: unset; width:1.2em; display:inline-block; background:none; border:none; cursor:pointer; color:#446; font-size:0.9em; text-align:center; }
 .bullet { all: unset; display:inline-block; width:1.2em; text-align:center; color:#888; }
-.keyword { font-weight:600; color:#064; margin-right:0.3rem; }
-.identifier { color:#094; font-weight:600; margin-right:0.4rem; }
+.keyword { font-weight:600; color:#c41a16; margin-right:0.3rem; }
+.identifier { color:#1e7f68; font-weight:600; margin-right:0.4rem; }
 .collapsed { display:none; }
 .jp-view { display: none; font-size: 0.95em; }
 .syntax-mode .jp-view { display: none; }

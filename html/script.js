@@ -5,6 +5,18 @@ let selectedIndex = 0;
 const toggleViewBtn = document.getElementById('toggleView');
 let currentView = 'syntax';
 
+function highlightBlock(blockElement) {
+  // まず既存の selectedblock を解除
+  document.querySelectorAll('.block-header.selectedblock').forEach(el => {
+    el.classList.remove('selectedblock');
+  });
+
+  // blockElement 内のすべての .block-header に追加
+  blockElement.querySelectorAll('.block-header').forEach(el => {
+    el.classList.add('selectedblock');
+  });
+}
+
 // 選択状態を更新する関数
 function selectHeader(index) {
   const header = allHeaders[index];
@@ -13,6 +25,9 @@ function selectHeader(index) {
   allHeaders.forEach(h => h.classList.remove('selected'));
   header.classList.add('selected');
   selectedIndex = index;
+  // ブロック全体をハイライト
+  const block = header.closest('.block');  // 選択行が属するブロックを取得
+  if (block) highlightBlock(block);
   return header;
 }
 
