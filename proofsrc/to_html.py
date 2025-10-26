@@ -62,11 +62,11 @@ def render_expr_mathjax(node, context: Context) -> str:
         return escape(f"\\({pretty_expr(node, context)}\\)")
 
 def render_expr_list_mathjax(expr_list: list, context: Context) -> str:
-    return escape(f"\\({",".join(pretty_expr(expr, context) for expr in expr_list)}\\)")
+    return ",".join(render_expr_mathjax(expr, context) for expr in expr_list)
 
 def render_expr_dict_mathjax(expr_dict: dict, context: Context) -> str:
-    parts = [f"{pretty_expr(k, context)}:{pretty_expr(v, context)}" for k, v in expr_dict.items()]
-    return escape(f"\\({",".join(parts)}\\)")
+    parts = [f"{render_expr_mathjax(k, context)}:{render_expr_mathjax(v, context)}" for k, v in expr_dict.items()]
+    return ",".join(parts)
 
 def render_tex_mathjax(tex: list[str]):
     return escape(f"\\({"".join(tex)}\\)")
