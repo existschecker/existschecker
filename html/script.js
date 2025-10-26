@@ -164,3 +164,21 @@ document.getElementById('collapseAll').addEventListener('click', () => {
   document.querySelectorAll('.block-content').forEach(c => c.classList.add('collapsed'));
   document.querySelectorAll('.toggle').forEach(b => b.textContent='▶');
 });
+
+const toggleViewBtn = document.getElementById('toggleView');
+let currentView = 'syntax';
+
+toggleViewBtn.addEventListener('click', () => {
+  const proof = document.querySelector('.proof');
+  if (currentView === 'syntax') {
+    proof.classList.remove('syntax-mode');
+    proof.classList.add('jp-mode');
+    toggleViewBtn.textContent = 'Syntax';
+    currentView = 'jp';
+  } else {
+    proof.classList.remove('jp-mode');
+    proof.classList.add('syntax-mode');
+    toggleViewBtn.textContent = '日本語 (Japanese)';
+    currentView = 'syntax';
+  }
+});

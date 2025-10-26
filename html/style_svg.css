@@ -14,3 +14,8 @@ header { font-size: 0.9em; color: gray; margin-left: 1em; }
 .identifier { color:#1e7f68; margin-right:0.4rem; font-size: 1.0em; line-height: 2.0em; }
 #infoPanel img { vertical-align: middle; }
 .collapsed { display:none; }
+.jp-view { display: none; font-size: 0.95em; }
+.syntax-mode .jp-view { display: none; }
+.syntax-mode .syntax-view { display: block; }
+.jp-mode .syntax-view { display: none; }
+.jp-mode .jp-view { display: block; }

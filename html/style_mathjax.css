@@ -14,3 +14,8 @@ footer { height: 40px; border-top: 1px solid #888; text-align: center; }
 .keyword { font-weight:600; color:#064; margin-right:0.3rem; }
 .identifier { color:#094; font-weight:600; margin-right:0.4rem; }
 .collapsed { display:none; }
+.jp-view { display: none; font-size: 0.95em; }
+.syntax-mode .jp-view { display: none; }
+.syntax-mode .syntax-view { display: block; }
+.jp-mode .syntax-view { display: none; }
+.jp-mode .jp-view { display: block; }

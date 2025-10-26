@@ -14,11 +14,12 @@ HTML_TEMPLATE = """<!doctype html>
 <header>
   Rendered at {now_str}
 </header>
+<div class="controls">
+  <button id="expandAll">Expand all</button>
+  <button id="collapseAll">Collapse all</button>
+  <button id="toggleView">日本語 (Japanese)</button>
+</div>
 <div class="proof">
-  <div class="controls">
-    <button id="expandAll">Expand all</button>
-    <button id="collapseAll">Collapse all</button>
-  </div>
 {body}
 </div>
 <div class="info-panel" id="infoPanel">
@@ -108,6 +109,7 @@ def render_node(node, context: Context, mode: bool) -> str:
         raise Exception(f"Unexpected mode: {mode}")
 
     header_parts = []
+    header_parts_jp = []
     body_html = ""
     bullet = "<button class='bullet'>•</button>"
     toggle = "<button class='toggle'>▼</button>"
@@ -119,16 +121,30 @@ def render_node(node, context: Context, mode: bool) -> str:
                         render_tex(node.tex),
                         render_keyword("arity"),
                         f"{str(node.arity)}"]
+        header_parts_jp = [bullet,
+                           render_keyword("原始述語記号"),
+                           render_identifier(node.name),
+                           render_tex(node.tex),
+                           render_keyword("arity"),
+                           str(node.arity)]
     elif isinstance(node, Axiom):
         header_parts = [bullet,
                         render_keyword("axiom"),
                         render_identifier(node.name),
                         render_expr(node.conclusion, context)]
+        header_parts_jp = [bullet,
+                           render_keyword("公理"),
+                           render_identifier(node.name),
+                           render_expr(node.conclusion, context)]
     elif isinstance(node, Theorem):
         header_parts = [toggle,
                         render_keyword("theorem"),
                         render_identifier(node.name),
                         render_expr(node.conclusion, context)]
+        header_parts_jp = [toggle,
+                           render_keyword("定理"),
+                           render_identifier(node.name),
+                           render_expr(node.conclusion, context)]
         body_html = "".join(render_node(s, context, mode) for s in node.proof)
     elif isinstance(node, DefPred):
         header_parts = [bullet,
@@ -138,6 +154,14 @@ def render_node(node, context: Context, mode: bool) -> str:
                         render_expr(Symbol(Pred(node.name), node.args), context),
                         render_keyword("as"),
                         render_expr(node.formula, context)]
+        header_parts_jp = [bullet,
+                        render_keyword("述語記号定義"),
+                        render_keyword("autoexpand") if node.autoexpand else "",
+                        render_identifier(node.name),
+                        render_expr(Symbol(Pred(node.name), node.args), context),
+                        "を",
+                        render_expr(node.formula, context),
+                        "により定める。"]
     elif isinstance(node, DefCon):
         header_parts = [toggle,
                         render_keyword("definition constant"),
@@ -145,17 +169,32 @@ def render_node(node, context: Context, mode: bool) -> str:
                         render_tex(node.tex),
                         render_keyword("by"),
                         render_identifier(node.theorem)]
+        header_parts_jp = [toggle,
+                           render_keyword("定数記号定義"),
+                           render_identifier(node.name),
+                           render_tex(node.tex),
+                           "存在と一意性は",
+                           render_identifier(node.theorem),
+                           "により示された。"]
         body_html = render_node(node.existence, context, mode) + render_node(node.uniqueness, context, mode)
     elif isinstance(node, DefConExist):
         header_parts = [bullet,
                         render_keyword("existence"),
                         render_identifier(node.name),
                         render_expr(node.formula, context)]
+        header_parts_jp = [bullet,
+                           render_keyword("存在"),
+                           render_identifier(node.name),
+                           render_expr(node.formula, context)]
     elif isinstance(node, DefConUniq):
         header_parts = [bullet,
                         render_keyword("uniqueness"),
                         render_identifier(node.name),
                         render_expr(node.formula, context)]
+        header_parts_jp = [bullet,
+                           render_keyword("一意性"),
+                           render_identifier(node.name),
+                           render_expr(node.formula, context)]
     elif isinstance(node, DefFun):
         header_parts = [toggle,
                         render_keyword("definition function"),
@@ -163,17 +202,32 @@ def render_node(node, context: Context, mode: bool) -> str:
                         render_tex(node.tex),
                         render_keyword("by"),
                         render_identifier(node.theorem)]
+        header_parts_jp = [toggle,
+                           render_keyword("関数記号定義"),
+                           render_identifier(node.name),
+                           render_tex(node.tex),
+                           "存在と一意性は",
+                           render_identifier(node.theorem),
+                           "により示された。"]
         body_html = render_node(node.existence, context, mode) + render_node(node.uniqueness, context, mode)
     elif isinstance(node, DefFunExist):
         header_parts = [bullet,
                         render_keyword("existence"),
                         render_identifier(node.name),
                         render_expr(node.formula, context)]
+        header_parts_jp = [bullet,
+                           render_keyword("存在"),
+                           render_identifier(node.name),
+                           render_expr(node.formula, context)]
     elif isinstance(node, DefFunUniq):
         header_parts = [bullet,
                         render_keyword("uniqueness"),
                         render_identifier(node.name),
                         render_expr(node.formula, context)]
+        header_parts_jp = [bullet,
+                           render_keyword("一意性"),
+                           render_identifier(node.name),
+                           render_expr(node.formula, context)]
     elif isinstance(node, DefFunTerm):
         header_parts = [bullet,
                         render_keyword("definition function"),
@@ -181,43 +235,83 @@ def render_node(node, context: Context, mode: bool) -> str:
                         render_expr(Compound(Fun(node.name), node.args), context),
                         render_keyword("as"),
                         render_expr(node.term, context)]
+        header_parts_jp = [bullet,
+                           render_keyword("関数記号定義"),
+                           render_identifier(node.name),
+                           render_expr(Compound(Fun(node.name), node.args), context),
+                           "を",
+                           render_expr(node.term, context),
+                           "により定める。"]
     elif isinstance(node, Equality):
         header_parts = [toggle,
                         render_keyword("equality"),
                         render_identifier(node.equal.name)]
+        header_parts_jp = [toggle,
+                           render_keyword("等号宣言"),
+                           render_identifier(node.equal.name),
+                           "は等号である。"]
         body_html = render_node(node.reflection, context, mode) + render_node(node.replacement, context, mode)
     elif isinstance(node, EqualityReflection):
         header_parts = [bullet,
                         render_keyword("reflection"),
                         render_identifier(node.evidence.name)]
+        header_parts_jp = [bullet,
+                           "反射律は",
+                           render_identifier(node.evidence.name),
+                           "で示された。"]
     elif isinstance(node, EqualityReplacement):
         header_parts = [bullet,
                         render_keyword("replacement"),
                         ",".join([render_identifier(k) + ":" + render_identifier(v.name) for k, v in node.evidence.items()])]
+        header_parts_jp = [bullet,
+                           "、".join([render_identifier(k) + "の置換律は" + render_identifier(v.name) + "で" for k, v in node.evidence.items()]),
+                           "示された。"]
     elif isinstance(node, Any):
         header_parts = [toggle,
                         render_keyword("any"),
                         render_expr_list(node.vars, context)]
+        header_parts_jp = [toggle,
+                           "任意の",
+                           render_expr_list(node.vars, context),
+                           "をとる。"]
         body_html = "".join(render_node(s, context, mode) for s in node.body)
     elif isinstance(node, Assume):
         header_parts = [toggle,
                         render_keyword("assume"),
                         render_expr(node.premise, context)]
+        header_parts_jp = [toggle,
+                           render_expr(node.premise, context),
+                           "を仮定する。"]
         body_html = "".join(render_node(s, context, mode) for s in node.body)
     elif isinstance(node, Connect):
         header_parts = [bullet,
                         render_keyword("connect"),
                         render_expr(node.conclusion, context)]
+        header_parts_jp = [bullet,
+                           render_expr_list(node.proofinfo.premises, context),
+                           "をまとめて",
+                           render_expr_list(node.proofinfo.conclusions, context),
+                           "を得る。"]
     elif isinstance(node, Expand):
         header_parts = [bullet,
                         render_keyword("expand"),
                         render_expr(node.fact, context),
                         render_keyword("conclude"),
                         render_expr(node.conclusion, context)]
+        header_parts_jp = [bullet,
+                           render_expr_list(node.proofinfo.premises, context),
+                           "を定義により言い換えて",
+                           render_expr_list(node.proofinfo.conclusions, context),
+                           "を得る。"]
     elif isinstance(node, Split):
         header_parts = [bullet,
                         render_keyword("split"),
                         render_expr(node.fact, context)]
+        header_parts_jp = [bullet,
+                           render_expr(node.fact, context),
+                           "を分解して",
+                           render_expr_list(node.proofinfo.conclusions, context),
+                           "を得る。"]
     elif isinstance(node, Apply):
         fact = render_expr(node.fact, context)
         header_parts = [bullet,
@@ -225,18 +319,36 @@ def render_node(node, context: Context, mode: bool) -> str:
                         fact,
                         render_keyword("for"),
                         render_expr_dict(node.env, context)]
+        header_parts_jp = [bullet,
+                           fact,
+                           "の",
+                           "、".join([render_expr(k, context) + "を" + render_expr(v, context) + "に" for k, v in node.env.items()]),
+                           "適用して",
+                           render_expr_list(node.proofinfo.conclusions, context),
+                           "を得る。"]
         if node.conclusion is not None:
             header_parts.append(f"<span class='keyword'>conclude</span> {render_expr(node.conclusion, context)}")
     elif isinstance(node, Invoke):
         header_parts = [bullet,
                         render_keyword("invoke"),
                         render_expr(node.fact, context)]
+        header_parts_jp = [bullet,
+                           render_expr(node.fact, context),
+                           "の前提",
+                           render_expr(node.fact.left, context),
+                           "が成り立つので結論の",
+                           render_expr(node.fact.right, context),
+                           "を得る。"]
         if node.conclusion is not None:
             header_parts.append(f"<span class='keyword'>conclude</span> {render_expr(node.conclusion, context)}")
     elif isinstance(node, Deny):
         header_parts = [toggle,
                         render_keyword("deny"),
                         render_expr(node.premise, context)]
+        header_parts_jp = [toggle,
+                           "背理法を用いる。",
+                           render_expr(node.premise, context),
+                           "を仮定する。"]
         body_html = "".join(render_node(s, context, mode) for s in node.body)
     elif isinstance(node, Some):
         header_parts = [toggle,
@@ -244,11 +356,19 @@ def render_node(node, context: Context, mode: bool) -> str:
                         render_expr_dict(node.env, context),
                         render_keyword("such"),
                         render_expr(node.fact, context)]
+        header_parts_jp = [toggle,
+                           render_expr(node.fact, context),
+                           "の",
+                           "、".join([render_expr(k, context) + "を" + render_expr(v, context) + "として" for k, v in node.env.items()]),
+                           "とる。"]
         body_html = "".join(render_node(s, context, mode) for s in node.body)
     elif isinstance(node, Contradict):
         header_parts = [bullet,
                         render_keyword("contradict"),
                         render_expr(node.contradiction, context)]
+        header_parts_jp = [bullet,
+                          render_expr_list(node.proofinfo.premises, context),
+                          "より矛盾する。"]
     elif isinstance(node, Lift):
         header_parts = [bullet,
                         render_keyword("lift")]
@@ -258,26 +378,48 @@ def render_node(node, context: Context, mode: bool) -> str:
                              render_expr_dict(node.env, context),
                              render_keyword("conclude"),
                              render_expr(node.conclusion, context)])
+        header_parts_jp = [bullet,
+                           render_expr_list(node.proofinfo.premises, context),
+                           "の",
+                           "、".join([render_expr(v, context) + "を" + render_expr(k, context) + "に" for k, v in node.env.items()]),
+                           "置き換えて",
+                           render_expr_list(node.proofinfo.conclusions, context),
+                           "を得る。"]
     elif isinstance(node, Pad):
         header_parts = [bullet,
                         render_keyword("pad"),
                         render_expr(node.fact, context),
                         render_keyword("conclude"),
                         render_expr(node.conclusion, context)]
+        header_parts_jp = [bullet,
+                           render_expr(node.fact, context),
+                           "を水増しして",
+                           render_expr(node.conclusion, context),
+                           "を得る。"]
     elif isinstance(node, Divide):
         header_parts = [toggle,
                         render_keyword("divide"),
                         render_expr(node.fact, context)]
+        header_parts_jp = [toggle,
+                           render_expr(node.fact, context),
+                           "を場合分けする。"]
         body_html = "".join(render_node(s, context, mode) for s in node.cases)
     elif isinstance(node, Case):
         header_parts = [toggle,
                         render_keyword("case"),
                         render_expr(node.premise, context)]
+        header_parts_jp = [toggle,
+                           render_expr(node.premise, context),
+                           "のとき"]
         body_html = "".join(render_node(s, context, mode) for s in node.body)
     elif isinstance(node, Explode):
         header_parts = [bullet,
                         render_keyword("explode"),
                         render_expr(node.conclusion, context)]
+        header_parts_jp = [bullet,
+                           "矛盾から任意に結論を導けるので",
+                           render_expr(node.conclusion, context),
+                           "を得る。"]
     elif isinstance(node, Characterize):
         header_parts = [bullet,
                         render_keyword("characterize")]
@@ -287,6 +429,13 @@ def render_node(node, context: Context, mode: bool) -> str:
                              render_expr_dict(node.env, context),
                              render_keyword("conclude"),
                              render_expr(node.conclusion, context)])
+        header_parts_jp = [bullet,
+                           render_expr_list(node.proofinfo.premises, context),
+                           "の",
+                           "、".join([render_expr(v, context) + "を" + render_expr(k, context) + "に" for k, v in node.env.items()]),
+                           "置き換えて",
+                           render_expr_list(node.proofinfo.conclusions, context),
+                           "を得る。"]
     elif isinstance(node, Substitute):
         header_parts = [bullet,
                         render_keyword("substitute"),
@@ -295,15 +444,27 @@ def render_node(node, context: Context, mode: bool) -> str:
                         render_expr_dict(node.env, context),
                         render_keyword("conclude"),
                         render_expr(node.conclusion, context)]
+        header_parts_jp = [bullet,
+                           render_expr(node.fact, context),
+                           "に",
+                           ",".join([render_expr(Symbol(Pred(context.equality.equal.name), [k, v]), context) for k, v in node.env.items()]),
+                           "を代入して",
+                           render_expr_list(node.proofinfo.conclusions, context),
+                           "を得る。"]
     elif isinstance(node, Show):
         header_parts = [toggle,
                         render_keyword("show"),
                         render_expr(node.conclusion, context)]
+        header_parts_jp = [toggle,
+                           render_expr(node.conclusion, context),
+                           "を示す。"]
         body_html = "".join(render_node(s, context, mode) for s in node.body)
     else:
         raise Exception(f"Unexpected node: {type(node)}")
 
-    header_html = f"<div class='block-header'>" + " ".join(header_parts) + "</div>"
+    header_syntax_html = f"<div class='syntax-view'>{' '.join(header_parts)}</div>"
+    header_jp_html = f"<div class='jp-view'>{' '.join(header_parts_jp)}</div>"
+    header_html = f"<div class='block-header'>{header_syntax_html}{header_jp_html}</div>"
     context_vars = f"context_vars: {render_expr_list(node.proofinfo.context_vars, context)}" if isinstance(node, Control) else ""
     context_vars_html = f"<div class='context-vars' hidden>{context_vars}</div>"
     context_formulas = f"context_formulas: {render_expr_list(node.proofinfo.context_formulas, context)}" if isinstance(node, Control) else ""
