@@ -588,6 +588,10 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
         logger.debug(f"{sp}[DefFun] name: {node.name}, theorem: {node.theorem}")
         context.deffuns[node.name] = DefFun(node.name, node.arity, node.theorem, node.tex, None, None)
         args, existsuniq = collect_quantifier_vars(context.theorems[node.theorem].conclusion, Forall)
+        if not isinstance(existsuniq, ExistsUniq):
+            logger.error(f"{sp}❌ [DefFun] Not ExistsUniq object: {pretty_expr(existsuniq, context)}")
+            return False
+        logger.debug(f"{sp}[DefFun] ExistsUniq object: {pretty_expr(existsuniq, context)}")
         existence_formula = substitute(existsuniq.body, {existsuniq.var: Compound(Fun(node.name), args)})
         for arg in reversed(args):
             existence_formula = Forall(arg, existence_formula)
