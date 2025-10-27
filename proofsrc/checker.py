@@ -364,6 +364,9 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
         logger.debug(f"{sp}[Characterize] node.conclusion.var {node.conclusion.var} is matched with node.env {node.env}")
         free, bound = collect_vars(node.conclusion.body)
         vardash = fresh_var(Var(node.conclusion.var.name + "'"), free | bound)
+        if context.equality is None:
+            logger.error(f"{sp}❌ [Characterize] equality has not been declared yet")
+            return False
         fact = And(substitute(node.conclusion.body, node.env), Forall(vardash, Implies(substitute(node.conclusion.body, {node.conclusion.var: vardash}), Symbol(Pred(context.equality.equal.name), [vardash, list(node.env.values())[0]]))))
         if not goal_in_context(fact, context):
             logger.error(f"{sp}❌ [Characterize] Not fact: {pretty_expr(fact, context)}")
@@ -503,6 +506,9 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             logger.error(f"{sp}❌ [Substitute] Not fact: {pretty_expr(node.fact, context)}")
             return False
         logger.debug(f"{sp}[Substitute] Fact: {pretty_expr(node.fact, context)}")
+        if context.equality is None:
+            logger.error(f"{sp}❌ [Substitute] equality has not been declared yet")
+            return False
         equations = [Symbol(Pred(context.equality.equal.name), [k, v]) for k, v in node.env.items()]
         for equation in equations:
             if not goal_in_context(equation, context):
@@ -567,6 +573,9 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
         logger.debug(f"{sp}[DefCon] existence_formula is matched with theorem: {pretty_expr(node.existence.formula, context)}")
         var = fresh_var(existsuniq.var, [Con(node.name)])
         body = substitute(existsuniq.body, {existsuniq.var: var})
+        if context.equality is None:
+            logger.error(f"{sp}❌ [DefCon] equality has not been declared yet")
+            return False
         uniqueness_formula = Forall(var, Implies(body, Symbol(Pred(context.equality.equal.name), [var, Con(node.name)])))
         if not alpha_equiv_with_defs(node.uniqueness.formula, uniqueness_formula, context):
             logger.error(f"{sp}❌ [DefCon] uniqueness_formula is not matched with theorem: {pretty_expr(node.uniqueness.formula, context)}")
@@ -586,6 +595,9 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             logger.error(f"{sp}❌ [DefFun] existence_formula is not matched with theorem: {pretty_expr(node.existence.formula, context)}")
             return False
         logger.debug(f"{sp}[DefFun] existence_formula is matched with theorem: {pretty_expr(node.existence.formula, context)}")
+        if context.equality is None:
+            logger.error(f"{sp}❌ [DefFun] equality has not been declared yet")
+            return False
         uniqueness_formula = Forall(existsuniq.var, Implies(existsuniq.body, Symbol(Pred(context.equality.equal.name), [existsuniq.var, Compound(Fun(node.name), args)])))
         for arg in reversed(args):
             uniqueness_formula = Forall(arg, uniqueness_formula)
