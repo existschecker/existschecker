@@ -95,7 +95,7 @@ def render_tex_svg(tex: list[str]):
     svg_path = output_svg(latex_code)
     return img_tag(svg_path, latex_code)
 
-def render_node(node, context: Context, mode: bool) -> str:
+def render_node(node, context: Context, mode: str) -> str:
     if mode == "mathjax":
         render_expr = render_expr_mathjax
         render_expr_list = render_expr_list_mathjax
