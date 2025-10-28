@@ -295,7 +295,7 @@ class Context:
     def init() -> "Context":
         return Context(vars=[], formulas=[], primpreds={}, axioms={}, theorems={}, defpreds={}, defcons={}, deffuns={}, deffunterms={}, equality=None)
 
-    def copy(self, vars, formulas) -> "Context":
+    def copy(self, vars: list[Var], formulas: list[Bottom | Formula]) -> "Context":
         return Context(vars=vars, formulas=formulas, primpreds=self.primpreds, axioms=self.axioms, theorems=self.theorems, defpreds=self.defpreds, defcons=self.defcons, deffuns=self.deffuns, deffunterms=self.deffunterms, equality=self.equality)
 
     def has_reference(self, name: str) -> bool:

@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, Var, Substitute, Symbol, Characterize, Show, Pred, Control, ProofInfo, Formula, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, Var, Substitute, Symbol, Characterize, Show, Pred, Control, ProofInfo, Formula, Declaration, pretty_expr
 from logic_utils import expr_in_context, collect_quantifier_vars, substitute, collect_vars, flatten_op, fresh_var, alpha_equiv, alpha_equiv_with_defs
 from copy import deepcopy
 
@@ -24,12 +24,12 @@ def get_fact(fact: str | Formula, context: Context) -> Formula:
 def add_conclusion(context: Context, conclusion) -> None:
     context.formulas.append(conclusion)
 
-def check_ast(ast: list) -> tuple[bool, list, Context]:
+def check_ast(ast: list[Declaration]) -> tuple[bool, list[Declaration], Context]:
     context = Context.init()
     return all(check_proof(node, context) for node in ast), ast, context
 
 # === 証明チェッカー ===
-def check_proof(node, context: Context, indent: int = 0) -> bool:
+def check_proof(node: Declaration | Control, context: Context, indent: int = 0) -> bool:
     sp = "  " * indent
 
     if isinstance(node, Control):

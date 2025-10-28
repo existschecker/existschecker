@@ -1,14 +1,14 @@
-from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, Symbol, Context, Compound, Fun, Con, Var, Bottom, Term, Pred
+from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, Symbol, Context, Compound, Fun, Con, Var, Bottom, Term, Pred, Formula
 from itertools import permutations
 from copy import deepcopy
 
-def flatten_op(expr, op: type[And] | type[Or]) -> list:
+def flatten_op(expr: Formula, op: type[And] | type[Or]) -> list:
     if isinstance(expr, op):
         return flatten_op(expr.left, op) + flatten_op(expr.right, op)
     else:
         return [expr]
 
-def op_equiv(e1, e2, context: Context, env: dict[Var, Var], op: type[And] | type[Or]) -> bool:
+def op_equiv(e1: Formula, e2: Formula, context: Context, env: dict[Var, Var], op: type[And] | type[Or]) -> bool:
     parts1 = flatten_op(e1, op)
     parts2 = flatten_op(e2, op)
 
@@ -28,7 +28,7 @@ def op_equiv(e1, e2, context: Context, env: dict[Var, Var], op: type[And] | type
 
     return True
 
-def alpha_equiv(e1, e2, context: Context, env: dict[Var, Var] | None = None) -> bool:
+def alpha_equiv(e1: Formula, e2: Formula, context: Context, env: dict[Var, Var] | None = None) -> bool:
     if env is None:
         env = {}
 
@@ -111,7 +111,7 @@ def alpha_equiv(e1, e2, context: Context, env: dict[Var, Var] | None = None) -> 
 
     return False
 
-def collect_quantifier_vars(e, quantifier_type: type[Forall] | type[Exists] | type[ExistsUniq]) -> tuple[list[Var], object]:
+def collect_quantifier_vars(e: Formula, quantifier_type: type[Forall] | type[Exists] | type[ExistsUniq]) -> tuple[list[Var], Formula]:
     vars_ = []
     body = e
     while isinstance(body, quantifier_type):
@@ -119,7 +119,7 @@ def collect_quantifier_vars(e, quantifier_type: type[Forall] | type[Exists] | ty
         body = body.body
     return vars_, body
 
-def collect_vars(expr, bound: set[Var] | None = None) -> tuple[set[Var], set[Var]]:
+def collect_vars(expr: Formula | Term, bound: set[Var] | None = None) -> tuple[set[Var], set[Var]]:
     """
     式 expr から自由変数と束縛変数の集合を返す
     戻り値: (free_vars, bound_vars)
@@ -159,10 +159,10 @@ def collect_vars(expr, bound: set[Var] | None = None) -> tuple[set[Var], set[Var
         raise Exception(f"Unexpected type {type(expr)}")
 
 # === コンテキスト中の式検索 ===
-def expr_in_context(expr, context: Context) -> bool:
+def expr_in_context(expr: Bottom | Formula, context: Context) -> bool:
     return any(alpha_equiv_with_defs(expr, f, context) for f in context.formulas)
 
-def alpha_equiv_with_defs(e1, e2, context: Context, expand_all: bool = False) -> bool:
+def alpha_equiv_with_defs(e1: Bottom | Formula, e2: Bottom | Formula, context: Context, expand_all: bool = False) -> bool:
     if isinstance(e1, Bottom) and isinstance(e2, Bottom):
         return True
     elif isinstance(e1, Bottom) and not isinstance(e2, Bottom):
@@ -174,7 +174,7 @@ def alpha_equiv_with_defs(e1, e2, context: Context, expand_all: bool = False) ->
         e2_exp = normalize_neg(expand_basic_defs(e2, context, expand_all))
         return alpha_equiv(e1_exp, e2_exp, context)
 
-def expand_basic_defs(expr, context: Context, expand_all: bool):
+def expand_basic_defs(expr: Formula, context: Context, expand_all: bool) -> Formula:
     if isinstance(expr, Symbol):
         if expr.pred.name in context.primpreds:
             return Symbol(expand_basic_defs(expr.pred, context, expand_all), [expand_basic_defs(arg, context, expand_all) for arg in expr.args])
@@ -210,7 +210,7 @@ def expand_basic_defs(expr, context: Context, expand_all: bool):
     else:
         raise Exception(f"Unexpected type: {type(expr)}")
 
-def normalize_neg(expr):
+def normalize_neg(expr: Formula) -> Formula:
     if isinstance(expr, Symbol):
         return expr
     elif isinstance(expr, Not):
@@ -236,7 +236,7 @@ def fresh_var(var: Var, used: set[Var]) -> Var:
     else:
         return var
 
-def substitute(expr, mapping: dict[Term, Term], used_vars: set[Var] | None = None):
+def substitute(expr: Formula, mapping: dict[Term, Term], used_vars: set[Var] | None = None) -> Formula:
     if used_vars is None:
         used_vars = collect_vars(expr)[0] | {v for v in mapping.values() if isinstance(v, Var)}
 
@@ -275,7 +275,7 @@ def substitute(expr, mapping: dict[Term, Term], used_vars: set[Var] | None = Non
 
     return expr
 
-def alpha_rename(expr, rename_map: dict[Var, Var]):
+def alpha_rename(expr: Formula, rename_map: dict[Var, Var]) -> Formula:
     if isinstance(expr, Symbol):
         new_args = [alpha_rename(a, rename_map) for a in expr.args]
         return Symbol(alpha_rename(expr.pred, rename_map), new_args)
