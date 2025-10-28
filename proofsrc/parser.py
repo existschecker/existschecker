@@ -587,19 +587,9 @@ class Parser:
         else:
             raise SyntaxError(f"Unexpected token: {tok}")
 
-    def parse_reference_or_formula(self) -> Axiom | Theorem | DefConExist | DefConUniq | DefFunExist | DefFunUniq | Formula:
-        if self.peek().type == "IDENT" and self.peek().value in self.context.axioms:
-            return self.context.axioms[self.consume("IDENT").value]
-        elif self.peek().type == "IDENT" and self.peek().value in self.context.theorems:
-            return self.context.theorems[self.consume("IDENT").value]
-        elif self.peek().type == "IDENT" and self.context.has_defcon_existence(self.peek().value):
-            return self.context.get_defcon_existence(self.consume("IDENT").value)
-        elif self.peek().type == "IDENT" and self.context.has_defcon_uniqueness(self.peek().value):
-            return self.context.get_defcon_uniqueness(self.consume("IDENT").value)
-        elif self.peek().type == "IDENT" and self.context.has_deffun_existence(self.peek().value):
-            return self.context.get_deffun_existence(self.consume("IDENT").value)
-        elif self.peek().type == "IDENT" and self.context.has_deffun_uniqueness(self.peek().value):
-            return self.context.get_deffun_uniqueness(self.consume("IDENT").value)
+    def parse_reference_or_formula(self) -> str | Formula:
+        if self.peek().type == "IDENT" and self.context.has_reference(self.peek().value):
+            return self.consume("IDENT").value
         else:
             return self.parse_formula()
 

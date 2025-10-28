@@ -84,7 +84,7 @@ class Bottom:
 class ProofInfo:
     context_vars: list[Var] = field(init=False)
     context_formulas: list[Bottom | Formula] = field(init=False)
-    premises: list["Axiom | Theorem | DefConExist | DefConUniq | DefFunExist | DefFunUniq | Bottom | Formula"] = field(init=False)
+    premises: list[str | Formula] = field(init=False)
     conclusions: list[Bottom | Formula] = field(init=False)
     local_vars: list[Var] = field(init=False)
     local_premise: list[Formula] = field(init=False)
@@ -114,14 +114,14 @@ class Case(Control):
 
 @dataclass
 class Divide(Control):
-    fact: "Axiom | Theorem | DefConExist | DefConUniq | DefFunExist | DefFunUniq | Formula"
+    fact: str | Formula
     conclusion: Bottom | Formula | None
     cases: list[Case]
 
 @dataclass
 class Some(Control):
     env: dict[Var, Var]
-    fact: "Axiom | Theorem | DefConExist | DefConUniq | DefFunExist | DefFunUniq | Formula"
+    fact: str | Formula
     conclusion: Bottom | Formula | None
     body: list[Control]
 
@@ -140,7 +140,7 @@ class Explode(Control):
 
 @dataclass
 class Apply(Control):
-    fact: "Axiom | Theorem | DefConExist | DefConUniq | DefFunExist | DefFunUniq | Formula"
+    fact: str | Formula
     env: dict[Var, Term]
     conclusion: Formula | None
 
@@ -163,12 +163,12 @@ class Invoke(Control):
 
 @dataclass
 class Expand(Control):
-    fact: "Axiom | Theorem | DefConExist | DefConUniq | DefFunExist | DefFunUniq | Formula"
+    fact: str | Formula
     conclusion: Formula
 
 @dataclass
 class Pad(Control):
-    fact: "Axiom | Theorem | DefConExist | DefConUniq | DefFunExist | DefFunUniq | Formula"
+    fact: str | Formula
     conclusion: Or
 
 @dataclass
@@ -181,7 +181,7 @@ class Connect(Control):
 
 @dataclass
 class Substitute(Control):
-    fact: "Axiom | Theorem | DefConExist | DefConUniq | DefFunExist | DefFunUniq | Formula"
+    fact: str | Formula
     env: dict[Term, Term]
     conclusion: Formula
 
@@ -298,6 +298,25 @@ class Context:
     def copy(self, vars, formulas) -> "Context":
         return Context(vars=vars, formulas=formulas, primpreds=self.primpreds, axioms=self.axioms, theorems=self.theorems, defpreds=self.defpreds, defcons=self.defcons, deffuns=self.deffuns, deffunterms=self.deffunterms, equality=self.equality)
 
+    def has_reference(self, name: str) -> bool:
+        return name in self.axioms or name in self.theorems or self.has_defcon_existence(name) or self.has_defcon_uniqueness(name) or self.has_deffun_existence(name) or self.has_deffun_uniqueness(name)
+
+    def get_reference(self, name: str) -> Formula:
+        if name in self.axioms:
+            return self.axioms[name].conclusion
+        elif name in self.theorems:
+            return self.theorems[name].conclusion
+        elif self.has_defcon_existence(name):
+            return self.get_defcon_existence(name).formula
+        elif self.has_defcon_uniqueness(name):
+            return self.get_defcon_uniqueness(name).formula
+        elif self.has_deffun_existence(name):
+            return self.get_deffun_existence(name).formula
+        elif self.has_deffun_uniqueness(name):
+            return self.get_deffun_uniqueness(name).formula
+        else:
+            raise Exception(f"Unexpected name: {name}")
+
     def has_defcon_existence(self, existence_name: str) -> bool:
         for defcon in self.defcons.values():
             if defcon.existence.name == existence_name:
@@ -357,19 +376,9 @@ OP_PRECEDENCE = {
     "Quantifier": 5,
 }
 
-def pretty_expr(expr: Axiom | Theorem | DefConExist | DefConUniq | DefFunExist | DefFunUniq | Bottom | Formula | Term | Pred | Fun, context: Context, parent_prec: int = OP_PRECEDENCE["Lowest"]):
-    if isinstance(expr, Axiom):
-        return expr.name
-    if isinstance(expr, Theorem):
-        return expr.name
-    if isinstance(expr, DefConExist):
-        return expr.name
-    if isinstance(expr, DefConUniq):
-        return expr.name
-    if isinstance(expr, DefFunExist):
-        return expr.name
-    if isinstance(expr, DefFunUniq):
-        return expr.name
+def pretty_expr(expr: str | Bottom | Formula | Term | Pred | Fun, context: Context, parent_prec: int = OP_PRECEDENCE["Lowest"]):
+    if isinstance(expr, str):
+        return expr
     if isinstance(expr, Symbol):
         tex = pretty_expr(expr.pred, context)
         if len(tex) != len(expr.args) + 1:

@@ -57,8 +57,8 @@ def render_identifier(name: str) -> str:
     return f"<span class='identifier'>{escape(name)}</span>"
 
 def render_expr_mathjax(node, context: Context) -> str:
-    if isinstance(node, (Axiom, Theorem, DefConExist, DefConUniq, DefFunExist, DefFunUniq)):
-        return render_identifier(node.name)
+    if isinstance(node, str):
+        return render_identifier(node)
     else:
         return escape(f"\\({pretty_expr(node, context)}\\)")
 
@@ -76,8 +76,8 @@ def img_tag(svg_path: str, latex_code: str) -> str:
     return f"<img src='{escape(svg_path)}' alt='{escape(latex_code)}'>"
 
 def render_expr_svg(node, context: Context) -> str:
-    if isinstance(node, (Axiom, Theorem, DefConExist, DefConUniq, DefFunExist, DefFunUniq)):
-        return render_identifier(node.name)
+    if isinstance(node, str):
+        return render_identifier(node)
     else:
         latex_code = pretty_expr(node, context)
         svg_path = output_svg(latex_code)

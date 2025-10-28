@@ -1,27 +1,25 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, Var, Substitute, Symbol, Characterize, Show, Pred, Control, ProofInfo, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, Var, Substitute, Symbol, Characterize, Show, Pred, Control, ProofInfo, Formula, pretty_expr
 from logic_utils import expr_in_context, collect_quantifier_vars, substitute, collect_vars, flatten_op, fresh_var, alpha_equiv, alpha_equiv_with_defs
 from copy import deepcopy
 
 import logging
 logger = logging.getLogger("proof")
 
-def goal_in_context(goal, context: Context) -> bool:
-    if isinstance(goal, Axiom):
-        return goal.name in context.axioms
-    elif isinstance(goal, Theorem):
-        return goal.name in context.theorems
-    elif isinstance(goal, DefConExist):
-        return context.has_defcon_existence(goal.name)
-    elif isinstance(goal, DefConUniq):
-        return context.has_defcon_uniqueness(goal.name)
-    elif isinstance(goal, DefFunExist):
-        return context.has_deffun_existence(goal.name)
-    elif isinstance(goal, DefFunUniq):
-        return context.has_deffun_uniqueness(goal.name)
+def goal_in_context(goal: str | Bottom | Formula, context: Context) -> bool:
+    if isinstance(goal, str):
+        return context.has_reference(goal)
     elif isinstance(goal, Symbol) and context.equality is not None and goal.pred.name == context.equality.equal.name and goal.args[0] == goal.args[1]:
         return True
     else:
         return expr_in_context(goal, context)
+
+def get_fact(fact: str | Formula, context: Context) -> Formula:
+    if isinstance(fact, str):
+        return context.get_reference(fact)
+    elif isinstance(fact, Formula):
+        return fact
+    else:
+        raise Exception(f"Unexpected type {type(fact)}")
 
 def add_conclusion(context: Context, conclusion) -> None:
     context.formulas.append(conclusion)
@@ -133,17 +131,18 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
         if not goal_in_context(node.fact, context):
             logger.error(f"{sp}❌ [Divide] Not fact: {pretty_expr(node.fact, context)}")
             return False
+        fact = get_fact(node.fact, context)
         connected_premise = Or(node.cases[0].premise, node.cases[1].premise)
         i = 2
         while i < len(node.cases):
             connected_premise = Or(connected_premise, node.cases[i].premise)
             i += 1
-        if alpha_equiv_with_defs(connected_premise, node.fact, context):
-            logger.debug(f"{sp}[Divide] mathched: fact={pretty_expr(node.fact, context)}, connected_premise={pretty_expr(connected_premise, context)}")
+        if alpha_equiv_with_defs(connected_premise, fact, context):
+            logger.debug(f"{sp}[Divide] mathched: fact={pretty_expr(fact, context)}, connected_premise={pretty_expr(connected_premise, context)}")
         else:
-            logger.error(f"{sp}❌ [Divide] not matched: fact={pretty_expr(node.fact, context)}, conected_premise={pretty_expr(connected_premise, context)}")
+            logger.error(f"{sp}❌ [Divide] not matched: fact={pretty_expr(fact, context)}, conected_premise={pretty_expr(connected_premise, context)}")
             return False
-        logger.debug(f"{sp}[Divide] fact={pretty_expr(node.fact, context)}")
+        logger.debug(f"{sp}[Divide] fact={pretty_expr(fact, context)}")
         local_ctx = context.copy(list(context.vars), list(context.formulas))
         goals = []
         for stmt in node.cases:
@@ -160,7 +159,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
                 if not alpha_equiv_with_defs(goals[i], goals[i + 1], context):
                     logger.error(f"{sp}❌ [Divide] Not matched: goals[{i}]={pretty_expr(goals[i], context)}, goals[{i + 1}]={pretty_expr(goals[i + 1], context)}")
                     return False
-        node.proofinfo.premises = [node.fact]
+        node.proofinfo.premises = [fact]
         node.proofinfo.conclusions = [goals[0]]
         node.proofinfo.local_vars = []
         node.proofinfo.local_premise = []
@@ -199,12 +198,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             logger.error(f"{sp}❌ [Some] not derivable: {pretty_expr(node.fact, context)}")
             return False
         logger.debug(f"{sp}[Some] derivable: {pretty_expr(node.fact, context)}")
-        if isinstance(node.fact, Axiom):
-            fact = node.fact.conclusion
-        elif isinstance(node.fact, Theorem):
-            fact = node.fact.conclusion
-        else:
-            fact = node.fact
+        fact = get_fact(node.fact, context)
         if not isinstance(fact, Exists):
             logger.error(f"{sp}❌ Not Exists object: {pretty_expr(node.fact, context)}")
             return False
@@ -298,20 +292,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             logger.error(f"{sp}❌ [Apply] Cannot derive fact: {pretty_expr(node.fact, context)}")
             return False
         logger.debug(f"{sp}[Apply] Drivable fact: {pretty_expr(node.fact, context)}")
-        if isinstance(node.fact, Axiom):
-            fact = node.fact.conclusion
-        elif isinstance(node.fact, Theorem):
-            fact = node.fact.conclusion
-        elif isinstance(node.fact, DefConExist):
-            fact = node.fact.formula
-        elif isinstance(node.fact, DefConUniq):
-            fact = node.fact.formula
-        elif isinstance(node.fact, DefFunExist):
-            fact = node.fact.formula
-        elif isinstance(node.fact, DefFunUniq):
-            fact = node.fact.formula
-        else:
-            fact = node.fact
+        fact = get_fact(node.fact, context)
         vars, body = collect_quantifier_vars(fact, Forall)
         if set(vars) != set(node.env.keys()):
             logger.error(f"{sp}❌ [Apply] Not matched: vars={vars}, env={node.env}")
@@ -410,11 +391,12 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             logger.error(f"{sp}❌ [Expand] Not fact: {pretty_expr(node.fact, context)}")
             return False
         logger.debug(f"{sp}[Expand] fact: {pretty_expr(node.fact, context)}")
-        if not alpha_equiv_with_defs(node.conclusion, node.fact, context, True):
+        fact = get_fact(node.fact, context)
+        if not alpha_equiv_with_defs(node.conclusion, fact, context, True):
             logger.error(f"{sp}❌ [Expand] Not matched: node.conclusion={pretty_expr(node.conclusion, context)}")
             return False
         logger.debug(f"{sp}[Expand] Matched: node.conclusion={pretty_expr(node.conclusion, context)}")
-        node.proofinfo.premises = [node.fact]
+        node.proofinfo.premises = [fact]
         node.proofinfo.conclusions = [node.conclusion]
         add_conclusion(context, node.conclusion)
         logger.debug(f"{sp}[Expand] Added: {pretty_expr(node.conclusion, context)}")
@@ -425,16 +407,17 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             logger.error(f"{sp}❌ [Pad] Not derivable: {pretty_expr(node.fact, context)}")
             return False
         logger.debug(f"{sp}[Pad] Derivable: {pretty_expr(node.fact, context)}")
+        fact = get_fact(node.fact, context)
         if not isinstance(node.conclusion, Or):
             logger.error(f"{sp}❌ [Pad] Not Or object: {pretty_expr(node.conclusion, context)}")
             return False
         logger.debug(f"{sp}[Pad] Or object: {pretty_expr(node.conclusion, context)}")
-        fact_parts = flatten_op(node.fact, Or)
+        fact_parts = flatten_op(fact, Or)
         conclusion_parts = flatten_op(node.conclusion, Or)
         if not all(any(alpha_equiv_with_defs(c, f, context) for c in conclusion_parts) for f in fact_parts):
             logger.error(f"{sp}❌ [Pad] neither left or right not derivable: {pretty_expr(node.conclusion, context)}")
             return False
-        node.proofinfo.premises = [node.fact]
+        node.proofinfo.premises = [fact]
         node.proofinfo.conclusions = [node.conclusion]
         add_conclusion(context, node.conclusion)
         logger.debug(f"{sp}[Pad] Derivable, added {pretty_expr(node.conclusion, context)}")
@@ -506,6 +489,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             logger.error(f"{sp}❌ [Substitute] Not fact: {pretty_expr(node.fact, context)}")
             return False
         logger.debug(f"{sp}[Substitute] Fact: {pretty_expr(node.fact, context)}")
+        fact = get_fact(node.fact, context)
         if context.equality is None:
             logger.error(f"{sp}❌ [Substitute] equality has not been declared yet")
             return False
@@ -515,7 +499,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
                 logger.error(f"{sp}❌ [Substitute] Not fact: {pretty_expr(equation, context)}")
                 return False
             logger.debug(f"{sp}[Substitute] Fact: {pretty_expr(equation, context)}")
-        fact_subst = substitute(node.fact, node.env)
+        fact_subst = substitute(fact, node.env)
         conclusion_subst = substitute(node.conclusion, node.env)
         logger.debug(f"{sp}[Substitute] fact_subst: {pretty_expr(fact_subst, context)}")
         logger.debug(f"{sp}[Substitute] conclusion_subst: {pretty_expr(conclusion_subst, context)}")
@@ -523,7 +507,7 @@ def check_proof(node, context: Context, indent: int = 0) -> bool:
             logger.error(f"{sp}❌ [Substitute] Not matched")
             return False
         logger.debug(f"{sp}[Substitute] Matched")
-        node.proofinfo.premises = [node.fact] + equations
+        node.proofinfo.premises = [fact] + equations
         node.proofinfo.conclusions = [node.conclusion]
         add_conclusion(context, node.conclusion)
         logger.debug(f"{sp}[Substitute] Added {pretty_expr(node.conclusion, context)}")
