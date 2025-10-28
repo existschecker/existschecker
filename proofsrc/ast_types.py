@@ -73,19 +73,23 @@ class Context:
 
 # === DSL ノード定義 ===
 @dataclass
-class PrimPred:
+class Declaration:
+    pass
+
+@dataclass
+class PrimPred(Declaration):
     type: str
     name: str
     arity: int
     tex: list[str]
 
 @dataclass
-class Axiom:
+class Axiom(Declaration):
     name: str
     conclusion: "Formula"
 
 @dataclass
-class Theorem:
+class Theorem(Declaration):
     name: str
     conclusion: "Formula"
     proof: list["Control"]
@@ -201,7 +205,7 @@ class Show(Control):
     body: list[Control]
 
 @dataclass
-class DefPred:
+class DefPred(Declaration):
     name: str
     args: list["Var"]
     formula: "Formula"
@@ -209,7 +213,7 @@ class DefPred:
     tex: list[str]
 
 @dataclass
-class DefCon:
+class DefCon(Declaration):
     name: str
     theorem: str
     tex: list[str]
@@ -227,7 +231,7 @@ class DefConUniq:
     formula: "Formula"
 
 @dataclass
-class DefFun:
+class DefFun(Declaration):
     name: str
     arity: int
     theorem: str
@@ -246,14 +250,14 @@ class DefFunUniq:
     formula: "Formula"
 
 @dataclass
-class DefFunTerm:
+class DefFunTerm(Declaration):
     name: str
     args: list["Var"]
     term: "Term"
     tex: list[str]
 
 @dataclass
-class Equality:
+class Equality(Declaration):
     equal: PrimPred | DefPred
     reflection: "EqualityReflection"
     replacement: "EqualityReplacement"
