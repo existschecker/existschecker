@@ -278,6 +278,25 @@ class Equality(Declaration):
     reflection: EqualityReflection
     replacement: EqualityReplacement
 
+@dataclass(frozen=True)
+class Template:
+    name: str
+    arity: int
+
+@dataclass
+class TemplateCall(Formula):
+    template: Template
+    args: list[Term]
+
+    def __post_init__(self):
+        if len(self.args) != self.template.arity:
+            raise ValueError(f"{self.template.name} expects {self.template.arity} args, got {len(self.args)}")
+
+@dataclass
+class ForallTemplate(Formula):
+    template: Template
+    body: Formula
+
 @dataclass
 class Context:
     vars: list[Var]
@@ -466,4 +485,23 @@ def pretty_expr(expr: str | Bottom | Formula | Term | Pred | Fun, context: Conte
         return text if OP_PRECEDENCE["Quantifier"] > parent_prec else f"({text})"
     if isinstance(expr, Bottom):
         return "\\bot"
+    if isinstance(expr, ForallTemplate):
+        body = expr
+        qtemps = []
+        while True:
+            if isinstance(body, ForallTemplate):
+                qtemps.append(type(body)(body.template, None))
+                body = body.body
+            else:
+                break
+        qtemps_text = ""
+        for qtemp in qtemps:
+            if isinstance(qtemp, ForallTemplate):
+                q_text = "\\forall^T"
+            qtemps_text += q_text + qtemp.template.name + "(" + str(qtemp.template.arity) + ")"
+        text = f"{qtemps_text} {pretty_expr(body, context, OP_PRECEDENCE["Quantifier"])}"
+        return text if OP_PRECEDENCE["Quantifier"] > parent_prec else f"({text})"
+    if isinstance(expr, TemplateCall):
+        text = f"{expr.template.name}({",".join([pretty_expr(arg, context) for arg in expr.args])})"
+        return text if OP_PRECEDENCE["Symbol"] > parent_prec else f"({text})"
     raise TypeError(f"Unsupported node type: {type(expr)}")

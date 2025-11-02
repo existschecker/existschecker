@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, Template, TemplateCall, ForallTemplate
 from lexer import Token, lex
 from logic_utils import collect_quantifier_vars
 
@@ -10,6 +10,7 @@ class Parser:
     def __init__(self, tokens: list[Token]):
         self.tokens = tokens
         self.pos = 0
+        self.bound_templates: dict[str, Template] = {}
 
     def peek(self) -> Token:
         if self.pos >= len(self.tokens):
@@ -539,7 +540,9 @@ class Parser:
         tok = self.peek()
         if tok.type == "IDENT":
             name = self.consume("IDENT").value
-            if name in self.context.primpreds:
+            if name in self.bound_templates:
+                arity = self.bound_templates[name].arity
+            elif name in self.context.primpreds:
                 arity = self.context.primpreds[name].arity
             elif name in self.context.defpreds:
                 arity = len(self.context.defpreds[name].args)
@@ -553,7 +556,10 @@ class Parser:
             if len(args) != arity:
                 raise SyntaxError("arity is different")
             self.consume("RPAREN")
-            return Symbol(Pred(name), args)
+            if name in self.bound_templates:
+                return TemplateCall(self.bound_templates[name], args)
+            else:
+                return Symbol(Pred(name), args)
 
         elif tok.type == "LPAREN":
             self.consume("LPAREN")
@@ -585,6 +591,29 @@ class Parser:
                     body = Exists(var, body)
                 elif quantifier == "EXISTS_UNIQ":
                     body = ExistsUniq(var, body)
+            return body
+
+        elif tok.type in ("FORALLTEMPLATE"):
+            quantifiers: list[str] = []
+            templates: list[Template] = []
+            while tok.type in ("FORALLTEMPLATE"):
+                quantifiers.append(self.consume(tok.type).type)
+                template_name = self.consume("IDENT").value
+                self.consume("LPAREN")
+                template_arity = int(self.consume("NUMBER").value)
+                self.consume("RPAREN")
+                templates.append(Template(template_name, template_arity))
+                tok = self.peek()
+            for template in templates:
+                self.bound_templates[template.name] = template
+            self.consume("LPAREN")
+            body = self.parse_formula()
+            self.consume("RPAREN")
+            for template in templates:
+                self.bound_templates.pop(template.name)
+            for quantifier, template in zip(reversed(quantifiers), reversed(templates)):
+                if quantifier == "FORALLTEMPLATE":
+                    body = ForallTemplate(template, body)
             return body
 
         else:

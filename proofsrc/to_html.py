@@ -487,8 +487,9 @@ def to_html(ast: list[Declaration], context: Context, title: str, mode: str):
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     parts = []
     for i, node in enumerate(ast):
-        print(f"Rendering node {i + 1} / {len(ast)} finished")
+        print(f"\rRendering node {i + 1} / {len(ast)} finished", end="")
         parts.append(render_node(node, context, mode))
+    print()
     body_html = "\n".join(parts)
     if mode == "mathjax":
         extra_head = MATHJAX_HEAD.format()

@@ -813,3 +813,5 @@ theorem powerset_cor2 equal(powerset(emptyset),singleton(emptyset)) {
   }
   expand \forall x(in(x,powerset(emptyset))\leftrightarrow in(x,singleton(emptyset))) conclude equal(powerset(emptyset),singleton(emptyset))
 }
+
+axiom axiom_schema_of_separation \forall^T\phi(1)(\forall x\exists y\forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi(z)))
