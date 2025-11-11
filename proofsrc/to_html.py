@@ -66,7 +66,7 @@ def render_expr_list_mathjax(expr_list: list[str | Bottom | Formula | Term], con
     return ",".join(render_expr_mathjax(expr, context) for expr in expr_list)
 
 def render_expr_dict_mathjax(expr_dict: dict[Term, Term], context: Context) -> str:
-    parts = [f"{render_expr_mathjax(k, context)}:{render_expr_mathjax(v, context)}" for k, v in expr_dict.items()]
+    parts = [f"{escape(f"\\({pretty_expr(k, context)}\\)")}:{escape(f"\\({pretty_expr(v, context)}\\)")}" for k, v in expr_dict.items()]
     return ",".join(parts)
 
 def render_tex_mathjax(tex: list[str]):
@@ -270,10 +270,10 @@ def render_node(node: Declaration | Control, context: Context, mode: str) -> str
     elif isinstance(node, Any):
         header_parts = [toggle,
                         render_keyword("any"),
-                        render_expr_list(node.vars, context)]
+                        render_expr_list(node.items, context)]
         header_parts_jp = [toggle,
                            "任意の",
-                           render_expr_list(node.vars, context),
+                           render_expr_list(node.items, context),
                            "をとる。"]
         body_html = "".join(render_node(s, context, mode) for s in node.body)
     elif isinstance(node, Assume):

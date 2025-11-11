@@ -11,6 +11,7 @@ class Parser:
         self.tokens = tokens
         self.pos = 0
         self.bound_templates: dict[str, Template] = {}
+        self.free_templates: dict[str, Template] = {}
 
     def peek(self) -> Token:
         if self.pos >= len(self.tokens):
@@ -271,14 +272,24 @@ class Parser:
 
     def parse_any(self) -> Any:
         self.consume("ANY")
-        vars_ = []
+        items: list[Var | Template] = []
         while True:
-            tok = self.consume("IDENT")
-            vars_.append(Var(tok.value))
+            if self.peek().type == "TEMPLATE":
+                self.consume("TEMPLATE")
+                template_name = self.consume("IDENT").value
+                self.consume("LPAREN")
+                template_arity = int(self.consume("NUMBER").value)
+                self.consume("RPAREN")
+                template = Template(template_name, template_arity)
+                items.append(template)
+                self.free_templates[template.name] = template
+            else:
+                var = Var(self.consume("IDENT").value)
+                items.append(var)
             if self.peek().type == "COMMA":
                 self.consume("COMMA")
-                continue
-            break
+            else:
+                break
         if self.peek().type == "CONCLUDE":
             self.consume("CONCLUDE")
             conclusion = self.parse_formula()
@@ -287,7 +298,10 @@ class Parser:
         self.consume("LBRACE")
         body = self.parse_block()
         self.consume("RBRACE")
-        return Any(vars=vars_, conclusion=conclusion, body=body)
+        for item in items:
+            if isinstance(item, Template):
+                self.free_templates.pop(item.name)
+        return Any(items=items, conclusion=conclusion, body=body)
 
     def parse_assume(self) -> Assume:
         self.consume("ASSUME")
@@ -366,28 +380,37 @@ class Parser:
         self.consume("EXPLODE")
         conclusion = self.parse_formula()
         return Explode(conclusion=conclusion)
-    
+
     def parse_apply(self) -> Apply:
         self.consume("APPLY")
         fact = self.parse_reference_or_formula()
         self.consume("FOR")
-        env = {}
+        env: dict[Var | str, Term | str] = {}
         while True:
-            bound = Var(self.consume("IDENT").value)
-            self.consume("COLON")
-            term = self.parse_term()
-            env[bound] = term
+            if self.peek().type == "TEMPLATE":
+                self.consume("TEMPLATE")
+                bound = self.consume("IDENT").value
+                if bound not in self.bound_templates:
+                    raise Exception(f"{bound} is not declared")
+                self.consume("COLON")
+                free = self.consume("IDENT").value
+                env[bound] = free
+            else:
+                bound = Var(self.consume("IDENT").value)
+                self.consume("COLON")
+                term = self.parse_term()
+                env[bound] = term
             if self.peek().type == "COMMA":
                 self.consume("COMMA")
-                continue
-            break
+            else:
+                break
         if self.peek().type == "CONCLUDE":
             self.consume("CONCLUDE")
             conclusion = self.parse_formula()
         else:
             conclusion = None
         return Apply(fact=fact, env=env, conclusion=conclusion)
-    
+
     def parse_lift(self) -> Lift:
         self.consume("LIFT")
         if self.peek().type == "FOR":
@@ -542,6 +565,8 @@ class Parser:
             name = self.consume("IDENT").value
             if name in self.bound_templates:
                 arity = self.bound_templates[name].arity
+            elif name in self.free_templates:
+                arity = self.free_templates[name].arity
             elif name in self.context.primpreds:
                 arity = self.context.primpreds[name].arity
             elif name in self.context.defpreds:
@@ -558,6 +583,8 @@ class Parser:
             self.consume("RPAREN")
             if name in self.bound_templates:
                 return TemplateCall(self.bound_templates[name], args)
+            elif name in self.free_templates:
+                return TemplateCall(self.free_templates[name], args)
             else:
                 return Symbol(Pred(name), args)
 
@@ -574,46 +601,36 @@ class Parser:
             self.consume("RPAREN")
             return Not(body)
 
-        elif tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ"):
+        elif tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ", "FORALL_TEMPLATE"):
             quantifiers = []
-            vars_ = []
-            while tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ"):
-                quantifiers.append(self.consume(tok.type).type)
-                vars_.append(Var(self.consume("IDENT").value))
-                tok = self.peek()
+            items: list[Var | Template] = []
+            while tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ", "FORALL_TEMPLATE"):
+                if tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ"):
+                    quantifiers.append(self.consume(tok.type).type)
+                    items.append(Var(self.consume("IDENT").value))
+                    tok = self.peek()
+                else:
+                    quantifiers.append(self.consume(tok.type).type)
+                    template_name = self.consume("IDENT").value
+                    self.consume("LPAREN")
+                    template_arity = int(self.consume("NUMBER").value)
+                    self.consume("RPAREN")
+                    template = Template(template_name, template_arity)
+                    items.append(template)
+                    self.bound_templates[template.name] = template
+                    tok = self.peek()
             self.consume("LPAREN")
             body = self.parse_formula()
             self.consume("RPAREN")
-            for quantifier, var in zip(reversed(quantifiers), reversed(vars_)):
+            for quantifier, item in zip(reversed(quantifiers), reversed(items)):
                 if quantifier == "FORALL":
-                    body = Forall(var, body)
+                    body = Forall(item, body)
                 elif quantifier == "EXISTS":
-                    body = Exists(var, body)
+                    body = Exists(item, body)
                 elif quantifier == "EXISTS_UNIQ":
-                    body = ExistsUniq(var, body)
-            return body
-
-        elif tok.type in ("FORALLTEMPLATE"):
-            quantifiers: list[str] = []
-            templates: list[Template] = []
-            while tok.type in ("FORALLTEMPLATE"):
-                quantifiers.append(self.consume(tok.type).type)
-                template_name = self.consume("IDENT").value
-                self.consume("LPAREN")
-                template_arity = int(self.consume("NUMBER").value)
-                self.consume("RPAREN")
-                templates.append(Template(template_name, template_arity))
-                tok = self.peek()
-            for template in templates:
-                self.bound_templates[template.name] = template
-            self.consume("LPAREN")
-            body = self.parse_formula()
-            self.consume("RPAREN")
-            for template in templates:
-                self.bound_templates.pop(template.name)
-            for quantifier, template in zip(reversed(quantifiers), reversed(templates)):
-                if quantifier == "FORALLTEMPLATE":
-                    body = ForallTemplate(template, body)
+                    body = ExistsUniq(item, body)
+                elif quantifier == "FORALL_TEMPLATE":
+                    body = ForallTemplate(item, body)
             return body
 
         else:

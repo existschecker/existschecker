@@ -1,4 +1,4 @@
-from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, Symbol, Context, Compound, Fun, Con, Var, Bottom, Term, Pred, Formula
+from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, Symbol, Context, Compound, Fun, Con, Var, Bottom, Term, Pred, Formula, TemplateCall, ForallTemplate, Template
 from itertools import permutations
 from copy import deepcopy
 
@@ -28,7 +28,7 @@ def op_equiv(e1: Formula, e2: Formula, context: Context, env: dict[Var, Var], op
 
     return True
 
-def alpha_equiv(e1: Formula, e2: Formula, context: Context, env: dict[Var, Var] | None = None) -> bool:
+def alpha_equiv(e1: Formula, e2: Formula, context: Context, env: dict[Var | Template, Var | Template] | None = None) -> bool:
     if env is None:
         env = {}
 
@@ -109,7 +109,44 @@ def alpha_equiv(e1: Formula, e2: Formula, context: Context, env: dict[Var, Var] 
     if isinstance(e1, Var) and isinstance(e2, Var):
         return env.get(e1, e1) == e2
 
+    if isinstance(e1, TemplateCall) and isinstance(e2, TemplateCall):
+        t1 = env.get(e1.template, e1.template)
+        t2 = env.get(e2.template, e2.template)
+        if t1 != t2:
+            return False
+        if len(e1.args) != len(e2.args):
+            return False
+        for a, b in zip(e1.args, e2.args):
+            if not alpha_equiv(a, b, context, env):
+                return False
+        return True
+
+    if isinstance(e1, ForallTemplate) and isinstance(e2, ForallTemplate):
+        if e1.template.arity != e2.template.arity:
+            return False
+        newenv = env.copy()
+        newenv[e1.template] = e2.template
+        return alpha_equiv(e1.body, e2.body, context, newenv)
+
+    if isinstance(e1, ForallTemplate) and isinstance(e2, ForallTemplate):
+        if e1.template != e2.template:
+            return False
+        return alpha_equiv(e1.body, e2.body, context, env)
+
     return False
+
+def collect_quantifier_items(e: Formula, quantifier_types: tuple) -> tuple[list[Var | str], Formula]:
+    items: list[Var | Template] = []
+    body = e
+    while isinstance(body, quantifier_types):
+        if isinstance(body, (Forall, Exists, ExistsUniq)):
+            items.append(body.var)
+        elif isinstance(body, ForallTemplate):
+            items.append(body.template.name)
+        else:
+            raise Exception(f"Unexpected type: {type(body)}")
+        body = body.body
+    return items, body
 
 def collect_quantifier_vars(e: Formula, quantifier_type: type[Forall] | type[Exists] | type[ExistsUniq]) -> tuple[list[Var], Formula]:
     vars_ = []
@@ -119,6 +156,14 @@ def collect_quantifier_vars(e: Formula, quantifier_type: type[Forall] | type[Exi
         body = body.body
     return vars_, body
 
+def collect_quantifier_templates(e: Formula, quantifier_type: type[ForallTemplate]) -> tuple[list[str], Formula]:
+    templates: list[str] = []
+    body = e
+    while isinstance(body, quantifier_type):
+        templates.append(body.template.name)
+        body = body.body
+    return templates, body
+
 def collect_vars(expr: Formula | Term, bound: set[Var] | None = None) -> tuple[set[Var], set[Var]]:
     """
     式 expr から自由変数と束縛変数の集合を返す
@@ -127,7 +172,7 @@ def collect_vars(expr: Formula | Term, bound: set[Var] | None = None) -> tuple[s
     if bound is None:
         bound = set()
 
-    if isinstance(expr, (Symbol, Compound)):
+    if isinstance(expr, (Symbol, Compound, TemplateCall)):
         free = set()
         for arg in expr.args:
             f, _ = collect_vars(arg, bound)
@@ -143,7 +188,7 @@ def collect_vars(expr: Formula | Term, bound: set[Var] | None = None) -> tuple[s
         else:
             return {expr}, set()
 
-    elif isinstance(expr, Not):
+    elif isinstance(expr, (Not, ForallTemplate)):
         return collect_vars(expr.body, bound)
 
     elif isinstance(expr, (And, Or, Implies, Iff)):
@@ -174,44 +219,54 @@ def alpha_equiv_with_defs(e1: Bottom | Formula, e2: Bottom | Formula, context: C
         e2_exp = normalize_neg(expand_basic_defs(e2, context, expand_all))
         return alpha_equiv(e1_exp, e2_exp, context)
 
-def expand_basic_defs(expr: Formula, context: Context, expand_all: bool) -> Formula:
+def expand_basic_defs(expr: Formula, context: Context, expand_all: bool, bound_templates: list[Template] | None = None) -> Formula:
+    if bound_templates is None:
+        bound_templates = []
     if isinstance(expr, Symbol):
         if expr.pred.name in context.primpreds:
-            return Symbol(expand_basic_defs(expr.pred, context, expand_all), [expand_basic_defs(arg, context, expand_all) for arg in expr.args])
+            return Symbol(expand_basic_defs(expr.pred, context, expand_all, bound_templates), [expand_basic_defs(arg, context, expand_all, bound_templates) for arg in expr.args])
         if expr.pred.name in context.defpreds:
             defpred = context.defpreds[expr.pred.name]
             if defpred.autoexpand or expand_all:
                 expanded = substitute(defpred.formula, dict(zip(defpred.args, expr.args)))
-                return expand_basic_defs(expanded, context, expand_all)
+                return expand_basic_defs(expanded, context, expand_all, bound_templates)
             else:
-                return Symbol(expand_basic_defs(expr.pred, context, expand_all), [expand_basic_defs(arg, context, expand_all) for arg in expr.args])
+                return Symbol(expand_basic_defs(expr.pred, context, expand_all, bound_templates), [expand_basic_defs(arg, context, expand_all, bound_templates) for arg in expr.args])
         else:
             raise Exception(f"Unexpected predicate name: {expr.pred.name}")
     elif isinstance(expr, Compound):
         if expr.fun.name in context.deffuns:
-            return Compound(expand_basic_defs(expr.fun, context, expand_all), [expand_basic_defs(arg, context, expand_all) for arg in expr.args])
+            return Compound(expand_basic_defs(expr.fun, context, expand_all, bound_templates), [expand_basic_defs(arg, context, expand_all, bound_templates) for arg in expr.args])
         elif expr.fun.name in context.deffunterms:
             deffunterm = context.deffunterms[expr.fun.name]
             if expand_all:
                 expanded = substitute(deffunterm.term, dict(zip(deffunterm.args, expr.args)))
-                return expand_basic_defs(expanded, context, expand_all)
+                return expand_basic_defs(expanded, context, expand_all, bound_templates)
             else:
-                return Compound(expand_basic_defs(expr.fun, context, expand_all), [expand_basic_defs(arg, context, expand_all) for arg in expr.args])
+                return Compound(expand_basic_defs(expr.fun, context, expand_all, bound_templates), [expand_basic_defs(arg, context, expand_all, bound_templates) for arg in expr.args])
         else:
             raise Exception(f"Unexpected function name: {expr.fun.name}")
     elif isinstance(expr, (Pred, Fun, Con, Var)):
         return expr
     elif isinstance(expr, Not):
-        return Not(expand_basic_defs(expr.body, context, expand_all))
+        return Not(expand_basic_defs(expr.body, context, expand_all, bound_templates))
     elif isinstance(expr, (And, Or, Implies, Iff)):
-        return type(expr)(expand_basic_defs(expr.left, context, expand_all), expand_basic_defs(expr.right, context, expand_all))
+        return type(expr)(expand_basic_defs(expr.left, context, expand_all, bound_templates), expand_basic_defs(expr.right, context, expand_all, bound_templates))
     elif isinstance(expr, (Exists, Forall, ExistsUniq)):
-        return type(expr)(expr.var, expand_basic_defs(expr.body, context, expand_all))
+        return type(expr)(expr.var, expand_basic_defs(expr.body, context, expand_all, bound_templates))
+    elif isinstance(expr, TemplateCall):
+        if expr.template in context.templates or expr.template in bound_templates:
+            return TemplateCall(expr.template, [expand_basic_defs(arg, context, expand_all, bound_templates) for arg in expr.args])
+        else:
+            raise Exception(f"Unexpected expr.template: {expr.template}")
+    elif isinstance(expr, ForallTemplate):
+        bound_templates.append(expr.template)
+        return ForallTemplate(expr.template, expand_basic_defs(expr.body, context, expand_all, bound_templates))
     else:
         raise Exception(f"Unexpected type: {type(expr)}")
 
 def normalize_neg(expr: Formula) -> Formula:
-    if isinstance(expr, Symbol):
+    if isinstance(expr, (Symbol, TemplateCall)):
         return expr
     elif isinstance(expr, Not):
         if isinstance(expr.body, Not):
@@ -222,6 +277,8 @@ def normalize_neg(expr: Formula) -> Formula:
         return type(expr)(normalize_neg(expr.left), normalize_neg(expr.right))
     elif isinstance(expr, (Exists, Forall, ExistsUniq)):
         return type(expr)(expr.var, normalize_neg(expr.body))
+    elif isinstance(expr, ForallTemplate):
+        return ForallTemplate(expr.template, normalize_neg(expr.body))
     else:
         raise Exception(f"Unexpected type: {type(expr)}")
 

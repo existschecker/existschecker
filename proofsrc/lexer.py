@@ -8,7 +8,7 @@ class Token:
     pos: int
     line: int
 
-KEYWORDS = {"theorem", "definition", "any", "assume", "conclude", "divide", "case", "some", "such", "deny", "contradict", "explode", "apply", "for", "lift", "primitive", "predicate", "arity", "axiom", "invoke", "expand", "constant", "by", "pad", "split", "connect", "existence", "uniqueness", "autoexpand", "function", "equality", "reflection", "replacement", "substitute", "characterize", "show", "tex", "as"}
+KEYWORDS = {"theorem", "definition", "any", "assume", "conclude", "divide", "case", "some", "such", "deny", "contradict", "explode", "apply", "for", "lift", "primitive", "predicate", "arity", "axiom", "invoke", "expand", "constant", "by", "pad", "split", "connect", "existence", "uniqueness", "autoexpand", "function", "equality", "reflection", "replacement", "substitute", "characterize", "show", "tex", "as", "template"}
 
 SYMBOLS = {
     "{": "LBRACE",
@@ -46,7 +46,7 @@ def lex(src: str) -> list[Token]:
             tokens.append(Token(SYMBOLS[c], c, i, line))
             i += 1
         elif src[i:].startswith("\\forall^T"):
-            tokens.append(Token("FORALLTEMPLATE", "\\forall^T", i, line))
+            tokens.append(Token("FORALL_TEMPLATE", "\\forall^T", i, line))
             i += len("\\forall^T")
         elif src[i:].startswith("\\forall"):
             tokens.append(Token("FORALL", "\\forall", i, line))

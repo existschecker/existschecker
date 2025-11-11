@@ -814,4 +814,34 @@ theorem powerset_cor2 equal(powerset(emptyset),singleton(emptyset)) {
   expand \forall x(in(x,powerset(emptyset))\leftrightarrow in(x,singleton(emptyset))) conclude equal(powerset(emptyset),singleton(emptyset))
 }
 
-axiom axiom_schema_of_separation \forall^T\phi(1)(\forall x\exists y\forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi(z)))
+axiom axiom_schema_of_separation \forall x\forall^T\phi(1)\exists y\forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi(z))
+
+theorem separation_is_unique \forall x\forall^T\phi(1)\exists!y\forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi(z)) {
+  any x, template \phi(1) {
+    apply axiom_schema_of_separation for x:x, template \phi:\phi
+    some y:y such \exists y\forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi(z)) {
+      any y' {
+        assume \forall z(in(z,y')\leftrightarrow in(z,x)\wedge\phi(z)) {
+          any z {
+            apply \forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi(z)) for z:z
+            split in(z,y)\leftrightarrow in(z,x)\wedge\phi(z)
+            apply \forall z(in(z,y')\leftrightarrow in(z,x)\wedge\phi(z)) for z:z
+            split in(z,y')\leftrightarrow in(z,x)\wedge\phi(z)
+            assume in(z,y') {
+              invoke in(z,y')\to in(z,x)\wedge\phi(z)
+              invoke in(z,x)\wedge\phi(z)\to in(z,y)
+            }
+            assume in(z,y) {
+              invoke in(z,y)\to in(z,x)\wedge\phi(z)
+              invoke in(z,x)\wedge\phi(z)\to in(z,y')
+            }
+            connect in(z,y')\leftrightarrow in(z,y)
+          }
+          expand \forall z(in(z,y')\leftrightarrow in(z,y)) conclude equal(y',y)
+        }
+      }
+      connect \forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi(z))\wedge\forall y'(\forall z(in(z,y')\leftrightarrow in(z,x)\wedge\phi(z))\to equal(y',y))
+      characterize for y:y conclude \exists!y\forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi(z))
+    }
+  }
+}

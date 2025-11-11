@@ -80,6 +80,25 @@ class Iff(Formula):
 class Bottom:
     pass
 
+@dataclass(frozen=True)
+class Template:
+    name: str
+    arity: int
+
+@dataclass
+class TemplateCall(Formula):
+    template: Template
+    args: list[Term]
+
+    def __post_init__(self):
+        if len(self.args) != self.template.arity:
+            raise ValueError(f"{self.template.name} expects {self.template.arity} args, got {len(self.args)}")
+
+@dataclass
+class ForallTemplate(Formula):
+    template: Template
+    body: Formula
+
 @dataclass
 class ProofInfo:
     context_vars: list[Var] = field(init=False)
@@ -102,7 +121,7 @@ class Assume(Control):
 
 @dataclass
 class Any(Control):
-    vars: list[Var]
+    items: list[Var | Template]
     conclusion: Formula | None
     body: list[Control]
 
@@ -141,7 +160,7 @@ class Explode(Control):
 @dataclass
 class Apply(Control):
     fact: str | Formula
-    env: dict[Var, Term]
+    env: dict[Var | str, Term | str]
     conclusion: Formula | None
 
 @dataclass
@@ -278,30 +297,12 @@ class Equality(Declaration):
     reflection: EqualityReflection
     replacement: EqualityReplacement
 
-@dataclass(frozen=True)
-class Template:
-    name: str
-    arity: int
-
-@dataclass
-class TemplateCall(Formula):
-    template: Template
-    args: list[Term]
-
-    def __post_init__(self):
-        if len(self.args) != self.template.arity:
-            raise ValueError(f"{self.template.name} expects {self.template.arity} args, got {len(self.args)}")
-
-@dataclass
-class ForallTemplate(Formula):
-    template: Template
-    body: Formula
-
 @dataclass
 class Context:
     vars: list[Var]
     formulas: list[Bottom | Formula]
     primpreds: dict[str, PrimPred]
+    templates: list[Template]
     axioms: dict[str, Axiom]
     theorems: dict[str, Theorem]
     defpreds: dict[str, DefPred]
@@ -312,10 +313,10 @@ class Context:
 
     @staticmethod
     def init() -> "Context":
-        return Context(vars=[], formulas=[], primpreds={}, axioms={}, theorems={}, defpreds={}, defcons={}, deffuns={}, deffunterms={}, equality=None)
+        return Context(vars=[], formulas=[], templates=[], primpreds={}, axioms={}, theorems={}, defpreds={}, defcons={}, deffuns={}, deffunterms={}, equality=None)
 
-    def copy(self, vars: list[Var], formulas: list[Bottom | Formula]) -> "Context":
-        return Context(vars=vars, formulas=formulas, primpreds=self.primpreds, axioms=self.axioms, theorems=self.theorems, defpreds=self.defpreds, defcons=self.defcons, deffuns=self.deffuns, deffunterms=self.deffunterms, equality=self.equality)
+    def copy(self, vars: list[Var], formulas: list[Bottom | Formula], templates: list[Template]) -> "Context":
+        return Context(vars=vars, formulas=formulas, templates=templates, primpreds=self.primpreds, axioms=self.axioms, theorems=self.theorems, defpreds=self.defpreds, defcons=self.defcons, deffuns=self.deffuns, deffunterms=self.deffunterms, equality=self.equality)
 
     def has_reference(self, name: str) -> bool:
         return name in self.axioms or name in self.theorems or self.has_defcon_existence(name) or self.has_defcon_uniqueness(name) or self.has_deffun_existence(name) or self.has_deffun_uniqueness(name)
@@ -485,6 +486,8 @@ def pretty_expr(expr: str | Bottom | Formula | Term | Pred | Fun, context: Conte
         return text if OP_PRECEDENCE["Quantifier"] > parent_prec else f"({text})"
     if isinstance(expr, Bottom):
         return "\\bot"
+    if isinstance(expr, Template):
+        return f"{expr.name}({str(expr.arity)})"
     if isinstance(expr, ForallTemplate):
         body = expr
         qtemps = []

@@ -1,5 +1,5 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, Var, Substitute, Symbol, Characterize, Show, Pred, Control, ProofInfo, Formula, Declaration, pretty_expr
-from logic_utils import expr_in_context, collect_quantifier_vars, substitute, collect_vars, flatten_op, fresh_var, alpha_equiv, alpha_equiv_with_defs
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, Var, Substitute, Symbol, Characterize, Show, Pred, Control, ProofInfo, Formula, Declaration, Template, ForallTemplate, pretty_expr
+from logic_utils import expr_in_context, collect_quantifier_vars, substitute, collect_vars, flatten_op, fresh_var, alpha_equiv, alpha_equiv_with_defs, collect_quantifier_items
 from copy import deepcopy
 
 import logging
@@ -45,7 +45,7 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
     # --- Theorem ---
     if isinstance(node, Theorem):
         logger.debug(f"{sp}[Theorem] {node.name}: {pretty_expr(node.conclusion, context)}")
-        local_ctx = context.copy([], [])
+        local_ctx = context.copy([], [], [])
         for stmt in node.proof:
             if not check_proof(stmt, local_ctx, indent+1):
                 logger.error(f"{sp}❌ [Theorem] {node.name} not proved: {pretty_expr(node.conclusion, context)}")
@@ -178,33 +178,43 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
 
     # --- Any ---
     if isinstance(node, Any):
-        for var in node.vars:
+        local_vars = [item for item in node.items if isinstance(item, Var)]
+        for var in local_vars:
             if var in context.vars:
                 logger.error(f"{sp}❌ [Any] {pretty_expr(var, context)} is already used")
                 return False
-        logger.debug(f"{sp}[Any] Taking {node.vars}")
-        local_ctx = context.copy(list(context.vars + node.vars), list(context.formulas))
+        local_templates = [item for item in node.items if isinstance(item, Template)]
+        for template in local_templates:
+            if template in context.templates:
+                logger.error(f"{sp}❌ [Any] {pretty_expr(template, context)} is already used")
+                return False
+        logger.debug(f"{sp}[Any] Taking {node.items}")
+        local_ctx = context.copy(list(context.vars + local_vars), list(context.formulas), list(context.templates + local_templates))
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
         if not (len(context.formulas) < len(local_ctx.formulas) and context.formulas == local_ctx.formulas[:len(context.formulas)]):
             logger.error(f"{sp}❌ [Any] Local context must extend the parent context")
             return False
-        goal = local_ctx.formulas[-1]
-        logger.debug(f"{sp}[Any] derived goal: {pretty_expr(goal, context)}")
+        local_goal = local_ctx.formulas[-1]
+        logger.debug(f"{sp}[Any] derived local_goal: {pretty_expr(local_goal, context)}")
         if node.conclusion is not None:
-            if alpha_equiv_with_defs(node.conclusion, goal, context):
+            if alpha_equiv_with_defs(node.conclusion, local_goal, context):
                 logger.debug(f"{sp}[Any] Mathched with conclusion: {pretty_expr(node.conclusion, context)}")
             else:
                 logger.error(f"{sp}❌ [Any] Not matched with conclusion: {pretty_expr(node.conclusion, context)}")
                 return False
-        for v in reversed(node.vars):
-            goal = Forall(v, goal)
+        goal = local_goal
+        for item in reversed(node.items):
+            if isinstance(item, Var):
+                goal = Forall(item, goal)
+            else:
+                goal = ForallTemplate(item, goal)
         node.proofinfo.premises = []
         node.proofinfo.conclusions = [goal]
-        node.proofinfo.local_vars = node.vars
+        node.proofinfo.local_vars = local_vars
         node.proofinfo.local_premise = []
-        node.proofinfo.local_conclusion = [local_ctx.formulas[-1]]
+        node.proofinfo.local_conclusion = [local_goal]
         add_conclusion(context, goal)
         logger.debug(f"{sp}[Any] Generalized to {pretty_expr(goal, context)}")
         return True
@@ -212,7 +222,7 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
     # --- Assume ---
     if isinstance(node, Assume):
         logger.debug(f"{sp}[Assume] premise={pretty_expr(node.premise, context)}")
-        local_ctx = context.copy(list(context.vars), list(context.formulas + [node.premise]))
+        local_ctx = context.copy(list(context.vars), list(context.formulas + [node.premise]), list(context.templates))
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
@@ -253,7 +263,7 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
             logger.error(f"{sp}❌ [Divide] not matched: fact={pretty_expr(fact, context)}, conected_premise={pretty_expr(connected_premise, context)}")
             return False
         logger.debug(f"{sp}[Divide] fact={pretty_expr(fact, context)}")
-        local_ctx = context.copy(list(context.vars), list(context.formulas))
+        local_ctx = context.copy(list(context.vars), list(context.formulas), list(context.templates))
         goals = []
         for stmt in node.cases:
             if not check_proof(stmt, local_ctx, indent+1):
@@ -280,7 +290,7 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
 
     if isinstance(node, Case):
         logger.debug(f"{sp}[Case] premise={pretty_expr(node.premise, context)}")
-        local_ctx = context.copy(list(context.vars), list(context.formulas + [node.premise]))
+        local_ctx = context.copy(list(context.vars), list(context.formulas + [node.premise]), list(context.templates))
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
@@ -321,7 +331,7 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
                 logger.error(f"{sp}❌ [Some] {pretty_expr(var, context)} is already used")
         premise = substitute(body, node.env)
         logger.debug(f"{sp}[Some] Taking {node.env.values()}, premise={pretty_expr(premise, context)}")
-        local_ctx = context.copy(list(context.vars + list(node.env.values())), list(context.formulas + [premise]))
+        local_ctx = context.copy(list(context.vars + list(node.env.values())), list(context.formulas + [premise]), list(context.templates))
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
@@ -346,7 +356,7 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
     
     if isinstance(node, Deny):
         logger.debug(f"{sp}[Deny] premise={pretty_expr(node.premise, context)}")
-        local_ctx = context.copy(list(context.vars), list(context.formulas + [node.premise]))
+        local_ctx = context.copy(list(context.vars), list(context.formulas + [node.premise]), list(context.templates))
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
@@ -403,11 +413,11 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
             return False
         logger.debug(f"{sp}[Apply] Drivable fact: {pretty_expr(node.fact, context)}")
         fact = get_fact(node.fact, context)
-        vars, body = collect_quantifier_vars(fact, Forall)
-        if set(vars) != set(node.env.keys()):
-            logger.error(f"{sp}❌ [Apply] Not matched: vars={vars}, env={node.env}")
+        items, body = collect_quantifier_items(fact, (Forall, ForallTemplate))
+        if set(items) != set(node.env.keys()):
+            logger.error(f"{sp}❌ [Apply] Not matched: items={items}, env={node.env}")
             return False
-        logger.debug(f"{sp}[Apply] Instantiable: vars={vars}, env={node.env}")
+        logger.debug(f"{sp}[Apply] Instantiable: items={items}, env={node.env}")
         instantiation = substitute(body, node.env)
         logger.debug(f"{sp}[Apply] \\forall-elimination is done: instantiation={pretty_expr(instantiation, context)}")
         if node.conclusion is not None:
@@ -420,7 +430,7 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
         node.proofinfo.conclusions = [instantiation]
         add_conclusion(context, instantiation)
         return True
-    
+
     if isinstance(node, Lift):
         logger.debug(f"{sp}[Lift] Target conclusion: {pretty_expr(node.conclusion, context)}")
         vars, body = collect_quantifier_vars(node.conclusion, Exists)
@@ -625,7 +635,7 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
 
     if isinstance(node, Show):
         logger.debug(f"{sp}[Show] Target conclusion: {pretty_expr(node.conclusion, context)}")
-        local_ctx = context.copy(list(context.vars), list(context.formulas))
+        local_ctx = context.copy(list(context.vars), list(context.formulas), list(context.templates))
         for stmt in node.body:
             if not check_proof(stmt, local_ctx, indent+1):
                 return False
