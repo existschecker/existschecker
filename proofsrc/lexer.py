@@ -8,7 +8,7 @@ class Token:
     pos: int
     line: int
 
-KEYWORDS = {"theorem", "definition", "any", "assume", "conclude", "divide", "case", "some", "such", "deny", "contradict", "explode", "apply", "for", "lift", "primitive", "predicate", "arity", "axiom", "invoke", "expand", "constant", "by", "pad", "split", "connect", "existence", "uniqueness", "autoexpand", "function", "equality", "reflection", "replacement", "substitute", "characterize", "show", "tex", "as", "template"}
+KEYWORDS = {"theorem", "definition", "any", "assume", "conclude", "divide", "case", "some", "such", "deny", "contradict", "explode", "apply", "for", "lift", "primitive", "predicate", "arity", "axiom", "invoke", "expand", "constant", "by", "pad", "split", "connect", "existence", "uniqueness", "autoexpand", "function", "equality", "reflection", "replacement", "substitute", "characterize", "show", "tex", "as", "template", "not"}
 
 SYMBOLS = {
     "{": "LBRACE",
@@ -19,6 +19,7 @@ SYMBOLS = {
     ")": "RPAREN",
     "[": "LBRACKET",
     "]": "RBRACKET",
+    "|": "SLASH"
 }
 
 def lex(src: str) -> list[Token]:
@@ -47,9 +48,6 @@ def lex(src: str) -> list[Token]:
         if c in SYMBOLS:
             tokens.append(Token(SYMBOLS[c], c, i, line))
             i += 1
-        elif src[i:].startswith("|not"):
-            tokens.append(Token("NOT_ALLOWED", "|not", i, line))
-            i += len("|not")
         elif src[i:].startswith("\\forall^T"):
             tokens.append(Token("FORALL_TEMPLATE", "\\forall^T", i, line))
             i += len("\\forall^T")

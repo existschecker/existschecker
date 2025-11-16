@@ -1,4 +1,4 @@
-from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, Symbol, Context, Compound, Fun, Con, Var, Bottom, Term, Pred, Formula, TemplateCall, Template
+from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, Symbol, Context, Compound, Fun, Con, Var, Bottom, Term, Pred, Formula, TemplateCall, Template, FormulaTerm
 from itertools import permutations
 from copy import deepcopy
 
@@ -193,6 +193,10 @@ def collect_vars(expr: Formula | Term, bound: set[Var | Template] | None = None)
             return free, set()
         else:
             return free | {expr.template}, set()
+
+    elif isinstance(expr, FormulaTerm):
+        f_body, b_body= collect_vars(expr.formula, bound | set(expr.allowed_vars))
+        return f_body, b_body | set(expr.allowed_vars)
 
     else:
         raise Exception(f"Unexpected type {type(expr)}")

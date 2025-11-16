@@ -849,3 +849,5 @@ theorem separation_is_unique \forall x\forall^T\phi[z,x |not y]\exists!y\forall 
 definition function sep by separation_is_unique tex "\mathrm{sep}(",",",")"
   existence sep_existence \forall x\forall^T\phi[z,x |not y]\forall z(in(z,sep(x,\phi))\leftrightarrow in(z,x)\wedge\phi)
   uniqueness sep_uniqueness \forall x\forall^T\phi[z,x |not y]\forall y(\forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi)\to equal(y,sep(x,\phi)))
+
+definition function bigcap(u) as sep(bigcup(u),[z | \forall w(in(w,u)\to in(z,w))]) tex "\bigcap",""

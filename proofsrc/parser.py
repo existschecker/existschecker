@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, Template, TemplateCall
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, Template, TemplateCall, FormulaTerm
 from lexer import Token, lex
 from logic_utils import collect_quantifier_vars
 
@@ -687,6 +687,23 @@ class Parser:
                 return Compound(Fun(name), args)
             else:
                 raise SyntaxError(f"Unexpected token: {tok}")
+        elif tok.type == "LBRACKET":
+            self.consume("LBRACKET")
+            allowed_vars: list[Var] = []
+            while True:
+                allowed_vars.append(Var(self.consume("IDENT").value))
+                if self.peek().type == "COMMA":
+                    self.consume("COMMA")
+                else:
+                    break
+            for var in allowed_vars:
+                self.free_items[var.name] = var
+            self.consume("SLASH")
+            formula = self.parse_formula()
+            self.consume("RBRACKET")
+            for var in allowed_vars:
+                self.free_items.pop(var.name)
+            return FormulaTerm(tuple(allowed_vars), formula)
         else:
             raise SyntaxError(f"Unexpected token: {tok}")
 
@@ -708,7 +725,8 @@ class Parser:
         while self.peek().type == "COMMA":
             self.consume("COMMA")
             allowed_vars.append(Var(self.consume("IDENT").value))
-        self.consume("NOT_ALLOWED")
+        self.consume("SLASH")
+        self.consume("NOT")
         not_allowed_vars: list[Var] = [Var(self.consume("IDENT").value)]
         while self.peek().type == "COMMA":
             self.consume("COMMA")

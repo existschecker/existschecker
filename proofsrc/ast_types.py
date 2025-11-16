@@ -24,7 +24,7 @@ class Con(Term):
 class Var(Term):
     name: str
 
-@dataclass
+@dataclass(frozen=True)
 class Formula:
     pass
 
@@ -32,7 +32,7 @@ class Formula:
 class Pred:
     name: str
 
-@dataclass
+@dataclass(frozen=True)
 class Symbol(Formula):
     pred: Pred
     args: list[Term]
@@ -43,7 +43,7 @@ class Template(Term):
     allowed_vars: tuple[Var]
     not_allowed_vars:  tuple[Var]
 
-@dataclass
+@dataclass(frozen=True)
 class TemplateCall(Formula):
     template: Template
     bindings: dict[Var, Var]
@@ -53,46 +53,51 @@ class TemplateCall(Formula):
             if var not in self.template.allowed_vars:
                 raise Exception(f"{var} not in {self.template.allowed_vars}")
 
-@dataclass
+@dataclass(frozen=True)
+class FormulaTerm(Term):
+    allowed_vars: tuple[Var]
+    formula: Formula
+
+@dataclass(frozen=True)
 class Forall(Formula):
     var: Var | Template
     body: Formula
 
-@dataclass
+@dataclass(frozen=True)
 class Exists(Formula):
     var: Var
     body: Formula
 
-@dataclass
+@dataclass(frozen=True)
 class ExistsUniq(Formula):
     var: Var
     body: Formula
 
-@dataclass
+@dataclass(frozen=True)
 class Implies(Formula):
     left: Formula
     right: Formula
 
-@dataclass
+@dataclass(frozen=True)
 class And(Formula):
     left: Formula
     right: Formula
 
-@dataclass
+@dataclass(frozen=True)
 class Or(Formula):
     left: Formula
     right: Formula
 
-@dataclass
+@dataclass(frozen=True)
 class Not(Formula):
     body: Formula
 
-@dataclass
+@dataclass(frozen=True)
 class Iff(Formula):
     left: Formula
     right: Formula
 
-@dataclass
+@dataclass(frozen=True)
 class Bottom:
     pass
 
@@ -497,4 +502,6 @@ def pretty_expr(expr: str | Bottom | Formula | Term | Pred | Fun, context: Conte
             env_text = f"[{env_text}]"
         text = f"{expr.template.name}{env_text}"
         return text if OP_PRECEDENCE["Symbol"] > parent_prec else f"({text})"
+    if isinstance(expr, FormulaTerm):
+        return f"[{",".join([var.name for var in expr.allowed_vars])} \\mid {pretty_expr(expr.formula, context)}]"
     raise TypeError(f"Unsupported node type: {type(expr)}")
