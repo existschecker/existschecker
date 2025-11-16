@@ -7,6 +7,7 @@ class Token:
     value: str
     pos: int
     line: int
+    column: int
 
 KEYWORDS = {"theorem", "definition", "any", "assume", "conclude", "divide", "case", "some", "such", "deny", "contradict", "explode", "apply", "for", "lift", "primitive", "predicate", "arity", "axiom", "invoke", "expand", "constant", "by", "pad", "split", "connect", "existence", "uniqueness", "autoexpand", "function", "equality", "reflection", "replacement", "substitute", "characterize", "show", "tex", "as", "template", "not"}
 
@@ -26,11 +27,14 @@ def lex(src: str) -> list[Token]:
     tokens = []
     i = 0
     line = 1
+    line_start_pos = 0
     while i < len(src):
+        column = i - line_start_pos + 1
         c = src[i]
         if c == "\n":
             line += 1
             i += 1
+            line_start_pos = i
             continue
         if c.isspace():
             i += 1
@@ -40,43 +44,44 @@ def lex(src: str) -> list[Token]:
             while i < len(src) and src[i:i+2] != "*/":
                 if src[i] == "\n":
                     line += 1
+                    line_start_pos = i
                 i += 1
             if i >= len(src):
                 raise SyntaxError("Unterminated comment")
             i += 2
             continue
         if c in SYMBOLS:
-            tokens.append(Token(SYMBOLS[c], c, i, line))
+            tokens.append(Token(SYMBOLS[c], c, i, line, column))
             i += 1
         elif src[i:].startswith("\\forall^T"):
-            tokens.append(Token("FORALL_TEMPLATE", "\\forall^T", i, line))
+            tokens.append(Token("FORALL_TEMPLATE", "\\forall^T", i, line, column))
             i += len("\\forall^T")
         elif src[i:].startswith("\\forall"):
-            tokens.append(Token("FORALL", "\\forall", i, line))
+            tokens.append(Token("FORALL", "\\forall", i, line, column))
             i += len("\\forall")
         elif src[i:].startswith("\\exists!"):
-            tokens.append(Token("EXISTS_UNIQ", "\\exists!", i, line))
+            tokens.append(Token("EXISTS_UNIQ", "\\exists!", i, line, column))
             i += len("\\exists!")
         elif src[i:].startswith("\\exists"):
-            tokens.append(Token("EXISTS", "\\exists", i, line))
+            tokens.append(Token("EXISTS", "\\exists", i, line, column))
             i += len("\\exists")
         elif src[i:].startswith("\\wedge"):
-            tokens.append(Token("AND", "\\wedge", i, line))
+            tokens.append(Token("AND", "\\wedge", i, line, column))
             i += len("\\wedge")
         elif src[i:].startswith("\\vee"):
-            tokens.append(Token("OR", "\\vee", i, line))
+            tokens.append(Token("OR", "\\vee", i, line, column))
             i += len("\\vee")
         elif src[i:].startswith("\\neg"):
-            tokens.append(Token("NOT", "\\neg", i, line))
+            tokens.append(Token("NOT", "\\neg", i, line, column))
             i += len("\\neg")
         elif src[i:].startswith("\\to"):
-            tokens.append(Token("IMPLIES", "\\to", i, line))
+            tokens.append(Token("IMPLIES", "\\to", i, line, column))
             i += len("\\to")
         elif src[i:].startswith("\\leftrightarrow"):
-            tokens.append(Token("IFF", "\\leftrightarrow", i, line))
+            tokens.append(Token("IFF", "\\leftrightarrow", i, line, column))
             i += len("\\leftrightarrow")
         elif src[i:].startswith("\\bot"):
-            tokens.append(Token("BOT", "\\bot", i, line))
+            tokens.append(Token("BOT", "\\bot", i, line, column))
             i += len("\\bot")
         elif src[i] == '"':
             i += 1
@@ -86,25 +91,25 @@ def lex(src: str) -> list[Token]:
             if i >= len(src):
                 raise SyntaxError(f"Unterminated string starting at pos {start}")
             text = src[start:i]
-            tokens.append(Token("STRING", text, start, line))
+            tokens.append(Token("STRING", text, start, line, column))
             i += 1
         else:
             m = re.match(r"(\\[A-Za-z][A-Za-z0-9_]*)|([A-Za-z_][A-Za-z0-9_]*'*)", src[i:])
             if m:
                 text = m.group(0)
                 if text in KEYWORDS:
-                    tokens.append(Token(text.upper(), text, i, line))
+                    tokens.append(Token(text.upper(), text, i, line, column))
                 else:
-                    tokens.append(Token("IDENT", text, i, line))
+                    tokens.append(Token("IDENT", text, i, line, column))
                 i += len(text)
             elif re.match(r"\d+", src[i:]):
                 m = re.match(r"\d+", src[i:])
                 text = m.group(0)
-                tokens.append(Token("NUMBER", text, i, line))
+                tokens.append(Token("NUMBER", text, i, line, column))
                 i += len(text)
             else:
                 raise SyntaxError(f"Unexpected character {c} at pos {i}, line {line}")
-    tokens.append(Token("EOF", "", i, line))
+    tokens.append(Token("EOF", "", i, line, len(src) - line_start_pos + 1))
     return tokens
 
 if __name__ == "__main__":
