@@ -399,19 +399,12 @@ class Parser:
         self.consume("APPLY")
         fact = self.parse_reference_or_formula()
         self.consume("FOR")
-        env: dict[Var | Template, Term | Template] = {}
+        env: dict[str, Term] = {}
         while True:
-            if self.peek().type == "TEMPLATE":
-                self.consume("TEMPLATE")
-                bound = self.parse_template()
-                self.consume("COLON")
-                free = self.parse_template()
-                env[bound] = free
-            else:
-                bound = Var(self.consume("IDENT").value)
-                self.consume("COLON")
-                term = self.parse_term()
-                env[bound] = term
+            bound = self.consume("IDENT").value
+            self.consume("COLON")
+            term = self.parse_term()
+            env[bound] = term
             if self.peek().type == "COMMA":
                 self.consume("COMMA")
             else:

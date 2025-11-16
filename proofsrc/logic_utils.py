@@ -138,6 +138,9 @@ def alpha_equiv(e1: Formula, e2: Formula, context: Context, env: dict[Var | Temp
                 return False
         return True
 
+    if isinstance(e1, FormulaTerm) and isinstance(e2, FormulaTerm):
+        return alpha_equiv(e1.formula, e2.formula, context, env)
+
     return False
 
 def collect_quantifier_vars(e: Formula, quantifier_type: type[Forall] | type[Exists] | type[ExistsUniq]) -> tuple[list[Var | Template], Formula]:
@@ -259,6 +262,8 @@ def expand_basic_defs(expr: Formula, context: Context, expand_all: bool, bound_t
             return expr
         else:
             raise Exception(f"{expr.template} in {context.templates} or {expr.template} in {bound_templates}")
+    elif isinstance(expr, FormulaTerm):
+        return expand_basic_defs(expr.formula, context, expand_all, bound_templates)
     else:
         raise Exception(f"Unexpected type: {type(expr)}")
 
@@ -332,6 +337,9 @@ def substitute(expr: Formula, mapping: dict[Term, Term], used_vars: set[Var] | N
             if var in expr.template.allowed_vars:
                 new_bindings[var] = mapping[var]
         return TemplateCall(new_template, new_bindings)
+
+    if isinstance(expr, FormulaTerm):
+        return FormulaTerm(expr.allowed_vars, substitute(expr.formula, mapping, used_vars))
 
     return expr
 

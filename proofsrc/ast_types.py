@@ -162,7 +162,7 @@ class Explode(Control):
 @dataclass
 class Apply(Control):
     fact: str | Formula
-    env: dict[Var | str, Term | str]
+    env: dict[str | Term]
     conclusion: Formula | None
 
 @dataclass
