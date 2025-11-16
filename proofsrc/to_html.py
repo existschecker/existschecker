@@ -306,8 +306,10 @@ def render_node(node: Declaration | Control, context: Context, mode: str) -> str
                            "を得る。"]
     elif isinstance(node, Split):
         header_parts = [bullet,
-                        render_keyword("split"),
-                        render_expr(node.fact, context)]
+                        render_keyword("split")]
+        if node.index is not None:
+            header_parts.append(str(node.index))
+        header_parts.append(render_expr(node.fact, context))
         header_parts_jp = [bullet,
                            render_expr(node.fact, context),
                            "を分解して",

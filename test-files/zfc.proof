@@ -850,4 +850,18 @@ definition function sep by separation_is_unique tex "\mathrm{sep}(",",",")"
   existence sep_existence \forall x\forall^T\phi[z,x |not y]\forall z(in(z,sep(x,\phi))\leftrightarrow in(z,x)\wedge\phi)
   uniqueness sep_uniqueness \forall x\forall^T\phi[z,x |not y]\forall y(\forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi)\to equal(y,sep(x,\phi)))
 
+theorem sep_cor1 \forall x\forall^T\phi[z,x |not y](subset(sep(x,\phi),x)) {
+  any x, template \phi[z,x |not y] {
+    any z {
+      assume in(z,sep(x,\phi)) {
+        apply sep_existence for x:x, template \phi[z,x |not y]:\phi[z,x |not y], z:z
+        split in(z,sep(x,\phi))\leftrightarrow in(z,x)\wedge\phi
+        invoke in(z,sep(x,\phi))\to in(z,x)\wedge\phi
+        split 1 in(z,x)\wedge\phi
+      }
+    }
+    expand \forall z(in(z,sep(x,\phi))\to in(z,x)) conclude subset(sep(x,\phi),x)
+  }
+}
+
 definition function bigcap(u) as sep(bigcup(u),[z | \forall w(in(w,u)\to in(z,w))]) tex "\bigcap",""

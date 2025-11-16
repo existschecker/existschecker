@@ -549,8 +549,17 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
             logger.debug(f"{sp}[Split] And object: {pretty_expr(node.fact, context)}")
             fact_parts = flatten_op(node.fact, And)
             node.proofinfo.premises = [node.fact]
-            node.proofinfo.conclusions = fact_parts
-            for f in fact_parts:
+            if node.index is None:
+                node.proofinfo.conclusions = fact_parts
+                for f in fact_parts:
+                    add_conclusion(context, f)
+                    logger.debug(f"{sp}[Split] added {pretty_expr(f, context)}")
+            else:
+                if node.index <= 0 or node.index > len(fact_parts):
+                    logger.error(f"{sp}❌ [Split] index out of range, index: {node.index}, len(fact_parts): {len(fact_parts)}")
+                    return False
+                f = fact_parts[node.index - 1]
+                node.proofinfo.conclusions = [f]
                 add_conclusion(context, f)
                 logger.debug(f"{sp}[Split] added {pretty_expr(f, context)}")
             return True

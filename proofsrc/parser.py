@@ -493,10 +493,14 @@ class Parser:
 
     def parse_split(self) -> Split:
         self.consume("SPLIT")
+        if self.peek().type == "NUMBER":
+            index = int(self.consume("NUMBER").value)
+        else:
+            index = None
         fact = self.parse_reference_or_formula()
         if not isinstance(fact, (And, Iff)):
             raise Exception("Fact of Split has to be And or Iff object")
-        return Split(fact=fact)
+        return Split(index=index, fact=fact)
 
     def parse_connect(self):
         self.consume("CONNECT")
