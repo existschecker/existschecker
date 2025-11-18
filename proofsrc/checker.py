@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, Var, Substitute, Symbol, Characterize, Show, Pred, Control, ProofInfo, Formula, Declaration, Template, Term, FreshVar, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, Var, Substitute, Symbol, Characterize, Show, Pred, Control, ProofInfo, Formula, Declaration, Template, Term, Lambda, pretty_expr
 from logic_utils import expr_in_context, collect_quantifier_vars, substitute, collect_vars, flatten_op, fresh_var, alpha_equiv, alpha_equiv_with_defs
 from copy import deepcopy
 
@@ -413,9 +413,14 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
         items, body = collect_quantifier_vars(fact, Forall)
         env: dict[Term, Term] = {}
         for item in items:
-            for key in node.env.keys():
-                if item.name == key:
-                    env[item] = node.env[key]
+            for k, v in node.env.items():
+                if item.name == k:
+                    env[item] = v
+                    if isinstance(item, Template) and isinstance(v, Lambda):
+                        if item.arity != len(v.args):
+                            logger.error(f"{sp}❌ [Apply] arity of {item.name} is {item.arity}, args of Lambda are {",".join([arg.name for arg in v.args])}")
+                            return False
+                        logger.debug(f"{sp}[Apply] arity of {item.name} is {item.arity}, args of Lambda are {",".join([arg.name for arg in v.args])}")
                     break
         logger.debug(f"{sp}[Apply] Instantiable: env={env}")
         instantiation = substitute(body, env)
