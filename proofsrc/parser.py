@@ -713,7 +713,7 @@ class Parser:
         name = self.consume("IDENT").value
         if self.peek().type == "LBRACKET":
             self.consume("LBRACKET")
-            self.consume("FRESH")
+            self.consume("HASH")
             fresh_templates: list[Template] = []
             while True:
                 fresh_templates.append(self.parse_template())

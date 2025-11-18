@@ -445,7 +445,7 @@ def pretty_expr(expr: str | Bottom | Formula | Term | Pred | Fun, context: Conte
         return tex[0]
     if isinstance(expr, Var):
         if isinstance(expr, FreshVar):
-            return f"{expr.name}[\\text{{fresh }} {",".join([template.name for template in expr.fresh_templates])}]"
+            return f"{expr.name}[\\# {",".join([template.name for template in expr.fresh_templates])}]"
         else:
             return expr.name
     if isinstance(expr, Implies):

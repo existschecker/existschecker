@@ -814,12 +814,12 @@ theorem powerset_cor2 equal(powerset(emptyset),singleton(emptyset)) {
   expand \forall x(in(x,powerset(emptyset))\leftrightarrow in(x,singleton(emptyset))) conclude equal(powerset(emptyset),singleton(emptyset))
 }
 
-axiom axiom_schema_of_separation \forall x\forall^T\phi\exists y[fresh \phi]\forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi)
+axiom axiom_schema_of_separation \forall x\forall^T\phi\exists y[#\phi]\forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi)
 
-theorem separation_is_unique \forall x\forall^T\phi\exists!y[fresh \phi]\forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi) {
+theorem separation_is_unique \forall x\forall^T\phi\exists!y[#\phi]\forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi) {
   any x, template \phi {
     apply axiom_schema_of_separation for x:x, \phi:\phi
-    some y[fresh \phi]:y such \exists y[fresh \phi]\forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi) {
+    some y[#\phi]:y such \exists y[#\phi]\forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi) {
       any y' {
         assume \forall z(in(z,y')\leftrightarrow in(z,x)\wedge\phi) {
           any z {
@@ -841,14 +841,14 @@ theorem separation_is_unique \forall x\forall^T\phi\exists!y[fresh \phi]\forall 
         }
       }
       connect \forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi)\wedge\forall y'(\forall z(in(z,y')\leftrightarrow in(z,x)\wedge\phi)\to equal(y',y))
-      characterize for y[fresh \phi]:y conclude \exists!y[fresh \phi]\forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi)
+      characterize for y[#\phi]:y conclude \exists!y[#\phi]\forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi)
     }
   }
 }
 
 definition function sep by separation_is_unique tex "\mathrm{sep}(",",",")"
   existence sep_existence \forall x\forall^T\phi\forall z(in(z,sep(x,\phi))\leftrightarrow in(z,x)\wedge\phi)
-  uniqueness sep_uniqueness \forall x\forall^T\phi\forall y[fresh \phi](\forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi)\to equal(y,sep(x,\phi)))
+  uniqueness sep_uniqueness \forall x\forall^T\phi\forall y[#\phi](\forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi)\to equal(y,sep(x,\phi)))
 
 theorem sep_cor1 \forall x\forall^T\phi(subset(sep(x,\phi),x)) {
   any x, template \phi {
