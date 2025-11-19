@@ -866,7 +866,25 @@ theorem sep_cor1 \forall x\forall^T\phi[1](subset(sep(x,\phi),x)) {
 
 definition function bigcap(u) as sep(bigcup(u), lambda z. \forall w(in(w,u)\to in(z,w))) tex "\bigcap",""
 
-theorem bigcap_cor1 equal(bigcap(emptyset),emptyset) {
+theorem bigcap_cor1 \forall u\forall z(in(z,bigcap(u))\leftrightarrow in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))) {
+  any u, z {
+    assume in(z,bigcap(u)) {
+      expand in(z,bigcap(u)) conclude in(z,sep(bigcup(u), lambda z'. \forall w(in(w,u)\to in(z',w))))
+      apply sep_existence for x:bigcup(u),\phi: lambda z'. \forall w(in(w,u)\to in(z',w)),z:z
+      split in(z,sep(bigcup(u), lambda z'. \forall w(in(w,u)\to in(z',w))))\leftrightarrow in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
+      invoke in(z,sep(bigcup(u), lambda z'. \forall w(in(w,u)\to in(z',w))))\to in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
+    }
+    assume in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w)) {
+      apply sep_existence for x:bigcup(u),\phi: lambda z'. \forall w(in(w,u)\to in(z',w)),z:z
+      split in(z,sep(bigcup(u), lambda z'. \forall w(in(w,u)\to in(z',w))))\leftrightarrow in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
+      invoke in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))\to in(z,sep(bigcup(u), lambda z'. \forall w(in(w,u)\to in(z',w))))
+      expand in(z,sep(bigcup(u), lambda z'. \forall w(in(w,u)\to in(z',w)))) conclude in(z,bigcap(u))
+    }
+    connect in(z,bigcap(u))\leftrightarrow in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
+  }
+}
+
+theorem bigcap_cor2 equal(bigcap(emptyset),emptyset) {
   apply sep_cor1 for x:bigcup(emptyset), \phi: lambda z. \forall w(in(w,emptyset)\to in(z,w))
   expand subset(sep(bigcup(emptyset), lambda z. \forall w(in(w,emptyset)\to in(z,w))),bigcup(emptyset)) conclude subset(bigcap(emptyset),bigcup(emptyset))
   substitute subset(bigcap(emptyset),bigcup(emptyset)) for bigcup(emptyset):emptyset by bigcup_cor2 conclude subset(bigcap(emptyset),emptyset)
@@ -874,15 +892,14 @@ theorem bigcap_cor1 equal(bigcap(emptyset),emptyset) {
   invoke subset(bigcap(emptyset),emptyset)\to equal(bigcap(emptyset),emptyset)
 }
 
-theorem bigcap_cor2 \forall u(neq(u,emptyset)\to\forall z(in(z,bigcap(u))\leftrightarrow\forall w(in(w,u)\to in(z,w)))) {
+theorem bigcap_cor3 \forall u(neq(u,emptyset)\to\forall z(in(z,bigcap(u))\leftrightarrow\forall w(in(w,u)\to in(z,w)))) {
   any u {
     assume neq(u,emptyset) {
       any z {
         assume in(z,bigcap(u)) {
-          expand in(z,bigcap(u)) conclude in(z,sep(bigcup(u), lambda z'. \forall w(in(w,u)\to in(z',w))))
-          apply sep_existence for x:bigcup(u),\phi: lambda z'. \forall w(in(w,u)\to in(z',w)),z:z
-          split in(z,sep(bigcup(u), lambda z'. \forall w(in(w,u)\to in(z',w))))\leftrightarrow in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
-          invoke in(z,sep(bigcup(u), lambda z'. \forall w(in(w,u)\to in(z',w))))\to in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
+          apply bigcap_cor1 for u:u,z:z
+          split in(z,bigcap(u))\leftrightarrow in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
+          invoke in(z,bigcap(u))\to in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
           split 2 in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
         }
         assume \forall w(in(w,u)\to in(z,w)) {
@@ -898,10 +915,9 @@ theorem bigcap_cor2 \forall u(neq(u,emptyset)\to\forall z(in(z,bigcap(u))\leftri
           split in(z,bigcup(u))\leftrightarrow\exists y(in(z,y)\wedge in(y,u))
           invoke \exists y(in(z,y)\wedge in(y,u))\to in(z,bigcup(u))
           connect in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
-          apply sep_existence for x:bigcup(u),\phi: lambda z'. \forall w(in(w,u)\to in(z',w)),z:z
-          split in(z,sep(bigcup(u), lambda z'. \forall w(in(w,u)\to in(z',w))))\leftrightarrow in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
-          invoke in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))\to in(z,sep(bigcup(u), lambda z'. \forall w(in(w,u)\to in(z',w))))
-          expand in(z,sep(bigcup(u), lambda z'. \forall w(in(w,u)\to in(z',w)))) conclude in(z,bigcap(u))
+          apply bigcap_cor1 for u:u,z:z
+          split in(z,bigcap(u))\leftrightarrow in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
+          invoke in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))\to in(z,bigcap(u))
         }
         connect in(z,bigcap(u))\leftrightarrow\forall w(in(w,u)\to in(z,w))
       }
