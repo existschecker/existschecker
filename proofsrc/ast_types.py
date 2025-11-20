@@ -500,7 +500,10 @@ def pretty_expr(expr: str | Bottom | Formula | Term | Pred | Fun, context: Conte
     if isinstance(expr, Template):
         return f"{expr.name}[{str(expr.arity)}]"
     if isinstance(expr, TemplateCall):
-        return f"{expr.template.name}({",".join([arg.name for arg in expr.args])})"
+        if expr.template.arity == 0:
+            return expr.template.name
+        else:
+            return f"{expr.template.name}({",".join([arg.name for arg in expr.args])})"
     if isinstance(expr, Lambda):
         return f"\\lambda {",".join([var.name for var in expr.args])}. {pretty_expr(expr.body, context)}"
     raise TypeError(f"Unsupported node type: {type(expr)}")

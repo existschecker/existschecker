@@ -252,115 +252,15 @@ theorem test25 \neg(\exists x\exists y(in(x,y)))\to\forall x\forall y(\neg(in(x,
   }
 }
 
-primitive predicate in arity 2 tex "","\in",""
-
-definition predicate equal(x,y) as \forall z(in(z,x)\leftrightarrow in(z,y)) tex "","=",""
-
-theorem equal_reflection \forall x(equal(x,x)) {
-  any x conclude equal(x,x) {
-    any y conclude in(y,x)\leftrightarrow in(y,x) {
-      assume in(y,x) conclude in(y,x) {}
-      connect in(y,x)\leftrightarrow in(y,x)
-    }
-    expand \forall y(in(y,x)\leftrightarrow in(y,x)) conclude equal(x,x)
-  }
-}
-
-theorem equal_replacement \forall x\forall y\forall u\forall v(equal(x,y)\wedge equal(u,v)\to(equal(x,u)\to equal(y,v))) {
-  any x,y,u,v conclude equal(x,y)\wedge equal(u,v)\to(equal(x,u)\to equal(y,v)) {
-    assume equal(x,y)\wedge equal(u,v) conclude equal(x,u)\to equal(y,v) {
-      assume equal(x,u) conclude equal(y,v) {
-        any p conclude in(p,y)\leftrightarrow in(p,v) {
-          assume in(p,y) conclude in(p,v) {
-            split equal(x,y)\wedge equal(u,v)
-            expand equal(x,y) conclude \forall z(in(z,x)\leftrightarrow in(z,y))
-            apply \forall z(in(z,x)\leftrightarrow in(z,y)) for z:p conclude in(p,x)\leftrightarrow in(p,y)
-            split in(p,x)\leftrightarrow in(p,y)
-            invoke in(p,y)\to in(p,x) conclude in(p,x)
-            expand equal(x,u) conclude \forall z(in(z,x)\leftrightarrow in(z,u))
-            apply \forall z(in(z,x)\leftrightarrow in(z,u)) for z:p conclude in(p,x)\leftrightarrow in(p,u)
-            split in(p,x)\leftrightarrow in(p,u)
-            invoke in(p,x)\to in(p,u) conclude in(p,u)
-            expand equal(u,v) conclude \forall z(in(z,u)\leftrightarrow in(z,v))
-            apply \forall z(in(z,u)\leftrightarrow in(z,v)) for z:p conclude in(p,u)\leftrightarrow in(p,v)
-            split in(p,u)\leftrightarrow in(p,v)
-            invoke in(p,u)\to in(p,v) conclude in(p,v)
-          }
-          assume in(p,v) conclude in(p,y) {
-            split equal(x,y)\wedge equal(u,v)
-            expand equal(u,v) conclude \forall z(in(z,u)\leftrightarrow in(z,v))
-            apply \forall z(in(z,u)\leftrightarrow in(z,v)) for z:p conclude in(p,u)\leftrightarrow in(p,v)
-            split in(p,u)\leftrightarrow in(p,v)
-            invoke in(p,v)\to in(p,u) conclude in(p,u)
-            expand equal(x,u) conclude \forall z(in(z,x)\leftrightarrow in(z,u))
-            apply \forall z(in(z,x)\leftrightarrow in(z,u)) for z:p conclude in(p,x)\leftrightarrow in(p,u)
-            split in(p,x)\leftrightarrow in(p,u)
-            invoke in(p,u)\to in(p,x) conclude in(p,x)
-            expand equal(x,y) conclude \forall z(in(z,x)\leftrightarrow in(z,y))
-            apply \forall z(in(z,x)\leftrightarrow in(z,y)) for z:p conclude in(p,x)\leftrightarrow in(p,y)
-            split in(p,x)\leftrightarrow in(p,y)
-            invoke in(p,x)\to in(p,y) conclude in(p,y)
-          }
-          connect in(p,y)\leftrightarrow in(p,v)
-        }
-        expand \forall p(in(p,y)\leftrightarrow in(p,v)) conclude equal(y,v)
-      }
-    }
-  }
-}
-
-axiom axiom_of_equal \forall x\forall y(equal(x,y)\to\forall z(in(x,z)\to in(y,z)))
-
-theorem in_replacement \forall x\forall y\forall u\forall v(equal(x,y)\wedge equal(u,v)\to(in(x,u)\to in(y,v))) {
-  any x,y,u,v conclude equal(x,y)\wedge equal(u,v)\to(in(x,u)\to in(y,v)) {
-    assume equal(x,y)\wedge equal(u,v) conclude in(x,u)\to in(y,v) {
-      assume in(x,u) conclude in(y,v) {
-        apply axiom_of_equal for x:x,y:y conclude equal(x,y)\to\forall z(in(x,z)\to in(y,z))
-        split equal(x,y)\wedge equal(u,v)
-        invoke equal(x,y)\to\forall z(in(x,z)\to in(y,z)) conclude \forall z(in(x,z)\to in(y,z))
-        apply \forall z(in(x,z)\to in(y,z)) for z:u conclude in(x,u)\to in(y,u)
-        invoke in(x,u)\to in(y,u) conclude in(y,u)
-        expand equal(u,v) conclude \forall z(in(z,u)\leftrightarrow in(z,v))
-        apply \forall z(in(z,u)\leftrightarrow in(z,v)) for z:y conclude in(y,u)\leftrightarrow in(y,v)
-        split in(y,u)\leftrightarrow in(y,v)
-        invoke in(y,u)\to in(y,v) conclude in(y,v)
-      }
-    }
-  }
-}
-
-equality equal
-  reflection equal_reflection
-  replacement equal: equal_replacement, in: in_replacement
-
-axiom axiom_schema_of_separation \forall x\forall^T\phi[z,x |not y]\exists y\forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi)
-
-theorem separation_is_unique \forall x\forall^T\phi[z,x |not y]\exists!y\forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi) {
-  any w, template \psi[z,x |not y] {
-    apply axiom_schema_of_separation for x:w, template \phi[z,x |not y]:\psi[z,x |not y]
-    some y:y such \exists y\forall z(in(z,y)\leftrightarrow in(z,w)\wedge\psi[x:w]) {
-      any y' {
-        assume \forall z(in(z,y')\leftrightarrow in(z,w)\wedge\psi[x:w]) {
-          any v {
-            apply \forall z(in(z,y)\leftrightarrow in(z,w)\wedge\psi[x:w]) for z:v
-            split in(v,y)\leftrightarrow in(v,w)\wedge\psi[x:w,z:v]
-            apply \forall z(in(z,y')\leftrightarrow in(z,w)\wedge\psi[x:w]) for z:v
-            split in(v,y')\leftrightarrow in(v,w)\wedge\psi[x:w,z:v]
-            assume in(v,y') {
-              invoke in(v,y')\to in(v,w)\wedge\psi[x:w,z:v]
-              invoke in(v,w)\wedge\psi[x:w,z:v]\to in(v,y)
-            }
-            assume in(v,y) {
-              invoke in(v,y)\to in(v,w)\wedge\psi[x:w,z:v]
-              invoke in(v,w)\wedge\psi[x:w,z:v]\to in(v,y')
-            }
-            connect in(v,y')\leftrightarrow in(v,y)
-          }
-          expand \forall v(in(v,y')\leftrightarrow in(v,y)) conclude equal(y',y)
+theorem contrapositive_is_equivalent \forall^T\phi[0]\forall^T\psi[0]((\phi\to\psi)\to(\neg(\psi)\to\neg(\phi))) {
+  any template \phi[0], template \psi[0] {
+    assume \phi\to\psi {
+      assume \neg(\psi) {
+        deny \phi {
+          invoke \phi\to\psi
+          contradict \psi
         }
       }
-      connect \forall z(in(z,y)\leftrightarrow in(z,w)\wedge\psi[x:w])\wedge\forall y'(\forall z(in(z,y')\leftrightarrow in(z,w)\wedge\psi[x:w])\to equal(y',y))
-      characterize for y:y conclude \exists!y\forall z(in(z,y)\leftrightarrow in(z,w)\wedge\psi[x:w])
     }
   }
 }

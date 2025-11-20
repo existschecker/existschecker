@@ -584,15 +584,20 @@ class Parser:
                     template = self.free_items[name]
                 if not isinstance(template, Template):
                     raise Exception(f"{template} is not Template object")
-                self.consume("LPAREN")
-                args: list[Var] = []
-                while True:
-                    args.append(self.parse_var())
-                    if self.peek().type == "COMMA":
-                        self.consume("COMMA")
-                    else:
-                        break
-                self.consume("RPAREN")
+                if template.arity == 0:
+                    args: list[Var] = []
+                else:
+                    self.consume("LPAREN")
+                    args: list[Var] = []
+                    while True:
+                        args.append(self.parse_var())
+                        if self.peek().type == "COMMA":
+                            self.consume("COMMA")
+                        else:
+                            break
+                    self.consume("RPAREN")
+                    if len(args) != template.arity:
+                        raise SyntaxError("arity is different")
                 return TemplateCall(template, args)
             elif name in self.context.primpreds or name in self.context.defpreds:
                 if name in self.context.primpreds:
