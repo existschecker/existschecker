@@ -63,12 +63,12 @@ class Forall(Formula):
 
 @dataclass(frozen=True)
 class Exists(Formula):
-    var: Var
+    var: Var | Template
     body: Formula
 
 @dataclass(frozen=True)
 class ExistsUniq(Formula):
-    var: Var
+    var: Var | Template
     body: Formula
 
 @dataclass(frozen=True)
@@ -160,7 +160,7 @@ class Explode(Control):
 @dataclass
 class Apply(Control):
     fact: str | Formula
-    env: dict[str | Term]
+    env: dict[str, Term]
     conclusion: Formula | None
 
 @dataclass
@@ -468,24 +468,23 @@ def pretty_expr(expr: str | Bottom | Formula | Term | Pred | Fun, context: Conte
         return text if OP_PRECEDENCE["Not"] > parent_prec else f"({text})"
     if isinstance(expr, (Forall, Exists, ExistsUniq)):
         body = expr
-        qvars = []
+        qvars_text = ""
         while True:
-            if isinstance(body, (Forall, Exists, ExistsUniq)):
-                qvars.append(type(body)(body.var, None))
-                body = body.body
+            if isinstance(body, Forall):
+                qvars_text += "\\forall"
+            elif isinstance(body, Exists):
+                qvars_text += "\\exists"
+            elif isinstance(body, ExistsUniq):
+                qvars_text += "\\exists!"
             else:
                 break
-        qvars_text = ""
-        for qvar in qvars:
-            if isinstance(qvar, Forall):
-                if isinstance(qvar.var, Var):
-                    qvars_text += f"\\forall {pretty_expr(qvar.var, context)}"
-                elif isinstance(qvar.var, Template):
-                    qvars_text += f"\\forall^T {pretty_expr(qvar.var, context)}"
-            elif isinstance(qvar, Exists):
-                qvars_text += f"\\exists {pretty_expr(qvar.var, context)}"
-            elif isinstance(qvar, ExistsUniq):
-                qvars_text += f"\\exists! {pretty_expr(qvar.var, context)}"
+            if isinstance(body.var, Var):
+                qvars_text += f" {pretty_expr(body.var, context)}"
+            elif isinstance(body.var, Template):
+                qvars_text += f"^T {pretty_expr(body.var, context)}"
+            else:
+                raise Exception(f"Unexpected type: {type(body.var)}")
+            body = body.body
         text = f"{qvars_text} {pretty_expr(body, context, OP_PRECEDENCE["Quantifier"])}"
         return text if OP_PRECEDENCE["Quantifier"] > parent_prec else f"({text})"
     if isinstance(expr, Bottom):
