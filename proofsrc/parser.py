@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, Template, Lambda, FreshVar, TemplateCall
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, Template, Lambda, TemplateCall
 from lexer import Token, lex
 from logic_utils import collect_quantifier_vars
 
@@ -667,15 +667,9 @@ class Parser:
         if tok.type == "IDENT":
             name = self.consume("IDENT").value
             if name in self.bound_items:
-                if isinstance(self.bound_items[name], FreshVar):
-                    return Var(name)
-                else:
-                    return self.bound_items[name]
+                return self.bound_items[name]
             elif name in self.free_items:
-                if isinstance(self.free_items[name], FreshVar):
-                    return Var(name)
-                else:
-                    return self.free_items[name]
+                return self.free_items[name]
             elif name in self.context.defcons:
                 return Con(name)
             elif name in self.context.deffuns or name in self.context.deffunterms:
@@ -725,26 +719,7 @@ class Parser:
 
     def parse_var(self) -> Var:
         var_name = self.consume("IDENT").value
-        if self.peek().type == "LBRACKET":
-            self.consume("LBRACKET")
-            self.consume("HASH")
-            fresh_templates: list[Template] = []
-            while True:
-                template_name = self.consume("IDENT").value
-                if template_name in self.bound_items:
-                    fresh_templates.append(self.bound_items[template_name])
-                elif template_name in self.free_items:
-                    fresh_templates.append(self.free_items[template_name])
-                else:
-                    raise Exception(f"Unknown template name: {template_name} at line {self.tokens[self.pos].line}, column {self.tokens[self.pos].column}")
-                if self.peek().type == "COMMA":
-                    self.consume("COMMA")
-                else:
-                    break
-            self.consume("RBRACKET")
-            return FreshVar(var_name, tuple(fresh_templates))
-        else:
-            return Var(var_name)
+        return Var(var_name)
 
     def parse_template(self) -> Template:
         template_name = self.consume("IDENT").value

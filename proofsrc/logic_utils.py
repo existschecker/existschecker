@@ -303,9 +303,6 @@ def substitute(expr: Formula, mapping: dict[Term, Term], used_vars: set[Var] | N
         if expr == k:
             return deepcopy(v)
 
-        if isinstance(k, Var) and isinstance(expr, Var) and expr.name == k.name:
-            return deepcopy(v)
-
     if isinstance(expr, Symbol):
         new_args = [substitute(arg, mapping, used_vars) for arg in expr.args]
         return Symbol(substitute(expr.pred, mapping, used_vars), new_args)

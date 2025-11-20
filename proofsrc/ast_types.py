@@ -25,10 +25,6 @@ class Var(Term):
     name: str
 
 @dataclass(frozen=True)
-class FreshVar(Var):
-    fresh_templates: tuple["Template"]
-
-@dataclass(frozen=True)
 class Formula:
     pass
 
@@ -454,10 +450,7 @@ def pretty_expr(expr: str | Bottom | Formula | Term | Pred | Fun, context: Conte
             raise Exception("arity is different")
         return tex[0]
     if isinstance(expr, Var):
-        if isinstance(expr, FreshVar):
-            return f"{expr.name}[\\# {",".join([template.name for template in expr.fresh_templates])}]"
-        else:
-            return expr.name
+        return expr.name
     if isinstance(expr, Implies):
         text = f"{pretty_expr(expr.left, context, OP_PRECEDENCE["Implies"])} \\to {pretty_expr(expr.right, context, OP_PRECEDENCE["Implies"])}"
         return text if OP_PRECEDENCE["Implies"] > parent_prec else f"({text})"

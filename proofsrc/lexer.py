@@ -21,7 +21,6 @@ SYMBOLS = {
     "[": "LBRACKET",
     "]": "RBRACKET",
     "|": "SLASH",
-    "#": "HASH",
     ".": "DOT"
 }
 
