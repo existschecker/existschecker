@@ -479,7 +479,7 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
         if context.equality is None:
             logger.error(f"{sp}❌ [Characterize] equality has not been declared yet")
             return False
-        fact = And(substitute_formula(node.conclusion.body, node.env), Forall(vardash, Implies(substitute_formula(node.conclusion.body, {node.conclusion.var: vardash}), Symbol(Pred(context.equality.equal.name), [vardash, list(node.env.values())[0]]))))
+        fact = And(substitute_formula(node.conclusion.body, node.env), Forall(vardash, Implies(substitute_formula(node.conclusion.body, {node.conclusion.var: vardash}), Symbol(Pred(context.equality.equal.name), (vardash, list(node.env.values())[0])))))
         if not goal_in_context(fact, context):
             logger.error(f"{sp}❌ [Characterize] Not fact: {pretty_expr(fact, context)}")
             return False
