@@ -76,7 +76,8 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
             logger.error(f"{sp}❌ [DefCon] existence_formula is not matched with theorem: {pretty_expr(node.existence.formula, context)}")
             return False
         logger.debug(f"{sp}[DefCon] existence_formula is matched with theorem: {pretty_expr(node.existence.formula, context)}")
-        var = fresh_var(existsuniq.var, [Con(node.name)])
+        free, bound = collect_vars(existsuniq.body)
+        var = fresh_var(existsuniq.var, free | bound)
         body = substitute_formula(existsuniq.body, {existsuniq.var: var})
         if context.equality is None:
             logger.error(f"{sp}❌ [DefCon] equality has not been declared yet")
