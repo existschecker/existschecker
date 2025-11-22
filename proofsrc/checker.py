@@ -197,6 +197,9 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
             logger.error(f"{sp}❌ [Any] Local context must extend the parent context")
             return False
         local_goal = local_ctx.formulas[-1]
+        if isinstance(local_goal, Bottom):
+            logger.error(f"{sp}❌ [Any] Bottom cannot be generalized")
+            return False
         logger.debug(f"{sp}[Any] derived local_goal: {pretty_expr(local_goal, context)}")
         if node.conclusion is not None:
             if alpha_equiv_with_defs(node.conclusion, local_goal, context):
@@ -227,6 +230,9 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
             logger.error(f"{sp}❌ [Assume] Local context must extend the parent context")
             return False
         goal = local_ctx.formulas[-1]
+        if isinstance(goal, Bottom):
+            logger.error(f"{sp}❌ [Assume] Bottom is not allowed as goal")
+            return False
         logger.debug(f"{sp}[Assume] derived goal: {pretty_expr(goal, context)}")
         if node.conclusion is not None:
             if alpha_equiv_with_defs(node.conclusion, goal, context):

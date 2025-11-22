@@ -209,12 +209,8 @@ def expr_in_context(expr: Bottom | Formula, context: Context) -> bool:
     return any(alpha_equiv_with_defs(expr, f, context) for f in context.formulas)
 
 def alpha_equiv_with_defs(e1: Bottom | Formula, e2: Bottom | Formula, context: Context, expand_all: bool = False) -> bool:
-    if isinstance(e1, Bottom) and isinstance(e2, Bottom):
-        return True
-    elif isinstance(e1, Bottom) and not isinstance(e2, Bottom):
-        return False
-    elif not isinstance(e1, Bottom) and isinstance(e2, Bottom):
-        return False
+    if isinstance(e1, Bottom) or isinstance(e2, Bottom):
+        return isinstance(e1, Bottom) and isinstance(e2, Bottom)
     else:
         e1_exp = normalize_neg(expand_basic_defs(e1, context, expand_all))
         e2_exp = normalize_neg(expand_basic_defs(e2, context, expand_all))
