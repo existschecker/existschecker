@@ -81,7 +81,7 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
         if context.equality is None:
             logger.error(f"{sp}❌ [DefCon] equality has not been declared yet")
             return False
-        uniqueness_formula = Forall(var, Implies(body, Symbol(Pred(context.equality.equal.name), [var, Con(node.name)])))
+        uniqueness_formula = Forall(var, Implies(body, Symbol(Pred(context.equality.equal.name), (var, Con(node.name)))))
         if not alpha_equiv_with_defs(node.uniqueness.formula, uniqueness_formula, context):
             logger.error(f"{sp}❌ [DefCon] uniqueness_formula is not matched with theorem: {pretty_expr(node.uniqueness.formula, context)}")
             return False
