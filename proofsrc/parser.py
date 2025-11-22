@@ -20,8 +20,6 @@ class Parser:
 
     def consume(self, expected_type: str | None = None) -> Token:
         tok = self.peek()
-        if tok is None:
-            raise SyntaxError("Unexpected EOF")
         if expected_type and tok.type != expected_type:
             raise SyntaxError(f"Expected {expected_type}, got {tok.type} at line {tok.line}")
         self.pos += 1
@@ -551,7 +549,7 @@ class Parser:
 
     def parse_implies(self) -> Formula:
         left = self.parse_and()
-        while self.peek() is not None and self.peek().type in ("IMPLIES", "IFF"):
+        while self.peek().type in ("IMPLIES", "IFF"):
             op = self.peek().type
             self.consume(op)
             right = self.parse_and()
@@ -563,7 +561,7 @@ class Parser:
 
     def parse_and(self) -> Formula:
         left = self.parse_primary()
-        while self.peek() is not None and self.peek().type in ("AND", "OR"):
+        while self.peek().type in ("AND", "OR"):
             op = self.peek().type
             self.consume(op)
             right = self.parse_primary()
