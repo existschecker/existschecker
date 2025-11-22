@@ -633,7 +633,7 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
         if context.equality is None:
             logger.error(f"{sp}❌ [Substitute] equality has not been declared yet")
             return False
-        premises_equal: list[str | Formula] = []
+        premises_equal: list[str | Symbol] = []
         for k, v in node.env.items():
             equation = Symbol(Pred(context.equality.equal.name), (k, v))
             if k in node.evidence:
