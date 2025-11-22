@@ -1,5 +1,5 @@
 from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, DefConExist, DefConUniq, Compound, Fun, Con, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, Var, Substitute, Symbol, Characterize, Show, Pred, Control, ProofInfo, Formula, Declaration, Template, Term, Lambda, pretty_expr
-from logic_utils import expr_in_context, collect_quantifier_vars, substitute, collect_vars, flatten_op, fresh_var, alpha_equiv, alpha_equiv_with_defs
+from logic_utils import expr_in_context, collect_quantifier_vars, substitute_formula, collect_vars, flatten_op, fresh_var, alpha_equiv, alpha_equiv_with_defs
 from copy import deepcopy
 
 import logging
@@ -71,13 +71,13 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
             logger.error(f"{sp}❌ [DefCon] Theorem conclusion is not ExistsUniq object: {pretty_expr(existsuniq, context)}")
             return False
         logger.debug(f"{sp}[DefCon] Theorem conclusion is ExistsUniq object: {pretty_expr(existsuniq, context)}")
-        existence_formula = substitute(existsuniq.body, {existsuniq.var: Con(node.name)})
+        existence_formula = substitute_formula(existsuniq.body, {existsuniq.var: Con(node.name)})
         if not alpha_equiv_with_defs(node.existence.formula, existence_formula, context):
             logger.error(f"{sp}❌ [DefCon] existence_formula is not matched with theorem: {pretty_expr(node.existence.formula, context)}")
             return False
         logger.debug(f"{sp}[DefCon] existence_formula is matched with theorem: {pretty_expr(node.existence.formula, context)}")
         var = fresh_var(existsuniq.var, [Con(node.name)])
-        body = substitute(existsuniq.body, {existsuniq.var: var})
+        body = substitute_formula(existsuniq.body, {existsuniq.var: var})
         if context.equality is None:
             logger.error(f"{sp}❌ [DefCon] equality has not been declared yet")
             return False
@@ -97,7 +97,7 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
             logger.error(f"{sp}❌ [DefFun] Not ExistsUniq object: {pretty_expr(existsuniq, context)}")
             return False
         logger.debug(f"{sp}[DefFun] ExistsUniq object: {pretty_expr(existsuniq, context)}")
-        existence_formula = substitute(existsuniq.body, {existsuniq.var: Compound(Fun(node.name), tuple(args))})
+        existence_formula = substitute_formula(existsuniq.body, {existsuniq.var: Compound(Fun(node.name), tuple(args))})
         for arg in reversed(args):
             existence_formula = Forall(arg, existence_formula)
         if not alpha_equiv_with_defs(node.existence.formula, existence_formula, context):
@@ -332,7 +332,7 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
         for var in node.env.values():
             if var in context.vars:
                 logger.error(f"{sp}❌ [Some] {pretty_expr(var, context)} is already used")
-        premise = substitute(body, node.env)
+        premise = substitute_formula(body, node.env)
         logger.debug(f"{sp}[Some] Taking {node.env.values()}, premise={pretty_expr(premise, context)}")
         local_ctx = context.copy(list(context.vars + list(node.env.values())), list(context.formulas + [premise]), list(context.templates))
         for stmt in node.body:
@@ -429,7 +429,7 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
                         logger.debug(f"{sp}[Apply] arity of {item.name} is {item.arity}, args of Lambda are {",".join([arg.name for arg in v.args])}")
                     break
         logger.debug(f"{sp}[Apply] Instantiable: env={env}")
-        instantiation = substitute(body, env)
+        instantiation = substitute_formula(body, env)
         logger.debug(f"{sp}[Apply] \\forall-elimination is done: instantiation={pretty_expr(instantiation, context)}")
         if node.conclusion is not None:
             if not alpha_equiv_with_defs(node.conclusion, instantiation, context):
@@ -449,7 +449,7 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
             logger.error(f"{sp}❌ [Lift] Not matched: vars: {vars}, node.env: {node.env}")
             return False
         logger.debug(f"{sp}[Lift] Matched: vars: {vars}, node.env: {node.env}")
-        fact = substitute(body, node.env)
+        fact = substitute_formula(body, node.env)
         if not goal_in_context(fact, context):
             logger.error(f"{sp}❌ [Lift] Not fact: {pretty_expr(fact, context)}")
             return False
@@ -479,7 +479,7 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
         if context.equality is None:
             logger.error(f"{sp}❌ [Characterize] equality has not been declared yet")
             return False
-        fact = And(substitute(node.conclusion.body, node.env), Forall(vardash, Implies(substitute(node.conclusion.body, {node.conclusion.var: vardash}), Symbol(Pred(context.equality.equal.name), [vardash, list(node.env.values())[0]]))))
+        fact = And(substitute_formula(node.conclusion.body, node.env), Forall(vardash, Implies(substitute_formula(node.conclusion.body, {node.conclusion.var: vardash}), Symbol(Pred(context.equality.equal.name), [vardash, list(node.env.values())[0]]))))
         if not goal_in_context(fact, context):
             logger.error(f"{sp}❌ [Characterize] Not fact: {pretty_expr(fact, context)}")
             return False
@@ -649,8 +649,8 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
                     return False
                 logger.debug(f"{sp}[Substitute] Fact: {pretty_expr(equation, context)}")
                 premises_equal.append(equation)
-        fact_subst = substitute(fact, node.env)
-        conclusion_subst = substitute(node.conclusion, node.env)
+        fact_subst = substitute_formula(fact, node.env)
+        conclusion_subst = substitute_formula(node.conclusion, node.env)
         logger.debug(f"{sp}[Substitute] fact_subst: {pretty_expr(fact_subst, context)}")
         logger.debug(f"{sp}[Substitute] conclusion_subst: {pretty_expr(conclusion_subst, context)}")
         if not alpha_equiv_with_defs(conclusion_subst, fact_subst, context):

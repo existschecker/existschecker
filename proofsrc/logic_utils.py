@@ -227,7 +227,7 @@ def expand_defs_term(expr: Term, context: Context, expand_all: bool, bound_templ
         elif expr.fun.name in context.deffunterms:
             deffunterm = context.deffunterms[expr.fun.name]
             if expand_all:
-                expanded = substitute(deffunterm.term, dict(zip(deffunterm.args, expr.args)))
+                expanded = substitute_term(deffunterm.term, dict(zip(deffunterm.args, expr.args)))
                 return expand_defs_term(expanded, context, expand_all, bound_templates)
             else:
                 return Compound(expr.fun, tuple(expand_defs_term(arg, context, expand_all, bound_templates) for arg in expr.args))
@@ -247,7 +247,7 @@ def expand_defs_formula(expr: Formula, context: Context, expand_all: bool, bound
         if expr.pred.name in context.defpreds:
             defpred = context.defpreds[expr.pred.name]
             if defpred.autoexpand or expand_all:
-                expanded = substitute(defpred.formula, dict(zip(defpred.args, expr.args)))
+                expanded = substitute_formula(defpred.formula, dict(zip(defpred.args, expr.args)))
                 return expand_defs_formula(expanded, context, expand_all, bound_templates)
             else:
                 return Symbol(expr.pred, tuple(expand_defs_term(arg, context, expand_all, bound_templates) for arg in expr.args))
@@ -300,7 +300,7 @@ def fresh_var(var: Var | Template, used: set[Var | Template]) -> Var | Template:
     else:
         return var
 
-def substitute(expr: Formula, mapping: dict[Term, Term], used_vars: set[Var] | None = None) -> Formula:
+def substitute_term(expr: Term, mapping: dict[Term, Term], used_vars: set[Var | Template] | None = None) -> Term:
     if used_vars is None:
         used_vars = collect_vars(expr)[0]
         for v in mapping.values():
@@ -310,53 +310,60 @@ def substitute(expr: Formula, mapping: dict[Term, Term], used_vars: set[Var] | N
         if expr == k:
             return deepcopy(v)
 
-    if isinstance(expr, Symbol):
-        new_args = [substitute(arg, mapping, used_vars) for arg in expr.args]
-        return Symbol(substitute(expr.pred, mapping, used_vars), new_args)
-
-    if isinstance(expr, Compound):
-        new_args = tuple(substitute(arg, mapping, used_vars) for arg in expr.args)
-        return Compound(substitute(expr.fun, mapping, used_vars), new_args)
-
-    if isinstance(expr, (Pred, Fun, Con, Var, Template)):
+    if isinstance(expr, (Var, Con, Template)):
         return expr
 
-    if isinstance(expr, Not):
-        return Not(substitute(expr.body, mapping, used_vars))
+    elif isinstance(expr, Compound):
+        return Compound(expr.fun, tuple(substitute_term(arg, mapping, used_vars) for arg in expr.args))
 
-    if isinstance(expr, (And, Or, Implies, Iff)):
-        return type(expr)(substitute(expr.left, mapping, used_vars), substitute(expr.right, mapping, used_vars))
+    elif isinstance(expr, Lambda):
+        return Lambda(expr.args, substitute_formula(expr.body, mapping, used_vars))
 
-    if isinstance(expr, (Forall, Exists)):
+    else:
+        raise Exception(f"Unexpected type: {type(expr)}")
+
+def substitute_formula(expr: Formula, mapping: dict[Term, Term], used_vars: set[Var | Template] | None = None) -> Formula:
+    if used_vars is None:
+        used_vars = collect_vars(expr)[0]
+        for v in mapping.values():
+            used_vars.update(collect_vars(v)[0])
+
+    if isinstance(expr, Symbol):
+        return Symbol(expr.pred, tuple(substitute_term(arg, mapping, used_vars) for arg in expr.args))
+
+    elif isinstance(expr, Not):
+        return Not(substitute_formula(expr.body, mapping, used_vars))
+
+    elif isinstance(expr, (And, Or, Implies, Iff)):
+        return type(expr)(substitute_formula(expr.left, mapping, used_vars), substitute_formula(expr.right, mapping, used_vars))
+
+    elif isinstance(expr, (Forall, Exists)):
         var = expr.var
         # 衝突する場合は束縛変数をリネーム
         if var in mapping.values() or var in used_vars:
             new_var = fresh_var(var, used_vars)
             used_vars.add(new_var)
-            body = substitute(alpha_rename(expr.body, {var: new_var}), mapping, used_vars)
+            body = substitute_formula(alpha_rename(expr.body, {var: new_var}), mapping, used_vars)
             return type(expr)(new_var, body)
         else:
             used_vars.add(var)
-            return type(expr)(var, substitute(expr.body, mapping, used_vars))
+            return type(expr)(var, substitute_formula(expr.body, mapping, used_vars))
 
-    if isinstance(expr, TemplateCall):
-        new_template = substitute(expr.template, mapping, used_vars)
+    elif isinstance(expr, TemplateCall):
+        new_template = substitute_term(expr.template, mapping, used_vars)
         if isinstance(new_template, Template):
-            new_args = tuple(substitute(arg, mapping, used_vars) for arg in expr.args)
-            return TemplateCall(substitute(expr.template, mapping, used_vars), new_args)
+            return TemplateCall(new_template, tuple(substitute_term(arg, mapping, used_vars) for arg in expr.args))
         elif isinstance(new_template, Lambda):
             lambda_mapping = {}
             for a, b in zip(new_template.args, expr.args):
                 lambda_mapping[a] = b
-            lambda_mapped = substitute(new_template.body, lambda_mapping)
-            return substitute(lambda_mapped, mapping, used_vars)
+            lambda_mapped = substitute_formula(new_template.body, lambda_mapping)
+            return substitute_formula(lambda_mapped, mapping, used_vars)
         else:
             raise Exception(f"Unexpected type: {type(new_template)}")
 
-    if isinstance(expr, Lambda):
-        return Lambda(expr.args, substitute(expr.body, mapping, used_vars))
-
-    return expr
+    else:
+        raise Exception(f"Unexpected type: {type(expr)}")
 
 def alpha_rename(expr: Formula, rename_map: dict[Var, Var]) -> Formula:
     if isinstance(expr, Symbol):
