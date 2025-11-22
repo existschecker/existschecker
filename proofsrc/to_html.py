@@ -453,6 +453,8 @@ def render_node(node: Declaration | DeclarationSupport | Control, context: Conte
                         env_parts,
                         render_keyword("conclude"),
                         render_expr(node.conclusion, context)]
+        if context.equality is None:
+            raise Exception("context.equality is None")
         header_parts_jp = [bullet,
                            render_expr(node.fact, context),
                            "に",
