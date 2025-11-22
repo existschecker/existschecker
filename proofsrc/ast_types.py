@@ -216,6 +216,10 @@ class Declaration:
     pass
 
 @dataclass
+class DeclarationSupport:
+    pass
+
+@dataclass
 class PrimPred(Declaration):
     type: str
     name: str
@@ -242,12 +246,12 @@ class DefPred(Declaration):
     tex: list[str]
 
 @dataclass
-class DefConExist:
+class DefConExist(DeclarationSupport):
     name: str
     formula: Formula
 
 @dataclass
-class DefConUniq:
+class DefConUniq(DeclarationSupport):
     name: str
     formula: Formula
 
@@ -260,12 +264,12 @@ class DefCon(Declaration):
     uniqueness: DefConUniq
 
 @dataclass
-class DefFunExist:
+class DefFunExist(DeclarationSupport):
     name: str
     formula: Formula
 
 @dataclass
-class DefFunUniq:
+class DefFunUniq(DeclarationSupport):
     name: str
     formula: Formula
 
@@ -286,11 +290,11 @@ class DefFunTerm(Declaration):
     tex: list[str]
 
 @dataclass
-class EqualityReflection:
+class EqualityReflection(DeclarationSupport):
     evidence: Axiom | Theorem
 
 @dataclass
-class EqualityReplacement:
+class EqualityReplacement(DeclarationSupport):
     evidence: dict[str, Axiom | Theorem]
 
 @dataclass

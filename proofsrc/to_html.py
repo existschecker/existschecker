@@ -1,6 +1,6 @@
 from datetime import datetime
 from html import escape
-from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Symbol, Pred, Compound, Fun, Control, Declaration, Bottom, Formula, Term, pretty_expr
+from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Symbol, Pred, Compound, Fun, Control, Declaration, Bottom, Formula, Term, DeclarationSupport, pretty_expr
 from svg import output_svg
 
 HTML_TEMPLATE = """<!doctype html>
@@ -95,7 +95,7 @@ def render_tex_svg(tex: list[str]):
     svg_path = output_svg(latex_code)
     return img_tag(svg_path, latex_code)
 
-def render_node(node: Declaration | Control, context: Context, mode: str) -> str:
+def render_node(node: Declaration | DeclarationSupport | Control, context: Context, mode: str) -> str:
     if mode == "mathjax":
         render_expr = render_expr_mathjax
         render_expr_list = render_expr_list_mathjax
