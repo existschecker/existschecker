@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from typing import Sequence
 
 import logging
 logger = logging.getLogger("proof")
@@ -101,13 +102,13 @@ class Bottom:
 
 @dataclass
 class ProofInfo:
-    context_vars: list[Var] = field(init=False)
-    context_formulas: list[Bottom | Formula] = field(init=False)
-    premises: list[str | Bottom | Formula] = field(init=False)
-    conclusions: list[Bottom | Formula] = field(init=False)
-    local_vars: list[Var] = field(init=False)
-    local_premise: list[Formula] = field(init=False)
-    local_conclusion: list[Bottom | Formula] = field(init=False)
+    context_vars: Sequence[Var] = field(init=False)
+    context_formulas: Sequence[Bottom | Formula] = field(init=False)
+    premises: Sequence[str | Bottom | Formula] = field(init=False)
+    conclusions: Sequence[Bottom | Formula] = field(init=False)
+    local_vars: Sequence[Var] = field(init=False)
+    local_premise: Sequence[Formula] = field(init=False)
+    local_conclusion: Sequence[Bottom | Formula] = field(init=False)
 
 @dataclass
 class Control:
