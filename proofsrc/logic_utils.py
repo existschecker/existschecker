@@ -8,7 +8,7 @@ def flatten_op(expr: Formula, op: type[And] | type[Or]) -> list:
     else:
         return [expr]
 
-def op_equiv(e1: Formula, e2: Formula, context: Context, env: dict[Var, Var], op: type[And] | type[Or]) -> bool:
+def op_equiv(e1: Formula, e2: Formula, context: Context, env: dict[Var | Template, Var | Template], op: type[And] | type[Or]) -> bool:
     parts1 = flatten_op(e1, op)
     parts2 = flatten_op(e2, op)
 
@@ -282,14 +282,19 @@ def normalize_neg(expr: Formula) -> Formula:
     else:
         raise Exception(f"Unexpected type: {type(expr)}")
 
-def fresh_var(var: Var, used: set[Var]) -> Var:
+def fresh_var(var: Var | Template, used: set[Var | Template]) -> Var | Template:
     if var in used:
         i = 0
         new_name = f"{var.name}_{i}"
         while any(new_name == u.name for u in used):
             i += 1
             new_name = f"{var.name}_{i}"
-        return Var(new_name)
+        if isinstance(var, Var):
+            return Var(new_name)
+        elif isinstance(var, Template):
+            return Template(new_name, var.arity)
+        else:
+            raise Exception(f"Unexpected type {type(var)}")
     else:
         return var
 
