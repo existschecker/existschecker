@@ -209,64 +209,64 @@ def collect_vars(expr: Formula | Term, bound: set[Var | Template] | None = None)
 def expr_in_context(expr: Bottom | Formula, context: Context) -> bool:
     return any(alpha_equiv_with_defs(expr, f, context) for f in context.formulas)
 
-def alpha_equiv_with_defs(e1: Bottom | Formula, e2: Bottom | Formula, context: Context, expand_all: bool = False) -> bool:
+def alpha_equiv_with_defs(e1: Bottom | Formula, e2: Bottom | Formula, context: Context, defs: list[str] = []) -> bool:
     if isinstance(e1, Bottom) or isinstance(e2, Bottom):
         return isinstance(e1, Bottom) and isinstance(e2, Bottom)
     else:
-        e1_exp = normalize_neg(expand_defs_formula(e1, context, expand_all))
-        e2_exp = normalize_neg(expand_defs_formula(e2, context, expand_all))
+        e1_exp = normalize_neg(expand_defs_formula(e1, context, defs))
+        e2_exp = normalize_neg(expand_defs_formula(e2, context, defs))
         return alpha_equiv(e1_exp, e2_exp, context)
 
-def expand_defs_term(expr: Term, context: Context, expand_all: bool, bound_templates: list[Template] | None = None) -> Term:
+def expand_defs_term(expr: Term, context: Context, defs: list[str], bound_templates: list[Template] | None = None) -> Term:
     if bound_templates is None:
         bound_templates = []
     if isinstance(expr, (Var, Con, Template)):
         return expr
     elif isinstance(expr, Compound):
         if expr.fun.name in context.deffuns:
-            return Compound(expr.fun, tuple(expand_defs_term(arg, context, expand_all, bound_templates) for arg in expr.args))
+            return Compound(expr.fun, tuple(expand_defs_term(arg, context, defs, bound_templates) for arg in expr.args))
         elif expr.fun.name in context.deffunterms:
             deffunterm = context.deffunterms[expr.fun.name]
-            if expand_all:
+            if expr.fun.name in defs:
                 expanded = substitute_term(deffunterm.term, dict(zip(deffunterm.args, expr.args)))
-                return expand_defs_term(expanded, context, expand_all, bound_templates)
+                return expand_defs_term(expanded, context, defs, bound_templates)
             else:
-                return Compound(expr.fun, tuple(expand_defs_term(arg, context, expand_all, bound_templates) for arg in expr.args))
+                return Compound(expr.fun, tuple(expand_defs_term(arg, context, defs, bound_templates) for arg in expr.args))
         else:
             raise Exception(f"Unexpected function name: {expr.fun.name}")
     elif isinstance(expr, Lambda):
-        return Lambda(expr.args, expand_defs_formula(expr.body, context, expand_all, bound_templates))
+        return Lambda(expr.args, expand_defs_formula(expr.body, context, defs, bound_templates))
     else:
         raise Exception(f"Unexpected type: {type(expr)}")
 
-def expand_defs_formula(expr: Formula, context: Context, expand_all: bool, bound_templates: list[Template] | None = None) -> Formula:
+def expand_defs_formula(expr: Formula, context: Context, defs: list[str], bound_templates: list[Template] | None = None) -> Formula:
     if bound_templates is None:
         bound_templates = []
     if isinstance(expr, Symbol):
         if expr.pred.name in context.primpreds:
-            return Symbol(expr.pred, tuple(expand_defs_term(arg, context, expand_all, bound_templates) for arg in expr.args))
+            return Symbol(expr.pred, tuple(expand_defs_term(arg, context, defs, bound_templates) for arg in expr.args))
         if expr.pred.name in context.defpreds:
             defpred = context.defpreds[expr.pred.name]
-            if defpred.autoexpand or expand_all:
+            if defpred.autoexpand or expr.pred.name in defs:
                 expanded = substitute_formula(defpred.formula, dict(zip(defpred.args, expr.args)))
-                return expand_defs_formula(expanded, context, expand_all, bound_templates)
+                return expand_defs_formula(expanded, context, defs, bound_templates)
             else:
-                return Symbol(expr.pred, tuple(expand_defs_term(arg, context, expand_all, bound_templates) for arg in expr.args))
+                return Symbol(expr.pred, tuple(expand_defs_term(arg, context, defs, bound_templates) for arg in expr.args))
         else:
             raise Exception(f"Unexpected predicate name: {expr.pred.name}")
     elif isinstance(expr, TemplateCall):
         if expr.template in context.templates or expr.template in bound_templates:
-            return TemplateCall(expr.template, tuple(expand_defs_term(arg, context, expand_all, bound_templates) for arg in expr.args))
+            return TemplateCall(expr.template, tuple(expand_defs_term(arg, context, defs, bound_templates) for arg in expr.args))
         else:
             raise Exception(f"{expr.template} in {context.templates} or {expr.template} in {bound_templates}")
     elif isinstance(expr, Not):
-        return Not(expand_defs_formula(expr.body, context, expand_all, bound_templates))
+        return Not(expand_defs_formula(expr.body, context, defs, bound_templates))
     elif isinstance(expr, (And, Or, Implies, Iff)):
-        return type(expr)(expand_defs_formula(expr.left, context, expand_all, bound_templates), expand_defs_formula(expr.right, context, expand_all, bound_templates))
+        return type(expr)(expand_defs_formula(expr.left, context, defs, bound_templates), expand_defs_formula(expr.right, context, defs, bound_templates))
     elif isinstance(expr, (Exists, Forall, ExistsUniq)):
         if isinstance(expr.var, Template):
             bound_templates.append(expr.var)
-        return type(expr)(expr.var, expand_defs_formula(expr.body, context, expand_all, bound_templates))
+        return type(expr)(expr.var, expand_defs_formula(expr.body, context, defs, bound_templates))
     else:
         raise Exception(f"Unexpected type: {type(expr)}")
 

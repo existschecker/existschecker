@@ -184,6 +184,7 @@ class Invoke(Control):
 @dataclass
 class Expand(Control):
     fact: str | Formula
+    defs: list[str]
     conclusion: Formula
 
 @dataclass

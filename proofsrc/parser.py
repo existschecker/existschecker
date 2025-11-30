@@ -469,9 +469,19 @@ class Parser:
     def parse_expand(self) -> Expand:
         self.consume("EXPAND")
         fact = self.parse_formula()
+        self.consume("FOR")
+        defs: list[str] = []
+        while True:
+            defs.append(self.consume("IDENT").value)
+            if self.peek().type == "COMMA":
+                self.consume("COMMA")
+            else:
+                break
+        if len(defs) == 0:
+            raise Exception("len(defs) == 0")
         self.consume("CONCLUDE")
         conclusion = self.parse_formula()
-        return Expand(fact=fact, conclusion=conclusion)
+        return Expand(fact=fact, defs=defs, conclusion=conclusion)
 
     def parse_pad(self) -> Pad:
         self.consume("PAD")

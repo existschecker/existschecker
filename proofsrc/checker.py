@@ -536,7 +536,7 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
             return False
         logger.debug(f"{sp}[Expand] fact: {pretty_expr(node.fact, context)}")
         fact = get_fact(node.fact, context)
-        if not alpha_equiv_with_defs(node.conclusion, fact, context, True):
+        if not alpha_equiv_with_defs(node.conclusion, fact, context, node.defs):
             logger.error(f"{sp}❌ [Expand] Not matched: node.conclusion={pretty_expr(node.conclusion, context)}")
             return False
         logger.debug(f"{sp}[Expand] Matched: node.conclusion={pretty_expr(node.conclusion, context)}")
