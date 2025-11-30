@@ -209,7 +209,9 @@ def collect_vars(expr: Formula | Term, bound: set[Var | Template] | None = None)
 def expr_in_context(expr: Bottom | Formula, context: Context) -> bool:
     return any(alpha_equiv_with_defs(expr, f, context) for f in context.formulas)
 
-def alpha_equiv_with_defs(e1: Bottom | Formula, e2: Bottom | Formula, context: Context, defs: list[str] = []) -> bool:
+def alpha_equiv_with_defs(e1: Bottom | Formula, e2: Bottom | Formula, context: Context, defs: list[str] | None = None) -> bool:
+    if defs is None:
+        defs = []
     if isinstance(e1, Bottom) or isinstance(e2, Bottom):
         return isinstance(e1, Bottom) and isinstance(e2, Bottom)
     else:
