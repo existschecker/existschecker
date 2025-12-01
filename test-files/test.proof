@@ -96,7 +96,7 @@ theorem test12 \forall u\forall v(in(u,v)\vee in(v,u)\to in(v,u)\vee in(u,v)) {
 theorem test13 \forall x\forall y(in(x,y)\vee in(y,x)\to(in(x,y)\wedge in(x,y))\vee(in(y,x)\wedge in(y,x))) {
   any x, y {
     assume in(x,y)\vee in(y,x) {
-      divide in(x,y)\vee in(y,x) conclude (in(x,y)\wedge in(x,y))\vee(in(y,x)\wedge in(y,x))
+      divide in(x,y)\vee in(y,x)
         case in(x,y) {
           connect in(x,y)\wedge in(x,y)
           pad in(x,y)\wedge in(x,y) conclude (in(x,y)\wedge in(x,y))\vee(in(y,x)\wedge in(y,x))
@@ -112,7 +112,7 @@ theorem test13 \forall x\forall y(in(x,y)\vee in(y,x)\to(in(x,y)\wedge in(x,y))\
 theorem test14 \forall x\forall y(in(x,x)\vee in(x,y)\vee in(y,x)\to in(x,x)\vee in(x,y)\vee in(y,x)) {
   any x, y {
     assume in(x,x)\vee in(x,y)\vee in(y,x) {
-      divide in(x,x)\vee in(x,y)\vee in(y,x) conclude in(x,x)\vee in(x,y)\vee in(y,x)
+      divide in(x,x)\vee in(x,y)\vee in(y,x)
         case in(x,x) {
           pad in(x,x) conclude in(x,x)\vee in(x,y)\vee in(y,x)
         }
@@ -150,7 +150,7 @@ theorem test17 \exists x(in(x,x))\to\exists x(in(x,x)) {
 theorem test18 \exists x\exists y(in(x,y)\vee in(y,x))\to\exists x\exists y(\neg(\neg(in(x,y))\wedge\neg(in(y,x)))) {
   assume \exists x\exists y(in(x,y)\vee in(y,x)) {
     some x:x, y:y such \exists x\exists y(in(x,y)\vee in(y,x)) conclude \exists x\exists y(\neg(\neg(in(x,y))\wedge\neg(in(y,x)))) {
-      divide in(x,y)\vee in(y,x) conclude \neg(\neg(in(x,y))\wedge\neg(in(y,x)))
+      divide in(x,y)\vee in(y,x)
         case in(x,y) {
           deny \neg(in(x,y))\wedge\neg(in(y,x)) {
             split \neg(in(x,y))\wedge\neg(in(y,x))
@@ -172,7 +172,7 @@ theorem test19 \exists x\exists y((in(x,y)\vee in(y,x))\wedge\neg(in(y,x)))\to\e
   assume \exists x\exists y((in(x,y)\vee in(y,x))\wedge\neg(in(y,x))) {
     some x:x, y:y such \exists x\exists y((in(x,y)\vee in(y,x))\wedge\neg(in(y,x))) conclude \exists x\exists y(in(x,y)) {
       split (in(x,y)\vee in(y,x))\wedge\neg(in(y,x))
-      divide in(x,y)\vee in(y,x) conclude in(x,y)
+      divide in(x,y)\vee in(y,x)
         case in(x,y) {}
         case in(y,x) {
           contradict in(y,x)

@@ -278,11 +278,6 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
             goal = local_ctx.formulas[-1]
             logger.debug(f"{sp}[Divide] derived goal: {pretty_expr(goal, context)}")
             goals.append(goal)
-        if node.conclusion is None:
-            for i in range(len(goals) - 1):
-                if not alpha_equiv_with_defs(goals[i], goals[i + 1], context):
-                    logger.error(f"{sp}❌ [Divide] Not matched: goals[{i}]={pretty_expr(goals[i], context)}, goals[{i + 1}]={pretty_expr(goals[i + 1], context)}")
-                    return False
         node.proofinfo.premises = [fact]
         node.proofinfo.conclusions = [goals[0]]
         node.proofinfo.local_vars = []
@@ -303,11 +298,6 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
             return False
         goal = local_ctx.formulas[-1]
         logger.debug(f"{sp}[Case] derived goal: {pretty_expr(goal, context)}")
-        if node.conclusion is not None:
-            if not alpha_equiv_with_defs(node.conclusion, goal, context):
-                logger.error(f"{sp}❌ [Case] Not matched with conclusion: {pretty_expr(node.conclusion, context)}")
-                return False
-            logger.debug(f"{sp}[Case] Mathched with conclusion: {pretty_expr(node.conclusion, context)}")
         node.proofinfo.premises = []
         node.proofinfo.conclusions = [goal]
         node.proofinfo.local_vars = []

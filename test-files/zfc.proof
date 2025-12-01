@@ -117,7 +117,7 @@ theorem neq_cor1 \forall x\forall y(neq(x,y)\leftrightarrow\exists z((in(z,x)\we
           connect (in(z,x)\to in(z,y))\wedge(in(z,y)\to in(z,x))
           contradict (in(z,x)\to in(z,y))\wedge(in(z,y)\to in(z,x))
         }
-        divide \neg(in(z,x)\to in(z,y))\vee\neg(in(z,y)\to in(z,x)) conclude (in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))
+        divide \neg(in(z,x)\to in(z,y))\vee\neg(in(z,y)\to in(z,x))
           case \neg(in(z,x)\to in(z,y)) {
             deny \neg(in(z,x)\wedge notin(z,y)) {
               assume in(z,x) {
@@ -151,7 +151,7 @@ theorem neq_cor1 \forall x\forall y(neq(x,y)\leftrightarrow\exists z((in(z,x)\we
           expand equal(x,y) for equal conclude \forall z(in(z,x)\leftrightarrow in(z,y))
           apply \forall z(in(z,x)\leftrightarrow in(z,y)) for z:z conclude in(z,x)\leftrightarrow in(z,y)
           split in(z,x)\leftrightarrow in(z,y)
-          divide (in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y)) conclude \bot
+          divide (in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))
             case in(z,x)\wedge notin(z,y) {
               split in(z,x)\wedge notin(z,y)
               invoke in(z,x)\to in(z,y) conclude in(z,y)
@@ -427,7 +427,7 @@ theorem pair_cor6 \forall x\forall y\forall z(equal(pair(x,x),pair(y,z))\to equa
     assume equal(pair(x,x),pair(y,z)) {
       apply pair_cor4 for x:y,y:z,z:x,w:x conclude equal(pair(y,z),pair(x,x))\to equal(y,x)\vee equal(y,x)
       invoke equal(pair(y,z),pair(x,x))\to equal(y,x)\vee equal(y,x) conclude equal(y,x)\vee equal(y,x)
-      divide equal(y,x)\vee equal(y,x) conclude equal(y,x)
+      divide equal(y,x)\vee equal(y,x)
         case equal(y,x) {}
         case equal(y,x) {}
     }
@@ -439,7 +439,7 @@ theorem pair_cor7 \forall x\forall y\forall z(equal(pair(x,x),pair(y,z))\to equa
     assume equal(pair(x,x),pair(y,z)) {
       apply pair_cor5 for x:y,y:z,z:x,w:x conclude equal(pair(y,z),pair(x,x))\to equal(z,x)\vee equal(z,x)
       invoke equal(pair(y,z),pair(x,x))\to equal(z,x)\vee equal(z,x) conclude equal(z,x)\vee equal(z,x)
-      divide equal(z,x)\vee equal(z,x) conclude equal(z,x)
+      divide equal(z,x)\vee equal(z,x)
         case equal(z,x) {}
         case equal(z,x) {}
     }
@@ -451,7 +451,7 @@ theorem pair_cor8 \forall x\forall y\forall z(equal(pair(x,y),pair(x,z))\to equa
     assume equal(pair(x,y),pair(x,z)) {
       apply pair_cor5 for x:x,y:y,z:x,w:z conclude equal(pair(x,y),pair(x,z))\to equal(y,x)\vee equal(y,z)
       invoke equal(pair(x,y),pair(x,z))\to equal(y,x)\vee equal(y,z) conclude equal(y,x)\vee equal(y,z)
-      divide equal(y,x)\vee equal(y,z) conclude equal(y,z)
+      divide equal(y,x)\vee equal(y,z)
         case equal(y,x) {
           substitute equal(pair(x,y),pair(x,z)) for y:x conclude equal(pair(x,x),pair(x,z))
           apply pair_cor7 for x:x,y:x,z:z conclude equal(pair(x,x),pair(x,z))\to equal(x,z)
@@ -504,7 +504,7 @@ theorem singleton_characterization \forall x\forall y(in(y,singleton(x))\leftrig
       apply pair_existence for x:x,y:x,w:y conclude in(y,pair(x,x))\leftrightarrow equal(y,x)\vee equal(y,x)
       split in(y,pair(x,x))\leftrightarrow equal(y,x)\vee equal(y,x)
       invoke in(y,pair(x,x))\to equal(y,x)\vee equal(y,x) conclude equal(y,x)\vee equal(y,x)
-      divide equal(y,x)\vee equal(y,x) conclude equal(y,x)
+      divide equal(y,x)\vee equal(y,x)
         case equal(y,x) {}
         case equal(y,x) {}
     }
@@ -694,7 +694,7 @@ theorem cup_characterization \forall x\forall y\forall z(in(z,cup(x,y))\leftrigh
           split in(w,pair(x,y))\leftrightarrow equal(w,x)\vee equal(w,y)
           invoke in(w,pair(x,y))\to equal(w,x)\vee equal(w,y)
         }
-        divide equal(w,x)\vee equal(w,y) conclude in(z,x)\vee in(z,y)
+        divide equal(w,x)\vee equal(w,y)
           case equal(w,x) {
             substitute in(z,w) for w:x conclude in(z,x)
             pad in(z,x) conclude in(z,x)\vee in(z,y)
@@ -706,7 +706,7 @@ theorem cup_characterization \forall x\forall y\forall z(in(z,cup(x,y))\leftrigh
       }
     }
     assume in(z,x)\vee in(z,y) {
-      divide in(z,x)\vee in(z,y) conclude in(z,cup(x,y))
+      divide in(z,x)\vee in(z,y)
         case in(z,x) {
           show \exists w(in(z,w)\wedge in(w,pair(x,y))) {
             apply pair_cor1 for x:x,y:y

@@ -127,13 +127,11 @@ class Any(Control):
 @dataclass
 class Case(Control):
     premise: Formula
-    conclusion: Bottom | Formula | None
     body: list[Control]
 
 @dataclass
 class Divide(Control):
     fact: str | Formula
-    conclusion: Bottom | Formula | None
     cases: list[Case]
 
 @dataclass

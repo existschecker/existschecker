@@ -317,25 +317,20 @@ class Parser:
     def parse_divide(self) -> Divide:
         self.consume("DIVIDE")
         fact = self.parse_reference_or_formula()
-        if self.peek().type == "CONCLUDE":
-            self.consume("CONCLUDE")
-            conclusion = self.parse_bot_or_formula()
-        else:
-            conclusion = None
         cases: list[Case] = []
         while self.peek().type == "CASE":
-            cases.append(self.parse_case(conclusion))
+            cases.append(self.parse_case())
         if len(cases) < 2:
             raise SyntaxError("At least two cases are necessary")
-        return Divide(fact=fact, conclusion=conclusion, cases=cases)
+        return Divide(fact=fact, cases=cases)
     
-    def parse_case(self, conclusion: Bottom | Formula | None) -> Case:
+    def parse_case(self) -> Case:
         self.consume("CASE")
         premise = self.parse_formula()
         self.consume("LBRACE")
         body = self.parse_block()
         self.consume("RBRACE")
-        return Case(premise=premise, conclusion=conclusion, body=body)
+        return Case(premise=premise, body=body)
     
     def parse_some(self) -> Some:
         self.consume("SOME")
