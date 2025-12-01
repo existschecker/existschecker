@@ -435,11 +435,6 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
             logger.error(f"{sp}❌ [Lift] Not fact: {pretty_expr(fact, context)}")
             return False
         logger.debug(f"{sp}[Lift] Fact: {pretty_expr(fact, context)}")
-        if node.fact is not None:
-            if not alpha_equiv_with_defs(node.fact, fact, context):
-                logger.error(f"{sp}❌ [Lift] Not matched: node.fact={pretty_expr(node.fact, context)}, fact={pretty_expr(fact, context)}")
-                return False
-            logger.debug(f"{sp}[Lift] Matched: node.fact={pretty_expr(node.fact, context)}, fact={pretty_expr(fact, context)}")
         node.proofinfo.premises = [fact]
         node.proofinfo.conclusions = [node.conclusion]
         add_conclusion(context, node.conclusion)
@@ -465,10 +460,6 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
             logger.error(f"{sp}❌ [Characterize] Not fact: {pretty_expr(fact, context)}")
             return False
         logger.debug(f"{sp}[Characterize] Fact: {pretty_expr(fact, context)}")
-        if node.fact is not None:
-            if not alpha_equiv_with_defs(node.fact, fact, context):
-                logger.error(f"{sp}❌ [Characterize] Not matched with node.fact: {pretty_expr(node.fact, context)}")
-                return False
         node.proofinfo.premises = [fact]
         node.proofinfo.conclusions = [node.conclusion]
         add_conclusion(context, node.conclusion)

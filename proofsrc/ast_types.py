@@ -160,13 +160,11 @@ class Apply(Control):
 
 @dataclass
 class Lift(Control):
-    fact: Formula | None
     env: dict[Var, Term]
     conclusion: Exists
 
 @dataclass
 class Characterize(Control):
-    fact: Formula | None
     env: dict[Var, Term]
     conclusion: ExistsUniq
 

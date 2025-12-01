@@ -382,8 +382,6 @@ def render_node(node: Declaration | DeclarationSupport | Control, context: Conte
     elif isinstance(node, Lift):
         header_parts = [bullet,
                         render_keyword("lift")]
-        if node.fact is not None:
-            header_parts.append(render_expr(node.fact, context))
         header_parts.extend([render_keyword("for"),
                              render_expr_dict(node.env, context),
                              render_keyword("conclude"),
@@ -433,8 +431,6 @@ def render_node(node: Declaration | DeclarationSupport | Control, context: Conte
     elif isinstance(node, Characterize):
         header_parts = [bullet,
                         render_keyword("characterize")]
-        if node.fact is not None:
-            header_parts.append(render_expr(node.fact, context))
         header_parts.extend([render_keyword("for"),
                              render_expr_dict(node.env, context),
                              render_keyword("conclude"),

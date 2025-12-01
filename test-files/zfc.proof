@@ -86,7 +86,7 @@ theorem neq_cor1 \forall x\forall y(neq(x,y)\leftrightarrow\exists z((in(z,x)\we
       deny \neg(\exists z(\neg(in(z,x)\leftrightarrow in(z,y)))) {
         any z {
           deny \neg(in(z,x)\leftrightarrow in(z,y)) {
-            lift \neg(in(z,x)\leftrightarrow in(z,y)) for z:z conclude \exists z(\neg(in(z,x)\leftrightarrow in(z,y)))
+            lift for z:z conclude \exists z(\neg(in(z,x)\leftrightarrow in(z,y)))
             contradict \exists z(\neg(in(z,x)\leftrightarrow in(z,y)))
           }
         }
@@ -135,7 +135,7 @@ theorem neq_cor1 \forall x\forall y(neq(x,y)\leftrightarrow\exists z((in(z,x)\we
             }
             pad notin(z,x)\wedge in(z,y) conclude (in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))
           }
-        lift (in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y)) for z:z conclude \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y)))
+        lift for z:z conclude \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y)))
       }
     }
     assume \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))) {
@@ -248,7 +248,7 @@ theorem emptyset_exists_uniquely \exists!x\forall y(notin(y,x)) {
       }
     }
     connect \forall y(notin(y,x))\wedge\forall x'(\forall y(notin(y,x'))\to equal(x',x))
-    characterize \forall y(notin(y,x))\wedge\forall x'(\forall y(notin(y,x'))\to equal(x',x)) for x:x conclude \exists!x\forall y(notin(y,x))
+    characterize for x:x conclude \exists!x\forall y(notin(y,x))
   }
 }
 
@@ -262,7 +262,7 @@ theorem not_emptyset_has_a_member \forall x(neq(x, emptyset)\to\exists y(in(y,x)
       deny \neg(\exists y(in(y,x))) {
         any y {
           deny in(y,x) {
-            lift in(y,x) for y:y conclude \exists y(in(y,x))
+            lift for y:y conclude \exists y(in(y,x))
             contradict \exists y(in(y,x))
           }
         }
@@ -333,7 +333,7 @@ theorem pair_exists_uniquely \forall x\forall y\exists!z\forall w(in(w,z)\leftri
         }
       }
       connect \forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))\wedge\forall z'(\forall w(in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y))\to equal(z',z))
-      characterize \forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))\wedge\forall z'(\forall w(in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y))\to equal(z',z)) for z:z conclude \exists!z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))
+      characterize for z:z conclude \exists!z\forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))
     }
   }
 }

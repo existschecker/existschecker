@@ -391,10 +391,6 @@ class Parser:
 
     def parse_lift(self) -> Lift:
         self.consume("LIFT")
-        if self.peek().type == "FOR":
-            fact = None
-        else:
-            fact = self.parse_formula()
         self.consume("FOR")
         env: dict[Var, Term] = {}
         while True:
@@ -410,14 +406,10 @@ class Parser:
         conclusion = self.parse_formula()
         if not isinstance(conclusion, Exists):
             raise Exception("Conclusion of Lift has to be Exists object")
-        return Lift(fact=fact, env=env, conclusion=conclusion)
+        return Lift(env=env, conclusion=conclusion)
 
     def parse_characterize(self) -> Characterize:
         self.consume("CHARACTERIZE")
-        if self.peek().type == "FOR":
-            fact = None
-        else:
-            fact = self.parse_formula()
         self.consume("FOR")
         bound = self.parse_var()
         self.consume("COLON")
@@ -427,7 +419,7 @@ class Parser:
         conclusion = self.parse_formula()
         if not isinstance(conclusion, ExistsUniq):
             raise Exception("Conclusion of Characterize has to be ExistsUniq object")
-        return Characterize(fact=fact, env=env, conclusion=conclusion)
+        return Characterize(env=env, conclusion=conclusion)
 
     def parse_invoke(self) -> Invoke:
         self.consume("INVOKE")

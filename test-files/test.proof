@@ -130,7 +130,7 @@ theorem test15 \exists x\exists y(in(x,y))\to\exists x\exists y(in(x,y)\wedge in
   assume \exists x\exists y(in(x,y)) {
     some x:x, y:y such \exists x\exists y(in(x,y)) {
       connect in(x,y)\wedge in(x,y)
-      lift in(x,y)\wedge in(x,y) for x: x, y: y conclude \exists x\exists y(in(x,y)\wedge in(x,y))
+      lift for x: x, y: y conclude \exists x\exists y(in(x,y)\wedge in(x,y))
     }
   }
 }
@@ -142,7 +142,7 @@ theorem test16 \forall x\forall y(in(x,y))\to\forall x\forall y(in(x,y)) {
 theorem test17 \exists x(in(x,x))\to\exists x(in(x,x)) {
   assume \exists x(in(x,x)) {
     some x:x such \exists x(in(x,x)) {
-      lift in(x,x) for x: x conclude \exists x(in(x,x))
+      lift for x: x conclude \exists x(in(x,x))
     }
   }
 }
@@ -163,7 +163,7 @@ theorem test18 \exists x\exists y(in(x,y)\vee in(y,x))\to\exists x\exists y(\neg
             contradict in(y,x)
           }
         }
-      lift \neg(\neg(in(x,y))\wedge\neg(in(y,x))) for x: x, y: y conclude \exists x\exists y(\neg(\neg(in(x,y))\wedge\neg(in(y,x))))
+      lift for x: x, y: y conclude \exists x\exists y(\neg(\neg(in(x,y))\wedge\neg(in(y,x))))
     }
   }
 }
@@ -178,7 +178,7 @@ theorem test19 \exists x\exists y((in(x,y)\vee in(y,x))\wedge\neg(in(y,x)))\to\e
           contradict in(y,x)
           explode in(x,y)
         }
-      lift in(x,y) for x: x, y: y conclude \exists x\exists y(in(x,y))
+      lift for x: x, y: y conclude \exists x\exists y(in(x,y))
     }
   }
 }
@@ -191,7 +191,7 @@ theorem test20 \forall x\forall y(in(x,y)\to\forall z(in(z,x)))\wedge\exists x\e
       invoke in(x,y)\to\forall z(in(z,x))
       apply \forall z(in(z,x)) for z: y
       connect in(x,y)\wedge in(y,x)
-      lift in(x,y)\wedge in(y,x) for x: x, y: y conclude \exists x\exists y(in(x,y)\wedge in(y,x))
+      lift for x: x, y: y conclude \exists x\exists y(in(x,y)\wedge in(y,x))
     }
   }
 }
@@ -211,7 +211,7 @@ theorem test22 \neg(\exists x\exists y(\neg(in(x,y))))\to\forall x\forall y(in(x
   assume \neg(\exists x\exists y(\neg(in(x,y)))) {
     any x, y {
       deny \neg(in(x,y)) {
-        lift \neg(in(x,y)) for x: x, y: y conclude \exists x\exists y(\neg(in(x,y)))
+        lift for x: x, y: y conclude \exists x\exists y(\neg(in(x,y)))
         contradict \exists x\exists y(\neg(in(x,y)))
       }
     }
@@ -245,7 +245,7 @@ theorem test25 \neg(\exists x\exists y(in(x,y)))\to\forall x\forall y(\neg(in(x,
   assume \neg(\exists x\exists y(in(x,y))) {
     any x, y {
       deny in(x,y) {
-        lift in(x,y) for x: x, y: y conclude \exists x\exists y(in(x,y))
+        lift for x: x, y: y conclude \exists x\exists y(in(x,y))
         contradict \exists x\exists y(in(x,y))
       }
     }
