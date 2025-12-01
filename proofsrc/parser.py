@@ -431,15 +431,22 @@ class Parser:
 
     def parse_invoke(self) -> Invoke:
         self.consume("INVOKE")
-        fact = self.parse_implies()
-        if not isinstance(fact, Implies):
-            raise Exception("Fact of Invoke has to be Implies object")
-        if self.peek().type == "CONCLUDE":
-            self.consume("CONCLUDE")
-            conclusion = self.parse_formula()
+        if self.peek().type == "RIGHTWARD":
+            self.consume("RIGHTWARD")
+            direction = "rightward"
+        elif self.peek().type == "LEFTWARD":
+            self.consume("LEFTWARD")
+            direction = "leftward"
         else:
-            conclusion = None
-        return Invoke(fact=fact, conclusion=conclusion)
+            direction = "none"
+        fact = self.parse_implies()
+        if direction == "none":
+            if not isinstance(fact, Implies):
+                raise Exception("direction is none, but fact is not Implies object")
+        else:
+            if not isinstance(fact, Iff):
+                raise Exception("direction is not none, but fact is not Iff object")
+        return Invoke(direction=direction, fact=fact)
 
     def parse_expand(self) -> Expand:
         self.consume("EXPAND")

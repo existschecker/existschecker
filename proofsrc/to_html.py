@@ -351,8 +351,6 @@ def render_node(node: Declaration | DeclarationSupport | Control, context: Conte
                            "が成り立つので結論の",
                            render_expr(node.fact.right, context),
                            "を得る。"]
-        if node.conclusion is not None:
-            header_parts.append(f"<span class='keyword'>conclude</span> {render_expr(node.conclusion, context)}")
     elif isinstance(node, Deny):
         header_parts = [toggle,
                         render_keyword("deny"),

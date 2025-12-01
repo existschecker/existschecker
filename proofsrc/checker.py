@@ -479,23 +479,48 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
             logger.error(f"{sp}❌ [Invoke] Not fact: {pretty_expr(node.fact, context)}")
             return False
         logger.debug(f"{sp}[Invoke] fact: {pretty_expr(node.fact, context)}")
-        if not isinstance(node.fact, Implies):
-            logger.error(f"{sp}❌ [Invoke] Not Implies object: {pretty_expr(node.fact, context)}")
-            return False
-        logger.debug(f"{sp}[Invoke] Implies object: {pretty_expr(node.fact, context)}")
-        if not goal_in_context(node.fact.left, context):
-            logger.error(f"{sp}❌ [Invoke] Left of Implies object not derived: {pretty_expr(node.fact.left, context)}")
-            return False
-        logger.debug(f"{sp}[Invoke] Left of Implies object derived: {pretty_expr(node.fact.left, context)}")
-        if node.conclusion is not None:
-            if not alpha_equiv_with_defs(node.conclusion, node.fact.right, context):
-                logger.error(f"{sp}❌ [Invoke] Not matched: node.conclusion={pretty_expr(node.conclusion, context)}, node.fact.right={pretty_expr(node.fact.right, context)}")
+        if node.direction == "none":
+            if not isinstance(node.fact, Implies):
+                logger.error(f"{sp}❌ [Invoke] Not Implies object: {pretty_expr(node.fact, context)}")
                 return False
-            logger.debug(f"{sp}[Invoke] Matched: node.conclusion={pretty_expr(node.conclusion, context)}, node.fact.right={pretty_expr(node.fact.right, context)}")
-        node.proofinfo.premises = [node.fact, node.fact.left]
-        node.proofinfo.conclusions = [node.fact.right]
-        add_conclusion(context, node.fact.right)
-        logger.debug(f"{sp}[Invoke] Right of Implies object added: {pretty_expr(node.fact.right, context)}")
+            logger.debug(f"{sp}[Invoke] Implies object: {pretty_expr(node.fact, context)}")
+            if not goal_in_context(node.fact.left, context):
+                logger.error(f"{sp}❌ [Invoke] Left of Implies object not derived: {pretty_expr(node.fact.left, context)}")
+                return False
+            logger.debug(f"{sp}[Invoke] Left of Implies object derived: {pretty_expr(node.fact.left, context)}")
+            node.proofinfo.premises = [node.fact, node.fact.left]
+            node.proofinfo.conclusions = [node.fact.right]
+            add_conclusion(context, node.fact.right)
+            logger.debug(f"{sp}[Invoke] Right of Implies object added: {pretty_expr(node.fact.right, context)}")
+        elif node.direction == "rightward":
+            if not isinstance(node.fact, Iff):
+                logger.error(f"{sp}❌ [Invoke] Not Iff object: {pretty_expr(node.fact, context)}")
+                return False
+            logger.debug(f"{sp}[Invoke] Iff object: {pretty_expr(node.fact, context)}")
+            if not goal_in_context(node.fact.left, context):
+                logger.error(f"{sp}❌ [Invoke] Left of Iff object not derived: {pretty_expr(node.fact.left, context)}")
+                return False
+            logger.debug(f"{sp}[Invoke] Left of Iff object derived: {pretty_expr(node.fact.left, context)}")
+            node.proofinfo.premises = [node.fact, node.fact.left]
+            node.proofinfo.conclusions = [node.fact.right]
+            add_conclusion(context, node.fact.right)
+            logger.debug(f"{sp}[Invoke] Right of Iff object added: {pretty_expr(node.fact.right, context)}")
+        elif node.direction == "leftward":
+            if not isinstance(node.fact, Iff):
+                logger.error(f"{sp}❌ [Invoke] Not Iff object: {pretty_expr(node.fact, context)}")
+                return False
+            logger.debug(f"{sp}[Invoke] Iff object: {pretty_expr(node.fact, context)}")
+            if not goal_in_context(node.fact.right, context):
+                logger.error(f"{sp}❌ [Invoke] Right of Iff object not derived: {pretty_expr(node.fact.right, context)}")
+                return False
+            logger.debug(f"{sp}[Invoke] Right of Iff object derived: {pretty_expr(node.fact.right, context)}")
+            node.proofinfo.premises = [node.fact, node.fact.right]
+            node.proofinfo.conclusions = [node.fact.left]
+            add_conclusion(context, node.fact.left)
+            logger.debug(f"{sp}[Invoke] Left of Iff object added: {pretty_expr(node.fact.left, context)}")
+        else:
+            logger.error(f"{sp}❌ [Invoke] Unexpected direction: {node.direction}")
+            return False
         return True
 
     if isinstance(node, Expand):

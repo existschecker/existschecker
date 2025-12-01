@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Sequence
+from typing import Sequence, Literal
 
 import logging
 logger = logging.getLogger("proof")
@@ -172,8 +172,8 @@ class Characterize(Control):
 
 @dataclass
 class Invoke(Control):
-    fact: Implies
-    conclusion: Formula | None
+    direction: Literal["none", "rightward", "leftward"]
+    fact: Implies | Iff
 
 @dataclass
 class Expand(Control):

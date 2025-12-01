@@ -21,31 +21,25 @@ theorem equal_replacement \forall x\forall y\forall u\forall v(equal(x,y)\wedge 
             split equal(x,y)\wedge equal(u,v)
             expand equal(x,y) for equal conclude \forall z(in(z,x)\leftrightarrow in(z,y))
             apply \forall z(in(z,x)\leftrightarrow in(z,y)) for z:p
-            split in(p,x)\leftrightarrow in(p,y)
-            invoke in(p,y)\to in(p,x) conclude in(p,x)
+            invoke leftward in(p,x)\leftrightarrow in(p,y)
             expand equal(x,u) for equal conclude \forall z(in(z,x)\leftrightarrow in(z,u))
             apply \forall z(in(z,x)\leftrightarrow in(z,u)) for z:p
-            split in(p,x)\leftrightarrow in(p,u)
-            invoke in(p,x)\to in(p,u) conclude in(p,u)
+            invoke rightward in(p,x)\leftrightarrow in(p,u)
             expand equal(u,v) for equal conclude \forall z(in(z,u)\leftrightarrow in(z,v))
             apply \forall z(in(z,u)\leftrightarrow in(z,v)) for z:p
-            split in(p,u)\leftrightarrow in(p,v)
-            invoke in(p,u)\to in(p,v) conclude in(p,v)
+            invoke rightward in(p,u)\leftrightarrow in(p,v)
           }
           assume in(p,v) {
             split equal(x,y)\wedge equal(u,v)
             expand equal(u,v) for equal conclude \forall z(in(z,u)\leftrightarrow in(z,v))
             apply \forall z(in(z,u)\leftrightarrow in(z,v)) for z:p
-            split in(p,u)\leftrightarrow in(p,v)
-            invoke in(p,v)\to in(p,u) conclude in(p,u)
+            invoke leftward in(p,u)\leftrightarrow in(p,v)
             expand equal(x,u) for equal conclude \forall z(in(z,x)\leftrightarrow in(z,u))
             apply \forall z(in(z,x)\leftrightarrow in(z,u)) for z:p
-            split in(p,x)\leftrightarrow in(p,u)
-            invoke in(p,u)\to in(p,x) conclude in(p,x)
+            invoke leftward in(p,x)\leftrightarrow in(p,u)
             expand equal(x,y) for equal conclude \forall z(in(z,x)\leftrightarrow in(z,y))
             apply \forall z(in(z,x)\leftrightarrow in(z,y)) for z:p
-            split in(p,x)\leftrightarrow in(p,y)
-            invoke in(p,x)\to in(p,y) conclude in(p,y)
+            invoke rightward in(p,x)\leftrightarrow in(p,y)
           }
           connect in(p,y)\leftrightarrow in(p,v)
         }
@@ -63,13 +57,12 @@ theorem in_replacement \forall x\forall y\forall u\forall v(equal(x,y)\wedge equ
       assume in(x,u) {
         apply axiom_of_equal for x:x,y:y
         split equal(x,y)\wedge equal(u,v)
-        invoke equal(x,y)\to\forall z(in(x,z)\to in(y,z)) conclude \forall z(in(x,z)\to in(y,z))
+        invoke equal(x,y)\to\forall z(in(x,z)\to in(y,z))
         apply \forall z(in(x,z)\to in(y,z)) for z:u
-        invoke in(x,u)\to in(y,u) conclude in(y,u)
+        invoke in(x,u)\to in(y,u)
         expand equal(u,v) for equal conclude \forall z(in(z,u)\leftrightarrow in(z,v))
         apply \forall z(in(z,u)\leftrightarrow in(z,v)) for z:y
-        split in(y,u)\leftrightarrow in(y,v)
-        invoke in(y,u)\to in(y,v) conclude in(y,v)
+        invoke rightward in(y,u)\leftrightarrow in(y,v)
       }
     }
   }
@@ -150,16 +143,15 @@ theorem neq_cor1 \forall x\forall y(neq(x,y)\leftrightarrow\exists z((in(z,x)\we
         deny equal(x,y) {
           expand equal(x,y) for equal conclude \forall z(in(z,x)\leftrightarrow in(z,y))
           apply \forall z(in(z,x)\leftrightarrow in(z,y)) for z:z
-          split in(z,x)\leftrightarrow in(z,y)
           divide (in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))
             case in(z,x)\wedge notin(z,y) {
               split in(z,x)\wedge notin(z,y)
-              invoke in(z,x)\to in(z,y) conclude in(z,y)
+              invoke rightward in(z,x)\leftrightarrow in(z,y)
               contradict in(z,y)
             }
             case notin(z,x)\wedge in(z,y) {
               split notin(z,x)\wedge in(z,y)
-              invoke in(z,y)\to in(z,x) conclude in(z,x)
+              invoke leftward in(z,x)\leftrightarrow in(z,y)
               contradict in(z,x)
             }
         }
@@ -177,7 +169,7 @@ theorem subset_cor1 \forall z\forall x\forall y(in(z,x)\wedge subset(x,y)\to in(
       split in(z,x)\wedge subset(x,y)
       expand subset(x,y) for subset conclude \forall z(in(z,x)\to in(z,y))
       apply \forall z(in(z,x)\to in(z,y)) for z:z
-      invoke in(z,x)\to in(z,y) conclude in(z,y)
+      invoke in(z,x)\to in(z,y)
     }
   }
 }
@@ -199,13 +191,13 @@ theorem subset_antisymmetry \forall x\forall y(subset(x,y)\wedge subset(y,x)\to 
           apply subset_cor1 for z:z,x:x,y:y
           split subset(x,y)\wedge subset(y,x)
           connect in(z,x)\wedge subset(x,y)
-          invoke in(z,x)\wedge subset(x,y)\to in(z,y) conclude in(z,y)
+          invoke in(z,x)\wedge subset(x,y)\to in(z,y)
         }
         assume in(z,y) {
           apply subset_cor1 for z:z,x:y,y:x
           split subset(x,y)\wedge subset(y,x)
           connect in(z,y)\wedge subset(y,x)
-          invoke in(z,y)\wedge subset(y,x)\to in(z,x) conclude in(z,x)
+          invoke in(z,y)\wedge subset(y,x)\to in(z,x)
         }
         connect in(z,x)\leftrightarrow in(z,y)
       }
@@ -222,10 +214,10 @@ theorem subset_trans \forall x\forall y\forall z(subset(x,y)\wedge subset(y,z)\t
           apply subset_cor1 for z:w,x:x,y:y
           split subset(x,y)\wedge subset(y,z)
           connect in(w,x)\wedge subset(x,y)
-          invoke in(w,x)\wedge subset(x,y)\to in(w,y) conclude in(w,y)
+          invoke in(w,x)\wedge subset(x,y)\to in(w,y)
           apply subset_cor1 for z:w,x:y,y:z
           connect in(w,y)\wedge subset(y,z)
-          invoke in(w,y)\wedge subset(y,z)\to in(w,z) conclude in(w,z)
+          invoke in(w,y)\wedge subset(y,z)\to in(w,z)
         }
       }
       expand \forall w(in(w,x)\to in(w,z)) for subset conclude subset(x,z)
@@ -275,7 +267,7 @@ theorem not_emptyset_has_a_member \forall x(neq(x, emptyset)\to\exists y(in(y,x)
           }
         }
         apply emptyset_uniqueness for x:x
-        invoke \forall y(notin(y,x))\to equal(x,emptyset) conclude equal(x,emptyset)
+        invoke \forall y(notin(y,x))\to equal(x,emptyset)
         contradict equal(x,emptyset)
       }
     }
@@ -325,19 +317,15 @@ theorem pair_exists_uniquely \forall x\forall y\exists!z\forall w(in(w,z)\leftri
           any w {
             assume in(w,z') {
               apply \forall w(in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y)) for w:w
-              split in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y)
-              invoke in(w,z')\to equal(w,x)\vee equal(w,y) conclude equal(w,x)\vee equal(w,y)
+              invoke rightward in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y)
               apply \forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)) for w:w
-              split in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)
-              invoke equal(w,x)\vee equal(w,y)\to in(w,z) conclude in(w,z)
+              invoke leftward in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)
             }
             assume in(w,z) {
               apply \forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)) for w:w
-              split in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)
-              invoke in(w,z)\to equal(w,x)\vee equal(w,y) conclude equal(w,x)\vee equal(w,y)
+              invoke rightward in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y)
               apply \forall w(in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y)) for w:w
-              split in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y)
-              invoke equal(w,x)\vee equal(w,y)\to in(w,z') conclude in(w,z')
+              invoke leftward in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y)
             }
             connect in(w,z')\leftrightarrow in(w,z)
           }
@@ -357,18 +345,16 @@ definition function pair by pair_exists_uniquely tex "\{",",","\}"
 theorem pair_cor1 \forall x\forall y(in(x,pair(x,y))) {
   any x,y {
     apply pair_existence for x:x,y:y,w:x
-    split in(x,pair(x,y))\leftrightarrow equal(x,x)\vee equal(x,y)
     pad equal(x,x) conclude equal(x,x)\vee equal(x,y)
-    invoke equal(x,x)\vee equal(x,y)\to in(x,pair(x,y)) conclude in(x,pair(x,y))
+    invoke leftward in(x,pair(x,y))\leftrightarrow equal(x,x)\vee equal(x,y)
   }
 }
 
 theorem pair_cor2 \forall x\forall y(in(y,pair(x,y))) {
   any x,y {
     apply pair_existence for x:x,y:y,w:y
-    split in(y,pair(x,y))\leftrightarrow equal(y,x)\vee equal(y,y)
     pad equal(y,y) conclude equal(y,x)\vee equal(y,y)
-    invoke equal(y,x)\vee equal(y,y)\to in(y,pair(x,y)) conclude in(y,pair(x,y))
+    invoke leftward in(y,pair(x,y))\leftrightarrow equal(y,x)\vee equal(y,y)
   }
 }
 
@@ -377,11 +363,9 @@ theorem pair_cor3 \forall x\forall y(subset(pair(x,y),pair(y,x))) {
     any z {
       assume in(z,pair(x,y)) {
         apply pair_existence for x:x,y:y,w:z
-        split in(z,pair(x,y))\leftrightarrow equal(z,x)\vee equal(z,y)
-        invoke in(z,pair(x,y))\to equal(z,x)\vee equal(z,y) conclude equal(z,x)\vee equal(z,y)
+        invoke rightward in(z,pair(x,y))\leftrightarrow equal(z,x)\vee equal(z,y)
         apply pair_existence for x:y,y:x,w:z
-        split in(z,pair(y,x))\leftrightarrow equal(z,y)\vee equal(z,x)
-        invoke equal(z,y)\vee equal(z,x)\to in(z,pair(y,x)) conclude in(z,pair(y,x))
+        invoke leftward in(z,pair(y,x))\leftrightarrow equal(z,y)\vee equal(z,x)
       }
     }
     expand \forall z(in(z,pair(x,y))\to in(z,pair(y,x))) for subset conclude subset(pair(x,y),pair(y,x))
@@ -394,7 +378,7 @@ theorem pair_commutativity \forall x\forall y(equal(pair(x,y),pair(y,x))) {
     apply pair_cor3 for x:y,y:x
     connect subset(pair(x,y),pair(y,x))\wedge subset(pair(y,x),pair(x,y))
     apply subset_antisymmetry for x:pair(x,y),y:pair(y,x)
-    invoke subset(pair(x,y),pair(y,x))\wedge subset(pair(y,x),pair(x,y))\to equal(pair(x,y),pair(y,x)) conclude equal(pair(x,y),pair(y,x))
+    invoke subset(pair(x,y),pair(y,x))\wedge subset(pair(y,x),pair(x,y))\to equal(pair(x,y),pair(y,x))
   }
 }
 
@@ -404,8 +388,7 @@ theorem pair_cor4 \forall x\forall y\forall z\forall w(equal(pair(x,y),pair(z,w)
       apply pair_cor1 for x:x,y:y
       substitute in(x,pair(x,y)) for pair(x,y):pair(z,w) conclude in(x,pair(z,w))
       apply pair_existence for x:z,y:w,w:x
-      split in(x,pair(z,w))\leftrightarrow equal(x,z)\vee equal(x,w)
-      invoke in(x,pair(z,w))\to equal(x,z)\vee equal(x,w) conclude equal(x,z)\vee equal(x,w)
+      invoke rightward in(x,pair(z,w))\leftrightarrow equal(x,z)\vee equal(x,w)
     }
   }
 }
@@ -416,8 +399,7 @@ theorem pair_cor5 \forall x\forall y\forall z\forall w(equal(pair(x,y),pair(z,w)
       apply pair_cor2 for x:x,y:y
       substitute in(y,pair(x,y)) for pair(x,y):pair(z,w) conclude in(y,pair(z,w))
       apply pair_existence for x:z,y:w,w:y
-      split in(y,pair(z,w))\leftrightarrow equal(y,z)\vee equal(y,w)
-      invoke in(y,pair(z,w))\to equal(y,z)\vee equal(y,w) conclude equal(y,z)\vee equal(y,w)
+      invoke rightward in(y,pair(z,w))\leftrightarrow equal(y,z)\vee equal(y,w)
     }
   }
 }
@@ -426,7 +408,7 @@ theorem pair_cor6 \forall x\forall y\forall z(equal(pair(x,x),pair(y,z))\to equa
   any x,y,z {
     assume equal(pair(x,x),pair(y,z)) {
       apply pair_cor4 for x:y,y:z,z:x,w:x
-      invoke equal(pair(y,z),pair(x,x))\to equal(y,x)\vee equal(y,x) conclude equal(y,x)\vee equal(y,x)
+      invoke equal(pair(y,z),pair(x,x))\to equal(y,x)\vee equal(y,x)
       divide equal(y,x)\vee equal(y,x)
         case equal(y,x) {}
         case equal(y,x) {}
@@ -438,7 +420,7 @@ theorem pair_cor7 \forall x\forall y\forall z(equal(pair(x,x),pair(y,z))\to equa
   any x,y,z {
     assume equal(pair(x,x),pair(y,z)) {
       apply pair_cor5 for x:y,y:z,z:x,w:x
-      invoke equal(pair(y,z),pair(x,x))\to equal(z,x)\vee equal(z,x) conclude equal(z,x)\vee equal(z,x)
+      invoke equal(pair(y,z),pair(x,x))\to equal(z,x)\vee equal(z,x)
       divide equal(z,x)\vee equal(z,x)
         case equal(z,x) {}
         case equal(z,x) {}
@@ -450,12 +432,12 @@ theorem pair_cor8 \forall x\forall y\forall z(equal(pair(x,y),pair(x,z))\to equa
   any x,y,z {
     assume equal(pair(x,y),pair(x,z)) {
       apply pair_cor5 for x:x,y:y,z:x,w:z
-      invoke equal(pair(x,y),pair(x,z))\to equal(y,x)\vee equal(y,z) conclude equal(y,x)\vee equal(y,z)
+      invoke equal(pair(x,y),pair(x,z))\to equal(y,x)\vee equal(y,z)
       divide equal(y,x)\vee equal(y,z)
         case equal(y,x) {
           substitute equal(pair(x,y),pair(x,z)) for y:x conclude equal(pair(x,x),pair(x,z))
           apply pair_cor7 for x:x,y:x,z:z
-          invoke equal(pair(x,x),pair(x,z))\to equal(x,z) conclude equal(x,z)
+          invoke equal(pair(x,x),pair(x,z))\to equal(x,z)
           substitute equal(y,x) for x:z conclude equal(y,z)
         }
         case equal(y,z) {}
@@ -502,17 +484,15 @@ theorem singleton_characterization \forall x\forall y(in(y,singleton(x))\leftrig
     assume in(y,singleton(x)) {
       expand in(y,singleton(x)) for singleton conclude in(y,pair(x,x))
       apply pair_existence for x:x,y:x,w:y
-      split in(y,pair(x,x))\leftrightarrow equal(y,x)\vee equal(y,x)
-      invoke in(y,pair(x,x))\to equal(y,x)\vee equal(y,x) conclude equal(y,x)\vee equal(y,x)
+      invoke rightward in(y,pair(x,x))\leftrightarrow equal(y,x)\vee equal(y,x)
       divide equal(y,x)\vee equal(y,x)
         case equal(y,x) {}
         case equal(y,x) {}
     }
     assume equal(y,x) {
       apply pair_existence for x:x,y:x,w:y
-      split in(y,pair(x,x))\leftrightarrow equal(y,x)\vee equal(y,x)
       pad equal(y,x) conclude equal(y,x)\vee equal(y,x)
-      invoke equal(y,x)\vee equal(y,x)\to in(y,pair(x,x)) conclude in(y,pair(x,x))
+      invoke leftward in(y,pair(x,x))\leftrightarrow equal(y,x)\vee equal(y,x)
       expand in(y,pair(x,x)) for singleton conclude in(y,singleton(x))
     }
     connect in(y,singleton(x))\leftrightarrow equal(y,x)
@@ -522,8 +502,7 @@ theorem singleton_characterization \forall x\forall y(in(y,singleton(x))\leftrig
 theorem singleton_cor1 \forall x(in(x,singleton(x))) {
   any x {
     apply singleton_characterization for x:x,y:x
-    split in(x,singleton(x))\leftrightarrow equal(x,x)
-    invoke equal(x,x)\to in(x,singleton(x)) conclude in(x,singleton(x))
+    invoke leftward in(x,singleton(x))\leftrightarrow equal(x,x)
   }
 }
 
@@ -533,8 +512,7 @@ theorem singleton_cor2 \forall x\forall y(equal(singleton(x),singleton(y))\to eq
       apply singleton_cor1 for x:x
       substitute in(x,singleton(x)) for singleton(x):singleton(y) conclude in(x,singleton(y))
       apply singleton_characterization for x:y,y:x
-      split in(x,singleton(y))\leftrightarrow equal(x,y)
-      invoke in(x,singleton(y))\to equal(x,y) conclude equal(x,y)
+      invoke rightward in(x,singleton(y))\leftrightarrow equal(x,y)
     }
   }
 }
@@ -545,8 +523,7 @@ theorem singleton_cor3 \forall x\forall y(in(x,y)\to subset(singleton(x),y)) {
       any z {
         assume in(z,singleton(x)) {
           apply singleton_characterization for x:x,y:z
-          split in(z,singleton(x))\leftrightarrow equal(z,x)
-          invoke in(z,singleton(x))\to equal(z,x)
+          invoke rightward in(z,singleton(x))\leftrightarrow equal(z,x)
           substitute in(x,y) for x:z conclude in(z,y)
         }
       }
@@ -560,7 +537,7 @@ theorem pair_singleton_cor1 \forall x\forall y\forall z(equal(singleton(x),pair(
     assume equal(singleton(x),pair(y,z)) {
       expand equal(singleton(x),pair(y,z)) for singleton conclude equal(pair(x,x),pair(y,z))
       apply pair_cor6 for x:x,y:y,z:z
-      invoke equal(pair(x,x),pair(y,z))\to equal(x,y) conclude equal(x,y)
+      invoke equal(pair(x,x),pair(y,z))\to equal(x,y)
     }
   }
 }
@@ -570,7 +547,7 @@ theorem pair_singleton_cor2 \forall x\forall y\forall z(equal(singleton(x),pair(
     assume equal(singleton(x),pair(y,z)) {
       expand equal(singleton(x),pair(y,z)) for singleton conclude equal(pair(x,x),pair(y,z))
       apply pair_cor7 for x:x,y:y,z:z
-      invoke equal(pair(x,x),pair(y,z))\to equal(x,z) conclude equal(x,z)
+      invoke equal(pair(x,x),pair(y,z))\to equal(x,z)
     }
   }
 }
@@ -613,19 +590,15 @@ theorem union_exists_uniquely \forall x\exists!y\forall z(in(z,y)\leftrightarrow
           any z {
             assume in(z,y') {
               apply \forall z(in(z,y')\leftrightarrow\exists w(in(z,w)\wedge in(w,x))) for z:z
-              split in(z,y')\leftrightarrow\exists w(in(z,w)\wedge in(w,x))
-              invoke in(z,y')\to\exists w(in(z,w)\wedge in(w,x))
+              invoke rightward in(z,y')\leftrightarrow\exists w(in(z,w)\wedge in(w,x))
               apply \forall z(in(z,y)\leftrightarrow\exists w(in(z,w)\wedge in(w,x))) for z:z
-              split in(z,y)\leftrightarrow\exists w(in(z,w)\wedge in(w,x))
-              invoke \exists w(in(z,w)\wedge in(w,x))\to in(z,y)
+              invoke leftward in(z,y)\leftrightarrow\exists w(in(z,w)\wedge in(w,x))
             }
             assume in(z,y) {
               apply \forall z(in(z,y)\leftrightarrow\exists w(in(z,w)\wedge in(w,x))) for z:z
-              split in(z,y)\leftrightarrow\exists w(in(z,w)\wedge in(w,x))
-              invoke in(z,y)\to\exists w(in(z,w)\wedge in(w,x))
+              invoke rightward in(z,y)\leftrightarrow\exists w(in(z,w)\wedge in(w,x))
               apply \forall z(in(z,y')\leftrightarrow\exists w(in(z,w)\wedge in(w,x))) for z:z
-              split in(z,y')\leftrightarrow\exists w(in(z,w)\wedge in(w,x))
-              invoke \exists w(in(z,w)\wedge in(w,x))\to in(z,y')
+              invoke leftward in(z,y')\leftrightarrow\exists w(in(z,w)\wedge in(w,x))
             }
             connect in(z,y')\leftrightarrow in(z,y)
           }
@@ -650,8 +623,7 @@ theorem bigcup_cor1 \forall x\forall y(in(y,x)\to subset(y,bigcup(x))) {
           connect in(z,y)\wedge in(y,x)
           lift for y:y conclude \exists y(in(z,y)\wedge in(y,x))
           apply bigcup_existence for x:x,z:z
-          split in(z,bigcup(x))\leftrightarrow\exists w(in(z,w)\wedge in(w,x))
-          invoke \exists y(in(z,y)\wedge in(y,x))\to in(z,bigcup(x))
+          invoke leftward in(z,bigcup(x))\leftrightarrow\exists w(in(z,w)\wedge in(w,x))
         }
       }
       expand \forall z(in(z,y)\to in(z,bigcup(x))) for subset conclude subset(y,bigcup(x))
@@ -663,8 +635,7 @@ theorem bigcup_cor2 equal(bigcup(emptyset),emptyset) {
   any x {
     deny in(x,bigcup(emptyset)) {
       apply bigcup_existence for x:emptyset,z:x
-      split in(x,bigcup(emptyset))\leftrightarrow\exists w(in(x,w)\wedge in(w,emptyset))
-      invoke in(x,bigcup(emptyset))\to\exists w(in(x,w)\wedge in(w,emptyset))
+      invoke rightward in(x,bigcup(emptyset))\leftrightarrow\exists w(in(x,w)\wedge in(w,emptyset))
       some w:w such \exists w(in(x,w)\wedge in(w,emptyset)) {
         split in(x,w)\wedge in(w,emptyset)
         apply emptyset_existence for y:w
@@ -684,15 +655,13 @@ theorem cup_characterization \forall x\forall y\forall z(in(z,cup(x,y))\leftrigh
       show \exists w(in(z,w)\wedge in(w,pair(x,y))) {
         expand in(z,cup(x,y)) for cup conclude in(z,bigcup(pair(x,y)))
         apply bigcup_existence for x:pair(x,y),z:z
-        split in(z,bigcup(pair(x,y)))\leftrightarrow\exists w(in(z,w)\wedge in(w,pair(x,y)))
-        invoke in(z,bigcup(pair(x,y)))\to\exists w(in(z,w)\wedge in(w,pair(x,y)))
+        invoke rightward in(z,bigcup(pair(x,y)))\leftrightarrow\exists w(in(z,w)\wedge in(w,pair(x,y)))
       }
       some w:w such \exists w(in(z,w)\wedge in(w,pair(x,y))) {
         split in(z,w)\wedge in(w,pair(x,y))
         show equal(w,x)\vee equal(w,y) {
           apply pair_existence for x:x,y:y,w:w
-          split in(w,pair(x,y))\leftrightarrow equal(w,x)\vee equal(w,y)
-          invoke in(w,pair(x,y))\to equal(w,x)\vee equal(w,y)
+          invoke rightward in(w,pair(x,y))\leftrightarrow equal(w,x)\vee equal(w,y)
         }
         divide equal(w,x)\vee equal(w,y)
           case equal(w,x) {
@@ -715,8 +684,7 @@ theorem cup_characterization \forall x\forall y\forall z(in(z,cup(x,y))\leftrigh
           }
           show in(z,cup(x,y)) {
             apply bigcup_existence for x:pair(x,y),z:z
-            split in(z,bigcup(pair(x,y)))\leftrightarrow\exists w(in(z,w)\wedge in(w,pair(x,y)))
-            invoke \exists w(in(z,w)\wedge in(w,pair(x,y)))\to in(z,bigcup(pair(x,y)))
+            invoke leftward in(z,bigcup(pair(x,y)))\leftrightarrow\exists w(in(z,w)\wedge in(w,pair(x,y)))
             expand in(z,bigcup(pair(x,y))) for cup conclude in(z,cup(x,y))
           }
         }
@@ -728,8 +696,7 @@ theorem cup_characterization \forall x\forall y\forall z(in(z,cup(x,y))\leftrigh
           }
           show in(z,cup(x,y)) {
             apply bigcup_existence for x:pair(x,y),z:z
-            split in(z,bigcup(pair(x,y)))\leftrightarrow\exists w(in(z,w)\wedge in(w,pair(x,y)))
-            invoke \exists w(in(z,w)\wedge in(w,pair(x,y)))\to in(z,bigcup(pair(x,y)))
+            invoke leftward in(z,bigcup(pair(x,y)))\leftrightarrow\exists w(in(z,w)\wedge in(w,pair(x,y)))
             expand in(z,bigcup(pair(x,y))) for cup conclude in(z,cup(x,y))
           }
         }
@@ -752,8 +719,7 @@ theorem cup_cor1 \forall x(equal(cup(x,emptyset),x)) {
     any y {
       assume in(y,cup(x,emptyset)) {
         apply cup_characterization for x:x,y:emptyset,z:y
-        split in(y,cup(x,emptyset))\leftrightarrow in(y,x)\vee in(y,emptyset)
-        invoke in(y,cup(x,emptyset))\to in(y,x)\vee in(y,emptyset)
+        invoke rightward in(y,cup(x,emptyset))\leftrightarrow in(y,x)\vee in(y,emptyset)
         divide in(y,x)\vee in(y,emptyset)
           case in(y,x) {}
           case in(y,emptyset) {
@@ -765,8 +731,7 @@ theorem cup_cor1 \forall x(equal(cup(x,emptyset),x)) {
       assume in(y,x) {
         pad in(y,x) conclude in(y,x)\vee in(y,emptyset)
         apply cup_characterization for x:x,y:emptyset,z:y
-        split in(y,cup(x,emptyset))\leftrightarrow in(y,x)\vee in(y,emptyset)
-        invoke in(y,x)\vee in(y,emptyset)\to in(y,cup(x,emptyset))
+        invoke leftward in(y,cup(x,emptyset))\leftrightarrow in(y,x)\vee in(y,emptyset)
       }
       connect in(y,cup(x,emptyset))\leftrightarrow in(y,x)
     }
@@ -788,8 +753,7 @@ theorem cup_cor3 \forall x\forall y(subset(x,cup(x,y))) {
       assume in(z,x) {
         pad in(z,x) conclude in(z,x)\vee in(z,y)
         apply cup_characterization for x:x,y:y,z:z
-        split in(z,cup(x,y))\leftrightarrow in(z,x)\vee in(z,y)
-        invoke in(z,x)\vee in(z,y)\to in(z,cup(x,y))
+        invoke leftward in(z,cup(x,y))\leftrightarrow in(z,x)\vee in(z,y)
       }
     }
     expand \forall z(in(z,x)\to in(z,cup(x,y))) for subset conclude subset(x,cup(x,y))
@@ -811,8 +775,7 @@ theorem cup_cor5 \forall x\forall y\forall X\forall Y(in(x,X)\wedge in(y,Y)\to s
       any z {
         assume in(z,pair(x,y)) {
           apply pair_existence for x:x,y:y,w:z
-          split in(z,pair(x,y))\leftrightarrow equal(z,x)\vee equal(z,y)
-          invoke in(z,pair(x,y))\to equal(z,x)\vee equal(z,y)
+          invoke rightward in(z,pair(x,y))\leftrightarrow equal(z,x)\vee equal(z,y)
           divide equal(z,x)\vee equal(z,y)
             case equal(z,x) {
               substitute in(x,X) for x:z conclude in(z,X)
@@ -846,19 +809,15 @@ theorem powerset_exists_uniquely \forall x\exists!y\forall z(in(z,y)\leftrightar
           any z {
             assume in(z,y') {
               apply \forall z(in(z,y')\leftrightarrow subset(z,x)) for z:z
-              split in(z,y')\leftrightarrow subset(z,x)
-              invoke in(z,y')\to subset(z,x)
+              invoke rightward in(z,y')\leftrightarrow subset(z,x)
               apply \forall z(in(z,y)\leftrightarrow subset(z,x)) for z:z
-              split in(z,y)\leftrightarrow subset(z,x)
-              invoke subset(z,x)\to in(z,y)
+              invoke leftward in(z,y)\leftrightarrow subset(z,x)
             }
             assume in(z,y) {
               apply \forall z(in(z,y)\leftrightarrow subset(z,x)) for z:z
-              split in(z,y)\leftrightarrow subset(z,x)
-              invoke in(z,y)\to subset(z,x)
+              invoke rightward in(z,y)\leftrightarrow subset(z,x)
               apply \forall z(in(z,y')\leftrightarrow subset(z,x)) for z:z
-              split in(z,y')\leftrightarrow subset(z,x)
-              invoke subset(z,x)\to in(z,y')
+              invoke leftward in(z,y')\leftrightarrow subset(z,x)
             }
             connect in(z,y')\leftrightarrow in(z,y)
           }
@@ -879,8 +838,7 @@ theorem powerset_cor1 \forall x(in(x,powerset(x))) {
   any x {
     apply subset_reflection for x:x
     apply powerset_existence for x:x,z:x
-    split in(x,powerset(x))\leftrightarrow subset(x,x)
-    invoke subset(x,x)\to in(x,powerset(x))
+    invoke leftward in(x,powerset(x))\leftrightarrow subset(x,x)
   }
 }
 
@@ -888,8 +846,7 @@ theorem powerset_cor2 equal(powerset(emptyset),singleton(emptyset)) {
   any x {
     assume in(x,powerset(emptyset)) {
       apply powerset_existence for x:emptyset,z:x
-      split in(x,powerset(emptyset))\leftrightarrow subset(x,emptyset)
-      invoke in(x,powerset(emptyset))\to subset(x,emptyset)
+      invoke rightward in(x,powerset(emptyset))\leftrightarrow subset(x,emptyset)
       apply emptyset_subset_cor1 for x:x
       invoke subset(x,emptyset)\to equal(x,emptyset)
       apply singleton_cor1 for x:emptyset
@@ -897,8 +854,7 @@ theorem powerset_cor2 equal(powerset(emptyset),singleton(emptyset)) {
     }
     assume in(x,singleton(emptyset)) {
       apply singleton_characterization for x:emptyset,y:x
-      split in(x,singleton(emptyset))\leftrightarrow equal(x,emptyset)
-      invoke in(x,singleton(emptyset))\to equal(x,emptyset)
+      invoke rightward in(x,singleton(emptyset))\leftrightarrow equal(x,emptyset)
       apply powerset_cor1 for x:emptyset
       substitute in(emptyset,powerset(emptyset)) for emptyset:x conclude in(x,powerset(emptyset))
     }
@@ -921,12 +877,12 @@ theorem separation_is_unique \forall x\forall^T\phi[1]\exists!y\forall z(in(z,y)
             apply \forall z(in(z,y')\leftrightarrow in(z,x)\wedge\phi(z)) for z:z
             split in(z,y')\leftrightarrow in(z,x)\wedge\phi(z)
             assume in(z,y') {
-              invoke in(z,y')\to in(z,x)\wedge\phi(z)
-              invoke in(z,x)\wedge\phi(z)\to in(z,y)
+              invoke rightward in(z,y')\leftrightarrow in(z,x)\wedge\phi(z)
+              invoke leftward in(z,y)\leftrightarrow in(z,x)\wedge\phi(z)
             }
             assume in(z,y) {
-              invoke in(z,y)\to in(z,x)\wedge\phi(z)
-              invoke in(z,x)\wedge\phi(z)\to in(z,y')
+              invoke rightward in(z,y)\leftrightarrow in(z,x)\wedge\phi(z)
+              invoke leftward in(z,y')\leftrightarrow in(z,x)\wedge\phi(z)
             }
             connect in(z,y')\leftrightarrow in(z,y)
           }
@@ -948,8 +904,7 @@ theorem sep_cor1 \forall x\forall^T\phi[1](subset(sep(x,\phi),x)) {
     any z {
       assume in(z,sep(x,\phi)) {
         apply sep_existence for x:x, \phi:\phi, z:z
-        split in(z,sep(x,\phi))\leftrightarrow in(z,x)\wedge\phi(z)
-        invoke in(z,sep(x,\phi))\to in(z,x)\wedge\phi(z)
+        invoke rightward in(z,sep(x,\phi))\leftrightarrow in(z,x)\wedge\phi(z)
         split 1 in(z,x)\wedge\phi(z)
       }
     }
@@ -964,13 +919,11 @@ theorem bigcap_characterization \forall u\forall z(in(z,bigcap(u))\leftrightarro
     assume in(z,bigcap(u)) {
       expand in(z,bigcap(u)) for bigcap conclude in(z,sep(bigcup(u), lambda z'. \forall w(in(w,u)\to in(z',w))))
       apply sep_existence for x:bigcup(u),\phi: lambda z'. \forall w(in(w,u)\to in(z',w)),z:z
-      split in(z,sep(bigcup(u), lambda z'. \forall w(in(w,u)\to in(z',w))))\leftrightarrow in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
-      invoke in(z,sep(bigcup(u), lambda z'. \forall w(in(w,u)\to in(z',w))))\to in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
+      invoke rightward in(z,sep(bigcup(u), lambda z'. \forall w(in(w,u)\to in(z',w))))\leftrightarrow in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
     }
     assume in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w)) {
       apply sep_existence for x:bigcup(u),\phi: lambda z'. \forall w(in(w,u)\to in(z',w)),z:z
-      split in(z,sep(bigcup(u), lambda z'. \forall w(in(w,u)\to in(z',w))))\leftrightarrow in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
-      invoke in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))\to in(z,sep(bigcup(u), lambda z'. \forall w(in(w,u)\to in(z',w))))
+      invoke leftward in(z,sep(bigcup(u), lambda z'. \forall w(in(w,u)\to in(z',w))))\leftrightarrow in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
       expand in(z,sep(bigcup(u), lambda z'. \forall w(in(w,u)\to in(z',w)))) for bigcap conclude in(z,bigcap(u))
     }
     connect in(z,bigcap(u))\leftrightarrow in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
@@ -991,8 +944,7 @@ theorem bigcap_cor2 \forall u(neq(u,emptyset)\to\forall z(in(z,bigcap(u))\leftri
       any z {
         assume in(z,bigcap(u)) {
           apply bigcap_characterization for u:u,z:z
-          split in(z,bigcap(u))\leftrightarrow in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
-          invoke in(z,bigcap(u))\to in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
+          invoke rightward in(z,bigcap(u))\leftrightarrow in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
           split 2 in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
         }
         assume \forall w(in(w,u)\to in(z,w)) {
@@ -1005,12 +957,10 @@ theorem bigcap_cor2 \forall u(neq(u,emptyset)\to\forall z(in(z,bigcap(u))\leftri
             lift for y:y conclude \exists y(in(z,y)\wedge in(y,u))
           }
           apply bigcup_existence for x:u,z:z
-          split in(z,bigcup(u))\leftrightarrow\exists y(in(z,y)\wedge in(y,u))
-          invoke \exists y(in(z,y)\wedge in(y,u))\to in(z,bigcup(u))
+          invoke leftward in(z,bigcup(u))\leftrightarrow\exists y(in(z,y)\wedge in(y,u))
           connect in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
           apply bigcap_characterization for u:u,z:z
-          split in(z,bigcap(u))\leftrightarrow in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
-          invoke in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))\to in(z,bigcap(u))
+          invoke leftward in(z,bigcap(u))\leftrightarrow in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
         }
         connect in(z,bigcap(u))\leftrightarrow\forall w(in(w,u)\to in(z,w))
       }
@@ -1024,8 +974,7 @@ theorem bigcap_cor3 \forall x\forall y(in(y,x)\to subset(bigcap(x),y)) {
       any z {
         assume in(z,bigcap(x)) {
           apply bigcap_characterization for z:z,u:x
-          split in(z,bigcap(x))\leftrightarrow in(z,bigcup(x))\wedge\forall w(in(w,x)\to in(z,w))
-          invoke in(z,bigcap(x))\to in(z,bigcup(x))\wedge\forall w(in(w,x)\to in(z,w))
+          invoke rightward in(z,bigcap(x))\leftrightarrow in(z,bigcup(x))\wedge\forall w(in(w,x)\to in(z,w))
           split in(z,bigcup(x))\wedge\forall w(in(w,x)\to in(z,w))
           apply \forall w(in(w,x)\to in(z,w)) for w:y
           invoke in(y,x)\to in(z,y)
@@ -1044,10 +993,9 @@ theorem cap_characterization \forall x\forall y\forall z(in(z,cap(x,y))\leftrigh
     apply pair_cor9 for x:x,y:y
     invoke neq(pair(x,y),emptyset)\to\forall z(in(z,bigcap(pair(x,y)))\leftrightarrow\forall w(in(w,pair(x,y))\to in(z,w)))
     apply \forall z(in(z,bigcap(pair(x,y)))\leftrightarrow\forall w(in(w,pair(x,y))\to in(z,w))) for z:z
-    split in(z,bigcap(pair(x,y)))\leftrightarrow\forall w(in(w,pair(x,y))\to in(z,w))
     assume in(z,cap(x,y)) {
       expand in(z,cap(x,y)) for cap conclude in(z,bigcap(pair(x,y)))
-      invoke in(z,bigcap(pair(x,y)))\to\forall w(in(w,pair(x,y))\to in(z,w))
+      invoke rightward in(z,bigcap(pair(x,y)))\leftrightarrow\forall w(in(w,pair(x,y))\to in(z,w))
       apply \forall w(in(w,pair(x,y))\to in(z,w)) for w:x
       apply pair_cor1 for x:x,y:y
       invoke in(x,pair(x,y))\to in(z,x)
@@ -1061,8 +1009,7 @@ theorem cap_characterization \forall x\forall y\forall z(in(z,cap(x,y))\leftrigh
       any w {
         assume in(w,pair(x,y)) {
           apply pair_existence for x:x,y:y,w:w
-          split in(w,pair(x,y))\leftrightarrow equal(w,x)\vee equal(w,y)
-          invoke in(w,pair(x,y))\to equal(w,x)\vee equal(w,y)
+          invoke rightward in(w,pair(x,y))\leftrightarrow equal(w,x)\vee equal(w,y)
           divide equal(w,x)\vee equal(w,y)
             case equal(w,x) {
               substitute in(z,x) for x:w conclude in(z,w)
@@ -1072,7 +1019,7 @@ theorem cap_characterization \forall x\forall y\forall z(in(z,cap(x,y))\leftrigh
             }
         }
       }
-      invoke \forall w(in(w,pair(x,y))\to in(z,w))\to in(z,bigcap(pair(x,y)))
+      invoke leftward in(z,bigcap(pair(x,y)))\leftrightarrow\forall w(in(w,pair(x,y))\to in(z,w))
       expand in(z,bigcap(pair(x,y))) for cap conclude in(z,cap(x,y))
     }
     connect in(z,cap(x,y))\leftrightarrow in(z,x)\wedge in(z,y)
@@ -1092,20 +1039,17 @@ theorem cartprod_lem1 \forall X\forall Y\forall x\forall y(in(x,X)\wedge in(y,Y)
       apply subset_trans for x:singleton(x),y:X,z:cup(X,Y)
       invoke subset(singleton(x),X)\wedge subset(X,cup(X,Y))\to subset(singleton(x),cup(X,Y))
       apply powerset_existence for x:cup(X,Y),z:singleton(x)
-      split in(singleton(x),powerset(cup(X,Y)))\leftrightarrow subset(singleton(x),cup(X,Y))
-      invoke subset(singleton(x),cup(X,Y))\to in(singleton(x),powerset(cup(X,Y)))
+      invoke leftward in(singleton(x),powerset(cup(X,Y)))\leftrightarrow subset(singleton(x),cup(X,Y))
       apply cup_cor5 for x:x,y:y,X:X,Y:Y
       invoke in(x,X)\wedge in(y,Y)\to subset(pair(x,y),cup(X,Y))
       apply powerset_existence for x:cup(X,Y),z:pair(x,y)
-      split in(pair(x,y),powerset(cup(X,Y)))\leftrightarrow subset(pair(x,y),cup(X,Y))
-      invoke subset(pair(x,y),cup(X,Y))\to in(pair(x,y),powerset(cup(X,Y)))
+      invoke leftward in(pair(x,y),powerset(cup(X,Y)))\leftrightarrow subset(pair(x,y),cup(X,Y))
       connect in(singleton(x),powerset(cup(X,Y)))\wedge in(pair(x,y),powerset(cup(X,Y)))
       apply pair_cor10 for x:singleton(x),y:pair(x,y),z:powerset(cup(X,Y))
       invoke in(singleton(x),powerset(cup(X,Y)))\wedge in(pair(x,y),powerset(cup(X,Y)))\to subset(pair(singleton(x),pair(x,y)),powerset(cup(X,Y)))
       expand subset(pair(singleton(x),pair(x,y)),powerset(cup(X,Y))) for op conclude subset(op(x,y),powerset(cup(X,Y)))
       apply powerset_existence for x:powerset(cup(X,Y)),z:op(x,y)
-      split in(op(x,y),powerset(powerset(cup(X,Y))))\leftrightarrow subset(op(x,y),powerset(cup(X,Y)))
-      invoke subset(op(x,y),powerset(cup(X,Y)))\to in(op(x,y),powerset(powerset(cup(X,Y))))
+      invoke leftward in(op(x,y),powerset(powerset(cup(X,Y))))\leftrightarrow subset(op(x,y),powerset(cup(X,Y)))
     }
   }
 }
@@ -1113,10 +1057,9 @@ theorem cartprod_lem1 \forall X\forall Y\forall x\forall y(in(x,X)\wedge in(y,Y)
 theorem cartprod_characterization \forall X\forall Y\forall z(in(z,cartprod(X,Y))\leftrightarrow\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y)))) {
   any X,Y,z {
     apply sep_existence for x:powerset(powerset(cup(X,Y))),\phi:lambda z'. \exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z',op(x,y))),z:z
-    split in(z,sep(powerset(powerset(cup(X,Y))),lambda z'.\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z',op(x,y)))))\leftrightarrow in(z,powerset(powerset(cup(X,Y))))\wedge\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y)))
     assume in(z,cartprod(X,Y)) {
       expand in(z,cartprod(X,Y)) for cartprod conclude in(z,sep(powerset(powerset(cup(X,Y))), lambda z'. \exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z',op(x,y)))))
-      invoke in(z,sep(powerset(powerset(cup(X,Y))),lambda z'. \exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z',op(x,y)))))\to in(z,powerset(powerset(cup(X,Y))))\wedge\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y)))
+      invoke rightward in(z,sep(powerset(powerset(cup(X,Y))),lambda z'.\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z',op(x,y)))))\leftrightarrow in(z,powerset(powerset(cup(X,Y))))\wedge\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y)))
       split in(z,powerset(powerset(cup(X,Y))))\wedge\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y)))
     }
     assume \exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y))) {
@@ -1127,7 +1070,7 @@ theorem cartprod_characterization \forall X\forall Y\forall z(in(z,cartprod(X,Y)
         invoke in(x,X)\wedge in(y,Y)\to in(op(x,y),powerset(powerset(cup(X,Y))))
         substitute in(op(x,y),powerset(powerset(cup(X,Y)))) for op(x,y):z conclude in(z,powerset(powerset(cup(X,Y))))
         connect in(z,powerset(powerset(cup(X,Y))))\wedge\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y)))
-        invoke in(z,powerset(powerset(cup(X,Y))))\wedge\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y)))\to in(z,sep(powerset(powerset(cup(X,Y))),lambda z'.\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z',op(x,y)))))
+        invoke leftward in(z,sep(powerset(powerset(cup(X,Y))),lambda z'.\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z',op(x,y)))))\leftrightarrow in(z,powerset(powerset(cup(X,Y))))\wedge\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y)))
         expand in(z,sep(powerset(powerset(cup(X,Y))),lambda z'.\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z',op(x,y))))) for cartprod conclude in(z,cartprod(X,Y))
       }
     }
