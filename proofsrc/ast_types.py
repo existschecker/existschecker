@@ -123,7 +123,6 @@ class Assume(Control):
 @dataclass
 class Any(Control):
     items: list[Var | Template]
-    conclusion: Formula | None
     body: list[Control]
 
 @dataclass

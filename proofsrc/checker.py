@@ -214,12 +214,6 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
             logger.error(f"{sp}❌ [Any] Bottom cannot be generalized")
             return False
         logger.debug(f"{sp}[Any] derived local_goal: {pretty_expr(local_goal, context)}")
-        if node.conclusion is not None:
-            if alpha_equiv_with_defs(node.conclusion, local_goal, context):
-                logger.debug(f"{sp}[Any] Mathched with conclusion: {pretty_expr(node.conclusion, context)}")
-            else:
-                logger.error(f"{sp}❌ [Any] Not matched with conclusion: {pretty_expr(node.conclusion, context)}")
-                return False
         goal = local_goal
         for item in reversed(node.items):
             goal = Forall(item, goal)
