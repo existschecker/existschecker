@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, Fun, Con, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Pred, Control, Formula, Declaration, Template, Term, Lambda, DefConExist, DefConUniq, DefFunExist, DefFunUniq, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, Fun, Con, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Pred, Control, Formula, Declaration, Template, Term, Lambda, DefConExist, DefConUniq, DefFunExist, DefFunUniq, DeclarationSupport, EqualityReflection, EqualityReplacement, pretty_expr
 from logic_utils import expr_in_context, collect_quantifier_vars, substitute_formula, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs
 from copy import deepcopy
 
@@ -29,7 +29,7 @@ def check_ast(ast: list[Declaration]) -> tuple[bool, list[Declaration], Context]
     return all(check_proof(node, context) for node in ast), ast, context
 
 # === 証明チェッカー ===
-def check_proof(node: Declaration | Control, context: Context, indent: int = 0) -> bool:
+def check_proof(node: Declaration | DeclarationSupport | Control, context: Context, indent: int = 0) -> bool:
     sp = "  " * indent
 
     node.proofinfo.context_vars = deepcopy(context.vars)
@@ -198,15 +198,31 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
 
     if isinstance(node, Equality):
         logger.debug(f"{sp}[Equality] name: {node.equal.name}")
-        logger.debug(f"{sp}[Equality] Checking {node.equal.name} reflection theorem: {pretty_expr(node.reflection.evidence.conclusion, context)}")
-        reflection = Forall(Var("x"), Symbol(Pred(node.equal.name), (Var("x"), Var("x"))))
-        if not alpha_equiv_with_defs(node.reflection.evidence.conclusion, reflection, context):
-            logger.error(f"{sp}❌ [Equality] Not matched with expected formula: {pretty_expr(reflection, context)}")
+        if not check_proof(node.reflection, context, indent+1):
             node.proofinfo.status = "ERROR"
             return False
-        logger.debug(f"{sp}[Equality] Matched with expected formula: {pretty_expr(reflection, context)}")
-        for predicate in node.replacement.evidence:
-            logger.debug(f"{sp}[Equality] Checking {predicate} replacement theorem: {pretty_expr(node.replacement.evidence[predicate].conclusion, context)}")
+        if not check_proof(node.replacement, context, indent+1):
+            node.proofinfo.status = "ERROR"
+            return False
+        context.equality = node
+        logger.debug(f"{sp}[Equality] {node.equal.name} is registered as equality")
+        node.proofinfo.status = "OK"
+        return True
+
+    if isinstance(node, EqualityReflection):
+        logger.debug(f"{sp}[EqualityReflection] Checking {node.equal.name} reflection theorem: {pretty_expr(node.evidence.conclusion, context)}")
+        reflection = Forall(Var("x"), Symbol(Pred(node.equal.name), (Var("x"), Var("x"))))
+        if not alpha_equiv_with_defs(node.evidence.conclusion, reflection, context):
+            logger.error(f"{sp}❌ [EqualityReflection] Not matched with expected formula: {pretty_expr(reflection, context)}")
+            node.proofinfo.status = "ERROR"
+            return False
+        logger.debug(f"{sp}[EqualiEqualityReflectionty] Matched with expected formula: {pretty_expr(reflection, context)}")
+        node.proofinfo.status = "OK"
+        return True
+
+    if isinstance(node, EqualityReplacement):
+        for predicate in node.evidence:
+            logger.debug(f"{sp}[EqualityReplacement] Checking {predicate} replacement theorem: {pretty_expr(node.evidence[predicate].conclusion, context)}")
             if predicate == node.equal.name:
                 if isinstance(node.equal, PrimPred):
                     arity = node.equal.arity
@@ -230,13 +246,11 @@ def check_proof(node: Declaration | Control, context: Context, indent: int = 0) 
                 replacement = Forall(arg, replacement)
             for arg in reversed(args_x):
                 replacement = Forall(arg, replacement)
-            if not alpha_equiv_with_defs(node.replacement.evidence[predicate].conclusion, replacement, context):
-                logger.error(f"{sp}❌ [Equality] Not matched with expected formula: {pretty_expr(replacement, context)}")
+            if not alpha_equiv_with_defs(node.evidence[predicate].conclusion, replacement, context):
+                logger.error(f"{sp}❌ [EqualityReplacement] Not matched with expected formula: {pretty_expr(replacement, context)}")
                 node.proofinfo.status = "ERROR"
                 return False
-            logger.debug(f"{sp}[Equality] Matched with expected formula: {pretty_expr(replacement, context)}")
-        context.equality = node
-        logger.debug(f"{sp}[Equality] {node.equal.name} is registered as equality")
+            logger.debug(f"{sp}[EqualityReplacement] Matched with expected formula: {pretty_expr(replacement, context)}")
         node.proofinfo.status = "OK"
         return True
 

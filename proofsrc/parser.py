@@ -224,6 +224,14 @@ class Parser:
                 raise Exception(f"arity of defpred {name} is not 2")
         else:
             raise Exception(f"{name} is not primpred or defpred")
+        reflection = self.parse_equality_reflection(equal)
+        replacement = self.parse_equality_replacement(equal)
+        equality = Equality(equal=equal, reflection=reflection, replacement=replacement)
+        self.context.equality = equality
+        logger.debug(f"[equality] {type(equal)}: {equal.name}")
+        return equality
+
+    def parse_equality_reflection(self, equal: PrimPred | DefPred) -> EqualityReflection:
         self.consume("REFLECTION")
         name = self.consume("IDENT").value
         if name in self.context.axioms:
@@ -232,7 +240,9 @@ class Parser:
             reflection_evidence = self.context.theorems[name]
         else:
             raise Exception(f"{name} is not axiom or theorem")
-        reflection = EqualityReflection(evidence=reflection_evidence)
+        return EqualityReflection(equal=equal, evidence=reflection_evidence)
+
+    def parse_equality_replacement(self, equal: PrimPred | DefPred) -> EqualityReplacement:
         self.consume("REPLACEMENT")
         replacement_evidence: dict[str, Axiom | Theorem] = {}
         while True:
@@ -252,11 +262,7 @@ class Parser:
                 self.consume("COMMA")
             else:
                 break
-        replacement = EqualityReplacement(replacement_evidence)
-        equality = Equality(equal=equal, reflection=reflection, replacement=replacement)
-        self.context.equality = equality
-        logger.debug(f"[equality] {type(equal)}: {equal.name}")
-        return equality
+        return EqualityReplacement(equal=equal, evidence=replacement_evidence)
 
     def parse_block(self) -> list[Control]:
         body: list[Control] = []

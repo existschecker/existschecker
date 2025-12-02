@@ -286,10 +286,12 @@ class DefFunTerm(Declaration):
 
 @dataclass
 class EqualityReflection(DeclarationSupport):
+    equal: PrimPred | DefPred
     evidence: Axiom | Theorem
 
 @dataclass
 class EqualityReplacement(DeclarationSupport):
+    equal: PrimPred | DefPred
     evidence: dict[str, Axiom | Theorem]
 
 @dataclass
