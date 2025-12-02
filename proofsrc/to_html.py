@@ -476,22 +476,26 @@ def render_node(node: Declaration | DeclarationSupport | Control, context: Conte
     header_syntax_html = f"<div class='syntax-view'>{' '.join(header_parts)}</div>"
     header_jp_html = f"<div class='jp-view'>{' '.join(header_parts_jp)}</div>"
     header_html = f"<div class='block-header'>{header_syntax_html}{header_jp_html}</div>"
-    context_vars = render_expr_list(node.proofinfo.context_vars, context) if isinstance(node, Control) else ""
+    status = node.proofinfo.status
+    status_html = f"<div class='status' hidden>{status}</div>"
+    context_vars = render_expr_list(node.proofinfo.context_vars, context)
     context_vars_html = f"<div class='context-vars' hidden>{context_vars}</div>"
-    context_formulas = render_expr_list(node.proofinfo.context_formulas, context) if isinstance(node, Control) else ""
+    context_formulas = render_expr_list(node.proofinfo.context_formulas, context)
     context_formulas_html = f"<div class='context-formulas' hidden>{context_formulas}</div>"
-    premises = render_expr_list(node.proofinfo.premises, context) if isinstance(node, Control) else ""
+    context_templates = render_expr_list(node.proofinfo.context_templates, context)
+    context_templates_html = f"<div class='context-templates' hidden>{context_templates}</div>"
+    premises = render_expr_list(node.proofinfo.premises, context)
     premises_html = f"<div class='premises' hidden>{premises}</div>"
-    conclusions = render_expr_list(node.proofinfo.conclusions, context) if isinstance(node, Control) else ""
+    conclusions = render_expr_list(node.proofinfo.conclusions, context)
     conclusions_html = f"<div class='conclusions' hidden>{conclusions}</div>"
     content_html = f"<div class='block-content'>{body_html}</div>"
-    local_vars = render_expr_list(node.proofinfo.local_vars, context) if isinstance(node, (Any, Assume, Divide, Case, Some, Deny, Show)) else ""
+    local_vars = render_expr_list(node.proofinfo.local_vars, context)
     local_vars_html = f"<div class='local_vars' hidden>{local_vars}</div>"
-    local_premise = render_expr_list(node.proofinfo.local_premise, context) if isinstance(node, (Any, Assume, Divide, Case, Some, Deny, Show)) else ""
+    local_premise = render_expr_list(node.proofinfo.local_premise, context)
     local_premise_html = f"<div class='local_premise' hidden>{local_premise}</div>"
-    local_conclusion = render_expr_list(node.proofinfo.local_conclusion, context) if isinstance(node, (Any, Assume, Divide, Case, Some, Deny, Show)) else ""
+    local_conclusion = render_expr_list(node.proofinfo.local_conclusion, context)
     local_conclusion_html = f"<div class='local_conclusion' hidden>{local_conclusion}</div>"
-    return f"  <div class='block'>{header_html}{context_vars_html}{context_formulas_html}{premises_html}{conclusions_html}{local_vars_html}{local_premise_html}{local_conclusion_html}{content_html}</div>"
+    return f"  <div class='block'>{header_html}{status_html}{context_vars_html}{context_formulas_html}{context_templates_html}{premises_html}{conclusions_html}{local_vars_html}{local_premise_html}{local_conclusion_html}{content_html}</div>"
 
 def to_html(ast: list[Declaration], context: Context, title: str, mode: str):
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")

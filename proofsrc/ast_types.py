@@ -102,17 +102,19 @@ class Bottom:
 
 @dataclass
 class ProofInfo:
-    context_vars: Sequence[Var] = field(init=False)
-    context_formulas: Sequence[Bottom | Formula] = field(init=False)
-    premises: Sequence[str | Bottom | Formula] = field(init=False)
-    conclusions: Sequence[Bottom | Formula] = field(init=False)
-    local_vars: Sequence[Var] = field(init=False)
-    local_premise: Sequence[Formula] = field(init=False)
-    local_conclusion: Sequence[Bottom | Formula] = field(init=False)
+    status: Literal["UNCHECKED", "OK", "ERROR"] = field(init=False, default="UNCHECKED")
+    context_vars: Sequence[Var] = field(init=False, default_factory=list[Var])
+    context_formulas: Sequence[Bottom | Formula] = field(init=False, default_factory=list[Bottom | Formula])
+    context_templates: Sequence[Template] = field(init=False, default_factory=list[Template])
+    premises: Sequence[str | Bottom | Formula] = field(init=False, default_factory=list[str | Bottom | Formula])
+    conclusions: Sequence[Bottom | Formula] = field(init=False, default_factory=list[Bottom | Formula])
+    local_vars: Sequence[Var] = field(init=False, default_factory=list[Var])
+    local_premise: Sequence[Formula] = field(init=False, default_factory=list[Formula])
+    local_conclusion: Sequence[Bottom | Formula] = field(init=False, default_factory=list[Bottom | Formula])
 
 @dataclass
 class Control:
-    proofinfo: ProofInfo = field(init=False)
+    proofinfo: ProofInfo = field(init=False, default_factory=ProofInfo)
 
 @dataclass
 class Assume(Control):
@@ -207,11 +209,11 @@ class Show(Control):
 
 @dataclass
 class Declaration:
-    pass
+    proofinfo: ProofInfo = field(init=False, default_factory=ProofInfo)
 
 @dataclass
 class DeclarationSupport:
-    pass
+    proofinfo: ProofInfo = field(init=False, default_factory=ProofInfo)
 
 @dataclass
 class PrimPred(Declaration):
@@ -300,8 +302,8 @@ class Equality(Declaration):
 class Context:
     vars: list[Var]
     formulas: list[Bottom | Formula]
-    primpreds: dict[str, PrimPred]
     templates: list[Template]
+    primpreds: dict[str, PrimPred]
     axioms: dict[str, Axiom]
     theorems: dict[str, Theorem]
     defpreds: dict[str, DefPred]

@@ -35,8 +35,10 @@ function selectHeader(index) {
 
 // infoPanel を更新する関数
 function updateInfoPanel(header) {
+  let status_label;
   let context_vars_label;
   let context_formulas_label;
+  let context_templates_label;
   let premises_label;
   let conclusions_label;
   let local_vars_label;
@@ -44,16 +46,20 @@ function updateInfoPanel(header) {
   let local_conclusion_label;
 
   if (currentView == "syntax") {
+    status_label = "status"
     context_vars_label = "context_vars"
     context_formulas_label = "context_formulas"
+    context_templates_label = "context_templates"
     premises_label = "premises"
     conclusions_label = "conclusions"
     local_vars_label = "local_vars"
     local_premise_label = "local_premise"
     local_conclusion_label = "local_conclusion"
   } else {
+    status_label = "状態"
     context_vars_label = "現在使える変数"
     context_formulas_label = "現在使える論理式"
+    context_templates_label = "現在使えるテンプレート"
     premises_label = "この文の前提"
     conclusions_label = "この文の結論"
     local_vars_label = "この文のブロック内に追加する変数"
@@ -61,16 +67,20 @@ function updateInfoPanel(header) {
     local_conclusion_label = "この文のブロック内で導く結論"
   }
 
-  const context_vars = header.nextElementSibling;
+  const status = header.nextElementSibling
+  const context_vars = status.nextElementSibling;
   const context_formulas = context_vars.nextElementSibling;
-  const premises = context_formulas.nextElementSibling;
+  const context_templates = context_formulas.nextElementSibling;
+  const premises = context_templates.nextElementSibling;
   const conclusions = premises.nextElementSibling;
   const local_vars = conclusions.nextElementSibling;
   const local_premise = local_vars.nextElementSibling;
   const local_conclusion = local_premise.nextElementSibling;
   infoContent.innerHTML = `
+    ${status_label}: ${status.innerHTML}<br>
     ${context_vars_label}: ${context_vars.innerHTML}<br>
     ${context_formulas_label}: ${context_formulas.innerHTML}<br>
+    ${context_templates_label}: ${context_templates.innerHTML}<br>
     ${premises_label}: ${premises.innerHTML}<br>
     ${conclusions_label}: ${conclusions.innerHTML}<br>
     ${local_vars_label}: ${local_vars.innerHTML}<br>
