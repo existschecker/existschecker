@@ -10,7 +10,7 @@ class TokenStream:
             raise Exception("Unexpcted end of input")
         return self.tokens[self.pos]
 
-    def consume(self, expected_type: str | None = None) -> Token:
+    def consume(self, expected_type: str) -> Token:
         tok = self.peek()
         if expected_type and tok.type != expected_type:
             raise SyntaxError(f"Expected {expected_type}, got {tok.type} at line {tok.line}")
