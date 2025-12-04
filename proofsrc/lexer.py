@@ -5,6 +5,7 @@ from dataclasses import dataclass
 class Token:
     type: str
     value: str
+    file: str
     pos: int
     line: int
     column: int
@@ -24,7 +25,10 @@ SYMBOLS = {
     ".": "DOT"
 }
 
-def lex(src: str) -> list[Token]:
+def lex(path: str) -> list[Token]:
+    f = open(path)
+    src = f.read()
+    f.close()
     tokens: list[Token] = []
     i = 0
     line = 1
@@ -52,37 +56,37 @@ def lex(src: str) -> list[Token]:
             i += 2
             continue
         if c in SYMBOLS:
-            tokens.append(Token(SYMBOLS[c], c, i, line, column))
+            tokens.append(Token(SYMBOLS[c], c, path, i, line, column))
             i += 1
         elif src[i:].startswith("\\forall^T"):
-            tokens.append(Token("FORALL_TEMPLATE", "\\forall^T", i, line, column))
+            tokens.append(Token("FORALL_TEMPLATE", "\\forall^T", path, i, line, column))
             i += len("\\forall^T")
         elif src[i:].startswith("\\forall"):
-            tokens.append(Token("FORALL", "\\forall", i, line, column))
+            tokens.append(Token("FORALL", "\\forall", path, i, line, column))
             i += len("\\forall")
         elif src[i:].startswith("\\exists!"):
-            tokens.append(Token("EXISTS_UNIQ", "\\exists!", i, line, column))
+            tokens.append(Token("EXISTS_UNIQ", "\\exists!", path, i, line, column))
             i += len("\\exists!")
         elif src[i:].startswith("\\exists"):
-            tokens.append(Token("EXISTS", "\\exists", i, line, column))
+            tokens.append(Token("EXISTS", "\\exists", path, i, line, column))
             i += len("\\exists")
         elif src[i:].startswith("\\wedge"):
-            tokens.append(Token("AND", "\\wedge", i, line, column))
+            tokens.append(Token("AND", "\\wedge", path, i, line, column))
             i += len("\\wedge")
         elif src[i:].startswith("\\vee"):
-            tokens.append(Token("OR", "\\vee", i, line, column))
+            tokens.append(Token("OR", "\\vee", path, i, line, column))
             i += len("\\vee")
         elif src[i:].startswith("\\neg"):
-            tokens.append(Token("NOT", "\\neg", i, line, column))
+            tokens.append(Token("NOT", "\\neg", path, i, line, column))
             i += len("\\neg")
         elif src[i:].startswith("\\to"):
-            tokens.append(Token("IMPLIES", "\\to", i, line, column))
+            tokens.append(Token("IMPLIES", "\\to", path, i, line, column))
             i += len("\\to")
         elif src[i:].startswith("\\leftrightarrow"):
-            tokens.append(Token("IFF", "\\leftrightarrow", i, line, column))
+            tokens.append(Token("IFF", "\\leftrightarrow", path, i, line, column))
             i += len("\\leftrightarrow")
         elif src[i:].startswith("\\bot"):
-            tokens.append(Token("BOT", "\\bot", i, line, column))
+            tokens.append(Token("BOT", "\\bot", path, i, line, column))
             i += len("\\bot")
         elif src[i] == '"':
             i += 1
@@ -92,34 +96,31 @@ def lex(src: str) -> list[Token]:
             if i >= len(src):
                 raise SyntaxError(f"Unterminated string starting at pos {start}")
             text = src[start:i]
-            tokens.append(Token("STRING", text, start, line, column))
+            tokens.append(Token("STRING", text, path, start, line, column))
             i += 1
         else:
             m = re.match(r"(\\[A-Za-z][A-Za-z0-9_]*)|([A-Za-z_][A-Za-z0-9_]*'*)", src[i:])
             if m:
                 text = m.group(0)
                 if text in KEYWORDS:
-                    tokens.append(Token(text.upper(), text, i, line, column))
+                    tokens.append(Token(text.upper(), text, path, i, line, column))
                 else:
-                    tokens.append(Token("IDENT", text, i, line, column))
+                    tokens.append(Token("IDENT", text, path, i, line, column))
                 i += len(text)
             else:
                 m = re.match(r"\d+", src[i:])
                 if m:
                     text = m.group(0)
-                    tokens.append(Token("NUMBER", text, i, line, column))
+                    tokens.append(Token("NUMBER", text, path, i, line, column))
                     i += len(text)
                 else:
                     raise SyntaxError(f"Unexpected character {c} at pos {i}, line {line}")
-    tokens.append(Token("EOF", "", i, line, len(src) - line_start_pos + 1))
+    tokens.append(Token("EOF", "", path, i, line, len(src) - line_start_pos + 1))
     return tokens
 
 if __name__ == "__main__":
     import sys
     path = sys.argv[1]
-    f = open(path)
-    src = f.read()
-    f.close()
 
     import os
     import logging
@@ -144,6 +145,6 @@ if __name__ == "__main__":
     logger.addHandler(console_handler)
     logger.addHandler(file_handler)
 
-    tokens = lex(src)
+    tokens = lex(path)
     for t in tokens:
         logger.debug(t)

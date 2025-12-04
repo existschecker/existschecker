@@ -16,10 +16,7 @@ class DependencyResolver:
             raise Exception(f"Cyclic dependency detected: {path}")
         self.visiting_files.add(path)
         print(f"Visiting {path}")
-        f = open(path)
-        src = f.read()
-        f.close()
-        tokens = lex(src)
+        tokens = lex(path)
         self.tokens_cache[path] = tokens
         stream = TokenStream(tokens)
         while True:
