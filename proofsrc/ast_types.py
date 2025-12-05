@@ -301,10 +301,7 @@ class Equality(Declaration):
     replacement: EqualityReplacement
 
 @dataclass
-class Context:
-    vars: list[Var]
-    formulas: list[Bottom | Formula]
-    templates: list[Template]
+class DeclarationContext:
     primpreds: dict[str, PrimPred]
     axioms: dict[str, Axiom]
     theorems: dict[str, Theorem]
@@ -319,11 +316,8 @@ class Context:
     equality: Equality | None
 
     @staticmethod
-    def init() -> "Context":
-        return Context(vars=[], formulas=[], templates=[], primpreds={}, axioms={}, theorems={}, defpreds={}, defcons={}, defconexists={}, defconuniqs={}, deffuns={}, deffunexists={}, deffununiqs={}, deffunterms={}, equality=None)
-
-    def copy(self, vars: list[Var], formulas: list[Bottom | Formula], templates: list[Template]) -> "Context":
-        return Context(vars=vars, formulas=formulas, templates=templates, primpreds=self.primpreds, axioms=self.axioms, theorems=self.theorems, defpreds=self.defpreds, defcons=self.defcons, defconexists=self.defconexists, defconuniqs=self.defconuniqs, deffuns=self.deffuns, deffunexists=self.deffunexists, deffununiqs=self.deffununiqs, deffunterms=self.deffunterms, equality=self.equality)
+    def init() -> "DeclarationContext":
+        return DeclarationContext(primpreds={}, axioms={}, theorems={}, defpreds={}, defcons={}, defconexists={}, defconuniqs={}, deffuns={}, deffunexists={}, deffununiqs={}, deffunterms={}, equality=None)
 
     def has_reference(self, name: str) -> bool:
         return name in self.axioms or name in self.theorems or name in self.defconexists or name in self.defconuniqs or name in self.deffunexists or name in self.deffununiqs
@@ -345,6 +339,31 @@ class Context:
             raise Exception(f"Unexpected name: {name}")
 
 @dataclass
+class ControlContext:
+    vars: list[Var]
+    formulas: list[Bottom | Formula]
+    templates: list[Template]
+
+    @staticmethod
+    def init() -> "ControlContext":
+        return ControlContext(vars=[], formulas=[], templates=[])
+
+    def copy(self, vars: list[Var], formulas: list[Bottom | Formula], templates: list[Template]) -> "ControlContext":
+        return ControlContext(vars=vars, formulas=formulas, templates=templates)
+
+@dataclass
+class Context:
+    decl: DeclarationContext
+    ctrl: ControlContext
+
+    @staticmethod
+    def init() -> "Context":
+        return Context(DeclarationContext.init(), ControlContext.init())
+
+    def copy(self, vars: list[Var], formulas: list[Bottom | Formula], templates: list[Template]) -> "Context":
+        return Context(self.decl, self.ctrl.copy(vars, formulas, templates))
+
+@dataclass
 class Include:
     file: str
 
@@ -361,18 +380,18 @@ OP_PRECEDENCE = {
 
 def pretty_expr_fragments(expr: Pred | Fun, context: Context) -> list[str]:
     if isinstance(expr, Pred):
-        if expr.name in context.primpreds:
-            tex = context.primpreds[expr.name].tex
-        elif expr.name in context.defpreds:
-            tex = context.defpreds[expr.name].tex
+        if expr.name in context.decl.primpreds:
+            tex = context.decl.primpreds[expr.name].tex
+        elif expr.name in context.decl.defpreds:
+            tex = context.decl.defpreds[expr.name].tex
         else:
             raise Exception(f"{expr.name} is not in primpreds or defpreds")
         return tex
     elif isinstance(expr, Fun):
-        if expr.name in context.deffuns:
-            tex = context.deffuns[expr.name].tex
-        elif expr.name in context.deffunterms:
-            tex = context.deffunterms[expr.name].tex
+        if expr.name in context.decl.deffuns:
+            tex = context.decl.deffuns[expr.name].tex
+        elif expr.name in context.decl.deffunterms:
+            tex = context.decl.deffunterms[expr.name].tex
         else:
             raise Exception(f"{expr.name} is not in deffuns or deffunterms")
         return tex
@@ -385,8 +404,8 @@ def pretty_expr(expr: str | Bottom | Formula | Term, context: Context, parent_pr
     elif isinstance(expr, Var):
         return expr.name
     elif isinstance(expr, Con):
-        if expr.name in context.defcons:
-            tex = context.defcons[expr.name].tex
+        if expr.name in context.decl.defcons:
+            tex = context.decl.defcons[expr.name].tex
         else:
             raise Exception(f"{expr.name} is not in context.defcons")
         if len(tex) != 1:

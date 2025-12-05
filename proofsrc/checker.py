@@ -7,22 +7,22 @@ logger = logging.getLogger("proof")
 
 def goal_in_context(goal: str | Bottom | Formula, context: Context) -> bool:
     if isinstance(goal, str):
-        return context.has_reference(goal)
-    elif isinstance(goal, Symbol) and context.equality is not None and goal.pred.name == context.equality.equal.name and goal.args[0] == goal.args[1]:
+        return context.decl.has_reference(goal)
+    elif isinstance(goal, Symbol) and context.decl.equality is not None and goal.pred.name == context.decl.equality.equal.name and goal.args[0] == goal.args[1]:
         return True
     else:
         return expr_in_context(goal, context)
 
 def get_fact(fact: str | Formula, context: Context) -> Formula:
     if isinstance(fact, str):
-        return context.get_reference(fact)
+        return context.decl.get_reference(fact)
     elif isinstance(fact, Formula):
         return fact
     else:
         raise Exception(f"Unexpected type {type(fact)}")
 
 def add_conclusion(context: Context, conclusion: Bottom | Formula) -> None:
-    context.formulas.append(conclusion)
+    context.ctrl.formulas.append(conclusion)
 
 def check_ast(ast: list[Include | Declaration], context: Context) -> tuple[bool, list[Include | Declaration], Context]:
     return all(check_declaration(node, context) for node in ast if isinstance(node, Declaration)), ast, context
@@ -31,9 +31,9 @@ def check_ast(ast: list[Include | Declaration], context: Context) -> tuple[bool,
 def check_declaration(node: Declaration, context: Context, indent: int = 0) -> bool:
     sp = "  " * indent
 
-    node.proofinfo.context_vars = deepcopy(context.vars)
-    node.proofinfo.context_formulas = deepcopy(context.formulas)
-    node.proofinfo.context_templates = deepcopy(context.templates)
+    node.proofinfo.context_vars = deepcopy(context.ctrl.vars)
+    node.proofinfo.context_formulas = deepcopy(context.ctrl.formulas)
+    node.proofinfo.context_templates = deepcopy(context.ctrl.templates)
 
     if isinstance(node, PrimPred):
         return check_primpred(node, context, indent)
@@ -66,14 +66,14 @@ def check_declaration(node: Declaration, context: Context, indent: int = 0) -> b
 def check_primpred(node: PrimPred, context: Context, indent: int):
     sp = "  " * indent
     logger.debug(f"{sp}[PrimPred] name: {node.name}, arity: {node.arity}")
-    context.primpreds[node.name] = node
+    context.decl.primpreds[node.name] = node
     node.proofinfo.status = "OK"
     return True
 
 def check_axiom(node: Axiom, context: Context, indent: int):
     sp = "  " * indent
     logger.debug(f"{sp}[Axiom] name: {node.name}, conclusion: {pretty_expr(node.conclusion, context)}")
-    context.axioms[node.name] = node
+    context.decl.axioms[node.name] = node
     node.proofinfo.status = "OK"
     return True
 
@@ -88,7 +88,7 @@ def check_theorem(node: Theorem, context: Context, indent: int):
             return False
     if goal_in_context(node.conclusion, local_ctx):
         logger.debug(f"{sp}[Theorem] {node.name} proved: {pretty_expr(node.conclusion, context)}")
-        context.theorems[node.name] = node
+        context.decl.theorems[node.name] = node
         node.proofinfo.status = "OK"
         return True
     else:
@@ -99,27 +99,27 @@ def check_theorem(node: Theorem, context: Context, indent: int):
 def check_defpred(node: DefPred, context: Context, indent: int):
     sp = "  " * indent
     logger.debug(f"{sp}[DefPred] name: {node.name}, args: {node.args}, formula: {pretty_expr(node.formula, context)}")
-    context.defpreds[node.name] = node
+    context.decl.defpreds[node.name] = node
     node.proofinfo.status = "OK"
     return True
 
 def check_defcon(node: DefCon, context: Context, indent: int):
     sp = "  " * indent
     logger.debug(f"{sp}[DefCon] name: {node.name}, theorem: {node.theorem}")
-    existsuniq = context.theorems[node.theorem].conclusion
+    existsuniq = context.decl.theorems[node.theorem].conclusion
     if not isinstance(existsuniq, ExistsUniq):
         logger.error(f"{sp}❌ [DefCon] Not ExistsUniq object: {pretty_expr(existsuniq, context)}")
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{sp}[DefCon] ExistsUniq object: {pretty_expr(existsuniq, context)}")
-    context.defcons[node.name] = node
+    context.decl.defcons[node.name] = node
     node.proofinfo.status = "OK"
     return True
 
 def check_defconexist(node: DefConExist, context: Context, indent: int):
     sp = "  " * indent
     logger.debug(f"{sp}[DefConExist] name: {node.name}, con_name: {node.con_name}")
-    existsuniq = context.theorems[context.defcons[node.con_name].theorem].conclusion
+    existsuniq = context.decl.theorems[context.decl.defcons[node.con_name].theorem].conclusion
     if not isinstance(existsuniq, ExistsUniq):
         logger.error(f"{sp}❌ [DefConExist] Not ExistsUniq object: {pretty_expr(existsuniq, context)}")
         node.proofinfo.status = "ERROR"
@@ -131,14 +131,14 @@ def check_defconexist(node: DefConExist, context: Context, indent: int):
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{sp}[DefConExist] existence_formula is matched with theorem: {pretty_expr(node.formula, context)}")
-    context.defconexists[node.name] = node
+    context.decl.defconexists[node.name] = node
     node.proofinfo.status = "OK"
     return True
 
 def check_defconuniq(node: DefConUniq, context: Context, indent: int):
     sp = "  " * indent
     logger.debug(f"{sp}[DefConUniq] name: {node.name}, con_name: {node.con_name}")
-    existsuniq = context.theorems[context.defcons[node.con_name].theorem].conclusion
+    existsuniq = context.decl.theorems[context.decl.defcons[node.con_name].theorem].conclusion
     if not isinstance(existsuniq, ExistsUniq):
         logger.error(f"{sp}❌ [DefConUniq] Not ExistsUniq object: {pretty_expr(existsuniq, context)}")
         node.proofinfo.status = "ERROR"
@@ -147,37 +147,37 @@ def check_defconuniq(node: DefConUniq, context: Context, indent: int):
     free, bound = collect_vars(existsuniq.body)
     var = fresh_var(existsuniq.var, free | bound)
     body = substitute_formula(existsuniq.body, {existsuniq.var: var})
-    if context.equality is None:
+    if context.decl.equality is None:
         logger.error(f"{sp}❌ [DefConUniq] equality has not been declared yet")
         node.proofinfo.status = "ERROR"
         return False
-    uniqueness_formula = Forall(var, Implies(body, Symbol(Pred(context.equality.equal.name), (var, Con(node.con_name)))))
+    uniqueness_formula = Forall(var, Implies(body, Symbol(Pred(context.decl.equality.equal.name), (var, Con(node.con_name)))))
     if not alpha_equiv_with_defs(node.formula, uniqueness_formula, context):
         logger.error(f"{sp}❌ [DefConUniq] uniqueness_formula is not matched with theorem: {pretty_expr(node.formula, context)}")
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{sp}[DefConUniq] uniqueness_formula is matched with theorem: {pretty_expr(node.formula, context)}")
-    context.defconuniqs[node.name] = node
+    context.decl.defconuniqs[node.name] = node
     node.proofinfo.status = "OK"
     return True
 
 def check_deffun(node: DefFun, context: Context, indent: int):
     sp = "  " * indent
     logger.debug(f"{sp}[DefFun] name: {node.name}, theorem: {node.theorem}")
-    _, existsuniq = collect_quantifier_vars(context.theorems[node.theorem].conclusion, Forall)
+    _, existsuniq = collect_quantifier_vars(context.decl.theorems[node.theorem].conclusion, Forall)
     if not isinstance(existsuniq, ExistsUniq):
         logger.error(f"{sp}❌ [DefFun] Not ExistsUniq object: {pretty_expr(existsuniq, context)}")
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{sp}[DefFun] ExistsUniq object: {pretty_expr(existsuniq, context)}")
-    context.deffuns[node.name] = node
+    context.decl.deffuns[node.name] = node
     node.proofinfo.status = "OK"
     return True
 
 def check_deffunexist(node: DefFunExist, context: Context, indent: int):
     sp = "  " * indent
     logger.debug(f"{sp}[DefFunExist] name: {node.name}, fun_name: {node.fun_name}")
-    args, existsuniq = collect_quantifier_vars(context.theorems[context.deffuns[node.fun_name].theorem].conclusion, Forall)
+    args, existsuniq = collect_quantifier_vars(context.decl.theorems[context.decl.deffuns[node.fun_name].theorem].conclusion, Forall)
     if not isinstance(existsuniq, ExistsUniq):
         logger.error(f"{sp}❌ [DefFunExists] Not ExistsUniq object: {pretty_expr(existsuniq, context)}")
         node.proofinfo.status = "ERROR"
@@ -191,24 +191,24 @@ def check_deffunexist(node: DefFunExist, context: Context, indent: int):
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{sp}[DefFunExist] existence_formula is matched with theorem: {pretty_expr(node.formula, context)}")
-    context.deffunexists[node.name] = node
+    context.decl.deffunexists[node.name] = node
     node.proofinfo.status = "OK"
     return True
 
 def check_deffununiq(node: DefFunUniq, context: Context, indent: int):
     sp = "  " * indent
     logger.debug(f"{sp}[DefFunUniq] name: {node.name}, fun_name: {node.fun_name}")
-    args, existsuniq = collect_quantifier_vars(context.theorems[context.deffuns[node.fun_name].theorem].conclusion, Forall)
+    args, existsuniq = collect_quantifier_vars(context.decl.theorems[context.decl.deffuns[node.fun_name].theorem].conclusion, Forall)
     if not isinstance(existsuniq, ExistsUniq):
         logger.error(f"{sp}❌ [DefFunExists] Not ExistsUniq object: {pretty_expr(existsuniq, context)}")
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{sp}[DefFunUniq] ExistsUniq object: {pretty_expr(existsuniq, context)}")
-    if context.equality is None:
+    if context.decl.equality is None:
         logger.error(f"{sp}❌ [DefFun] equality has not been declared yet")
         node.proofinfo.status = "ERROR"
         return False
-    uniqueness_formula = Forall(existsuniq.var, Implies(existsuniq.body, Symbol(Pred(context.equality.equal.name), (Var(existsuniq.var.name), Compound(Fun(node.fun_name), tuple(args))))))
+    uniqueness_formula = Forall(existsuniq.var, Implies(existsuniq.body, Symbol(Pred(context.decl.equality.equal.name), (Var(existsuniq.var.name), Compound(Fun(node.fun_name), tuple(args))))))
     for arg in reversed(args):
         uniqueness_formula = Forall(arg, uniqueness_formula)
     if not alpha_equiv_with_defs(node.formula, uniqueness_formula, context):
@@ -216,7 +216,7 @@ def check_deffununiq(node: DefFunUniq, context: Context, indent: int):
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{sp}[DefFun] uniqueness_formula is matched with theorem: {pretty_expr(node.formula, context)}")
-    context.deffununiqs[node.name] = node
+    context.decl.deffununiqs[node.name] = node
     node.proofinfo.status = "OK"
     return True
 
@@ -229,7 +229,7 @@ def check_deffunterm(node: DefFunTerm, context: Context, indent: int):
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{sp}[DefFunTerm] args are mathced with free vars of term: {free}")
-    context.deffunterms[node.name] = node
+    context.decl.deffunterms[node.name] = node
     node.proofinfo.status = "OK"
     return True
 
@@ -242,7 +242,7 @@ def check_equality(node: Equality, context: Context, indent: int):
     if not check_equality_replacement(node.replacement, context, indent+1):
         node.proofinfo.status = "ERROR"
         return False
-    context.equality = node
+    context.decl.equality = node
     logger.debug(f"{sp}[Equality] {node.equal.name} is registered as equality")
     node.proofinfo.status = "OK"
     return True
@@ -271,7 +271,7 @@ def check_equality_replacement(node: EqualityReplacement, context: Context, inde
             else:
                 raise Exception("node.equal is not PrimPred or DefPred")
         else:
-            arity = context.primpreds[predicate].arity
+            arity = context.decl.primpreds[predicate].arity
         args_x: list[Var] = []
         args_y: list[Var] = []
         for i in range(arity):
@@ -297,9 +297,9 @@ def check_equality_replacement(node: EqualityReplacement, context: Context, inde
 def check_control(node: Control, context: Context, indent: int):
     sp = "  " * indent
 
-    node.proofinfo.context_vars = deepcopy(context.vars)
-    node.proofinfo.context_formulas = deepcopy(context.formulas)
-    node.proofinfo.context_templates = deepcopy(context.templates)
+    node.proofinfo.context_vars = deepcopy(context.ctrl.vars)
+    node.proofinfo.context_formulas = deepcopy(context.ctrl.formulas)
+    node.proofinfo.context_templates = deepcopy(context.ctrl.templates)
 
     if isinstance(node, Any):
         return check_any(node, context, indent)
@@ -343,27 +343,27 @@ def check_any(node: Any, context: Context, indent: int):
     sp = "  " * indent
     local_vars = [item for item in node.items if isinstance(item, Var)]
     for var in local_vars:
-        if var in context.vars:
+        if var in context.ctrl.vars:
             logger.error(f"{sp}❌ [Any] {pretty_expr(var, context)} is already used")
             node.proofinfo.status = "ERROR"
             return False
     local_templates = [item for item in node.items if isinstance(item, Template)]
     for template in local_templates:
-        if template in context.templates:
+        if template in context.ctrl.templates:
             logger.error(f"{sp}❌ [Any] {pretty_expr(template, context)} is already used")
             node.proofinfo.status = "ERROR"
             return False
     logger.debug(f"{sp}[Any] Taking {node.items}")
-    local_ctx = context.copy(list(context.vars + local_vars), list(context.formulas), list(context.templates + local_templates))
+    local_ctx = context.copy(list(context.ctrl.vars + local_vars), list(context.ctrl.formulas), list(context.ctrl.templates + local_templates))
     for stmt in node.body:
         if not check_control(stmt, local_ctx, indent+1):
             node.proofinfo.status = "ERROR"
             return False
-    if not (len(context.formulas) < len(local_ctx.formulas) and context.formulas == local_ctx.formulas[:len(context.formulas)]):
+    if not (len(context.ctrl.formulas) < len(local_ctx.ctrl.formulas) and context.ctrl.formulas == local_ctx.ctrl.formulas[:len(context.ctrl.formulas)]):
         logger.error(f"{sp}❌ [Any] Local context must extend the parent context")
         node.proofinfo.status = "ERROR"
         return False
-    local_goal = local_ctx.formulas[-1]
+    local_goal = local_ctx.ctrl.formulas[-1]
     if isinstance(local_goal, Bottom):
         logger.error(f"{sp}❌ [Any] Bottom cannot be generalized")
         node.proofinfo.status = "ERROR"
@@ -385,16 +385,16 @@ def check_any(node: Any, context: Context, indent: int):
 def check_assume(node: Assume, context: Context, indent: int):
     sp = "  " * indent
     logger.debug(f"{sp}[Assume] premise={pretty_expr(node.premise, context)}")
-    local_ctx = context.copy(list(context.vars), list(context.formulas + [node.premise]), list(context.templates))
+    local_ctx = context.copy(list(context.ctrl.vars), list(context.ctrl.formulas + [node.premise]), list(context.ctrl.templates))
     for stmt in node.body:
         if not check_control(stmt, local_ctx, indent+1):
             node.proofinfo.status = "ERROR"
             return False
-    if not (len(context.formulas) < len(local_ctx.formulas) and context.formulas == local_ctx.formulas[:len(context.formulas)]):
+    if not (len(context.ctrl.formulas) < len(local_ctx.ctrl.formulas) and context.ctrl.formulas == local_ctx.ctrl.formulas[:len(context.ctrl.formulas)]):
         logger.error(f"{sp}❌ [Assume] Local context must extend the parent context")
         node.proofinfo.status = "ERROR"
         return False
-    goal = local_ctx.formulas[-1]
+    goal = local_ctx.ctrl.formulas[-1]
     if isinstance(goal, Bottom):
         logger.error(f"{sp}❌ [Assume] Bottom is not allowed as goal")
         node.proofinfo.status = "ERROR"
@@ -430,17 +430,17 @@ def check_divide(node: Divide, context: Context, indent: int):
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{sp}[Divide] fact={pretty_expr(fact, context)}")
-    local_ctx = context.copy(list(context.vars), list(context.formulas), list(context.templates))
+    local_ctx = context.copy(list(context.ctrl.vars), list(context.ctrl.formulas), list(context.ctrl.templates))
     goals: list[Bottom | Formula] = []
     for stmt in node.cases:
         if not check_case(stmt, local_ctx, indent+1):
             node.proofinfo.status = "ERROR"
             return False
-        if not (len(context.formulas) < len(local_ctx.formulas) and context.formulas == local_ctx.formulas[:len(context.formulas)]):
+        if not (len(context.ctrl.formulas) < len(local_ctx.ctrl.formulas) and context.ctrl.formulas == local_ctx.ctrl.formulas[:len(context.ctrl.formulas)]):
             logger.error(f"{sp}❌ [Divide] Local context must extend the parent context")
             node.proofinfo.status = "ERROR"
             return False
-        goal = local_ctx.formulas[-1]
+        goal = local_ctx.ctrl.formulas[-1]
         logger.debug(f"{sp}[Divide] derived goal: {pretty_expr(goal, context)}")
         goals.append(goal)
     node.proofinfo.status = "OK"
@@ -456,16 +456,16 @@ def check_divide(node: Divide, context: Context, indent: int):
 def check_case(node: Case, context: Context, indent: int):
     sp = "  " * indent
     logger.debug(f"{sp}[Case] premise={pretty_expr(node.premise, context)}")
-    local_ctx = context.copy(list(context.vars), list(context.formulas + [node.premise]), list(context.templates))
+    local_ctx = context.copy(list(context.ctrl.vars), list(context.ctrl.formulas + [node.premise]), list(context.ctrl.templates))
     for stmt in node.body:
         if not check_control(stmt, local_ctx, indent+1):
             node.proofinfo.status = "ERROR"
             return False
-    if not (len(context.formulas) < len(local_ctx.formulas) and context.formulas == local_ctx.formulas[:len(context.formulas)]):
+    if not (len(context.ctrl.formulas) < len(local_ctx.ctrl.formulas) and context.ctrl.formulas == local_ctx.ctrl.formulas[:len(context.ctrl.formulas)]):
         logger.error(f"{sp}❌ [Case] Local context must extend the parent context")
         node.proofinfo.status = "ERROR"
         return False
-    goal = local_ctx.formulas[-1]
+    goal = local_ctx.ctrl.formulas[-1]
     logger.debug(f"{sp}[Case] derived goal: {pretty_expr(goal, context)}")
     node.proofinfo.status = "OK"
     node.proofinfo.premises = []
@@ -495,21 +495,21 @@ def check_some(node: Some, context: Context, indent: int):
         node.proofinfo.status = "ERROR"
         return False
     for var in node.env.values():
-        if var in context.vars:
+        if var in context.ctrl.vars:
             node.proofinfo.status = "ERROR"
             logger.error(f"{sp}❌ [Some] {pretty_expr(var, context)} is already used")
     premise = substitute_formula(body, node.env)
     logger.debug(f"{sp}[Some] Taking {node.env.values()}, premise={pretty_expr(premise, context)}")
-    local_ctx = context.copy(list(context.vars + list(node.env.values())), list(context.formulas + [premise]), list(context.templates))
+    local_ctx = context.copy(list(context.ctrl.vars + list(node.env.values())), list(context.ctrl.formulas + [premise]), list(context.ctrl.templates))
     for stmt in node.body:
         if not check_control(stmt, local_ctx, indent+1):
             node.proofinfo.status = "ERROR"
             return False
-    if not (len(context.formulas) < len(local_ctx.formulas) and context.formulas == local_ctx.formulas[:len(context.formulas)]):
+    if not (len(context.ctrl.formulas) < len(local_ctx.ctrl.formulas) and context.ctrl.formulas == local_ctx.ctrl.formulas[:len(context.ctrl.formulas)]):
         logger.error(f"{sp}❌ [Some] Local context must extend the parent context")
         node.proofinfo.status = "ERROR"
         return False
-    goal = local_ctx.formulas[-1]
+    goal = local_ctx.ctrl.formulas[-1]
     logger.debug(f"{sp}[Some] derived goal: {pretty_expr(goal, context)}")
     node.proofinfo.status = "OK"
     node.proofinfo.premises = [node.fact]
@@ -524,16 +524,16 @@ def check_some(node: Some, context: Context, indent: int):
 def check_deny(node: Deny, context: Context, indent: int):
     sp = "  " * indent
     logger.debug(f"{sp}[Deny] premise={pretty_expr(node.premise, context)}")
-    local_ctx = context.copy(list(context.vars), list(context.formulas + [node.premise]), list(context.templates))
+    local_ctx = context.copy(list(context.ctrl.vars), list(context.ctrl.formulas + [node.premise]), list(context.ctrl.templates))
     for stmt in node.body:
         if not check_control(stmt, local_ctx, indent+1):
             node.proofinfo.status = "ERROR"
             return False
-    if not (len(context.formulas) < len(local_ctx.formulas) and context.formulas == local_ctx.formulas[:len(context.formulas)]):
+    if not (len(context.ctrl.formulas) < len(local_ctx.ctrl.formulas) and context.ctrl.formulas == local_ctx.ctrl.formulas[:len(context.ctrl.formulas)]):
         logger.error(f"{sp}❌ [Deny] Local context must extend the parent context")
         node.proofinfo.status = "ERROR"
         return False
-    goal = local_ctx.formulas[-1]
+    goal = local_ctx.ctrl.formulas[-1]
     logger.debug(f"{sp}[Deny] derived goal: {pretty_expr(goal, context)}")
     if isinstance(goal, Bottom):
         if isinstance(node.premise, Not):
@@ -653,11 +653,11 @@ def check_characterize(node: Characterize, context: Context, indent: int):
     logger.debug(f"{sp}[Characterize] node.conclusion.var {node.conclusion.var} is matched with node.env {node.env}")
     free, bound = collect_vars(node.conclusion.body)
     vardash = fresh_var(Var(node.conclusion.var.name + "'"), free | bound)
-    if context.equality is None:
+    if context.decl.equality is None:
         logger.error(f"{sp}❌ [Characterize] equality has not been declared yet")
         node.proofinfo.status = "ERROR"
         return False
-    fact = And(substitute_formula(node.conclusion.body, node.env), Forall(vardash, Implies(substitute_formula(node.conclusion.body, {node.conclusion.var: vardash}), Symbol(Pred(context.equality.equal.name), (vardash, list(node.env.values())[0])))))
+    fact = And(substitute_formula(node.conclusion.body, node.env), Forall(vardash, Implies(substitute_formula(node.conclusion.body, {node.conclusion.var: vardash}), Symbol(Pred(context.decl.equality.equal.name), (vardash, list(node.env.values())[0])))))
     if not goal_in_context(fact, context):
         logger.error(f"{sp}❌ [Characterize] Not fact: {pretty_expr(fact, context)}")
         node.proofinfo.status = "ERROR"
@@ -865,13 +865,13 @@ def check_substitute(node: Substitute, context: Context, indent: int):
         return False
     logger.debug(f"{sp}[Substitute] Fact: {pretty_expr(node.fact, context)}")
     fact = get_fact(node.fact, context)
-    if context.equality is None:
+    if context.decl.equality is None:
         logger.error(f"{sp}❌ [Substitute] equality has not been declared yet")
         node.proofinfo.status = "ERROR"
         return False
     premises_equal: list[str | Symbol] = []
     for k, v in node.env.items():
-        equation = Symbol(Pred(context.equality.equal.name), (k, v))
+        equation = Symbol(Pred(context.decl.equality.equal.name), (k, v))
         if k in node.evidence:
             evidence = get_fact(node.evidence[k], context)
             if not alpha_equiv_with_defs(equation, evidence, context):
@@ -906,16 +906,16 @@ def check_substitute(node: Substitute, context: Context, indent: int):
 def check_show(node: Show, context: Context, indent: int):
     sp = "  " * indent
     logger.debug(f"{sp}[Show] Target conclusion: {pretty_expr(node.conclusion, context)}")
-    local_ctx = context.copy(list(context.vars), list(context.formulas), list(context.templates))
+    local_ctx = context.copy(list(context.ctrl.vars), list(context.ctrl.formulas), list(context.ctrl.templates))
     for stmt in node.body:
         if not check_control(stmt, local_ctx, indent+1):
             node.proofinfo.status = "ERROR"
             return False
-    if not (len(context.formulas) < len(local_ctx.formulas) and context.formulas == local_ctx.formulas[:len(context.formulas)]):
+    if not (len(context.ctrl.formulas) < len(local_ctx.ctrl.formulas) and context.ctrl.formulas == local_ctx.ctrl.formulas[:len(context.ctrl.formulas)]):
         logger.error(f"{sp}❌ [Show] Local context must extend the parent context")
         node.proofinfo.status = "ERROR"
         return False
-    goal = local_ctx.formulas[-1]
+    goal = local_ctx.ctrl.formulas[-1]
     logger.debug(f"{sp}[Show] derived goal: {pretty_expr(goal, context)}")
     if not alpha_equiv_with_defs(node.conclusion, goal, context):
         logger.error(f"{sp}❌ [Show] Not matched with target conclusion: {pretty_expr(node.conclusion, context)}")

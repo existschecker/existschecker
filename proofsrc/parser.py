@@ -49,7 +49,7 @@ class Parser:
             if len(tex) != arity + 1:
                 raise SyntaxError(f"arity of {name} is {arity}, but length of tex is {len(tex)}, at {tok}")
             primpred = PrimPred(name=name, arity=arity, tex=tex)
-            context.primpreds[name] = primpred
+            context.decl.primpreds[name] = primpred
             logger.debug(f"[primpred] {name}")
             return primpred
         else:
@@ -60,7 +60,7 @@ class Parser:
         name = self.stream.consume("IDENT").value
         conclusion = self.parse_formula(context)
         axiom = Axiom(name=name, conclusion=conclusion)
-        context.axioms[name] = axiom
+        context.decl.axioms[name] = axiom
         logger.debug(f"[axiom] {name}")
         return axiom
 
@@ -72,7 +72,7 @@ class Parser:
         proof = self.parse_block(context.copy([], [], []))
         self.stream.consume("RBRACE")
         theorem = Theorem(name=name, conclusion=conclusion, proof=proof)
-        context.theorems[name] = theorem
+        context.decl.theorems[name] = theorem
         logger.debug(f"[theorem] {name}")
         return theorem
 
@@ -96,7 +96,7 @@ class Parser:
             if len(tex) != len(args) + 1:
                 raise SyntaxError(f"arity of {name} is {len(args)}, but length of tex is {len(tex)} at {tok}")
             defpred = DefPred(name=name, args=args, formula=formula, autoexpand=autoexpand, tex=tex)
-            context.defpreds[name] = defpred
+            context.decl.defpreds[name] = defpred
             logger.debug(f"[defpred] {name}")
             return defpred
         elif tok.type == "CONSTANT":
@@ -108,7 +108,7 @@ class Parser:
             if len(tex) != 1:
                 raise SyntaxError(f"{name} is constant, but length of tex is {len(tex)} at {tok}")
             defcon = DefCon(name=name, theorem=theorem, tex=tex)
-            context.defcons[name] = defcon
+            context.decl.defcons[name] = defcon
             logger.debug(f"[defcon] {name}")
             return defcon
         elif tok.type == "FUNCTION":
@@ -117,7 +117,7 @@ class Parser:
             if self.stream.peek().type == "BY":
                 self.stream.consume("BY")
                 theorem = self.stream.consume("IDENT").value
-                vars_, body = collect_quantifier_vars(context.theorems[theorem].conclusion, Forall)
+                vars_, body = collect_quantifier_vars(context.decl.theorems[theorem].conclusion, Forall)
                 if not (len(vars_) > 0 and isinstance(body, ExistsUniq)):
                     raise SyntaxError(f"conclusion of {theorem} cannot be used for function definition at {tok}")
                 arity = len(vars_)
@@ -125,7 +125,7 @@ class Parser:
                 if len(tex) != arity + 1:
                     raise SyntaxError(f"arity or {name} is {arity}, but length of tex is {len(tex)} at {tok}")
                 deffun = DefFun(name=name, arity=arity, theorem=theorem, tex=tex)
-                context.deffuns[name] = deffun
+                context.decl.deffuns[name] = deffun
                 logger.debug(f"[deffun] {name}")
                 return deffun
             else:
@@ -138,7 +138,7 @@ class Parser:
                 if len(tex) != len(args) + 1:
                     raise SyntaxError(f"arity of {name} is {len(args)}, but length of tex is {len(tex)} at {tok}")
                 deffunterm = DefFunTerm(name=name, args=args, term=term, tex=tex)
-                context.deffunterms[name] = deffunterm
+                context.decl.deffunterms[name] = deffunterm
                 logger.debug(f"[deffunterm] {name}")
                 return deffunterm
         else:
@@ -151,13 +151,13 @@ class Parser:
         self.stream.consume("BY")
         tok = self.stream.consume("IDENT")
         name = tok.value
-        if name in context.defcons:
+        if name in context.decl.defcons:
             defconexist = DefConExist(name=existence_name, formula=existence_formula, con_name=name)
-            context.defconexists[existence_name] = defconexist
+            context.decl.defconexists[existence_name] = defconexist
             return defconexist
-        elif name in context.deffuns:
+        elif name in context.decl.deffuns:
             deffunexist = DefFunExist(name=existence_name, formula=existence_formula, fun_name=name)
-            context.deffunexists[existence_name] = deffunexist
+            context.decl.deffunexists[existence_name] = deffunexist
             return deffunexist
         else:
             raise Exception(f"defcon or deffun is required, but {name} is unknown at {tok}")
@@ -169,13 +169,13 @@ class Parser:
         self.stream.consume("BY")
         tok = self.stream.consume("IDENT")
         name = tok.value
-        if name in context.defcons:
+        if name in context.decl.defcons:
             defconuniq = DefConUniq(name=uniqueness_name, formula=uniqueness_formula, con_name=name)
-            context.defconuniqs[uniqueness_name] = defconuniq
+            context.decl.defconuniqs[uniqueness_name] = defconuniq
             return defconuniq
-        elif name in context.deffuns:
+        elif name in context.decl.deffuns:
             deffununiq = DefFunUniq(name=uniqueness_name, formula=uniqueness_formula, fun_name=name)
-            context.deffununiqs[uniqueness_name] = deffununiq
+            context.decl.deffununiqs[uniqueness_name] = deffununiq
             return deffununiq
         else:
             raise Exception(f"defcon or deffun is required, but {name} is unknown at {tok}")
@@ -184,12 +184,12 @@ class Parser:
         self.stream.consume("EQUALITY")
         tok = self.stream.consume("IDENT")
         name = tok.value
-        if name in context.primpreds:
-            equal = context.primpreds[name]
+        if name in context.decl.primpreds:
+            equal = context.decl.primpreds[name]
             if equal.arity != 2:
                 raise Exception(f"arity is required to be 2, but arity of {name} is {equal.arity} at {tok}")
-        elif name in context.defpreds:
-            equal = context.defpreds[name]
+        elif name in context.decl.defpreds:
+            equal = context.decl.defpreds[name]
             if len(equal.args) != 2:
                 raise Exception(f"arity is required to be 2, but arity of {name} is {len(equal.args)} at {tok}")
         else:
@@ -197,7 +197,7 @@ class Parser:
         reflection = self.parse_equality_reflection(equal, context)
         replacement = self.parse_equality_replacement(equal, context)
         equality = Equality(equal=equal, reflection=reflection, replacement=replacement)
-        context.equality = equality
+        context.decl.equality = equality
         logger.debug(f"[equality] {type(equal)}: {equal.name}")
         return equality
 
@@ -205,10 +205,10 @@ class Parser:
         self.stream.consume("REFLECTION")
         tok = self.stream.consume("IDENT")
         name = tok.value
-        if name in context.axioms:
-            reflection_evidence = context.axioms[name]
-        elif name in context.theorems:
-            reflection_evidence = context.theorems[name]
+        if name in context.decl.axioms:
+            reflection_evidence = context.decl.axioms[name]
+        elif name in context.decl.theorems:
+            reflection_evidence = context.decl.theorems[name]
         else:
             raise Exception(f"axiom or theorem is required, but {name} is unknown at {tok}")
         return EqualityReflection(equal=equal, evidence=reflection_evidence)
@@ -219,15 +219,15 @@ class Parser:
         while True:
             tok = self.stream.consume("IDENT")
             predicate = tok.value
-            if not (predicate == equal.name or predicate in context.primpreds):
+            if not (predicate == equal.name or predicate in context.decl.primpreds):
                 raise Exception(f"{equal.name} or primpred is required, but {predicate} is unknown at {tok}")
             self.stream.consume("COLON")
             tok = self.stream.consume("IDENT")
             name = tok.value
-            if name in context.axioms:
-                formula = context.axioms[name]
-            elif name in context.theorems:
-                formula = context.theorems[name]
+            if name in context.decl.axioms:
+                formula = context.decl.axioms[name]
+            elif name in context.decl.theorems:
+                formula = context.decl.theorems[name]
             else:
                 raise Exception(f"axiom or theorem is required, but {name} is unknown at {tok}")
             replacement_evidence[predicate] = formula
@@ -306,7 +306,7 @@ class Parser:
             else:
                 break
         self.stream.consume("LBRACE")
-        body = self.parse_block(context.copy(list(context.vars + local_vars), list(context.formulas), list(context.templates + local_templates)))
+        body = self.parse_block(context.copy(list(context.ctrl.vars + local_vars), list(context.ctrl.formulas), list(context.ctrl.templates + local_templates)))
         self.stream.consume("RBRACE")
         return Any(items=items, body=body)
 
@@ -314,7 +314,7 @@ class Parser:
         self.stream.consume("ASSUME")
         premise = self.parse_formula(context)
         self.stream.consume("LBRACE")
-        body = self.parse_block(context.copy(list(context.vars), list(context.formulas), list(context.templates)))
+        body = self.parse_block(context.copy(list(context.ctrl.vars), list(context.ctrl.formulas), list(context.ctrl.templates)))
         self.stream.consume("RBRACE")
         return Assume(premise=premise, body=body)
     
@@ -323,7 +323,7 @@ class Parser:
         fact = self.parse_reference_or_formula(context)
         cases: list[Case] = []
         while self.stream.peek().type == "CASE":
-            cases.append(self.parse_case(context.copy(list(context.vars), list(context.formulas), list(context.templates))))
+            cases.append(self.parse_case(context.copy(list(context.ctrl.vars), list(context.ctrl.formulas), list(context.ctrl.templates))))
         if len(cases) < 2:
             raise SyntaxError(f"At least two cases are required at {tok}")
         return Divide(fact=fact, cases=cases)
@@ -332,7 +332,7 @@ class Parser:
         self.stream.consume("CASE")
         premise = self.parse_formula(context)
         self.stream.consume("LBRACE")
-        body = self.parse_block(context.copy(list(context.vars), list(context.formulas), list(context.templates)))
+        body = self.parse_block(context.copy(list(context.ctrl.vars), list(context.ctrl.formulas), list(context.ctrl.templates)))
         self.stream.consume("RBRACE")
         return Case(premise=premise, body=body)
     
@@ -351,7 +351,7 @@ class Parser:
         self.stream.consume("SUCH")
         fact = self.parse_reference_or_formula(context)
         self.stream.consume("LBRACE")
-        body = self.parse_block(context.copy(list(context.vars + list(env.values())), list(context.formulas), list(context.templates)))
+        body = self.parse_block(context.copy(list(context.ctrl.vars + list(env.values())), list(context.ctrl.formulas), list(context.ctrl.templates)))
         self.stream.consume("RBRACE")
         return Some(env=env, fact=fact, body=body)
     
@@ -359,7 +359,7 @@ class Parser:
         self.stream.consume("DENY")
         premise = self.parse_formula(context)
         self.stream.consume("LBRACE")
-        body = self.parse_block(context.copy(list(context.vars), list(context.formulas), list(context.templates)))
+        body = self.parse_block(context.copy(list(context.ctrl.vars), list(context.ctrl.formulas), list(context.ctrl.templates)))
         self.stream.consume("RBRACE")
         return Deny(premise=premise, body=body)
     
@@ -509,12 +509,12 @@ class Parser:
         self.stream.consume("SHOW")
         conclusion = self.parse_bot_or_formula(context)
         self.stream.consume("LBRACE")
-        body = self.parse_block(context.copy(list(context.vars), list(context.formulas), list(context.templates)))
+        body = self.parse_block(context.copy(list(context.ctrl.vars), list(context.ctrl.formulas), list(context.ctrl.templates)))
         self.stream.consume("RBRACE")
         return Show(conclusion=conclusion, body=body)
 
     def parse_reference_or_formula(self, context: Context) -> str | Formula:
-        if self.stream.peek().type == "IDENT" and context.has_reference(self.stream.peek().value):
+        if self.stream.peek().type == "IDENT" and context.decl.has_reference(self.stream.peek().value):
             return self.stream.consume("IDENT").value
         else:
             return self.parse_formula(context)
@@ -561,11 +561,11 @@ class Parser:
         tok = self.stream.peek()
         if tok.type == "IDENT":
             name = self.stream.consume("IDENT").value
-            if any(template.name == name for template in bound_templates) or any(template.name == name for template in context.templates):
+            if any(template.name == name for template in bound_templates) or any(template.name == name for template in context.ctrl.templates):
                 if any(template.name == name for template in bound_templates):
                     template = next(template for template in bound_templates if template.name == name)
                 else:
-                    template = next(template for template in context.templates if template.name == name)
+                    template = next(template for template in context.ctrl.templates if template.name == name)
                 if template.arity == 0:
                     vars: list[Var] = []
                 else:
@@ -575,11 +575,11 @@ class Parser:
                     if len(vars) != template.arity:
                         raise SyntaxError(f"arity of {template.name} is {template.arity}, but length of args is {len(vars)} at {tok}")
                 return TemplateCall(template, tuple(vars))
-            elif name in context.primpreds or name in context.defpreds:
-                if name in context.primpreds:
-                    arity = context.primpreds[name].arity
+            elif name in context.decl.primpreds or name in context.decl.defpreds:
+                if name in context.decl.primpreds:
+                    arity = context.decl.primpreds[name].arity
                 else:
-                    arity = len(context.defpreds[name].args)
+                    arity = len(context.decl.defpreds[name].args)
                 self.stream.consume("LPAREN")
                 args = [self.parse_term(context, list(bound_vars), list(bound_templates))]
                 while self.stream.peek().type == "COMMA":
@@ -650,13 +650,13 @@ class Parser:
                 return next(var for var in bound_vars if var.name == name)
             elif any(template.name == name for template in bound_templates):
                 return next(template for template in bound_templates if template.name == name)
-            elif any(var.name == name for var in context.vars):
-                return next((var for var in context.vars if var.name == name))
-            elif any(template.name == name for template in context.templates):
-                return next((template for template in context.templates if template.name == name))
-            elif name in context.defcons:
+            elif any(var.name == name for var in context.ctrl.vars):
+                return next((var for var in context.ctrl.vars if var.name == name))
+            elif any(template.name == name for template in context.ctrl.templates):
+                return next((template for template in context.ctrl.templates if template.name == name))
+            elif name in context.decl.defcons:
                 return Con(name)
-            elif name in context.deffuns or name in context.deffunterms:
+            elif name in context.decl.deffuns or name in context.decl.deffunterms:
                 self.stream.consume("LPAREN")
                 args = [self.parse_term(context, list(bound_vars), list(bound_templates))]
                 while self.stream.peek().type == "COMMA":
@@ -664,12 +664,12 @@ class Parser:
                     args.append(self.parse_term(context, list(bound_vars), list(bound_templates)))
                 self.stream.consume("RPAREN")
                 args = tuple(args)
-                if name in context.deffuns:
-                    arity = context.deffuns[name].arity
+                if name in context.decl.deffuns:
+                    arity = context.decl.deffuns[name].arity
                     if len(args) != arity:
                         raise SyntaxError(f"arity of {name} is {arity}, but length of args is {len(args)}, at {tok}")
                 else:
-                    arity = len(context.deffunterms[name].args)
+                    arity = len(context.decl.deffunterms[name].args)
                     if len(args) != arity:
                         raise SyntaxError(f"arity of {name} is {arity}, but lenfth of args is {len(args)}, at {tok}")
                 return Compound(Fun(name), args)
