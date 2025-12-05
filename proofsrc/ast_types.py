@@ -43,6 +43,21 @@ class Template(Term):
     name: str
     arity: int
 
+@dataclass
+class FormulaContext:
+    vars: list[Var]
+    templates: list[Template]
+
+    @staticmethod
+    def init() -> "FormulaContext":
+        return FormulaContext(vars=[], templates=[])
+
+    def copy(self) -> "FormulaContext":
+        return FormulaContext(list(self.vars), list(self.templates))
+
+    def add(self, new_vars: list[Var], new_templates: list[Template]) -> "FormulaContext":
+        return FormulaContext(list(self.vars + new_vars), list(self.templates + new_templates))
+
 @dataclass(frozen=True)
 class TemplateCall(Formula):
     template: Template
@@ -353,13 +368,20 @@ class DeclarationContext:
 class Context:
     decl: DeclarationContext
     ctrl: ControlContext
+    form: FormulaContext
 
     @staticmethod
     def init() -> "Context":
-        return Context(DeclarationContext.init(), ControlContext.init())
+        return Context(DeclarationContext.init(), ControlContext.init(), FormulaContext.init())
 
     def copy(self, vars: list[Var], formulas: list[Bottom | Formula], templates: list[Template]) -> "Context":
-        return Context(self.decl, self.ctrl.copy(vars, formulas, templates))
+        return Context(self.decl, self.ctrl.copy(vars, formulas, templates), self.form)
+
+    def copy_form(self):
+        return Context(self.decl, self.ctrl, self.form.copy())
+
+    def add_form(self, new_vars: list[Var], new_templates: list[Template]):
+        return Context(self.decl, self.ctrl, self.form.add(new_vars, new_templates))
 
 @dataclass
 class Include:

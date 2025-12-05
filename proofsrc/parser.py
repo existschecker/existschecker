@@ -91,7 +91,7 @@ class Parser:
             args = self.parse_vars()
             self.stream.consume("RPAREN")
             self.stream.consume("AS")
-            formula = self.parse_formula(context, list(args), [])
+            formula = self.parse_formula(context.add_form(args, []))
             tex = self.parse_tex()
             if len(tex) != len(args) + 1:
                 raise SyntaxError(f"arity of {name} is {len(args)}, but length of tex is {len(tex)} at {tok}")
@@ -133,7 +133,7 @@ class Parser:
                 args = self.parse_vars()
                 self.stream.consume("RPAREN")
                 self.stream.consume("AS")
-                term = self.parse_term(context, list(args), [])
+                term = self.parse_term(context.add_form(args, []))
                 tex = self.parse_tex()
                 if len(tex) != len(args) + 1:
                     raise SyntaxError(f"arity of {name} is {len(args)}, but length of tex is {len(tex)} at {tok}")
@@ -526,44 +526,40 @@ class Parser:
         else:
             return self.parse_formula(context)
 
-    def parse_formula(self, context: Context, bound_vars: list[Var] | None = None, bound_templates: list[Template] | None = None) -> Formula:
-        if bound_vars is None:
-            bound_vars = []
-        if bound_templates is None:
-            bound_templates = []
-        return self.parse_implies(context, list(bound_vars), list(bound_templates))
+    def parse_formula(self, context: Context) -> Formula:
+        return self.parse_implies(context.copy_form())
 
-    def parse_implies(self, context: Context, bound_vars: list[Var], bound_templates: list[Template]) -> Formula:
-        left = self.parse_and(context, list(bound_vars), list(bound_templates))
+    def parse_implies(self, context: Context) -> Formula:
+        left = self.parse_and(context.copy_form())
         while self.stream.peek().type in ("IMPLIES", "IFF"):
             op = self.stream.peek().type
             self.stream.consume(op)
-            right = self.parse_and(context, list(bound_vars), list(bound_templates))
+            right = self.parse_and(context.copy_form())
             if op == "IMPLIES":
                 left = Implies(left, right)
             elif op == "IFF":
                 left = Iff(left, right)
         return left
 
-    def parse_and(self, context: Context, bound_vars: list[Var], bound_templates: list[Template]) -> Formula:
-        left = self.parse_primary(context, list(bound_vars), list(bound_templates))
+    def parse_and(self, context: Context) -> Formula:
+        left = self.parse_primary(context.copy_form())
         while self.stream.peek().type in ("AND", "OR"):
             op = self.stream.peek().type
             self.stream.consume(op)
-            right = self.parse_primary(context, list(bound_vars), list(bound_templates))
+            right = self.parse_primary(context.copy_form())
             if op == "AND":
                 left = And(left, right)
             elif op == "OR":
                 left = Or(left, right)
         return left
 
-    def parse_primary(self, context: Context, bound_vars: list[Var], bound_templates: list[Template]) -> Formula:
+    def parse_primary(self, context: Context) -> Formula:
         tok = self.stream.peek()
         if tok.type == "IDENT":
             name = self.stream.consume("IDENT").value
-            if any(template.name == name for template in bound_templates) or any(template.name == name for template in context.ctrl.templates):
-                if any(template.name == name for template in bound_templates):
-                    template = next(template for template in bound_templates if template.name == name)
+            if any(template.name == name for template in context.form.templates) or any(template.name == name for template in context.ctrl.templates):
+                if any(template.name == name for template in context.form.templates):
+                    template = next(template for template in context.form.templates if template.name == name)
                 else:
                     template = next(template for template in context.ctrl.templates if template.name == name)
                 if template.arity == 0:
@@ -581,10 +577,10 @@ class Parser:
                 else:
                     arity = len(context.decl.defpreds[name].args)
                 self.stream.consume("LPAREN")
-                args = [self.parse_term(context, list(bound_vars), list(bound_templates))]
+                args = [self.parse_term(context.copy_form())]
                 while self.stream.peek().type == "COMMA":
                     self.stream.consume("COMMA")
-                    args.append(self.parse_term(context, list(bound_vars), list(bound_templates)))
+                    args.append(self.parse_term(context.copy_form()))
                 if len(args) != arity:
                     raise SyntaxError(f"arity of {name} is {arity}, but length of args is {len(args)} at {tok}")
                 self.stream.consume("RPAREN")
@@ -594,14 +590,14 @@ class Parser:
 
         elif tok.type == "LPAREN":
             self.stream.consume("LPAREN")
-            expr = self.parse_formula(context, list(bound_vars), list(bound_templates))
+            expr = self.parse_formula(context.copy_form())
             self.stream.consume("RPAREN")
             return expr
         
         elif tok.type == "NOT":
             self.stream.consume("NOT")
             self.stream.consume("LPAREN")
-            body = self.parse_formula(context, list(bound_vars), list(bound_templates))
+            body = self.parse_formula(context.copy_form())
             self.stream.consume("RPAREN")
             return Not(body)
 
@@ -624,7 +620,7 @@ class Parser:
                     local_bound_templates.append(template)
                     tok = self.stream.peek()
             self.stream.consume("LPAREN")
-            body = self.parse_formula(context, list(bound_vars + local_bound_vars), list(bound_templates + local_bound_templates))
+            body = self.parse_formula(context.add_form(local_bound_vars, local_bound_templates))
             self.stream.consume("RPAREN")
             for quantifier, item in zip(reversed(quantifiers), reversed(items)):
                 if quantifier == "FORALL" or quantifier == "FORALL_TEMPLATE":
@@ -638,18 +634,14 @@ class Parser:
         else:
             raise SyntaxError(f"Formula objct is required, but unknown token is found at {tok}")
 
-    def parse_term(self, context: Context, bound_vars: list[Var] | None = None, bound_templates: list[Template] | None = None) -> Term:
-        if bound_vars is None:
-            bound_vars = []
-        if bound_templates is None:
-            bound_templates = []
+    def parse_term(self, context: Context) -> Term:
         tok = self.stream.peek()
         if tok.type == "IDENT":
             name = self.stream.consume("IDENT").value
-            if any(var.name == name for var in bound_vars):
-                return next(var for var in bound_vars if var.name == name)
-            elif any(template.name == name for template in bound_templates):
-                return next(template for template in bound_templates if template.name == name)
+            if any(var.name == name for var in context.form.vars):
+                return next(var for var in context.form.vars if var.name == name)
+            elif any(template.name == name for template in context.form.templates):
+                return next(template for template in context.form.templates if template.name == name)
             elif any(var.name == name for var in context.ctrl.vars):
                 return next((var for var in context.ctrl.vars if var.name == name))
             elif any(template.name == name for template in context.ctrl.templates):
@@ -658,10 +650,10 @@ class Parser:
                 return Con(name)
             elif name in context.decl.deffuns or name in context.decl.deffunterms:
                 self.stream.consume("LPAREN")
-                args = [self.parse_term(context, list(bound_vars), list(bound_templates))]
+                args = [self.parse_term(context.copy_form())]
                 while self.stream.peek().type == "COMMA":
                     self.stream.consume("COMMA")
-                    args.append(self.parse_term(context, list(bound_vars), list(bound_templates)))
+                    args.append(self.parse_term(context.copy_form()))
                 self.stream.consume("RPAREN")
                 args = tuple(args)
                 if name in context.decl.deffuns:
@@ -679,7 +671,7 @@ class Parser:
             self.stream.consume("LAMBDA")
             vars = self.parse_vars()
             self.stream.consume("DOT")
-            formula = self.parse_formula(context, list(bound_vars + vars), list(bound_templates))
+            formula = self.parse_formula(context.add_form(vars, []))
             return Lambda(tuple(vars), formula)
         else:
             raise SyntaxError(f"Term object is required, but unknown token is found at {tok}")
