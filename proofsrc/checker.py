@@ -64,14 +64,14 @@ def check_declaration(node: Declaration, context: Context, indent: int = 0) -> b
 def check_primpred(node: PrimPred, context: Context, indent: int):
     sp = "  " * indent
     logger.debug(f"{sp}[PrimPred] name: {node.name}, arity: {node.arity}")
-    context.add_primpred(node)
+    context.add_decl(node)
     node.proofinfo.status = "OK"
     return True
 
 def check_axiom(node: Axiom, context: Context, indent: int):
     sp = "  " * indent
     logger.debug(f"{sp}[Axiom] name: {node.name}, conclusion: {pretty_expr(node.conclusion, context)}")
-    context.add_axiom(node)
+    context.add_decl(node)
     node.proofinfo.status = "OK"
     return True
 
@@ -86,7 +86,7 @@ def check_theorem(node: Theorem, context: Context, indent: int):
             return False
     if goal_in_context(node.conclusion, local_ctx):
         logger.debug(f"{sp}[Theorem] {node.name} proved: {pretty_expr(node.conclusion, context)}")
-        context.add_theorem(node)
+        context.add_decl(node)
         node.proofinfo.status = "OK"
         return True
     else:
@@ -97,7 +97,7 @@ def check_theorem(node: Theorem, context: Context, indent: int):
 def check_defpred(node: DefPred, context: Context, indent: int):
     sp = "  " * indent
     logger.debug(f"{sp}[DefPred] name: {node.name}, args: {node.args}, formula: {pretty_expr(node.formula, context)}")
-    context.add_defpred(node)
+    context.add_decl(node)
     node.proofinfo.status = "OK"
     return True
 
@@ -110,7 +110,7 @@ def check_defcon(node: DefCon, context: Context, indent: int):
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{sp}[DefCon] ExistsUniq object: {pretty_expr(existsuniq, context)}")
-    context.add_defcon(node)
+    context.add_decl(node)
     node.proofinfo.status = "OK"
     return True
 
@@ -129,7 +129,7 @@ def check_defconexist(node: DefConExist, context: Context, indent: int):
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{sp}[DefConExist] existence_formula is matched with theorem: {pretty_expr(node.formula, context)}")
-    context.add_defconexist(node)
+    context.add_decl(node)
     node.proofinfo.status = "OK"
     return True
 
@@ -155,7 +155,7 @@ def check_defconuniq(node: DefConUniq, context: Context, indent: int):
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{sp}[DefConUniq] uniqueness_formula is matched with theorem: {pretty_expr(node.formula, context)}")
-    context.add_defconuniq(node)
+    context.add_decl(node)
     node.proofinfo.status = "OK"
     return True
 
@@ -168,7 +168,7 @@ def check_deffun(node: DefFun, context: Context, indent: int):
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{sp}[DefFun] ExistsUniq object: {pretty_expr(existsuniq, context)}")
-    context.add_deffun(node)
+    context.add_decl(node)
     node.proofinfo.status = "OK"
     return True
 
@@ -189,7 +189,7 @@ def check_deffunexist(node: DefFunExist, context: Context, indent: int):
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{sp}[DefFunExist] existence_formula is matched with theorem: {pretty_expr(node.formula, context)}")
-    context.add_deffunexist(node)
+    context.add_decl(node)
     node.proofinfo.status = "OK"
     return True
 
@@ -214,7 +214,7 @@ def check_deffununiq(node: DefFunUniq, context: Context, indent: int):
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{sp}[DefFun] uniqueness_formula is matched with theorem: {pretty_expr(node.formula, context)}")
-    context.add_deffununiq(node)
+    context.add_decl(node)
     node.proofinfo.status = "OK"
     return True
 
@@ -227,7 +227,7 @@ def check_deffunterm(node: DefFunTerm, context: Context, indent: int):
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{sp}[DefFunTerm] args are mathced with free vars of term: {free}")
-    context.add_deffunterm(node)
+    context.add_decl(node)
     node.proofinfo.status = "OK"
     return True
 

@@ -47,16 +47,22 @@ class Template(Term):
 class FormulaContext:
     vars: list[Var]
     templates: list[Template]
+    used_names: set[str]
 
     @staticmethod
     def init() -> "FormulaContext":
-        return FormulaContext(vars=[], templates=[])
+        return FormulaContext(vars=[], templates=[], used_names=set())
 
     def copy(self) -> "FormulaContext":
-        return FormulaContext(list(self.vars), list(self.templates))
+        return FormulaContext(list(self.vars), list(self.templates), self.used_names.copy())
 
     def add(self, new_vars: list[Var], new_templates: list[Template]) -> "FormulaContext":
-        return FormulaContext(list(self.vars + new_vars), list(self.templates + new_templates))
+        new_used_names = self.used_names.copy()
+        for item in new_vars + new_templates:
+            if item.name in new_used_names:
+                raise Exception(f"{item.name} is already used")
+            new_used_names.add(item.name)
+        return FormulaContext(list(self.vars + new_vars), list(self.templates + new_templates), new_used_names)
 
 @dataclass(frozen=True)
 class TemplateCall(Formula):
@@ -120,16 +126,22 @@ class ControlContext:
     vars: list[Var]
     formulas: list[Bottom | Formula]
     templates: list[Template]
+    used_names: set[str]
 
     @staticmethod
     def init() -> "ControlContext":
-        return ControlContext(vars=[], formulas=[], templates=[])
+        return ControlContext(vars=[], formulas=[], templates=[], used_names=set())
 
     def copy(self) -> "ControlContext":
-        return ControlContext(list(self.vars), list(self.formulas), list(self.templates))
+        return ControlContext(list(self.vars), list(self.formulas), list(self.templates), self.used_names.copy())
 
     def add(self, new_vars: list[Var], new_formulas: list[Bottom | Formula], new_templates: list[Template]) -> "ControlContext":
-        return ControlContext(list(self.vars + new_vars), list(self.formulas + new_formulas), list(self.templates + new_templates))
+        new_used_names = self.used_names.copy()
+        for item in new_vars + new_templates:
+            if item.name in new_used_names:
+                raise Exception(f"{item.name} is already used")
+            new_used_names.add(item.name)
+        return ControlContext(list(self.vars + new_vars), list(self.formulas + new_formulas), list(self.templates + new_templates), new_used_names)
 
 @dataclass
 class ProofInfo:
@@ -343,10 +355,103 @@ class DeclarationContext:
     deffununiqs: dict[str, DefFunUniq]
     deffunterms: dict[str, DefFunTerm]
     equality: Equality | None
+    used_names: set[str]
 
     @staticmethod
     def init() -> "DeclarationContext":
-        return DeclarationContext(primpreds={}, axioms={}, theorems={}, defpreds={}, defcons={}, defconexists={}, defconuniqs={}, deffuns={}, deffunexists={}, deffununiqs={}, deffunterms={}, equality=None)
+        return DeclarationContext(primpreds={}, axioms={}, theorems={}, defpreds={}, defcons={}, defconexists={}, defconuniqs={}, deffuns={}, deffunexists={}, deffununiqs={}, deffunterms={}, equality=None, used_names=set())
+
+    def add(self, declaration: Declaration):
+        if isinstance(declaration, PrimPred):
+            self.add_primpred(declaration)
+        elif isinstance(declaration, Axiom):
+            self.add_axiom(declaration)
+        elif isinstance(declaration, Theorem):
+            self.add_theorem(declaration)
+        elif isinstance(declaration, DefPred):
+            self.add_defpred(declaration)
+        elif isinstance(declaration, DefCon):
+            self.add_defcon(declaration)
+        elif isinstance(declaration, DefConExist):
+            self.add_defconexist(declaration)
+        elif isinstance(declaration, DefConUniq):
+            self.add_defconuniq(declaration)
+        elif isinstance(declaration, DefFun):
+            self.add_deffun(declaration)
+        elif isinstance(declaration, DefFunExist):
+            self.add_deffunexist(declaration)
+        elif isinstance(declaration, DefFunUniq):
+            self.add_deffununiq(declaration)
+        elif isinstance(declaration, DefFunTerm):
+            self.add_deffunterm(declaration)
+        else:
+            raise Exception(f"Unexpected type: {type(declaration)}")
+
+    def add_primpred(self, primpred: PrimPred):
+        if primpred.name in self.used_names:
+            raise Exception(f"{primpred.name} is already used")
+        self.used_names.add(primpred.name)
+        self.primpreds[primpred.name] = primpred
+
+    def add_axiom(self, axiom: Axiom):
+        if axiom.name in self.used_names:
+            raise Exception(f"{axiom.name} is already used")
+        self.used_names.add(axiom.name)
+        self.axioms[axiom.name] = axiom
+
+    def add_theorem(self, theorem: Theorem):
+        if theorem.name in self.used_names:
+            raise Exception(f"{theorem.name} is already used")
+        self.used_names.add(theorem.name)
+        self.theorems[theorem.name] = theorem
+
+    def add_defpred(self, defpred: DefPred):
+        if defpred.name in self.used_names:
+            raise Exception(f"{defpred.name} is already used")
+        self.used_names.add(defpred.name)
+        self.defpreds[defpred.name] = defpred
+
+    def add_defcon(self, defcon: DefCon):
+        if defcon.name in self.used_names:
+            raise Exception(f"{defcon.name} is already used")
+        self.used_names.add(defcon.name)
+        self.defcons[defcon.name] = defcon
+
+    def add_defconexist(self, defconexist: DefConExist):
+        if defconexist.name in self.used_names:
+            raise Exception(f"{defconexist.name} is already used")
+        self.used_names.add(defconexist.name)
+        self.defconexists[defconexist.name] = defconexist
+
+    def add_defconuniq(self, defconuniq: DefConUniq):
+        if defconuniq.name in self.used_names:
+            raise Exception(f"{defconuniq.name} is already used")
+        self.used_names.add(defconuniq.name)
+        self.defconuniqs[defconuniq.name] = defconuniq
+
+    def add_deffun(self, deffun: DefFun):
+        if deffun.name in self.used_names:
+            raise Exception(f"{deffun.name} is already used")
+        self.used_names.add(deffun.name)
+        self.deffuns[deffun.name] = deffun
+
+    def add_deffunexist(self, deffunexist: DefFunExist):
+        if deffunexist.name in self.used_names:
+            raise Exception(f"{deffunexist.name} is already used")
+        self.used_names.add(deffunexist.name)
+        self.deffunexists[deffunexist.name] = deffunexist
+
+    def add_deffununiq(self, deffununiq: DefFunUniq):
+        if deffununiq.name in self.used_names:
+            raise Exception(f"{deffununiq.name} is already used")
+        self.used_names.add(deffununiq.name)
+        self.deffununiqs[deffununiq.name] = deffununiq
+
+    def add_deffunterm(self, deffunterm: DefFunTerm):
+        if deffunterm.name in self.used_names:
+            raise Exception(f"{deffunterm.name} is already used")
+        self.used_names.add(deffunterm.name)
+        self.deffunterms[deffunterm.name] = deffunterm
 
     def has_reference(self, name: str) -> bool:
         return name in self.axioms or name in self.theorems or name in self.defconexists or name in self.defconuniqs or name in self.deffunexists or name in self.deffununiqs
@@ -372,94 +477,25 @@ class Context:
     decl: DeclarationContext
     ctrl: ControlContext
     form: FormulaContext
-    used_names: set[str]
 
     @staticmethod
     def init() -> "Context":
-        return Context(DeclarationContext.init(), ControlContext.init(), FormulaContext.init(), set())
+        return Context(DeclarationContext.init(), ControlContext.init(), FormulaContext.init())
 
-    def add_primpred(self, primpred: PrimPred):
-        if primpred.name in self.used_names:
-            raise Exception(f"{primpred.name} is already used")
-        self.used_names.add(primpred.name)
-        self.decl.primpreds[primpred.name] = primpred
-
-    def add_axiom(self, axiom: Axiom):
-        if axiom.name in self.used_names:
-            raise Exception(f"{axiom.name} is already used")
-        self.used_names.add(axiom.name)
-        self.decl.axioms[axiom.name] = axiom
-
-    def add_theorem(self, theorem: Theorem):
-        if theorem.name in self.used_names:
-            raise Exception(f"{theorem.name} is already used")
-        self.used_names.add(theorem.name)
-        self.decl.theorems[theorem.name] = theorem
-
-    def add_defpred(self, defpred: DefPred):
-        if defpred.name in self.used_names:
-            raise Exception(f"{defpred.name} is already used")
-        self.used_names.add(defpred.name)
-        self.decl.defpreds[defpred.name] = defpred
-
-    def add_defcon(self, defcon: DefCon):
-        if defcon.name in self.used_names:
-            raise Exception(f"{defcon.name} is already used")
-        self.used_names.add(defcon.name)
-        self.decl.defcons[defcon.name] = defcon
-
-    def add_defconexist(self, defconexist: DefConExist):
-        if defconexist.name in self.used_names:
-            raise Exception(f"{defconexist.name} is already used")
-        self.used_names.add(defconexist.name)
-        self.decl.defconexists[defconexist.name] = defconexist
-
-    def add_defconuniq(self, defconuniq: DefConUniq):
-        if defconuniq.name in self.used_names:
-            raise Exception(f"{defconuniq.name} is already used")
-        self.used_names.add(defconuniq.name)
-        self.decl.defconuniqs[defconuniq.name] = defconuniq
-
-    def add_deffun(self, deffun: DefFun):
-        if deffun.name in self.used_names:
-            raise Exception(f"{deffun.name} is already used")
-        self.used_names.add(deffun.name)
-        self.decl.deffuns[deffun.name] = deffun
-
-    def add_deffunexist(self, deffunexist: DefFunExist):
-        if deffunexist.name in self.used_names:
-            raise Exception(f"{deffunexist.name} is already used")
-        self.used_names.add(deffunexist.name)
-        self.decl.deffunexists[deffunexist.name] = deffunexist
-
-    def add_deffununiq(self, deffununiq: DefFunUniq):
-        if deffununiq.name in self.used_names:
-            raise Exception(f"{deffununiq.name} is already used")
-        self.used_names.add(deffununiq.name)
-        self.decl.deffununiqs[deffununiq.name] = deffununiq
-
-    def add_deffunterm(self, deffunterm: DefFunTerm):
-        if deffunterm.name in self.used_names:
-            raise Exception(f"{deffunterm.name} is already used")
-        self.used_names.add(deffunterm.name)
-        self.decl.deffunterms[deffunterm.name] = deffunterm
+    def add_decl(self, declaration: Declaration):
+        self.decl.add(declaration)
 
     def copy_ctrl(self):
-        return Context(self.decl, self.ctrl.copy(), self.form, self.used_names)
+        return Context(self.decl, self.ctrl.copy(), self.form)
 
     def add_ctrl(self, new_vars: list[Var], new_formulas: list[Bottom | Formula], new_templates: list[Template]):
-        new_used_names = self.used_names.copy()
-        for item in new_vars + new_templates:
-            if item.name in new_used_names:
-                raise Exception(f"{item.name} is already used")
-            new_used_names.add(item.name)
-        return Context(self.decl, self.ctrl.add(new_vars, new_formulas, new_templates), self.form, new_used_names)
+        return Context(self.decl, self.ctrl.add(new_vars, new_formulas, new_templates), self.form)
 
     def copy_form(self):
-        return Context(self.decl, self.ctrl, self.form.copy(), self.used_names)
+        return Context(self.decl, self.ctrl, self.form.copy())
 
     def add_form(self, new_vars: list[Var], new_templates: list[Template]):
-        return Context(self.decl, self.ctrl, self.form.add(new_vars, new_templates), self.used_names)
+        return Context(self.decl, self.ctrl, self.form.add(new_vars, new_templates))
 
 @dataclass
 class Include:
