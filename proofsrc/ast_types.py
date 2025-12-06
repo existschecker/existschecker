@@ -250,6 +250,7 @@ class Show(Control):
 
 @dataclass
 class Declaration:
+    name: str
     proofinfo: ProofInfo = field(init=False, default_factory=ProofInfo)
 
 @dataclass
@@ -258,24 +259,20 @@ class DeclarationSupport:
 
 @dataclass
 class PrimPred(Declaration):
-    name: str
     arity: int
     tex: list[str]
 
 @dataclass
 class Axiom(Declaration):
-    name: str
     conclusion: Formula
 
 @dataclass
 class Theorem(Declaration):
-    name: str
     conclusion: Formula
     proof: list[Control]
 
 @dataclass
 class DefPred(Declaration):
-    name: str
     args: list[Var]
     formula: Formula
     autoexpand: bool
@@ -283,44 +280,37 @@ class DefPred(Declaration):
 
 @dataclass
 class DefConExist(Declaration):
-    name: str
     formula: Formula
     con_name: str
 
 @dataclass
 class DefConUniq(Declaration):
-    name: str
     formula: Formula
     con_name: str
 
 @dataclass
 class DefCon(Declaration):
-    name: str
     theorem: str
     tex: list[str]
 
 @dataclass
 class DefFunExist(Declaration):
-    name: str
     formula: Formula
     fun_name: str
 
 @dataclass
 class DefFunUniq(Declaration):
-    name: str
     formula: Formula
     fun_name: str
 
 @dataclass
 class DefFun(Declaration):
-    name: str
     arity: int
     theorem: str
     tex: list[str]
 
 @dataclass
 class DefFunTerm(Declaration):
-    name: str
     args: list[Var]
     term: Term
     tex: list[str]
@@ -362,96 +352,38 @@ class DeclarationContext:
         return DeclarationContext(primpreds={}, axioms={}, theorems={}, defpreds={}, defcons={}, defconexists={}, defconuniqs={}, deffuns={}, deffunexists={}, deffununiqs={}, deffunterms={}, equality=None, used_names=set())
 
     def add(self, declaration: Declaration):
+        if isinstance(declaration, Equality):
+            if self.equality is not None:
+                raise Exception("equality is already declared")
+            self.equality = declaration
+            return
+        if declaration.name in self.used_names:
+            raise Exception(f"{declaration.name} is already used")
         if isinstance(declaration, PrimPred):
-            self.add_primpred(declaration)
+            self.primpreds[declaration.name] = declaration
         elif isinstance(declaration, Axiom):
-            self.add_axiom(declaration)
+            self.axioms[declaration.name] = declaration
         elif isinstance(declaration, Theorem):
-            self.add_theorem(declaration)
+            self.theorems[declaration.name] = declaration
         elif isinstance(declaration, DefPred):
-            self.add_defpred(declaration)
+            self.defpreds[declaration.name] = declaration
         elif isinstance(declaration, DefCon):
-            self.add_defcon(declaration)
+            self.defcons[declaration.name] = declaration
         elif isinstance(declaration, DefConExist):
-            self.add_defconexist(declaration)
+            self.defconexists[declaration.name] = declaration
         elif isinstance(declaration, DefConUniq):
-            self.add_defconuniq(declaration)
+            self.defconuniqs[declaration.name] = declaration
         elif isinstance(declaration, DefFun):
-            self.add_deffun(declaration)
+            self.deffuns[declaration.name] = declaration
         elif isinstance(declaration, DefFunExist):
-            self.add_deffunexist(declaration)
+            self.deffunexists[declaration.name] = declaration
         elif isinstance(declaration, DefFunUniq):
-            self.add_deffununiq(declaration)
+            self.deffununiqs[declaration.name] = declaration
         elif isinstance(declaration, DefFunTerm):
-            self.add_deffunterm(declaration)
+            self.deffunterms[declaration.name] = declaration
         else:
             raise Exception(f"Unexpected type: {type(declaration)}")
-
-    def add_primpred(self, primpred: PrimPred):
-        if primpred.name in self.used_names:
-            raise Exception(f"{primpred.name} is already used")
-        self.used_names.add(primpred.name)
-        self.primpreds[primpred.name] = primpred
-
-    def add_axiom(self, axiom: Axiom):
-        if axiom.name in self.used_names:
-            raise Exception(f"{axiom.name} is already used")
-        self.used_names.add(axiom.name)
-        self.axioms[axiom.name] = axiom
-
-    def add_theorem(self, theorem: Theorem):
-        if theorem.name in self.used_names:
-            raise Exception(f"{theorem.name} is already used")
-        self.used_names.add(theorem.name)
-        self.theorems[theorem.name] = theorem
-
-    def add_defpred(self, defpred: DefPred):
-        if defpred.name in self.used_names:
-            raise Exception(f"{defpred.name} is already used")
-        self.used_names.add(defpred.name)
-        self.defpreds[defpred.name] = defpred
-
-    def add_defcon(self, defcon: DefCon):
-        if defcon.name in self.used_names:
-            raise Exception(f"{defcon.name} is already used")
-        self.used_names.add(defcon.name)
-        self.defcons[defcon.name] = defcon
-
-    def add_defconexist(self, defconexist: DefConExist):
-        if defconexist.name in self.used_names:
-            raise Exception(f"{defconexist.name} is already used")
-        self.used_names.add(defconexist.name)
-        self.defconexists[defconexist.name] = defconexist
-
-    def add_defconuniq(self, defconuniq: DefConUniq):
-        if defconuniq.name in self.used_names:
-            raise Exception(f"{defconuniq.name} is already used")
-        self.used_names.add(defconuniq.name)
-        self.defconuniqs[defconuniq.name] = defconuniq
-
-    def add_deffun(self, deffun: DefFun):
-        if deffun.name in self.used_names:
-            raise Exception(f"{deffun.name} is already used")
-        self.used_names.add(deffun.name)
-        self.deffuns[deffun.name] = deffun
-
-    def add_deffunexist(self, deffunexist: DefFunExist):
-        if deffunexist.name in self.used_names:
-            raise Exception(f"{deffunexist.name} is already used")
-        self.used_names.add(deffunexist.name)
-        self.deffunexists[deffunexist.name] = deffunexist
-
-    def add_deffununiq(self, deffununiq: DefFunUniq):
-        if deffununiq.name in self.used_names:
-            raise Exception(f"{deffununiq.name} is already used")
-        self.used_names.add(deffununiq.name)
-        self.deffununiqs[deffununiq.name] = deffununiq
-
-    def add_deffunterm(self, deffunterm: DefFunTerm):
-        if deffunterm.name in self.used_names:
-            raise Exception(f"{deffunterm.name} is already used")
-        self.used_names.add(deffunterm.name)
-        self.deffunterms[deffunterm.name] = deffunterm
+        self.used_names.add(declaration.name)
 
     def has_reference(self, name: str) -> bool:
         return name in self.axioms or name in self.theorems or name in self.defconexists or name in self.defconuniqs or name in self.deffunexists or name in self.deffununiqs

@@ -240,7 +240,7 @@ def check_equality(node: Equality, context: Context, indent: int):
     if not check_equality_replacement(node.replacement, context, indent+1):
         node.proofinfo.status = "ERROR"
         return False
-    context.decl.equality = node
+    context.add_decl(node)
     logger.debug(f"{sp}[Equality] {node.equal.name} is registered as equality")
     node.proofinfo.status = "OK"
     return True

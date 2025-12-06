@@ -196,8 +196,8 @@ class Parser:
             raise Exception(f"primpred or defpred is required, but {name} is unknown at {tok}")
         reflection = self.parse_equality_reflection(equal, context)
         replacement = self.parse_equality_replacement(equal, context)
-        equality = Equality(equal=equal, reflection=reflection, replacement=replacement)
-        context.decl.equality = equality
+        equality = Equality(name=name, equal=equal, reflection=reflection, replacement=replacement)
+        context.add_decl(equality)
         logger.debug(f"[equality] {type(equal)}: {equal.name}")
         return equality
 
