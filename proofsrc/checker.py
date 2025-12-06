@@ -28,7 +28,7 @@ def make_debug_prefix(node: Declaration | DeclarationSupport | Control, indent: 
     return "  " * indent + f"[{node.__class__.__name__}] "
 
 def make_error_prefix(node: Declaration | DeclarationSupport | Control, indent: int) -> str:
-    return "  " * indent + f"❌ [{node.__class__.__name__}] "
+    return "  " * indent + f"❌ [{node.__class__.__name__}] {node.token.info()} "
 
 def check_ast(ast: list[Include | Declaration], context: Context) -> tuple[bool, list[Include | Declaration], Context]:
     return all(check_declaration(node, context) for node in ast if isinstance(node, Declaration)), ast, context

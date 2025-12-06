@@ -1,3 +1,4 @@
+from lexer import Token
 from dataclasses import dataclass, field
 from typing import Sequence, Literal
 
@@ -155,6 +156,7 @@ class ProofInfo:
 
 @dataclass
 class Control:
+    token: Token
     proofinfo: ProofInfo = field(init=False, default_factory=ProofInfo)
 
 @dataclass
@@ -251,10 +253,12 @@ class Show(Control):
 @dataclass
 class Declaration:
     name: str
+    token: Token
     proofinfo: ProofInfo = field(init=False, default_factory=ProofInfo)
 
 @dataclass
 class DeclarationSupport:
+    token: Token
     proofinfo: ProofInfo = field(init=False, default_factory=ProofInfo)
 
 @dataclass

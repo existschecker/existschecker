@@ -13,6 +13,6 @@ class TokenStream:
     def consume(self, expected_type: str) -> Token:
         tok = self.peek()
         if expected_type and tok.type != expected_type:
-            raise SyntaxError(f"Expected {expected_type}, got {tok.type} at line {tok.line}")
+            raise SyntaxError(f"{tok.info()} Expected {expected_type}, got {tok.type}")
         self.pos += 1
         return tok
