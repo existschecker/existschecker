@@ -212,3 +212,73 @@ theorem cartprod_characterization \forall X\forall Y\forall z(in(z,cartprod(X,Y)
     connect in(z,cartprod(X,Y))\leftrightarrow\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y)))
   }
 }
+
+theorem cartprod_cor1 \forall X\forall Y\forall x\forall y(in(x,X)\wedge in(y,Y)\to in(op(x,y),cartprod(X,Y))) {
+  any X,Y,x,y {
+    assume in(x,X)\wedge in(y,Y) {
+      split in(x,X)\wedge in(y,Y)
+      connect in(x,X)\wedge in(y,Y)\wedge equal(op(x,y),op(x,y))
+      lift for x':x,y':y conclude \exists x'\exists y'(in(x',X)\wedge in(y',Y)\wedge equal(op(x,y),op(x',y')))
+      apply cartprod_characterization for X:X,Y:Y,z:op(x,y)
+      invoke leftward in(op(x,y),cartprod(X,Y))\leftrightarrow\exists x'\exists y'(in(x',X)\wedge in(y',Y)\wedge equal(op(x,y),op(x',y')))
+    }
+  }
+}
+
+theorem cartprod_cor2 \forall X(equal(cartprod(X,emptyset),emptyset)) {
+  any X {
+    any z {
+      deny in(z,cartprod(X,emptyset)) {
+        apply cartprod_characterization for X:X,Y:emptyset,z:z
+        invoke rightward in(z,cartprod(X,emptyset))\leftrightarrow\exists x\exists y(in(x,X)\wedge in(y,emptyset)\wedge equal(z,op(x,y)))
+        some x:x,y:y such \exists x\exists y(in(x,X)\wedge in(y,emptyset)\wedge equal(z,op(x,y))) {
+          split 2 in(x,X)\wedge in(y,emptyset)\wedge equal(z,op(x,y))
+          apply emptyset_existence for y:y
+          contradict in(y,emptyset)
+        }
+      }
+    }
+    apply emptyset_uniqueness for x:cartprod(X,emptyset)
+    invoke \forall z(notin(z,cartprod(X,emptyset)))\to equal(cartprod(X,emptyset),emptyset)
+  }
+}
+
+theorem cartprod_cor3 \forall Y(equal(cartprod(emptyset,Y),emptyset)) {
+  any Y {
+    any z {
+      deny in(z,cartprod(emptyset,Y)) {
+        apply cartprod_characterization for X:emptyset,Y:Y,z:z
+        invoke rightward in(z,cartprod(emptyset,Y))\leftrightarrow\exists x\exists y(in(x,emptyset)\wedge in(y,Y)\wedge equal(z,op(x,y)))
+        some x:x,y:y such \exists x\exists y(in(x,emptyset)\wedge in(y,Y)\wedge equal(z,op(x,y))) {
+          split 1 in(x,emptyset)\wedge in(y,Y)\wedge equal(z,op(x,y))
+          apply emptyset_existence for y:x
+          contradict in(x,emptyset)
+        }
+      }
+    }
+    apply emptyset_uniqueness for x:cartprod(emptyset,Y)
+    invoke \forall z(notin(z,cartprod(emptyset,Y)))\to equal(cartprod(emptyset,Y),emptyset)
+  }
+}
+
+theorem cartprod_cor4 \forall X\forall Y(neq(X,emptyset)\wedge neq(Y,emptyset)\to neq(cartprod(X,Y),emptyset)) {
+  any X,Y {
+    assume neq(X,emptyset)\wedge neq(Y,emptyset) {
+      split neq(X,emptyset)\wedge neq(Y,emptyset)
+      apply not_emptyset_has_a_member for x:X
+      invoke neq(X,emptyset)\to\exists x(in(x,X))
+      apply not_emptyset_has_a_member for x:Y
+      invoke neq(Y,emptyset)\to\exists y(in(y,Y))
+      some x:x such \exists x(in(x,X)) {
+        some y:y such \exists y(in(y,Y)) {
+          connect in(x,X)\wedge in(y,Y)
+          apply cartprod_cor1 for X:X,Y:Y,x:x,y:y
+          invoke in(x,X)\wedge in(y,Y)\to in(op(x,y),cartprod(X,Y))
+          lift for z:op(x,y) conclude \exists z(in(z,cartprod(X,Y)))
+        }
+      }
+      apply has_a_member_not_emptyset for x:cartprod(X,Y)
+      invoke \exists z(in(z,cartprod(X,Y)))\to neq(cartprod(X,Y),emptyset)
+    }
+  }
+}
