@@ -395,7 +395,13 @@ def alpha_rename_formula(expr: Formula, rename_map: dict[Var | Template, Var | T
     else:
         raise Exception(f"Unexpected type: {type(expr)}")
 
-OP_PRECEDENCE = {
+TERM_PRECEDENCE = {
+    "Lowest": 0,
+    "CompoundInfix": 1,
+    "CompoundFunction": 2
+}
+
+FORMULA_PRECEDENCE = {
     "Lowest": 0,
     "Iff": 1,
     "Implies": 1,
@@ -426,11 +432,11 @@ def pretty_expr_fragments(expr: Pred | Fun, context: Context) -> list[str]:
     else:
         raise TypeError(f"Unsupported node type: {type(expr)}")
 
-def pretty_expr(expr: str | Bottom | Formula | Term, context: Context, parent_prec: int = OP_PRECEDENCE["Lowest"]) -> str:
-    if isinstance(expr, str):
-        return expr
-    elif isinstance(expr, Var):
+def pretty_term(expr: Term, context: Context, parent_prec: int = TERM_PRECEDENCE["Lowest"]) -> str:
+    if isinstance(expr, Var):
         return expr.name
+    elif isinstance(expr, Template):
+        return f"{expr.name}[{str(expr.arity)}]"
     elif isinstance(expr, Con):
         if expr.name in context.decl.defcons:
             tex = context.decl.defcons[expr.name].tex
@@ -443,15 +449,22 @@ def pretty_expr(expr: str | Bottom | Formula | Term, context: Context, parent_pr
         tex = pretty_expr_fragments(expr.fun, context)
         if len(tex) != len(expr.args) + 1:
             raise Exception("arity is different")
+        prec = TERM_PRECEDENCE["CompoundInfix"] if tex[0] == "" or tex[-1] == "" else TERM_PRECEDENCE["CompoundFunction"]
         text = ""
         for i in range(len(expr.args)):
             text += tex[i]
             text += " "
-            text += pretty_expr(expr.args[i], context)
+            text += pretty_term(expr.args[i], context, prec)
             text += " "
         text += tex[-1]
-        return text
-    elif isinstance(expr, Symbol):
+        return text if prec > parent_prec or parent_prec == TERM_PRECEDENCE["CompoundFunction"] else f"({text})"
+    elif isinstance(expr, Lambda):
+        return f"\\lambda {",".join([var.name for var in expr.args])}. {pretty_formula(expr.body, context)}"
+    else:
+        raise TypeError(f"Unsupported node type: {type(expr)}")
+
+def pretty_formula(expr: Formula, context: Context, parent_prec: int = FORMULA_PRECEDENCE["Lowest"]) -> str:
+    if isinstance(expr, Symbol):
         tex = pretty_expr_fragments(expr.pred, context)
         if len(tex) != len(expr.args) + 1:
             raise Exception("arity is different")
@@ -459,27 +472,32 @@ def pretty_expr(expr: str | Bottom | Formula | Term, context: Context, parent_pr
         for i in range(len(expr.args)):
             text += tex[i]
             text += " "
-            text += pretty_expr(expr.args[i], context)
+            text += pretty_term(expr.args[i], context)
             text += " "
         text += tex[-1]
-        return text if OP_PRECEDENCE["Symbol"] > parent_prec else f"({text})"
+        return text if FORMULA_PRECEDENCE["Symbol"] > parent_prec else f"({text})"
+    elif isinstance(expr, TemplateCall):
+        if expr.template.arity == 0:
+            return expr.template.name
+        else:
+            return f"{expr.template.name}({",".join([pretty_term(arg, context) for arg in expr.args])})"
     elif isinstance(expr, Not):
-        text = f"\\neg {pretty_expr(expr.body, context, OP_PRECEDENCE["Not"])}"
-        return text if OP_PRECEDENCE["Not"] > parent_prec else f"({text})"
+        text = f"\\neg {pretty_formula(expr.body, context, FORMULA_PRECEDENCE["Not"])}"
+        return text if FORMULA_PRECEDENCE["Not"] > parent_prec else f"({text})"
     elif isinstance(expr, And):
         parts = flatten_op(expr, And)
-        text = " \\wedge ".join(pretty_expr(part, context, OP_PRECEDENCE["And"]) for part in parts)
-        return text if OP_PRECEDENCE["And"] > parent_prec else f"({text})"
+        text = " \\wedge ".join(pretty_formula(part, context, FORMULA_PRECEDENCE["And"]) for part in parts)
+        return text if FORMULA_PRECEDENCE["And"] > parent_prec else f"({text})"
     elif isinstance(expr, Or):
         parts = flatten_op(expr, Or)
-        text = " \\vee ".join(pretty_expr(part, context, OP_PRECEDENCE["Or"]) for part in parts)
-        return text if OP_PRECEDENCE["Or"] > parent_prec else f"({text})"
+        text = " \\vee ".join(pretty_formula(part, context, FORMULA_PRECEDENCE["Or"]) for part in parts)
+        return text if FORMULA_PRECEDENCE["Or"] > parent_prec else f"({text})"
     elif isinstance(expr, Implies):
-        text = f"{pretty_expr(expr.left, context, OP_PRECEDENCE["Implies"])} \\to {pretty_expr(expr.right, context, OP_PRECEDENCE["Implies"])}"
-        return text if OP_PRECEDENCE["Implies"] > parent_prec else f"({text})"
+        text = f"{pretty_formula(expr.left, context, FORMULA_PRECEDENCE["Implies"])} \\to {pretty_formula(expr.right, context, FORMULA_PRECEDENCE["Implies"])}"
+        return text if FORMULA_PRECEDENCE["Implies"] > parent_prec else f"({text})"
     elif isinstance(expr, Iff):
-        text = f"{pretty_expr(expr.left, context, OP_PRECEDENCE["Iff"])} \\leftrightarrow {pretty_expr(expr.right, context, OP_PRECEDENCE["Iff"])}"
-        return text if OP_PRECEDENCE["Iff"] > parent_prec else f"({text})"
+        text = f"{pretty_formula(expr.left, context, FORMULA_PRECEDENCE["Iff"])} \\leftrightarrow {pretty_formula(expr.right, context, FORMULA_PRECEDENCE["Iff"])}"
+        return text if FORMULA_PRECEDENCE["Iff"] > parent_prec else f"({text})"
     elif isinstance(expr, (Forall, Exists, ExistsUniq)):
         body = expr
         qvars_text = ""
@@ -493,24 +511,25 @@ def pretty_expr(expr: str | Bottom | Formula | Term, context: Context, parent_pr
             else:
                 break
             if isinstance(body.var, Var):
-                qvars_text += f" {pretty_expr(body.var, context)}"
+                qvars_text += f" {pretty_term(body.var, context)}"
             elif isinstance(body.var, Template):
-                qvars_text += f"^T {pretty_expr(body.var, context)}"
+                qvars_text += f"^T {pretty_term(body.var, context)}"
             else:
                 raise Exception(f"Unexpected type: {type(body.var)}")
             body = body.body
-        text = f"{qvars_text} {pretty_expr(body, context, OP_PRECEDENCE["Quantifier"])}"
-        return text if OP_PRECEDENCE["Quantifier"] > parent_prec else f"({text})"
+        text = f"{qvars_text} {pretty_formula(body, context, FORMULA_PRECEDENCE["Quantifier"])}"
+        return text if FORMULA_PRECEDENCE["Quantifier"] > parent_prec else f"({text})"
+    else:
+        raise TypeError(f"Unsupported node type: {type(expr)}")
+
+def pretty_expr(expr: str | Bottom | Formula | Term, context: Context) -> str:
+    if isinstance(expr, str):
+        return expr
     elif isinstance(expr, Bottom):
         return "\\bot"
-    elif isinstance(expr, Template):
-        return f"{expr.name}[{str(expr.arity)}]"
-    elif isinstance(expr, TemplateCall):
-        if expr.template.arity == 0:
-            return expr.template.name
-        else:
-            return f"{expr.template.name}({",".join([pretty_expr(arg, context) for arg in expr.args])})"
-    elif isinstance(expr, Lambda):
-        return f"\\lambda {",".join([var.name for var in expr.args])}. {pretty_expr(expr.body, context)}"
+    elif isinstance(expr, Formula):
+        return pretty_formula(expr, context)
+    elif isinstance(expr, Term):
+        return pretty_term(expr, context)
     else:
         raise TypeError(f"Unsupported node type: {type(expr)}")

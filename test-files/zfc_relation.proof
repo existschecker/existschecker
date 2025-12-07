@@ -345,3 +345,112 @@ theorem ran_of_id \forall X(equal(ran(id(X)),X)) {
     expand \forall x(in(x,ran(id(X)))\leftrightarrow in(x,X)) for equal conclude equal(ran(id(X)),X)
   }
 }
+
+definition function invrel(R) as sep(cartprod(ran(R),dom(R)),lambda z.\exists y\exists x(equal(z,op(y,x))\wedge in(op(x,y),R))) tex "","^{-1}"
+
+theorem invrel_characterization \forall R\forall z(in(z,invrel(R))\leftrightarrow\exists y\exists x(equal(z,op(y,x))\wedge in(op(x,y),R))) {
+  any R,z {
+    apply sep_existence for x:cartprod(ran(R),dom(R)),\phi:lambda z.\exists y\exists x(equal(z,op(y,x))\wedge in(op(x,y),R)),z:z
+    expand in(z,sep(cartprod(ran(R),dom(R)),lambda z.\exists y\exists x(equal(z,op(y,x))\wedge in(op(x,y),R))))\leftrightarrow in(z,cartprod(ran(R),dom(R)))\wedge\exists y\exists x(equal(z,op(y,x))\wedge in(op(x,y),R)) for invrel conclude in(z,invrel(R))\leftrightarrow in(z,cartprod(ran(R),dom(R)))\wedge\exists y\exists x(equal(z,op(y,x))\wedge in(op(x,y),R))
+    assume in(z,invrel(R)) {
+      invoke rightward in(z,invrel(R))\leftrightarrow in(z,cartprod(ran(R),dom(R)))\wedge\exists y\exists x(equal(z,op(y,x))\wedge in(op(x,y),R))
+      split 2 in(z,cartprod(ran(R),dom(R)))\wedge\exists y\exists x(equal(z,op(y,x))\wedge in(op(x,y),R))
+    }
+    assume \exists y\exists x(equal(z,op(y,x))\wedge in(op(x,y),R)) {
+      some y:y,x:x such \exists y\exists x(equal(z,op(y,x))\wedge in(op(x,y),R)) {
+        split equal(z,op(y,x))\wedge in(op(x,y),R)
+        lift for y:y conclude \exists y(in(op(x,y),R))
+        apply dom_characterization for R:R,x:x
+        invoke leftward in(x,dom(R))\leftrightarrow\exists y(in(op(x,y),R))
+        lift for x:x conclude \exists x(in(op(x,y),R))
+        apply ran_characterization for R:R,y:y
+        invoke leftward in(y,ran(R))\leftrightarrow\exists x(in(op(x,y),R))
+        connect in(y,ran(R))\wedge in(x,dom(R))
+        apply cartprod_cor1 for X:ran(R),Y:dom(R),x:y,y:x
+        invoke rightward in(y,ran(R))\wedge in(x,dom(R))\leftrightarrow in(op(y,x),cartprod(ran(R),dom(R)))
+        substitute in(op(y,x),cartprod(ran(R),dom(R))) for op(y,x):z conclude in(z,cartprod(ran(R),dom(R)))
+      }
+      connect in(z,cartprod(ran(R),dom(R)))\wedge\exists y\exists x(equal(z,op(y,x))\wedge in(op(x,y),R))
+      invoke leftward in(z,invrel(R))\leftrightarrow in(z,cartprod(ran(R),dom(R)))\wedge\exists y\exists x(equal(z,op(y,x))\wedge in(op(x,y),R))
+    }
+    connect in(z,invrel(R))\leftrightarrow\exists y\exists x(equal(z,op(y,x))\wedge in(op(x,y),R))
+  }
+}
+
+theorem invrel_cor1 \forall R\forall x\forall y(in(op(y,x),invrel(R))\leftrightarrow in(op(x,y),R)) {
+  any R,x,y {
+    assume in(op(y,x),invrel(R)) {
+      apply invrel_characterization for R:R,z:op(y,x)
+      invoke rightward in(op(y,x),invrel(R))\leftrightarrow\exists y'\exists x'(equal(op(y,x),op(y',x'))\wedge in(op(x',y'),R))
+      some y':y',x':x' such \exists y'\exists x'(equal(op(y,x),op(y',x'))\wedge in(op(x',y'),R)) {
+        split equal(op(y,x),op(y',x'))\wedge in(op(x',y'),R)
+        apply op_characterization for x:y,y:x,x':y',y':x'
+        invoke equal(op(y,x),op(y',x'))\to equal(y,y')\wedge equal(x,x')
+        split equal(y,y')\wedge equal(x,x')
+        substitute in(op(x',y'),R) for x':x,y':y conclude in(op(x,y),R)
+      }
+    }
+    assume in(op(x,y),R) {
+      connect equal(op(y,x),op(y,x))\wedge in(op(x,y),R)
+      lift for y':y,x':x conclude \exists y'\exists x'(equal(op(y,x),op(y',x'))\wedge in(op(x',y'),R))
+      apply invrel_characterization for R:R,z:op(y,x)
+      invoke leftward in(op(y,x),invrel(R))\leftrightarrow\exists y'\exists x'(equal(op(y,x),op(y',x'))\wedge in(op(x',y'),R))
+    }
+    connect in(op(y,x),invrel(R))\leftrightarrow in(op(x,y),R)
+  }
+}
+
+theorem invrel_is_rel \forall R(rel(invrel(R))) {
+  any R {
+    any z {
+      assume in(z,invrel(R)) {
+        apply invrel_characterization for R:R,z:z
+        invoke rightward in(z,invrel(R))\leftrightarrow\exists y\exists x(equal(z,op(y,x))\wedge in(op(x,y),R))
+        some y:y,x:x such \exists y\exists x(equal(z,op(y,x))\wedge in(op(x,y),R)) {
+          split 1 equal(z,op(y,x))\wedge in(op(x,y),R)
+          lift for y:y,x:x conclude \exists y\exists x(equal(z,op(y,x)))
+        }
+      }
+    }
+    expand \forall z(in(z,invrel(R))\to\exists y\exists x(equal(z,op(y,x)))) for rel conclude rel(invrel(R))
+  }
+}
+
+theorem invrel_of_invrel_is_itself \forall R(rel(R)\leftrightarrow equal(invrel(invrel(R)),R)) {
+  any R {
+    assume rel(R) {
+      any z {
+        assume in(z,invrel(invrel(R))) {
+          apply invrel_characterization for R:invrel(R),z:z
+          invoke rightward in(z,invrel(invrel(R)))\leftrightarrow\exists x\exists y(equal(z,op(x,y))\wedge in(op(y,x),invrel(R)))
+          some x:x,y:y such \exists x\exists y(equal(z,op(x,y))\wedge in(op(y,x),invrel(R))) {
+            split equal(z,op(x,y))\wedge in(op(y,x),invrel(R))
+            apply invrel_cor1 for R:R,x:x,y:y
+            invoke rightward in(op(y,x),invrel(R))\leftrightarrow in(op(x,y),R)
+            substitute in(op(x,y),R) for op(x,y):z conclude in(z,R)
+          }
+        }
+        assume in(z,R) {
+          expand rel(R) for rel conclude \forall z(in(z,R)\to\exists x\exists y(equal(z,op(x,y))))
+          apply \forall z(in(z,R)\to\exists x\exists y(equal(z,op(x,y)))) for z:z
+          invoke in(z,R)\to\exists x\exists y(equal(z,op(x,y)))
+          some x:x,y:y such \exists x\exists y(equal(z,op(x,y))) {
+            substitute in(z,R) for z:op(x,y) conclude in(op(x,y),R)
+            apply invrel_cor1 for R:R,x:x,y:y
+            invoke leftward in(op(y,x),invrel(R))\leftrightarrow in(op(x,y),R)
+            apply invrel_cor1 for R:invrel(R),x:y,y:x
+            invoke leftward in(op(x,y),invrel(invrel(R)))\leftrightarrow in(op(y,x),invrel(R))
+            substitute in(op(x,y),invrel(invrel(R))) for op(x,y):z conclude in(z,invrel(invrel(R)))
+          }
+        }
+        connect in(z,invrel(invrel(R)))\leftrightarrow in(z,R)
+      }
+      expand \forall z(in(z,invrel(invrel(R)))\leftrightarrow in(z,R)) for equal conclude equal(invrel(invrel(R)),R)
+    }
+    assume equal(invrel(invrel(R)),R) {
+      apply invrel_is_rel for R:invrel(R)
+      substitute rel(invrel(invrel(R))) for invrel(invrel(R)):R conclude rel(R)
+    }
+    connect rel(R)\leftrightarrow equal(invrel(invrel(R)),R)
+  }
+}
