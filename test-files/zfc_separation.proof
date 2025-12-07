@@ -47,6 +47,16 @@ theorem sep_cor1 \forall x\forall^T\phi[1](subset(sep(x,\phi),x)) {
   }
 }
 
+theorem sep_cor2 \forall x\forall^T\phi[1]\forall z(in(z,sep(x,\phi))\to\phi(z)) {
+  any x, template \phi[1], z {
+    assume in(z,sep(x,\phi)) {
+      apply sep_existence for x:x,\phi:\phi,z:z
+      invoke rightward in(z,sep(x,\phi))\leftrightarrow in(z,x)\wedge\phi(z)
+      split 2 in(z,x)\wedge\phi(z)
+    }
+  }
+}
+
 definition function bigcap(u) as sep(bigcup(u), lambda z. \forall w(in(w,u)\to in(z,w))) tex "\bigcap",""
 
 theorem bigcap_characterization \forall u\forall z(in(z,bigcap(u))\leftrightarrow in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))) {
