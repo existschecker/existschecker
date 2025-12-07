@@ -634,11 +634,61 @@ def check_apply(node: Apply, context: Context, indent: int):
     logger.debug(f"{debug_prefix}Instantiable: env={env}")
     instantiation = substitute_formula(body, env)
     logger.debug(f"{debug_prefix}\\forall-elimination is done: instantiation={pretty_expr(instantiation, context)}")
-    logger.debug(f"{debug_prefix}Added {pretty_expr(instantiation, context)}")
+    if node.invoke == "none":
+        node.proofinfo.premises = [node.fact]
+        node.proofinfo.conclusions = [instantiation]
+        add_conclusion(context, instantiation)
+        logger.debug(f"{debug_prefix}Added {pretty_expr(instantiation, context)}")
+    elif node.invoke == "invoke":
+        if not isinstance(instantiation, Implies):
+            logger.error(f"{error_prefix}instantiation is not Implies object")
+            node.proofinfo.status = "ERROR"
+            return False
+        logger.debug(f"{error_prefix}instantiation is Implies object")
+        if not goal_in_context(instantiation.left, context):
+            logger.error(f"{error_prefix}Left of instantiation is not derivable: {pretty_expr(instantiation.left, context)}")
+            node.proofinfo.status = "ERROR"
+            return False
+        logger.debug(f"{debug_prefix}Left of instantiation is derivable: {pretty_expr(instantiation.left, context)}")
+        node.proofinfo.premises = [node.fact, instantiation.left]
+        node.proofinfo.conclusions = [instantiation.right]
+        add_conclusion(context, instantiation.right)
+        logger.debug(f"{debug_prefix}Added {pretty_expr(instantiation.right, context)}")
+    elif node.invoke == "invoke-rightward":
+        if not isinstance(instantiation, Iff):
+            logger.error(f"{error_prefix}instantiation is not Iff object")
+            node.proofinfo.status = "ERROR"
+            return False
+        logger.debug(f"{error_prefix}instantiation is Iff object")
+        if not goal_in_context(instantiation.left, context):
+            logger.error(f"{error_prefix}Left of instantiation is not derivable: {pretty_expr(instantiation.left, context)}")
+            node.proofinfo.status = "ERROR"
+            return False
+        logger.debug(f"{debug_prefix}Left of instantiation is derivable: {pretty_expr(instantiation.left, context)}")
+        node.proofinfo.premises = [node.fact, instantiation.left]
+        node.proofinfo.conclusions = [instantiation.right]
+        add_conclusion(context, instantiation.right)
+        logger.debug(f"{debug_prefix}Added {pretty_expr(instantiation.right, context)}")
+    elif node.invoke == "invoke-leftward":
+        if not isinstance(instantiation, Iff):
+            logger.error(f"{error_prefix}instantiation is not Iff object")
+            node.proofinfo.status = "ERROR"
+            return False
+        logger.debug(f"{error_prefix}instantiation is Iff object")
+        if not goal_in_context(instantiation.right, context):
+            logger.error(f"{error_prefix}Right of instantiation is not derivable: {pretty_expr(instantiation.right, context)}")
+            node.proofinfo.status = "ERROR"
+            return False
+        logger.debug(f"{debug_prefix}Right of instantiation is derivable: {pretty_expr(instantiation.right, context)}")
+        node.proofinfo.premises = [node.fact, instantiation.right]
+        node.proofinfo.conclusions = [instantiation.left]
+        add_conclusion(context, instantiation.left)
+        logger.debug(f"{debug_prefix}Added {pretty_expr(instantiation.left, context)}")
+    else:
+        logger.error(f"{error_prefix}Unexpected invoke option {node.invoke}")
+        node.proofinfo.status = "ERROR"
+        return False
     node.proofinfo.status = "OK"
-    node.proofinfo.premises = [node.fact]
-    node.proofinfo.conclusions = [instantiation]
-    add_conclusion(context, instantiation)
     return True
 
 def check_lift(node: Lift, context: Context, indent: int):

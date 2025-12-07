@@ -369,6 +369,18 @@ class Parser:
 
     def parse_apply(self, context: Context) -> Apply:
         start_token = self.stream.consume("APPLY")
+        if self.stream.peek().type == "INVOKE":
+            self.stream.consume("INVOKE")
+            if self.stream.peek().type == "RIGHTWARD":
+                self.stream.consume("RIGHTWARD")
+                invoke = "invoke-rightward"
+            elif self.stream.peek().type == "LEFTWARD":
+                self.stream.consume("LEFTWARD")
+                invoke = "invoke-leftward"
+            else:
+                invoke = "invoke"
+        else:
+            invoke = "none"
         fact = self.parse_reference_or_formula(context)
         self.stream.consume("FOR")
         env: dict[str, Term] = {}
@@ -383,7 +395,7 @@ class Parser:
                 self.stream.consume("COMMA")
             else:
                 break
-        return Apply(token=start_token, fact=fact, env=env)
+        return Apply(token=start_token, invoke=invoke, fact=fact, env=env)
 
     def parse_lift(self, context: Context) -> Lift:
         start_token = self.stream.consume("LIFT")

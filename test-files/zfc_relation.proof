@@ -70,6 +70,16 @@ theorem dom_characterization \forall R\forall x(in(x,dom(R))\leftrightarrow\exis
   }
 }
 
+theorem dom_cor1 \forall R\forall x\forall y(in(op(x,y),R)\to in(x,dom(R))) {
+  any R,x,y {
+    assume in(op(x,y),R) {
+      lift for y:y conclude \exists y(in(op(x,y),R))
+      apply dom_characterization for R:R,x:x
+      invoke leftward in(x,dom(R))\leftrightarrow\exists y(in(op(x,y),R))
+    }
+  }
+}
+
 theorem domain_of_emptyset equal(dom(emptyset),emptyset) {
   any x {
     deny in(x,dom(emptyset)) {
@@ -155,6 +165,16 @@ theorem ran_characterization \forall R\forall y(in(y,ran(R))\leftrightarrow\exis
       }
     }
     connect in(y,ran(R))\leftrightarrow\exists x(in(op(x,y),R))
+  }
+}
+
+theorem ran_cor1 \forall R\forall x\forall y(in(op(x,y),R)\to in(y,ran(R))) {
+  any R,x,y {
+    assume in(op(x,y),R) {
+      lift for x:x conclude \exists x(in(op(x,y),R))
+      apply ran_characterization for R:R,y:y
+      invoke leftward in(y,ran(R))\leftrightarrow\exists x(in(op(x,y),R))
+    }
   }
 }
 
@@ -452,5 +472,51 @@ theorem invrel_of_invrel_is_itself \forall R(rel(R)\leftrightarrow equal(invrel(
       substitute rel(invrel(invrel(R))) for invrel(invrel(R)):R conclude rel(R)
     }
     connect rel(R)\leftrightarrow equal(invrel(invrel(R)),R)
+  }
+}
+
+theorem dom_of_invrel_is_ran \forall R(equal(dom(invrel(R)),ran(R))) {
+  any R {
+    any y {
+      assume in(y,dom(invrel(R))) {
+        apply invoke rightward dom_characterization for R:invrel(R),x:y
+        some x:x such \exists x(in(op(y,x),invrel(R))) {
+          apply invoke rightward invrel_cor1 for R:R,x:x,y:y
+          apply invoke ran_cor1 for R:R,y:y
+        }
+      }
+      assume in(y,ran(R)) {
+        apply invoke rightward ran_characterization for R:R,y:y
+        some x:x such \exists x(in(op(x,y),R)) {
+          apply invoke leftward invrel_cor1 for R:R,x:x,y:y
+          apply invoke dom_cor1 for R:invrel(R),x:y,y:x
+        }
+      }
+      connect in(y,dom(invrel(R)))\leftrightarrow in(y,ran(R))
+    }
+    expand \forall y(in(y,dom(invrel(R)))\leftrightarrow in(y,ran(R))) for equal conclude equal(dom(invrel(R)),ran(R))
+  }
+}
+
+theorem ran_of_invrel_is_dom \forall R(equal(ran(invrel(R)),dom(R))) {
+  any R {
+    any x {
+      assume in(x,ran(invrel(R))) {
+        apply invoke rightward ran_characterization for R:invrel(R),y:x
+        some y:y such \exists y(in(op(y,x),invrel(R))) {
+          apply invoke rightward invrel_cor1 for R:R,x:x,y:y
+          apply invoke dom_cor1 for R:R,x:x,y:y
+        }
+      }
+      assume in(x,dom(R)) {
+        apply invoke rightward dom_characterization for R:R,x:x
+        some y:y such \exists y(in(op(x,y),R)) {
+          apply invoke leftward invrel_cor1 for R:R,x:x,y:y
+          apply invoke ran_cor1 for R:invrel(R),x:y,y:x
+        }
+      }
+      connect in(x,ran(invrel(R)))\leftrightarrow in(x,dom(R))
+    }
+    expand \forall x(in(x,ran(invrel(R)))\leftrightarrow in(x,dom(R))) for equal conclude equal(ran(invrel(R)),dom(R))
   }
 }

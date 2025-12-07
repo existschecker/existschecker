@@ -347,16 +347,31 @@ def render_node(node: Include | Declaration | DeclarationSupport | Control, cont
                            "を分解する。" if node.index is None else f"を分解して{node.index}番目を得る。"]
     elif isinstance(node, Apply):
         fact = render_expr(node.fact, context)
+        if node.invoke == "none":
+            invoke = []
+            invoke_jp = "適用する。"
+        elif node.invoke == "invoke":
+            invoke = [render_keyword("invoke")]
+            invoke_jp = "適用し、左側が成り立つので右側を得る。"
+        elif node.invoke == "invoke-rightward":
+            invoke = [render_keyword("invoke"), render_keyword("rightward")]
+            invoke_jp = "適用し、左側が成り立つので右側を得る。"
+        elif node.invoke == "invoke-leftward":
+            invoke = [render_keyword("invoke"), render_keyword("leftward")]
+            invoke_jp = "適用し、右側が成り立つので左側を得る。"
+        else:
+            raise Exception(f"Unexpected invoke option {node.invoke}")
         header_parts = [bullet,
-                        render_keyword("apply"),
-                        fact,
-                        render_keyword("for"),
-                        render_expr_dict(node.env, context)]
+                        render_keyword("apply")]
+        header_parts.extend(invoke)
+        header_parts.extend([fact,
+                             render_keyword("for"),
+                             render_expr_dict(node.env, context)])
         header_parts_jp = [bullet,
                            fact,
                            "の",
                            "、".join([render_expr(k, context) + "を" + render_expr(v, context) + "に" for k, v in node.env.items()]),
-                           "適用する。"]
+                           invoke_jp]
     elif isinstance(node, Invoke):
         if node.direction == "none" or node.direction == "rightward":
             premise = "左側"

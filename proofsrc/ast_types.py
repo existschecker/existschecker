@@ -200,6 +200,7 @@ class Explode(Control):
 
 @dataclass
 class Apply(Control):
+    invoke: Literal["none", "invoke", "invoke-rightward", "invoke-leftward"]
     fact: str | Formula
     env: dict[str, Term]
 
