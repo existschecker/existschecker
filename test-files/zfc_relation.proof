@@ -10,7 +10,7 @@ theorem emptyset_is_relation rel(emptyset) {
       explode \exists x\exists y(equal(z,op(x,y)))
     }
   }
-  expand \forall z(in(z,emptyset)\to\exists x\exists y(equal(z,op(x,y)))) for rel conclude rel(emptyset)
+  fold for rel conclude rel(emptyset)
 }
 
 theorem cartprod_is_relation \forall X\forall Y(rel(cartprod(X,Y))) {
@@ -24,7 +24,7 @@ theorem cartprod_is_relation \forall X\forall Y(rel(cartprod(X,Y))) {
         }
       }
     }
-    expand \forall z(in(z,cartprod(X,Y))\to\exists x\exists y(equal(z,op(x,y)))) for rel conclude rel(cartprod(X,Y))
+    fold for rel conclude rel(cartprod(X,Y))
   }
 }
 
@@ -34,7 +34,7 @@ theorem dom_lem1 \forall R\forall x(\exists y(in(op(x,y),R))\to in(x,bigcup(bigc
   any R,x {
     assume \exists y(in(op(x,y),R)) {
       some y:y such \exists y(in(op(x,y),R)) {
-        expand in(op(x,y),R) for op conclude in(pair(singleton(x),pair(x,y)),R)
+        expand in(op(x,y),R) for op
         apply pair_cor1 for x:singleton(x),y:pair(x,y)
         connect in(singleton(x),pair(singleton(x),pair(x,y)))\wedge in(pair(singleton(x),pair(x,y)),R)
         lift for z:pair(singleton(x),pair(x,y)) conclude \exists z(in(singleton(x),z)\wedge in(z,R))
@@ -51,14 +51,14 @@ theorem dom_lem1 \forall R\forall x(\exists y(in(op(x,y),R))\to in(x,bigcup(bigc
 theorem dom_characterization \forall R\forall x(in(x,dom(R))\leftrightarrow\exists y(in(op(x,y),R))) {
   any R,x {
     assume in(x,dom(R)) {
-      expand in(x,dom(R)) for dom conclude in(x,sep(bigcup(bigcup(R)),lambda x.\exists y(in(op(x,y),R))))
+      expand in(x,dom(R)) for dom
       apply invoke sep_cor2 for x:bigcup(bigcup(R)),\phi:lambda x.\exists y(in(op(x,y),R)),z:x
     }
     assume \exists y(in(op(x,y),R)) {
       apply invoke dom_lem1 for R:R,x:x
       connect in(x,bigcup(bigcup(R)))\wedge\exists y(in(op(x,y),R))
       apply invoke leftward sep_existence for x:bigcup(bigcup(R)),\phi:lambda x.\exists y(in(op(x,y),R)),z:x
-      expand in(x,sep(bigcup(bigcup(R)),lambda x.\exists y(in(op(x,y),R)))) for dom conclude in(x,dom(R))
+      fold for dom conclude in(x,dom(R))
     }
     connect in(x,dom(R))\leftrightarrow\exists y(in(op(x,y),R))
   }
@@ -108,7 +108,7 @@ theorem domain_of_cartprod \forall X\forall Y(neq(Y,emptyset)\to equal(dom(cartp
         }
         connect in(x,dom(cartprod(X,Y)))\leftrightarrow in(x,X)
       }
-      expand \forall x(in(x,dom(cartprod(X,Y)))\leftrightarrow in(x,X)) for equal conclude equal(dom(cartprod(X,Y)),X)
+      fold for equal conclude equal(dom(cartprod(X,Y)),X)
     }
   }
 }
@@ -119,7 +119,7 @@ theorem ran_lem1 \forall R\forall y(\exists x(in(op(x,y),R))\to in(y,bigcup(bigc
   any R,y {
     assume \exists x(in(op(x,y),R)) {
       some x:x such \exists x(in(op(x,y),R)) {
-        expand in(op(x,y),R) for op conclude in(pair(singleton(x),pair(x,y)),R)
+        expand in(op(x,y),R) for op
         apply pair_cor2 for x:singleton(x),y:pair(x,y)
         connect in(pair(x,y),pair(singleton(x),pair(x,y)))\wedge in(pair(singleton(x),pair(x,y)),R)
         lift for z:pair(singleton(x),pair(x,y)) conclude \exists z(in(pair(x,y),z)\wedge in(z,R))
@@ -136,14 +136,14 @@ theorem ran_lem1 \forall R\forall y(\exists x(in(op(x,y),R))\to in(y,bigcup(bigc
 theorem ran_characterization \forall R\forall y(in(y,ran(R))\leftrightarrow\exists x(in(op(x,y),R))) {
   any R,y {
     assume in(y,ran(R)) {
-      expand in(y,ran(R)) for ran conclude in(y,sep(bigcup(bigcup(R)),lambda y.\exists x(in(op(x,y),R))))
+      expand in(y,ran(R)) for ran
       apply invoke sep_cor2 for x:bigcup(bigcup(R)),\phi:lambda y.\exists x(in(op(x,y),R)),z:y
     }
     assume \exists x(in(op(x,y),R)) {
       apply invoke ran_lem1 for R:R,y:y
       connect in(y,bigcup(bigcup(R)))\wedge\exists x(in(op(x,y),R))
       apply invoke leftward sep_existence for x:bigcup(bigcup(R)),\phi:lambda y.\exists x(in(op(x,y),R)),z:y
-      expand in(y,sep(bigcup(bigcup(R)),lambda y.\exists x(in(op(x,y),R)))) for ran conclude in(y,ran(R))
+      fold for ran conclude in(y,ran(R))
     }
     connect in(y,ran(R))\leftrightarrow\exists x(in(op(x,y),R))
   }
@@ -193,7 +193,7 @@ theorem range_of_cartprod \forall X\forall Y(neq(X,emptyset)\to equal(ran(cartpr
         }
         connect in(y,ran(cartprod(X,Y)))\leftrightarrow in(y,Y)
       }
-      expand \forall y(in(y,ran(cartprod(X,Y)))\leftrightarrow in(y,Y)) for equal conclude equal(ran(cartprod(X,Y)),Y)
+      fold for equal conclude equal(ran(cartprod(X,Y)),Y)
     }
   }
 }
@@ -203,7 +203,7 @@ definition function id(X) as sep(cartprod(X,X),lambda z.\exists x(equal(z,op(x,x
 theorem id_characterization \forall X\forall z(in(z,id(X))\leftrightarrow\exists x(in(x,X)\wedge equal(z,op(x,x)))) {
   any X,z {
     assume in(z,id(X)) {
-      expand in(z,id(X)) for id conclude in(z,sep(cartprod(X,X),lambda z.\exists x(equal(z,op(x,x)))))
+      expand in(z,id(X)) for id
       apply invoke rightward sep_existence for x:cartprod(X,X),\phi:lambda z.\exists x(equal(z,op(x,x))),z:z
       split in(z,cartprod(X,X))\wedge\exists x(equal(z,op(x,x)))
       some x:x such \exists x(equal(z,op(x,x))) {
@@ -223,7 +223,7 @@ theorem id_characterization \forall X\forall z(in(z,id(X))\leftrightarrow\exists
         lift for x:x conclude \exists x(equal(z,op(x,x)))
         connect in(z,cartprod(X,X))\wedge\exists x(equal(z,op(x,x)))
         apply invoke leftward sep_existence for x:cartprod(X,X),\phi:lambda z.\exists x(equal(z,op(x,x))),z:z
-        expand in(z,sep(cartprod(X,X),lambda z.\exists x(equal(z,op(x,x))))) for id conclude in(z,id(X))
+        fold for id conclude in(z,id(X))
       }
     }
     connect in(z,id(X))\leftrightarrow\exists x(in(x,X)\wedge equal(z,op(x,x)))
@@ -280,7 +280,7 @@ theorem id_is_relation \forall X(rel(id(X))) {
         }
       }
     }
-    expand \forall z(in(z,id(X))\to\exists x\exists y(equal(z,op(x,y)))) for rel conclude rel(id(X))
+    fold for rel conclude rel(id(X))
   }
 }
 
@@ -301,7 +301,7 @@ theorem dom_of_id \forall X(equal(dom(id(X)),X)) {
       }
       connect in(x,dom(id(X)))\leftrightarrow in(x,X)
     }
-    expand \forall x(in(x,dom(id(X)))\leftrightarrow in(x,X)) for equal conclude equal(dom(id(X)),X)
+    fold for equal conclude equal(dom(id(X)),X)
   }
 }
 
@@ -322,7 +322,7 @@ theorem ran_of_id \forall X(equal(ran(id(X)),X)) {
       }
       connect in(x,ran(id(X)))\leftrightarrow in(x,X)
     }
-    expand \forall x(in(x,ran(id(X)))\leftrightarrow in(x,X)) for equal conclude equal(ran(id(X)),X)
+    fold for equal conclude equal(ran(id(X)),X)
   }
 }
 
@@ -348,14 +348,14 @@ theorem invrel_lem1 \forall R\forall z(\exists y\exists x(equal(z,op(y,x))\wedge
 theorem invrel_characterization \forall R\forall z(in(z,invrel(R))\leftrightarrow\exists y\exists x(equal(z,op(y,x))\wedge in(op(x,y),R))) {
   any R,z {
     assume in(z,invrel(R)) {
-      expand in(z,invrel(R)) for invrel conclude in(z,sep(cartprod(ran(R),dom(R)),lambda z.\exists y\exists x(equal(z,op(y,x))\wedge in(op(x,y),R))))
+      expand in(z,invrel(R)) for invrel
       apply invoke sep_cor2 for x:cartprod(ran(R),dom(R)),\phi:lambda z.\exists y\exists x(equal(z,op(y,x))\wedge in(op(x,y),R)),z:z
     }
     assume \exists y\exists x(equal(z,op(y,x))\wedge in(op(x,y),R)) {
       apply invoke invrel_lem1 for R:R,z:z
       connect in(z,cartprod(ran(R),dom(R)))\wedge\exists y\exists x(equal(z,op(y,x))\wedge in(op(x,y),R))
       apply invoke leftward sep_existence for x:cartprod(ran(R),dom(R)),\phi:lambda z.\exists y\exists x(equal(z,op(y,x))\wedge in(op(x,y),R)),z:z
-      expand in(z,sep(cartprod(ran(R),dom(R)),lambda z.\exists y\exists x(equal(z,op(y,x))\wedge in(op(x,y),R)))) for invrel conclude in(z,invrel(R))
+      fold for invrel conclude in(z,invrel(R))
     }
     connect in(z,invrel(R))\leftrightarrow\exists y\exists x(equal(z,op(y,x))\wedge in(op(x,y),R))
   }
@@ -392,7 +392,7 @@ theorem invrel_is_rel \forall R(rel(invrel(R))) {
         }
       }
     }
-    expand \forall z(in(z,invrel(R))\to\exists y\exists x(equal(z,op(y,x)))) for rel conclude rel(invrel(R))
+    fold for rel conclude rel(invrel(R))
   }
 }
 
@@ -409,7 +409,7 @@ theorem invrel_of_invrel_is_itself \forall R(rel(R)\leftrightarrow equal(invrel(
           }
         }
         assume in(z,R) {
-          expand rel(R) for rel conclude \forall z(in(z,R)\to\exists x\exists y(equal(z,op(x,y))))
+          expand rel(R) for rel
           apply invoke \forall z(in(z,R)\to\exists x\exists y(equal(z,op(x,y)))) for z:z
           some x:x,y:y such \exists x\exists y(equal(z,op(x,y))) {
             substitute in(z,R) for z:op(x,y)
@@ -420,7 +420,7 @@ theorem invrel_of_invrel_is_itself \forall R(rel(R)\leftrightarrow equal(invrel(
         }
         connect in(z,invrel(invrel(R)))\leftrightarrow in(z,R)
       }
-      expand \forall z(in(z,invrel(invrel(R)))\leftrightarrow in(z,R)) for equal conclude equal(invrel(invrel(R)),R)
+      fold for equal conclude equal(invrel(invrel(R)),R)
     }
     assume equal(invrel(invrel(R)),R) {
       apply invrel_is_rel for R:invrel(R)
@@ -449,7 +449,7 @@ theorem dom_of_invrel_is_ran \forall R(equal(dom(invrel(R)),ran(R))) {
       }
       connect in(y,dom(invrel(R)))\leftrightarrow in(y,ran(R))
     }
-    expand \forall y(in(y,dom(invrel(R)))\leftrightarrow in(y,ran(R))) for equal conclude equal(dom(invrel(R)),ran(R))
+    fold for equal conclude equal(dom(invrel(R)),ran(R))
   }
 }
 
@@ -472,7 +472,7 @@ theorem ran_of_invrel_is_dom \forall R(equal(ran(invrel(R)),dom(R))) {
       }
       connect in(x,ran(invrel(R)))\leftrightarrow in(x,dom(R))
     }
-    expand \forall x(in(x,ran(invrel(R)))\leftrightarrow in(x,dom(R))) for equal conclude equal(ran(invrel(R)),dom(R))
+    fold for equal conclude equal(ran(invrel(R)),dom(R))
   }
 }
 
@@ -499,14 +499,14 @@ theorem comprel_lem1 \forall R\forall S\forall z(\exists x\exists y(equal(z,op(x
 theorem comprel_characterization \forall R\forall S\forall z(in(z,comprel(R,S))\leftrightarrow\exists x\exists y(equal(z,op(x,y))\wedge\exists w(in(op(x,w),R)\wedge in(op(w,y),S)))) {
   any R,S,z {
     assume in(z,comprel(R,S)) {
-      expand in(z,comprel(R,S)) for comprel conclude in(z,sep(cartprod(dom(R),ran(S)),lambda z.\exists x\exists y(equal(z,op(x,y))\wedge\exists w(in(op(x,w),R)\wedge in(op(w,y),S)))))
+      expand in(z,comprel(R,S)) for comprel
       apply invoke sep_cor2 for x:cartprod(dom(R),ran(S)),\phi:lambda z.\exists x\exists y(equal(z,op(x,y))\wedge\exists w(in(op(x,w),R)\wedge in(op(w,y),S)))
     }
     assume \exists x\exists y(equal(z,op(x,y))\wedge\exists w(in(op(x,w),R)\wedge in(op(w,y),S))) {
       apply invoke comprel_lem1 for R:R,S:S,z:z
       connect in(z,cartprod(dom(R),ran(S)))\wedge\exists x\exists y(equal(z,op(x,y))\wedge\exists w(in(op(x,w),R)\wedge in(op(w,y),S)))
       apply invoke leftward sep_existence for x:cartprod(dom(R),ran(S)),\phi:lambda z.\exists x\exists y(equal(z,op(x,y))\wedge\exists w(in(op(x,w),R)\wedge in(op(w,y),S)))
-      expand in(z,sep(cartprod(dom(R),ran(S)),lambda z.\exists x\exists y(equal(z,op(x,y))\wedge\exists w(in(op(x,w),R)\wedge in(op(w,y),S))))) for comprel conclude in(z,comprel(R,S))
+      fold for comprel conclude in(z,comprel(R,S))
     }
     connect in(z,comprel(R,S))\leftrightarrow\exists x\exists y(equal(z,op(x,y))\wedge\exists w(in(op(x,w),R)\wedge in(op(w,y),S)))
   }
@@ -523,6 +523,6 @@ theorem comprel_is_rel \forall R\forall S(rel(comprel(R,S))) {
         }
       }
     }
-    expand \forall z(in(z,comprel(R,S))\to\exists x\exists y(equal(z,op(x,y)))) for rel conclude rel(comprel(R,S))
+    fold for rel conclude rel(comprel(R,S))
   }
 }

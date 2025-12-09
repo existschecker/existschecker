@@ -8,7 +8,7 @@ theorem equal_reflection \forall x(equal(x,x)) {
       assume in(y,x) {}
       connect in(y,x)\leftrightarrow in(y,x)
     }
-    expand \forall y(in(y,x)\leftrightarrow in(y,x)) for equal conclude equal(x,x)
+    fold for equal conclude equal(x,x)
   }
 }
 
@@ -19,31 +19,31 @@ theorem equal_replacement \forall x\forall y\forall u\forall v(equal(x,y)\wedge 
         any p {
           assume in(p,y) {
             split equal(x,y)\wedge equal(u,v)
-            expand equal(x,y) for equal conclude \forall z(in(z,x)\leftrightarrow in(z,y))
+            expand equal(x,y) for equal
             apply \forall z(in(z,x)\leftrightarrow in(z,y)) for z:p
             invoke leftward in(p,x)\leftrightarrow in(p,y)
-            expand equal(x,u) for equal conclude \forall z(in(z,x)\leftrightarrow in(z,u))
+            expand equal(x,u) for equal
             apply \forall z(in(z,x)\leftrightarrow in(z,u)) for z:p
             invoke rightward in(p,x)\leftrightarrow in(p,u)
-            expand equal(u,v) for equal conclude \forall z(in(z,u)\leftrightarrow in(z,v))
+            expand equal(u,v) for equal
             apply \forall z(in(z,u)\leftrightarrow in(z,v)) for z:p
             invoke rightward in(p,u)\leftrightarrow in(p,v)
           }
           assume in(p,v) {
             split equal(x,y)\wedge equal(u,v)
-            expand equal(u,v) for equal conclude \forall z(in(z,u)\leftrightarrow in(z,v))
+            expand equal(u,v) for equal
             apply \forall z(in(z,u)\leftrightarrow in(z,v)) for z:p
             invoke leftward in(p,u)\leftrightarrow in(p,v)
-            expand equal(x,u) for equal conclude \forall z(in(z,x)\leftrightarrow in(z,u))
+            expand equal(x,u) for equal
             apply \forall z(in(z,x)\leftrightarrow in(z,u)) for z:p
             invoke leftward in(p,x)\leftrightarrow in(p,u)
-            expand equal(x,y) for equal conclude \forall z(in(z,x)\leftrightarrow in(z,y))
+            expand equal(x,y) for equal
             apply \forall z(in(z,x)\leftrightarrow in(z,y)) for z:p
             invoke rightward in(p,x)\leftrightarrow in(p,y)
           }
           connect in(p,y)\leftrightarrow in(p,v)
         }
-        expand \forall p(in(p,y)\leftrightarrow in(p,v)) for equal conclude equal(y,v)
+        fold for equal conclude equal(y,v)
       }
     }
   }
@@ -60,7 +60,7 @@ theorem in_replacement \forall x\forall y\forall u\forall v(equal(x,y)\wedge equ
         invoke equal(x,y)\to\forall z(in(x,z)\to in(y,z))
         apply \forall z(in(x,z)\to in(y,z)) for z:u
         invoke in(x,u)\to in(y,u)
-        expand equal(u,v) for equal conclude \forall z(in(z,u)\leftrightarrow in(z,v))
+        expand equal(u,v) for equal
         apply \forall z(in(z,u)\leftrightarrow in(z,v)) for z:y
         invoke rightward in(y,u)\leftrightarrow in(y,v)
       }
@@ -80,7 +80,7 @@ theorem neq_cor1 \forall x\forall y(neq(x,y)\leftrightarrow\exists z((in(z,x)\we
   any x, y {
     assume neq(x,y) {
       deny \forall z(in(z,x)\leftrightarrow in(z,y)) {
-        expand \forall z(in(z,x)\leftrightarrow in(z,y)) for equal conclude equal(x,y)
+        fold for equal conclude equal(x,y)
         contradict equal(x,y)
       }
       deny \neg(\exists z(\neg(in(z,x)\leftrightarrow in(z,y)))) {
@@ -141,7 +141,7 @@ theorem neq_cor1 \forall x\forall y(neq(x,y)\leftrightarrow\exists z((in(z,x)\we
     assume \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))) {
       some z:z such \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))) {
         deny equal(x,y) {
-          expand equal(x,y) for equal conclude \forall z(in(z,x)\leftrightarrow in(z,y))
+          expand equal(x,y) for equal
           apply \forall z(in(z,x)\leftrightarrow in(z,y)) for z:z
           divide (in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))
             case in(z,x)\wedge notin(z,y) {
@@ -167,7 +167,7 @@ theorem subset_cor1 \forall z\forall x\forall y(in(z,x)\wedge subset(x,y)\to in(
   any x,y,z {
     assume in(z,x)\wedge subset(x,y) {
       split in(z,x)\wedge subset(x,y)
-      expand subset(x,y) for subset conclude \forall z(in(z,x)\to in(z,y))
+      expand subset(x,y) for subset
       apply \forall z(in(z,x)\to in(z,y)) for z:z
       invoke in(z,x)\to in(z,y)
     }
@@ -179,7 +179,7 @@ theorem subset_reflection \forall x(subset(x,x)) {
     any y {
       assume in(y,x) {}
     }
-    expand \forall y(in(y,x)\to in(y,x)) for subset conclude subset(x,x)
+    fold for subset conclude subset(x,x)
   }
 }
 
@@ -201,7 +201,7 @@ theorem subset_antisymmetry \forall x\forall y(subset(x,y)\wedge subset(y,x)\to 
         }
         connect in(z,x)\leftrightarrow in(z,y)
       }
-      expand \forall z(in(z,x)\leftrightarrow in(z,y)) for equal conclude equal(x,y)
+      fold for equal conclude equal(x,y)
     }
   }
 }
@@ -220,7 +220,7 @@ theorem subset_trans \forall x\forall y\forall z(subset(x,y)\wedge subset(y,z)\t
           invoke in(w,y)\wedge subset(y,z)\to in(w,z)
         }
       }
-      expand \forall w(in(w,x)\to in(w,z)) for subset conclude subset(x,z)
+      fold for subset conclude subset(x,z)
     }
   }
 }

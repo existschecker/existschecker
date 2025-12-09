@@ -19,7 +19,7 @@ theorem emptyset_is_relon_emptyset relon(emptyset,emptyset) {
     }
     connect in(z,emptyset)\leftrightarrow\exists x\exists y(in(x,emptyset)\wedge in(y,emptyset)\wedge equal(z,op(x,y)))
   }
-  expand \forall z(in(z,emptyset)\leftrightarrow\exists x\exists y(in(x,emptyset)\wedge in(y,emptyset)\wedge equal(z,op(x,y)))) for relon conclude relon(emptyset,emptyset)
+  fold for relon conclude relon(emptyset,emptyset)
 }
 
 definition predicate transrelon(X,R) as relon(X,R)\wedge\forall x\forall y\forall z(in(op(x,y),R)\wedge in(op(y,z),R)\to in(op(x,z),R)) tex "\mathrm{transrelon}(",",",")"
@@ -35,7 +35,7 @@ theorem emptyset_is_transrelon_emptyset transrelon(emptyset,emptyset) {
   }
   assert emptyset_is_relon_emptyset
   connect relon(emptyset,emptyset)\wedge\forall x\forall y\forall z(in(op(x,y),emptyset)\wedge in(op(y,z),emptyset)\to in(op(x,z),emptyset))
-  expand relon(emptyset,emptyset)\wedge\forall x\forall y\forall z(in(op(x,y),emptyset)\wedge in(op(y,z),emptyset)\to in(op(x,z),emptyset)) for transrelon conclude transrelon(emptyset,emptyset)
+  fold for transrelon conclude transrelon(emptyset,emptyset)
 }
 
 definition predicate antisymrelon(X,R) as relon(X,R)\wedge\forall x\forall y(in(op(x,y),R)\wedge in(op(y,x),R)\to equal(x,y)) tex "\mathrm{antisymrelon}(",",",")"
@@ -51,7 +51,7 @@ theorem emptyset_is_antisymrelon_emptyset antisymrelon(emptyset,emptyset) {
     }
   }
   connect relon(emptyset,emptyset)\wedge\forall x\forall y(in(op(x,y),emptyset)\wedge in(op(y,x),emptyset)\to equal(x,y))
-  expand relon(emptyset,emptyset)\wedge\forall x\forall y(in(op(x,y),emptyset)\wedge in(op(y,x),emptyset)\to equal(x,y)) for antisymrelon conclude antisymrelon(emptyset,emptyset)
+  fold for antisymrelon conclude antisymrelon(emptyset,emptyset)
 }
 
 definition predicate ordon(X,R) as transrelon(X,R)\wedge antisymrelon(X,R) tex "\mathrm{ordon}(",",",")"
@@ -60,7 +60,7 @@ theorem emptyset_is_ordon_emptyset ordon(emptyset,emptyset) {
   assert emptyset_is_transrelon_emptyset
   assert emptyset_is_antisymrelon_emptyset
   connect transrelon(emptyset,emptyset)\wedge antisymrelon(emptyset,emptyset)
-  expand transrelon(emptyset,emptyset)\wedge antisymrelon(emptyset,emptyset) for ordon conclude ordon(emptyset,emptyset)
+  fold for ordon conclude ordon(emptyset,emptyset)
 }
 
 definition predicate irrefrelon(X,R) as relon(X,R)\wedge\forall x(notin(op(x,x),R)) tex "\mathrm{irrefrelon}(",",",")"
@@ -71,7 +71,7 @@ theorem emptyset_is_irrefrelon_on_emptyset irrefrelon(emptyset,emptyset) {
     apply emptyset_existence for y:op(x,x)
   }
   connect relon(emptyset,emptyset)\wedge\forall x(notin(op(x,x),emptyset))
-  expand relon(emptyset,emptyset)\wedge\forall x(notin(op(x,x),emptyset)) for irrefrelon conclude irrefrelon(emptyset,emptyset)
+  fold for irrefrelon conclude irrefrelon(emptyset,emptyset)
 }
 
 definition predicate linordon(X,R) as ordon(X,R)\wedge\forall x\forall y(in(x,X)\wedge in(y,X)\to in(op(x,y),R)\vee equal(x,y)\vee in(op(y,x),R)) tex "\mathrm{linordon}(",",",")"
@@ -95,7 +95,7 @@ theorem emptyset_is_wordon_emptyset wordon(emptyset,emptyset) {
     }
   }
   connect ordon(emptyset,emptyset)\wedge\forall A(subset(A,emptyset)\wedge neq(A,emptyset)\to\exists a(minimum(emptyset,emptyset,A,a)))
-  expand ordon(emptyset,emptyset)\wedge\forall A(subset(A,emptyset)\wedge neq(A,emptyset)\to\exists a(minimum(emptyset,emptyset,A,a))) for wordon conclude wordon(emptyset,emptyset)
+  fold for wordon conclude wordon(emptyset,emptyset)
 }
 
 definition predicate trans(X) as \forall x(in(x,X)\to\forall y(in(y,x)\to in(x,X))) tex "\mathrm{trans}(",")"
@@ -108,7 +108,7 @@ theorem emptyset_is_trans trans(emptyset) {
       explode \forall y(in(y,x)\to in(x,emptyset))
     }
   }
-  expand \forall x(in(x,emptyset)\to\forall y(in(y,x)\to in(x,emptyset))) for trans conclude trans(emptyset)
+  fold for trans conclude trans(emptyset)
 }
 
 definition function mem(X) as sep(cartprod(X,X),lambda z.\exists x\exists y(equal(z,op(x,y))\wedge in(x,y))) tex "\mathrm{mem}(",")"
@@ -116,7 +116,7 @@ definition function mem(X) as sep(cartprod(X,X),lambda z.\exists x\exists y(equa
 theorem mem_characterization \forall X\forall z(in(z,mem(X))\leftrightarrow\exists x\exists y(in(x,X)\wedge in(y,X)\wedge equal(z,op(x,y))\wedge in(x,y))) {
   any X,z {
     assume in(z,mem(X)) {
-      expand in(z,mem(X)) for mem conclude in(z,sep(cartprod(X,X),lambda z.\exists x\exists y(equal(z,op(x,y))\wedge in(x,y))))
+      expand in(z,mem(X)) for mem
       apply invoke rightward sep_existence for x:cartprod(X,X),\phi:lambda z.\exists x\exists y(equal(z,op(x,y))\wedge in(x,y)),z:z
       split in(z,cartprod(X,X))\wedge\exists x\exists y(equal(z,op(x,y))\wedge in(x,y))
       some x:x,y:y such \exists x\exists y(equal(z,op(x,y))\wedge in(x,y)) {
@@ -139,7 +139,7 @@ theorem mem_characterization \forall X\forall z(in(z,mem(X))\leftrightarrow\exis
         connect in(z,cartprod(X,X))\wedge\exists x\exists y(equal(z,op(x,y))\wedge in(x,y))
       }
       apply invoke leftward sep_existence for x:cartprod(X,X),\phi:lambda z.\exists x\exists y(equal(z,op(x,y))\wedge in(x,y)),z:z
-      expand in(z,sep(cartprod(X,X),lambda z.\exists x\exists y(equal(z,op(x,y))\wedge in(x,y)))) for mem conclude in(z,mem(X))
+      fold for mem conclude in(z,mem(X))
     }
     connect in(z,mem(X))\leftrightarrow\exists x\exists y(in(x,X)\wedge in(y,X)\wedge equal(z,op(x,y))\wedge in(x,y))
   }
@@ -169,5 +169,5 @@ theorem emptyset_is_ord ord(emptyset) {
   assert emptyset_is_wordon_emptyset
   substitute wordon(emptyset,emptyset) for emptyset@2:mem(emptyset)
   connect trans(emptyset)\wedge irrefrelon(emptyset,mem(emptyset))\wedge wordon(emptyset,mem(emptyset))
-  expand trans(emptyset)\wedge irrefrelon(emptyset,mem(emptyset))\wedge wordon(emptyset,mem(emptyset)) for ord conclude ord(emptyset)
+  fold for ord conclude ord(emptyset)
 }

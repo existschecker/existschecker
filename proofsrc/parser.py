@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, Template, Lambda, TemplateCall, Include, Assert
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, Template, Lambda, TemplateCall, Include, Assert, Fold
 from lexer import Token
 from token_stream import TokenStream
 from logic_utils import collect_quantifier_vars
@@ -266,6 +266,8 @@ class Parser:
                 body.append(self.parse_invoke(context))
             elif tok.type == "EXPAND":
                 body.append(self.parse_expand(context))
+            elif tok.type == "FOLD":
+                body.append(self.parse_fold(context))
             elif tok.type == "PAD":
                 body.append(self.parse_pad(context))
             elif tok.type == "SPLIT":
@@ -455,15 +457,53 @@ class Parser:
         fact = self.parse_formula(context)
         self.stream.consume("FOR")
         defs: list[str] = []
+        indexes: dict[str, list[int]] = {}
         while True:
-            defs.append(self.stream.consume("IDENT").value)
+            definition = self.stream.consume("IDENT").value
+            defs.append(definition)
+            if self.stream.peek().type == "LBRACKET":
+                self.stream.consume("LBRACKET")
+                indexes_: list[int] = []
+                while True:
+                    indexes_.append(int(self.stream.consume("NUMBER").value))
+                    if self.stream.peek().type == "COMMA":
+                        self.stream.consume("COMMA")
+                    else:
+                        break
+                self.stream.consume("RBRACKET")
+                indexes[definition] = indexes_
+            if self.stream.peek().type == "COMMA":
+                self.stream.consume("COMMA")
+            else:
+                break
+        return Expand(token=start_token, fact=fact, defs=defs, indexes=indexes)
+
+    def parse_fold(self, context: Context) -> Fold:
+        start_token = self.stream.consume("FOLD")
+        self.stream.consume("FOR")
+        defs: list[str] = []
+        indexes: dict[str, list[int]] = {}
+        while True:
+            definition = self.stream.consume("IDENT").value
+            defs.append(definition)
+            if self.stream.peek().type == "LBRACKET":
+                self.stream.consume("LBRACKET")
+                indexes_: list[int] = []
+                while True:
+                    indexes_.append(int(self.stream.consume("NUMBER").value))
+                    if self.stream.peek().type == "COMMA":
+                        self.stream.consume("COMMA")
+                    else:
+                        break
+                self.stream.consume("RBRACKET")
+                indexes[definition] = indexes_
             if self.stream.peek().type == "COMMA":
                 self.stream.consume("COMMA")
             else:
                 break
         self.stream.consume("CONCLUDE")
         conclusion = self.parse_formula(context)
-        return Expand(token=start_token, fact=fact, defs=defs, conclusion=conclusion)
+        return Fold(token=start_token, defs=defs, indexes=indexes, conclusion=conclusion)
 
     def parse_pad(self, context: Context) -> Pad:
         start_token = self.stream.consume("PAD")

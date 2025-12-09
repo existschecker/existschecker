@@ -223,6 +223,12 @@ class Invoke(Control):
 class Expand(Control):
     fact: str | Formula
     defs: list[str]
+    indexes: dict[str, list[int]]
+
+@dataclass
+class Fold(Control):
+    defs: list[str]
+    indexes: dict[str, list[int]]
     conclusion: Formula
 
 @dataclass

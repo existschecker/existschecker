@@ -21,7 +21,7 @@ theorem separation_is_unique \forall x\forall^T\phi[1]\exists!y\forall z(in(z,y)
             }
             connect in(z,y')\leftrightarrow in(z,y)
           }
-          expand \forall z(in(z,y')\leftrightarrow in(z,y)) for equal conclude equal(y',y)
+          fold for equal conclude equal(y',y)
         }
       }
       connect \forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi(z))\wedge\forall y'(\forall z(in(z,y')\leftrightarrow in(z,x)\wedge\phi(z))\to equal(y',y))
@@ -43,7 +43,7 @@ theorem sep_cor1 \forall x\forall^T\phi[1](subset(sep(x,\phi),x)) {
         split 1 in(z,x)\wedge\phi(z)
       }
     }
-    expand \forall z(in(z,sep(x,\phi))\to in(z,x)) for subset conclude subset(sep(x,\phi),x)
+    fold for subset conclude subset(sep(x,\phi),x)
   }
 }
 
@@ -62,14 +62,14 @@ definition function bigcap(u) as sep(bigcup(u), lambda z. \forall w(in(w,u)\to i
 theorem bigcap_characterization \forall u\forall z(in(z,bigcap(u))\leftrightarrow in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))) {
   any u, z {
     assume in(z,bigcap(u)) {
-      expand in(z,bigcap(u)) for bigcap conclude in(z,sep(bigcup(u), lambda z'. \forall w(in(w,u)\to in(z',w))))
+      expand in(z,bigcap(u)) for bigcap
       apply sep_existence for x:bigcup(u),\phi: lambda z'. \forall w(in(w,u)\to in(z',w)),z:z
       invoke rightward in(z,sep(bigcup(u), lambda z'. \forall w(in(w,u)\to in(z',w))))\leftrightarrow in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
     }
     assume in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w)) {
       apply sep_existence for x:bigcup(u),\phi: lambda z'. \forall w(in(w,u)\to in(z',w)),z:z
       invoke leftward in(z,sep(bigcup(u), lambda z'. \forall w(in(w,u)\to in(z',w))))\leftrightarrow in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
-      expand in(z,sep(bigcup(u), lambda z'. \forall w(in(w,u)\to in(z',w)))) for bigcap conclude in(z,bigcap(u))
+      fold for bigcap conclude in(z,bigcap(u))
     }
     connect in(z,bigcap(u))\leftrightarrow in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
   }
@@ -77,7 +77,7 @@ theorem bigcap_characterization \forall u\forall z(in(z,bigcap(u))\leftrightarro
 
 theorem bigcap_cor1 equal(bigcap(emptyset),emptyset) {
   apply sep_cor1 for x:bigcup(emptyset), \phi: lambda z. \forall w(in(w,emptyset)\to in(z,w))
-  expand subset(sep(bigcup(emptyset), lambda z. \forall w(in(w,emptyset)\to in(z,w))),bigcup(emptyset)) for bigcap conclude subset(bigcap(emptyset),bigcup(emptyset))
+  fold for bigcap conclude subset(bigcap(emptyset),bigcup(emptyset))
   assert bigcup_cor2
   substitute subset(bigcap(emptyset),bigcup(emptyset)) for bigcup(emptyset):emptyset
   apply emptyset_subset_cor1 for x:bigcap(emptyset)
@@ -126,7 +126,7 @@ theorem bigcap_cor3 \forall x\forall y(in(y,x)\to subset(bigcap(x),y)) {
           invoke in(y,x)\to in(z,y)
         }
       }
-      expand \forall z(in(z,bigcap(x))\to in(z,y)) for subset conclude subset(bigcap(x),y)
+      fold for subset conclude subset(bigcap(x),y)
     }
   }
 }
@@ -140,7 +140,7 @@ theorem cap_characterization \forall x\forall y\forall z(in(z,cap(x,y))\leftrigh
     invoke neq(pair(x,y),emptyset)\to\forall z(in(z,bigcap(pair(x,y)))\leftrightarrow\forall w(in(w,pair(x,y))\to in(z,w)))
     apply \forall z(in(z,bigcap(pair(x,y)))\leftrightarrow\forall w(in(w,pair(x,y))\to in(z,w))) for z:z
     assume in(z,cap(x,y)) {
-      expand in(z,cap(x,y)) for cap conclude in(z,bigcap(pair(x,y)))
+      expand in(z,cap(x,y)) for cap
       invoke rightward in(z,bigcap(pair(x,y)))\leftrightarrow\forall w(in(w,pair(x,y))\to in(z,w))
       apply \forall w(in(w,pair(x,y))\to in(z,w)) for w:x
       apply pair_cor1 for x:x,y:y
@@ -166,7 +166,7 @@ theorem cap_characterization \forall x\forall y\forall z(in(z,cap(x,y))\leftrigh
         }
       }
       invoke leftward in(z,bigcap(pair(x,y)))\leftrightarrow\forall w(in(w,pair(x,y))\to in(z,w))
-      expand in(z,bigcap(pair(x,y))) for cap conclude in(z,cap(x,y))
+      fold for cap conclude in(z,cap(x,y))
     }
     connect in(z,cap(x,y))\leftrightarrow in(z,x)\wedge in(z,y)
   }
@@ -193,7 +193,7 @@ theorem cartprod_lem1 \forall X\forall Y\forall x\forall y(in(x,X)\wedge in(y,Y)
       connect in(singleton(x),powerset(cup(X,Y)))\wedge in(pair(x,y),powerset(cup(X,Y)))
       apply pair_cor10 for x:singleton(x),y:pair(x,y),z:powerset(cup(X,Y))
       invoke in(singleton(x),powerset(cup(X,Y)))\wedge in(pair(x,y),powerset(cup(X,Y)))\to subset(pair(singleton(x),pair(x,y)),powerset(cup(X,Y)))
-      expand subset(pair(singleton(x),pair(x,y)),powerset(cup(X,Y))) for op conclude subset(op(x,y),powerset(cup(X,Y)))
+      fold for op conclude subset(op(x,y),powerset(cup(X,Y)))
       apply powerset_existence for x:powerset(cup(X,Y)),z:op(x,y)
       invoke leftward in(op(x,y),powerset(powerset(cup(X,Y))))\leftrightarrow subset(op(x,y),powerset(cup(X,Y)))
     }
@@ -204,7 +204,7 @@ theorem cartprod_characterization \forall X\forall Y\forall z(in(z,cartprod(X,Y)
   any X,Y,z {
     apply sep_existence for x:powerset(powerset(cup(X,Y))),\phi:lambda z'. \exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z',op(x,y))),z:z
     assume in(z,cartprod(X,Y)) {
-      expand in(z,cartprod(X,Y)) for cartprod conclude in(z,sep(powerset(powerset(cup(X,Y))), lambda z'. \exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z',op(x,y)))))
+      expand in(z,cartprod(X,Y)) for cartprod
       invoke rightward in(z,sep(powerset(powerset(cup(X,Y))),lambda z'.\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z',op(x,y)))))\leftrightarrow in(z,powerset(powerset(cup(X,Y))))\wedge\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y)))
       split in(z,powerset(powerset(cup(X,Y))))\wedge\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y)))
     }
@@ -217,7 +217,7 @@ theorem cartprod_characterization \forall X\forall Y\forall z(in(z,cartprod(X,Y)
         substitute in(op(x,y),powerset(powerset(cup(X,Y)))) for op(x,y):z
         connect in(z,powerset(powerset(cup(X,Y))))\wedge\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y)))
         invoke leftward in(z,sep(powerset(powerset(cup(X,Y))),lambda z'.\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z',op(x,y)))))\leftrightarrow in(z,powerset(powerset(cup(X,Y))))\wedge\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y)))
-        expand in(z,sep(powerset(powerset(cup(X,Y))),lambda z'.\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z',op(x,y))))) for cartprod conclude in(z,cartprod(X,Y))
+        fold for cartprod conclude in(z,cartprod(X,Y))
       }
     }
     connect in(z,cartprod(X,Y))\leftrightarrow\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y)))

@@ -23,7 +23,7 @@ theorem pair_exists_uniquely \forall x\forall y\exists!z\forall w(in(w,z)\leftri
             }
             connect in(w,z')\leftrightarrow in(w,z)
           }
-          expand \forall w(in(w,z')\leftrightarrow in(w,z)) for equal conclude equal(z',z)
+          fold for equal conclude equal(z',z)
         }
       }
       connect \forall w(in(w,z)\leftrightarrow equal(w,x)\vee equal(w,y))\wedge\forall z'(\forall w(in(w,z')\leftrightarrow equal(w,x)\vee equal(w,y))\to equal(z',z))
@@ -62,7 +62,7 @@ theorem pair_cor3 \forall x\forall y(subset(pair(x,y),pair(y,x))) {
         invoke leftward in(z,pair(y,x))\leftrightarrow equal(z,y)\vee equal(z,x)
       }
     }
-    expand \forall z(in(z,pair(x,y))\to in(z,pair(y,x))) for subset conclude subset(pair(x,y),pair(y,x))
+    fold for subset conclude subset(pair(x,y),pair(y,x))
   }
 }
 
@@ -165,7 +165,7 @@ theorem pair_cor10 \forall x\forall y\forall z(in(x,z)\wedge in(y,z)\to subset(p
             }
         }
       }
-      expand \forall w(in(w,pair(x,y))\to in(w,z)) for subset conclude subset(pair(x,y),z)
+      fold for subset conclude subset(pair(x,y),z)
     }
   }
 }
@@ -175,7 +175,7 @@ definition function singleton(x) as pair(x,x) tex "\{","\}"
 theorem singleton_characterization \forall x\forall y(in(y,singleton(x))\leftrightarrow equal(y,x)) {
   any x,y {
     assume in(y,singleton(x)) {
-      expand in(y,singleton(x)) for singleton conclude in(y,pair(x,x))
+      expand in(y,singleton(x)) for singleton
       apply pair_existence for x:x,y:x,w:y
       invoke rightward in(y,pair(x,x))\leftrightarrow equal(y,x)\vee equal(y,x)
       divide equal(y,x)\vee equal(y,x)
@@ -186,7 +186,7 @@ theorem singleton_characterization \forall x\forall y(in(y,singleton(x))\leftrig
       apply pair_existence for x:x,y:x,w:y
       pad equal(y,x) conclude equal(y,x)\vee equal(y,x)
       invoke leftward in(y,pair(x,x))\leftrightarrow equal(y,x)\vee equal(y,x)
-      expand in(y,pair(x,x)) for singleton conclude in(y,singleton(x))
+      fold for singleton conclude in(y,singleton(x))
     }
     connect in(y,singleton(x))\leftrightarrow equal(y,x)
   }
@@ -220,7 +220,7 @@ theorem singleton_cor3 \forall x\forall y(in(x,y)\to subset(singleton(x),y)) {
           substitute in(x,y) for x:z
         }
       }
-      expand \forall z(in(z,singleton(x))\to in(z,y)) for subset conclude subset(singleton(x),y)
+      fold for subset conclude subset(singleton(x),y)
     }
   }
 }
@@ -228,7 +228,7 @@ theorem singleton_cor3 \forall x\forall y(in(x,y)\to subset(singleton(x),y)) {
 theorem pair_singleton_cor1 \forall x\forall y\forall z(equal(singleton(x),pair(y,z))\to equal(x,y)) {
   any x,y,z {
     assume equal(singleton(x),pair(y,z)) {
-      expand equal(singleton(x),pair(y,z)) for singleton conclude equal(pair(x,x),pair(y,z))
+      expand equal(singleton(x),pair(y,z)) for singleton
       apply pair_cor6 for x:x,y:y,z:z
       invoke equal(pair(x,x),pair(y,z))\to equal(x,y)
     }
@@ -238,7 +238,7 @@ theorem pair_singleton_cor1 \forall x\forall y\forall z(equal(singleton(x),pair(
 theorem pair_singleton_cor2 \forall x\forall y\forall z(equal(singleton(x),pair(y,z))\to equal(x,z)) {
   any x,y,z {
     assume equal(singleton(x),pair(y,z)) {
-      expand equal(singleton(x),pair(y,z)) for singleton conclude equal(pair(x,x),pair(y,z))
+      expand equal(singleton(x),pair(y,z)) for singleton
       apply pair_cor7 for x:x,y:y,z:z
       invoke equal(pair(x,x),pair(y,z))\to equal(x,z)
     }
@@ -250,7 +250,7 @@ definition function op(x,y) as pair(singleton(x),pair(x,y)) tex "(",",",")"
 theorem op_characterization \forall x\forall y\forall x'\forall y'(equal(op(x,y),op(x',y'))\to equal(x,x')\wedge equal(y,y')) {
   any x,y,x',y' {
     assume equal(op(x,y),op(x',y')) {
-      expand equal(op(x,y),op(x',y')) for op conclude equal(pair(singleton(x),pair(x,y)),pair(singleton(x'),pair(x',y')))
+      expand equal(op(x,y),op(x',y')) for op
       apply pair_cor4 for x:singleton(x),y:pair(x,y),z:singleton(x'),w:pair(x',y')
       invoke equal(pair(singleton(x),pair(x,y)),pair(singleton(x'),pair(x',y')))\to equal(singleton(x),singleton(x'))\vee equal(singleton(x),pair(x',y'))
       divide equal(singleton(x),singleton(x'))\vee equal(singleton(x),pair(x',y'))

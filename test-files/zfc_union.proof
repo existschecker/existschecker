@@ -23,7 +23,7 @@ theorem union_exists_uniquely \forall x\exists!y\forall z(in(z,y)\leftrightarrow
             }
             connect in(z,y')\leftrightarrow in(z,y)
           }
-          expand \forall z(in(z,y')\leftrightarrow in(z,y)) for equal conclude equal(y',y)
+          fold for equal conclude equal(y',y)
         }
       }
       connect \forall z(in(z,y)\leftrightarrow\exists w(in(z,w)\wedge in(w,x)))\wedge\forall y'(\forall z(in(z,y')\leftrightarrow\exists w(in(z,w)\wedge in(w,x)))\to equal(y',y))
@@ -47,7 +47,7 @@ theorem bigcup_cor1 \forall x\forall y(in(y,x)\to subset(y,bigcup(x))) {
           invoke leftward in(z,bigcup(x))\leftrightarrow\exists w(in(z,w)\wedge in(w,x))
         }
       }
-      expand \forall z(in(z,y)\to in(z,bigcup(x))) for subset conclude subset(y,bigcup(x))
+      fold for subset conclude subset(y,bigcup(x))
     }
   }
 }
@@ -74,7 +74,7 @@ theorem cup_characterization \forall x\forall y\forall z(in(z,cup(x,y))\leftrigh
   any x,y,z {
     assume in(z,cup(x,y)) {
       show \exists w(in(z,w)\wedge in(w,pair(x,y))) {
-        expand in(z,cup(x,y)) for cup conclude in(z,bigcup(pair(x,y)))
+        expand in(z,cup(x,y)) for cup
         apply bigcup_existence for x:pair(x,y),z:z
         invoke rightward in(z,bigcup(pair(x,y)))\leftrightarrow\exists w(in(z,w)\wedge in(w,pair(x,y)))
       }
@@ -106,7 +106,7 @@ theorem cup_characterization \forall x\forall y\forall z(in(z,cup(x,y))\leftrigh
           show in(z,cup(x,y)) {
             apply bigcup_existence for x:pair(x,y),z:z
             invoke leftward in(z,bigcup(pair(x,y)))\leftrightarrow\exists w(in(z,w)\wedge in(w,pair(x,y)))
-            expand in(z,bigcup(pair(x,y))) for cup conclude in(z,cup(x,y))
+            fold for cup conclude in(z,cup(x,y))
           }
         }
         case in(z,y) {
@@ -118,7 +118,7 @@ theorem cup_characterization \forall x\forall y\forall z(in(z,cup(x,y))\leftrigh
           show in(z,cup(x,y)) {
             apply bigcup_existence for x:pair(x,y),z:z
             invoke leftward in(z,bigcup(pair(x,y)))\leftrightarrow\exists w(in(z,w)\wedge in(w,pair(x,y)))
-            expand in(z,bigcup(pair(x,y))) for cup conclude in(z,cup(x,y))
+            fold for cup conclude in(z,cup(x,y))
           }
         }
     }
@@ -128,10 +128,10 @@ theorem cup_characterization \forall x\forall y\forall z(in(z,cup(x,y))\leftrigh
 
 theorem cup_commutativity \forall x\forall y(equal(cup(x,y),cup(y,x))) {
   any x,y {
-    expand equal(cup(x,y),cup(x,y)) for cup conclude equal(cup(x,y),bigcup(pair(x,y)))
+    expand equal(cup(x,y),cup(x,y)) for cup[2]
     apply pair_commutativity for x:x,y:y
     substitute equal(cup(x,y),bigcup(pair(x,y))) for pair(x,y):pair(y,x)
-    expand equal(cup(x,y),bigcup(pair(y,x))) for cup conclude equal(cup(x,y),cup(y,x))
+    fold for cup[2] conclude equal(cup(x,y),cup(y,x))
   }
 }
 
@@ -156,7 +156,7 @@ theorem cup_cor1 \forall x(equal(cup(x,emptyset),x)) {
       }
       connect in(y,cup(x,emptyset))\leftrightarrow in(y,x)
     }
-    expand \forall y(in(y,cup(x,emptyset))\leftrightarrow in(y,x)) for equal conclude equal(cup(x,emptyset),x)
+    fold for equal conclude equal(cup(x,emptyset),x)
   }
 }
 
@@ -177,7 +177,7 @@ theorem cup_cor3 \forall x\forall y(subset(x,cup(x,y))) {
         invoke leftward in(z,cup(x,y))\leftrightarrow in(z,x)\vee in(z,y)
       }
     }
-    expand \forall z(in(z,x)\to in(z,cup(x,y))) for subset conclude subset(x,cup(x,y))
+    fold for subset conclude subset(x,cup(x,y))
   }
 }
 
@@ -214,7 +214,7 @@ theorem cup_cor5 \forall x\forall y\forall X\forall Y(in(x,X)\wedge in(y,Y)\to s
             }
         }
       }
-      expand \forall z(in(z,pair(x,y))\to in(z,cup(X,Y))) for subset conclude subset(pair(x,y),cup(X,Y))
+      fold for subset conclude subset(pair(x,y),cup(X,Y))
     }
   }
 }

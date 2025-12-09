@@ -216,64 +216,94 @@ def alpha_equiv_with_defs(e1: Bottom | Formula, e2: Bottom | Formula, context: C
     if isinstance(e1, Bottom) or isinstance(e2, Bottom):
         return isinstance(e1, Bottom) and isinstance(e2, Bottom)
     else:
-        e1_exp = normalize_neg(expand_defs_formula(e1, context, defs))
-        e2_exp = normalize_neg(expand_defs_formula(e2, context, defs))
+        exp = DefExpander(context, defs)
+        e1_exp = normalize_neg(exp.expand_defs_formula(e1))
+        exp = DefExpander(context, defs)
+        e2_exp = normalize_neg(exp.expand_defs_formula(e2))
         return alpha_equiv(e1_exp, e2_exp, context)
 
-def expand_defs_term(expr: Term, context: Context, defs: list[str], bound_templates: list[Template] | None = None) -> Term:
-    if bound_templates is None:
-        bound_templates = []
-    if isinstance(expr, (Var, Con, Template)):
-        return expr
-    elif isinstance(expr, Compound):
-        if expr.fun.name in context.decl.deffuns:
-            return Compound(expr.fun, tuple(expand_defs_term(arg, context, defs, bound_templates) for arg in expr.args))
-        elif expr.fun.name in context.decl.deffunterms:
-            deffunterm = context.decl.deffunterms[expr.fun.name]
-            if expr.fun.name in defs:
-                subst = Substitutor(dict(zip(deffunterm.args, expr.args)))
-                expanded = subst.substitute_term(deffunterm.term)
-                return expand_defs_term(expanded, context, defs, bound_templates)
-            else:
-                return Compound(expr.fun, tuple(expand_defs_term(arg, context, defs, bound_templates) for arg in expr.args))
-        else:
-            raise Exception(f"Unexpected function name: {expr.fun.name}")
-    elif isinstance(expr, Lambda):
-        return Lambda(expr.args, expand_defs_formula(expr.body, context, defs, bound_templates))
-    else:
-        raise Exception(f"Unexpected type: {type(expr)}")
+@dataclass
+class DefExpander:
+    context: Context
+    defs: list[str]
+    indexes: dict[str, list[int]] = field(default_factory=dict[str, list[int]])
+    counter: dict[str, int] = field(init=False, default_factory=dict[str, int])
 
-def expand_defs_formula(expr: Formula, context: Context, defs: list[str], bound_templates: list[Template] | None = None) -> Formula:
-    if bound_templates is None:
-        bound_templates = []
-    if isinstance(expr, Symbol):
-        if expr.pred.name in context.decl.primpreds:
-            return Symbol(expr.pred, tuple(expand_defs_term(arg, context, defs, bound_templates) for arg in expr.args))
-        if expr.pred.name in context.decl.defpreds:
-            defpred = context.decl.defpreds[expr.pred.name]
-            if defpred.autoexpand or expr.pred.name in defs:
-                subst = Substitutor(dict(zip(defpred.args, expr.args)))
-                expanded = subst.substitute_formula(defpred.formula)
-                return expand_defs_formula(expanded, context, defs, bound_templates)
+    def expand_defs_term(self, expr: Term, bound_templates: list[Template] | None = None) -> Term:
+        if bound_templates is None:
+            bound_templates = []
+        if isinstance(expr, (Var, Con, Template)):
+            return expr
+        elif isinstance(expr, Compound):
+            if expr.fun.name in self.context.decl.deffuns:
+                return Compound(expr.fun, tuple(self.expand_defs_term(arg, bound_templates) for arg in expr.args))
+            elif expr.fun.name in self.context.decl.deffunterms:
+                deffunterm = self.context.decl.deffunterms[expr.fun.name]
+                should_expand = False
+                if expr.fun.name in self.defs:
+                    target_indexes = self.indexes.get(expr.fun.name, [])
+                    self.counter[expr.fun.name] = self.counter.get(expr.fun.name, 0) + 1
+                    if not target_indexes:
+                        should_expand = True
+                    elif self.counter[expr.fun.name] in target_indexes:
+                        should_expand = True
+                if should_expand:
+                    subst = Substitutor(dict(zip(deffunterm.args, expr.args)))
+                    expanded = subst.substitute_term(deffunterm.term)
+                    return self.expand_defs_term(expanded, bound_templates)
+                else:
+                    return Compound(expr.fun, tuple(self.expand_defs_term(arg, bound_templates) for arg in expr.args))
             else:
-                return Symbol(expr.pred, tuple(expand_defs_term(arg, context, defs, bound_templates) for arg in expr.args))
+                raise Exception(f"Unexpected function name: {expr.fun.name}")
+        elif isinstance(expr, Lambda):
+            return Lambda(expr.args, self.expand_defs_formula(expr.body, bound_templates))
         else:
-            raise Exception(f"Unexpected predicate name: {expr.pred.name}")
-    elif isinstance(expr, TemplateCall):
-        if expr.template in context.ctrl.templates or expr.template in bound_templates:
-            return TemplateCall(expr.template, tuple(expand_defs_term(arg, context, defs, bound_templates) for arg in expr.args))
+            raise Exception(f"Unexpected type: {type(expr)}")
+
+    def expand_defs_formula(self, expr: Formula, bound_templates: list[Template] | None = None) -> Formula:
+        if bound_templates is None:
+            bound_templates = []
+        if isinstance(expr, Symbol):
+            if expr.pred.name in self.context.decl.primpreds:
+                return Symbol(expr.pred, tuple(self.expand_defs_term(arg, bound_templates) for arg in expr.args))
+            elif expr.pred.name in self.context.decl.defpreds:
+                defpred = self.context.decl.defpreds[expr.pred.name]
+                should_expand = False
+                if len(self.defs) == 0 and defpred.autoexpand:
+                    should_expand = True
+                elif expr.pred.name in self.defs:
+                    target_indexes = self.indexes.get(expr.pred.name, [])
+                    self.counter[expr.pred.name] = self.counter.get(expr.pred.name, 0) + 1
+                    if not target_indexes:
+                        should_expand = True
+                    elif self.counter[expr.pred.name] in target_indexes:
+                        should_expand = True
+                if should_expand:
+                    subst = Substitutor(dict(zip(defpred.args, expr.args)))
+                    expanded = subst.substitute_formula(defpred.formula)
+                    return self.expand_defs_formula(expanded, bound_templates)
+                else:
+                    return Symbol(expr.pred, tuple(self.expand_defs_term(arg, bound_templates) for arg in expr.args))
+            else:
+                raise Exception(f"Unexpected predicate name: {expr.pred.name}")
+        elif isinstance(expr, TemplateCall):
+            if expr.template in self.context.ctrl.templates or expr.template in bound_templates:
+                return TemplateCall(expr.template, tuple(self.expand_defs_term(arg, bound_templates) for arg in expr.args))
+            else:
+                raise Exception(f"{expr.template} in {self.context.ctrl.templates} or {expr.template} in {bound_templates}")
+        elif isinstance(expr, Not):
+            return Not(self.expand_defs_formula(expr.body, bound_templates))
+        elif isinstance(expr, (And, Or, Implies, Iff)):
+            return type(expr)(self.expand_defs_formula(expr.left, bound_templates), self.expand_defs_formula(expr.right, bound_templates))
+        elif isinstance(expr, (Exists, Forall, ExistsUniq)):
+            if isinstance(expr.var, Template):
+                new_bound_templates = list(bound_templates) 
+                new_bound_templates.append(expr.var)
+            else:
+                new_bound_templates = bound_templates
+            return type(expr)(expr.var, self.expand_defs_formula(expr.body, new_bound_templates))
         else:
-            raise Exception(f"{expr.template} in {context.ctrl.templates} or {expr.template} in {bound_templates}")
-    elif isinstance(expr, Not):
-        return Not(expand_defs_formula(expr.body, context, defs, bound_templates))
-    elif isinstance(expr, (And, Or, Implies, Iff)):
-        return type(expr)(expand_defs_formula(expr.left, context, defs, bound_templates), expand_defs_formula(expr.right, context, defs, bound_templates))
-    elif isinstance(expr, (Exists, Forall, ExistsUniq)):
-        if isinstance(expr.var, Template):
-            bound_templates.append(expr.var)
-        return type(expr)(expr.var, expand_defs_formula(expr.body, context, defs, bound_templates))
-    else:
-        raise Exception(f"Unexpected type: {type(expr)}")
+            raise Exception(f"Unexpected type: {type(expr)}")
 
 def normalize_neg(expr: Formula) -> Formula:
     if isinstance(expr, (Symbol, TemplateCall)):

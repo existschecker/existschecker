@@ -1,6 +1,6 @@
 from datetime import datetime
 from html import escape
-from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Symbol, Pred, Compound, Fun, Control, Declaration, Bottom, Formula, Term, DeclarationSupport, Var, Include, Assert
+from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Symbol, Pred, Compound, Fun, Control, Declaration, Bottom, Formula, Term, DeclarationSupport, Var, Include, Assert, Fold
 from svg import output_svg
 from typing import Sequence, Mapping, TypeVar
 from logic_utils import pretty_expr
@@ -328,12 +328,20 @@ def render_node(node: Include | Declaration | DeclarationSupport | Control, cont
                         render_keyword("expand"),
                         render_expr(node.fact, context),
                         render_keyword("for"),
+                        defs]
+        header_parts_jp = [bullet,
+                           render_expr(node.fact, context),
+                           f"を{defs}の定義により言い換える。"]
+    elif isinstance(node, Fold):
+        defs = ",".join([render_identifier(definition) for definition in node.defs])
+        header_parts = [bullet,
+                        render_keyword("fold"),
+                        render_keyword("for"),
                         defs,
                         render_keyword("conclude"),
                         render_expr(node.conclusion, context)]
         header_parts_jp = [bullet,
-                           render_expr(node.fact, context),
-                           f"を{defs}の定義により言い換えて",
+                           f"{defs}の定義により言い換えて",
                            render_expr(node.conclusion, context),
                            "を得る。"]
     elif isinstance(node, Split):

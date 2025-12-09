@@ -1,5 +1,5 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, Fun, Con, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Pred, Control, Formula, Declaration, Template, Term, Lambda, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Include, DeclarationSupport, Assert
-from logic_utils import Substitutor, expr_in_context, collect_quantifier_vars, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs, pretty_expr
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, Fun, Con, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Pred, Control, Formula, Declaration, Template, Term, Lambda, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Include, DeclarationSupport, Assert, Fold
+from logic_utils import Substitutor, DefExpander, expr_in_context, collect_quantifier_vars, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs, pretty_expr
 from copy import deepcopy
 
 import logging
@@ -340,6 +340,8 @@ def check_control(node: Control, context: Context, indent: int):
         return check_invoke(node, context, indent)
     elif isinstance(node, Expand):
         return check_expand(node, context, indent)
+    elif isinstance(node, Fold):
+        return check_fold(node, context, indent)
     elif isinstance(node, Pad):
         return check_pad(node, context, indent)
     elif isinstance(node, Split):
@@ -826,11 +828,25 @@ def check_expand(node: Expand, context: Context, indent: int):
         return False
     logger.debug(f"{debug_prefix}fact: {pretty_expr(node.fact, context)}")
     fact = get_fact(node.fact, context)
-    if not alpha_equiv_with_defs(node.conclusion, fact, context, node.defs):
-        logger.error(f"{error_prefix}Not matched: node.conclusion={pretty_expr(node.conclusion, context)}")
+    exp = DefExpander(context, node.defs, node.indexes)
+    conclusion = exp.expand_defs_formula(fact)
+    node.proofinfo.status = "OK"
+    node.proofinfo.premises = [fact]
+    node.proofinfo.conclusions = [conclusion]
+    add_conclusion(context, conclusion)
+    logger.debug(f"{debug_prefix}Added: {pretty_expr(conclusion, context)}")
+    return True
+
+def check_fold(node: Fold, context: Context, indent: int):
+    debug_prefix = make_debug_prefix(node, indent)
+    error_prefix = make_error_prefix(node, indent)
+    exp = DefExpander(context, node.defs, node.indexes)
+    fact = exp.expand_defs_formula(node.conclusion)
+    if not goal_in_context(fact, context):
+        logger.error(f"{error_prefix}Not fact: {pretty_expr(fact, context)}")
         node.proofinfo.status = "ERROR"
         return False
-    logger.debug(f"{debug_prefix}Matched: node.conclusion={pretty_expr(node.conclusion, context)}")
+    logger.debug(f"{debug_prefix}fact: {pretty_expr(fact, context)}")
     node.proofinfo.status = "OK"
     node.proofinfo.premises = [fact]
     node.proofinfo.conclusions = [node.conclusion]
