@@ -1,5 +1,5 @@
 from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, Fun, Con, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Pred, Control, Formula, Declaration, Template, Term, Lambda, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Include, DeclarationSupport, Assert
-from logic_utils import expr_in_context, collect_quantifier_vars, substitute_formula, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs, pretty_expr
+from logic_utils import Substitutor, expr_in_context, collect_quantifier_vars, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs, pretty_expr
 from copy import deepcopy
 
 import logging
@@ -132,7 +132,8 @@ def check_defconexist(node: DefConExist, context: Context, indent: int):
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{debug_prefix}ExistsUniq object: {pretty_expr(existsuniq, context)}")
-    existence_formula = substitute_formula(existsuniq.body, {existsuniq.var: Con(node.con_name)})
+    subst = Substitutor({existsuniq.var: Con(node.con_name)})
+    existence_formula = subst.substitute_formula(existsuniq.body)
     if not alpha_equiv_with_defs(node.formula, existence_formula, context):
         logger.error(f"{error_prefix}existence_formula is not matched with theorem: {pretty_expr(node.formula, context)}")
         node.proofinfo.status = "ERROR"
@@ -154,7 +155,8 @@ def check_defconuniq(node: DefConUniq, context: Context, indent: int):
     logger.debug(f"{debug_prefix}ExistsUniq object: {pretty_expr(existsuniq, context)}")
     free, bound = collect_vars(existsuniq.body)
     var = fresh_var(existsuniq.var, free | bound)
-    body = substitute_formula(existsuniq.body, {existsuniq.var: var})
+    subst = Substitutor({existsuniq.var: var})
+    body = subst.substitute_formula(existsuniq.body)
     if context.decl.equality is None:
         logger.error(f"{error_prefix}equality has not been declared yet")
         node.proofinfo.status = "ERROR"
@@ -193,7 +195,8 @@ def check_deffunexist(node: DefFunExist, context: Context, indent: int):
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{debug_prefix}ExistsUniq object: {pretty_expr(existsuniq, context)}")
-    existence_formula = substitute_formula(existsuniq.body, {existsuniq.var: Compound(Fun(node.fun_name), tuple(args))})
+    subst = Substitutor({existsuniq.var: Compound(Fun(node.fun_name), tuple(args))})
+    existence_formula = subst.substitute_formula(existsuniq.body)
     for arg in reversed(args):
         existence_formula = Forall(arg, existence_formula)
     if not alpha_equiv_with_defs(node.formula, existence_formula, context):
@@ -517,7 +520,8 @@ def check_some(node: Some, context: Context, indent: int):
         if var in context.ctrl.vars:
             node.proofinfo.status = "ERROR"
             logger.error(f"{error_prefix}{pretty_expr(var, context)} is already used")
-    premise = substitute_formula(body, node.env)
+    subst = Substitutor(node.env)
+    premise = subst.substitute_formula(body)
     logger.debug(f"{debug_prefix}Taking {node.env.values()}, premise={pretty_expr(premise, context)}")
     local_ctx = context.add_ctrl(list(node.env.values()), [premise], [])
     for stmt in node.body:
@@ -634,7 +638,8 @@ def check_apply(node: Apply, context: Context, indent: int):
             logger.debug(f"{debug_prefix}arity of {item.name} is {item.arity}, args of Lambda are {",".join([arg.name for arg in v.args])}")
         env[item] = v
     logger.debug(f"{debug_prefix}Instantiable: env={env}")
-    instantiation = substitute_formula(body, env)
+    subst = Substitutor(env)
+    instantiation = subst.substitute_formula(body)
     logger.debug(f"{debug_prefix}\\forall-elimination is done: instantiation={pretty_expr(instantiation, context)}")
     if node.invoke == "none":
         node.proofinfo.premises = [node.fact]
@@ -703,7 +708,8 @@ def check_lift(node: Lift, context: Context, indent: int):
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{debug_prefix}Matched: vars: {vars}, node.env: {node.env}")
-    fact = substitute_formula(body, node.env)
+    subst = Substitutor(node.env)
+    fact = subst.substitute_formula(body)
     if not goal_in_context(fact, context):
         logger.error(f"{error_prefix}Not fact: {pretty_expr(fact, context)}")
         node.proofinfo.status = "ERROR"
@@ -735,7 +741,11 @@ def check_characterize(node: Characterize, context: Context, indent: int):
         logger.error(f"{error_prefix}equality has not been declared yet")
         node.proofinfo.status = "ERROR"
         return False
-    fact = And(substitute_formula(node.conclusion.body, node.env), Forall(vardash, Implies(substitute_formula(node.conclusion.body, {node.conclusion.var: vardash}), Symbol(Pred(context.decl.equality.equal.name), (vardash, list(node.env.values())[0])))))
+    subst = Substitutor(node.env)
+    existence = subst.substitute_formula(node.conclusion.body)
+    subst = Substitutor({node.conclusion.var: vardash})
+    existence_dash = subst.substitute_formula(node.conclusion.body)
+    fact = And(existence, Forall(vardash, Implies(existence_dash, Symbol(Pred(context.decl.equality.equal.name), (vardash, list(node.env.values())[0])))))
     if not goal_in_context(fact, context):
         logger.error(f"{error_prefix}Not fact: {pretty_expr(fact, context)}")
         node.proofinfo.status = "ERROR"
@@ -971,11 +981,11 @@ def check_substitute(node: Substitute, context: Context, indent: int):
                 return False
             logger.debug(f"{debug_prefix}Fact: {pretty_expr(equation, context)}")
             premises_equal.append(equation)
-    fact_subst = substitute_formula(fact, node.env)
-    conclusion_subst = substitute_formula(node.conclusion, node.env)
+    subst = Substitutor(node.env, node.indexes)
+    fact_subst = subst.substitute_formula(fact)
     logger.debug(f"{debug_prefix}fact_subst: {pretty_expr(fact_subst, context)}")
-    logger.debug(f"{debug_prefix}conclusion_subst: {pretty_expr(conclusion_subst, context)}")
-    if not alpha_equiv_with_defs(conclusion_subst, fact_subst, context):
+    logger.debug(f"{debug_prefix}node.conclusion: {pretty_expr(node.conclusion, context)}")
+    if not alpha_equiv_with_defs(node.conclusion, fact_subst, context):
         logger.error(f"{error_prefix}Not matched")
         node.proofinfo.status = "ERROR"
         return False

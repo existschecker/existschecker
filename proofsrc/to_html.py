@@ -476,10 +476,12 @@ def render_node(node: Include | Declaration | DeclarationSupport | Control, cont
     elif isinstance(node, Substitute):
         env_parts = ""
         for k, v in node.env.items():
+            env_parts += render_expr(k, context)
+            if k in node.indexes:
+                env_parts += "@" + ",".join(f"{i}" for i in node.indexes[k])
+            env_parts +=  ":" + render_expr(v, context)
             if k in node.evidence:
-                env_parts += render_expr(k, context) + ":" + render_expr(v, context) + render_keyword("by") + render_identifier(node.evidence[k])
-            else:
-                env_parts += render_expr(k, context) + ":" + render_expr(v, context)
+                env_parts += render_keyword("by") + render_identifier(node.evidence[k])
         header_parts = [bullet,
                         render_keyword("substitute"),
                         render_expr(node.fact, context),

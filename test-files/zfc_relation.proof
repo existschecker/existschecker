@@ -246,7 +246,7 @@ theorem id_cor1 \forall X\forall x\forall y(in(op(x,y),id(X))\leftrightarrow in(
     }
     assume in(x,X)\wedge in(y,X)\wedge equal(x,y) {
       split in(x,X)\wedge in(y,X)\wedge equal(x,y)
-      substitute equal(op(x,y),op(x,y)) for y:x conclude equal(op(x,y),op(x,x))
+      substitute equal(op(x,y),op(x,y)) for y@2:x conclude equal(op(x,y),op(x,x))
       connect in(x,X)\wedge equal(op(x,y),op(x,x))
       lift for x':x conclude \exists x'(in(x',X)\wedge equal(op(x,y),op(x',x')))
       apply invoke leftward id_characterization for X:X,z:op(x,y)

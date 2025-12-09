@@ -2,7 +2,7 @@ include "zfc_relation.proof"
 
 definition predicate relon(X,R) as \forall z(in(z,R)\leftrightarrow\exists x\exists y(in(x,X)\wedge in(y,X)\wedge equal(z,op(x,y)))) tex "\mathrm{relon}(",",",")"
 
-theorem emptyset_is_relation_on_emptyset relon(emptyset,emptyset) {
+theorem emptyset_is_relon_emptyset relon(emptyset,emptyset) {
   any z {
     assume in(z,emptyset) {
       apply emptyset_existence for y:z
@@ -24,7 +24,7 @@ theorem emptyset_is_relation_on_emptyset relon(emptyset,emptyset) {
 
 definition predicate transrelon(X,R) as relon(X,R)\wedge\forall x\forall y\forall z(in(op(x,y),R)\wedge in(op(y,z),R)\to in(op(x,z),R)) tex "\mathrm{transrelon}(",",",")"
 
-theorem emptyset_is_transitive_relation_on_emptyset transrelon(emptyset,emptyset) {
+theorem emptyset_is_transrelon_emptyset transrelon(emptyset,emptyset) {
   any x,y,z {
     assume in(op(x,y),emptyset)\wedge in(op(y,z),emptyset) {
       split in(op(x,y),emptyset)\wedge in(op(y,z),emptyset)
@@ -33,16 +33,46 @@ theorem emptyset_is_transitive_relation_on_emptyset transrelon(emptyset,emptyset
       explode in(op(x,z),emptyset)
     }
   }
-  assert emptyset_is_relation_on_emptyset
+  assert emptyset_is_relon_emptyset
   connect relon(emptyset,emptyset)\wedge\forall x\forall y\forall z(in(op(x,y),emptyset)\wedge in(op(y,z),emptyset)\to in(op(x,z),emptyset))
   expand relon(emptyset,emptyset)\wedge\forall x\forall y\forall z(in(op(x,y),emptyset)\wedge in(op(y,z),emptyset)\to in(op(x,z),emptyset)) for transrelon conclude transrelon(emptyset,emptyset)
 }
 
-definition predicate antisymrelon(X,R) as relon(X,R)\wedge\forall x\forall y(in(x,y)\wedge in(y,x)\to equal(x,y)) tex "\mathrm{antisymrelon}(",",",")"
+definition predicate antisymrelon(X,R) as relon(X,R)\wedge\forall x\forall y(in(op(x,y),R)\wedge in(op(y,x),R)\to equal(x,y)) tex "\mathrm{antisymrelon}(",",",")"
+
+theorem emptyset_is_antisymrelon_emptyset antisymrelon(emptyset,emptyset) {
+  assert emptyset_is_relon_emptyset
+  any x,y {
+    assume in(op(x,y),emptyset)\wedge in(op(y,x),emptyset) {
+      split in(op(x,y),emptyset)\wedge in(op(y,x),emptyset)
+      apply emptyset_existence for y:op(x,y)
+      contradict in(op(x,y),emptyset)
+      explode equal(x,y)
+    }
+  }
+  connect relon(emptyset,emptyset)\wedge\forall x\forall y(in(op(x,y),emptyset)\wedge in(op(y,x),emptyset)\to equal(x,y))
+  expand relon(emptyset,emptyset)\wedge\forall x\forall y(in(op(x,y),emptyset)\wedge in(op(y,x),emptyset)\to equal(x,y)) for antisymrelon conclude antisymrelon(emptyset,emptyset)
+}
 
 definition predicate ordon(X,R) as transrelon(X,R)\wedge antisymrelon(X,R) tex "\mathrm{ordon}(",",",")"
 
+theorem emptyset_is_ordon_emptyset ordon(emptyset,emptyset) {
+  assert emptyset_is_transrelon_emptyset
+  assert emptyset_is_antisymrelon_emptyset
+  connect transrelon(emptyset,emptyset)\wedge antisymrelon(emptyset,emptyset)
+  expand transrelon(emptyset,emptyset)\wedge antisymrelon(emptyset,emptyset) for ordon conclude ordon(emptyset,emptyset)
+}
+
 definition predicate irrefrelon(X,R) as relon(X,R)\wedge\forall x(notin(op(x,x),R)) tex "\mathrm{irrefrelon}(",",",")"
+
+theorem emptyset_is_irrefrelon_on_emptyset irrefrelon(emptyset,emptyset) {
+  assert emptyset_is_relon_emptyset
+  any x {
+    apply emptyset_existence for y:op(x,x)
+  }
+  connect relon(emptyset,emptyset)\wedge\forall x(notin(op(x,x),emptyset))
+  expand relon(emptyset,emptyset)\wedge\forall x(notin(op(x,x),emptyset)) for irrefrelon conclude irrefrelon(emptyset,emptyset)
+}
 
 definition predicate linordon(X,R) as ordon(X,R)\wedge\forall x\forall y(in(x,X)\wedge in(y,X)\to in(op(x,y),R)\vee equal(x,y)\vee in(op(y,x),R)) tex "\mathrm{linordon}(",",",")"
 
@@ -53,6 +83,20 @@ definition predicate minimum(X,R,A,a) as subset(A,X)\wedge in(a,A)\wedge\forall 
 definition predicate wfrelon(X,R) as relon(X,R)\wedge\forall A(subset(A,X)\wedge neq(A,emptyset)\to\exists a(minimal(X,R,A,a))) tex "\mathrm{wfrelon}(",",",")"
 
 definition predicate wordon(X,R) as ordon(X,R)\wedge\forall A(subset(A,X)\wedge neq(A,emptyset)\to\exists a(minimum(X,R,A,a))) tex "\mathrm{worelon}(",",",")"
+
+theorem emptyset_is_wordon_emptyset wordon(emptyset,emptyset) {
+  assert emptyset_is_ordon_emptyset
+  any A {
+    assume subset(A,emptyset)\wedge neq(A,emptyset) {
+      split subset(A,emptyset)\wedge neq(A,emptyset)
+      apply invoke emptyset_subset_cor1 for x:A
+      contradict equal(A,emptyset)
+      explode \exists a(minimum(emptyset,emptyset,A,a))
+    }
+  }
+  connect ordon(emptyset,emptyset)\wedge\forall A(subset(A,emptyset)\wedge neq(A,emptyset)\to\exists a(minimum(emptyset,emptyset,A,a)))
+  expand ordon(emptyset,emptyset)\wedge\forall A(subset(A,emptyset)\wedge neq(A,emptyset)\to\exists a(minimum(emptyset,emptyset,A,a))) for wordon conclude wordon(emptyset,emptyset)
+}
 
 definition predicate trans(X) as \forall x(in(x,X)\to\forall y(in(y,x)\to in(x,X))) tex "\mathrm{trans}(",")"
 
@@ -115,4 +159,15 @@ theorem mem_of_emptyset_is_emptyset equal(mem(emptyset),emptyset) {
   apply invoke emptyset_uniqueness for x:mem(emptyset)
 }
 
-definition predicate on(\alpha) as trans(\alpha)\wedge irrefrelon(\alpha,mem(\alpha))\wedge wordon(\alpha,mem(\alpha)) tex "\mathrm{on}(",")"
+definition predicate ord(\alpha) as trans(\alpha)\wedge irrefrelon(\alpha,mem(\alpha))\wedge wordon(\alpha,mem(\alpha)) tex "\mathrm{on}(",")"
+
+theorem emptyset_is_ord ord(emptyset) {
+  assert emptyset_is_trans
+  assert mem_of_emptyset_is_emptyset
+  assert emptyset_is_irrefrelon_on_emptyset
+  substitute irrefrelon(emptyset,emptyset) for emptyset@2:mem(emptyset) conclude irrefrelon(emptyset,mem(emptyset))
+  assert emptyset_is_wordon_emptyset
+  substitute wordon(emptyset,emptyset) for emptyset@2:mem(emptyset) conclude wordon(emptyset,mem(emptyset))
+  connect trans(emptyset)\wedge irrefrelon(emptyset,mem(emptyset))\wedge wordon(emptyset,mem(emptyset))
+  expand trans(emptyset)\wedge irrefrelon(emptyset,mem(emptyset))\wedge wordon(emptyset,mem(emptyset)) for ord conclude ord(emptyset)
+}

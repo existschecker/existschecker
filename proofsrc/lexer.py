@@ -25,7 +25,8 @@ SYMBOLS = {
     "[": "LBRACKET",
     "]": "RBRACKET",
     "|": "SLASH",
-    ".": "DOT"
+    ".": "DOT",
+    "@": "AT"
 }
 
 def lex(path: str) -> list[Token]:
