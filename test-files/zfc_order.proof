@@ -121,7 +121,7 @@ theorem mem_characterization \forall X\forall z(in(z,mem(X))\leftrightarrow\exis
       split in(z,cartprod(X,X))\wedge\exists x\exists y(equal(z,op(x,y))\wedge in(x,y))
       some x:x,y:y such \exists x\exists y(equal(z,op(x,y))\wedge in(x,y)) {
         split equal(z,op(x,y))\wedge in(x,y)
-        substitute in(z,cartprod(X,X)) for z:op(x,y) conclude in(op(x,y),cartprod(X,X))
+        substitute in(z,cartprod(X,X)) for z:op(x,y)
         apply invoke leftward cartprod_cor1 for X:X,Y:X,x:x,y:y
         split in(x,X)\wedge in(y,X)
         connect in(x,X)\wedge in(y,X)\wedge equal(z,op(x,y))\wedge in(x,y)
@@ -133,7 +133,7 @@ theorem mem_characterization \forall X\forall z(in(z,mem(X))\leftrightarrow\exis
         split in(x,X)\wedge in(y,X)\wedge equal(z,op(x,y))\wedge in(x,y)
         connect in(x,X)\wedge in(y,X)
         apply invoke rightward cartprod_cor1 for X:X,Y:X,x:x,y:y
-        substitute in(op(x,y),cartprod(X,X)) for op(x,y):z conclude in(z,cartprod(X,X))
+        substitute in(op(x,y),cartprod(X,X)) for op(x,y):z
         connect equal(z,op(x,y))\wedge in(x,y)
         lift for x:x,y:y conclude \exists x\exists y(equal(z,op(x,y))\wedge in(x,y))
         connect in(z,cartprod(X,X))\wedge\exists x\exists y(equal(z,op(x,y))\wedge in(x,y))
@@ -165,9 +165,9 @@ theorem emptyset_is_ord ord(emptyset) {
   assert emptyset_is_trans
   assert mem_of_emptyset_is_emptyset
   assert emptyset_is_irrefrelon_on_emptyset
-  substitute irrefrelon(emptyset,emptyset) for emptyset@2:mem(emptyset) conclude irrefrelon(emptyset,mem(emptyset))
+  substitute irrefrelon(emptyset,emptyset) for emptyset@2:mem(emptyset)
   assert emptyset_is_wordon_emptyset
-  substitute wordon(emptyset,emptyset) for emptyset@2:mem(emptyset) conclude wordon(emptyset,mem(emptyset))
+  substitute wordon(emptyset,emptyset) for emptyset@2:mem(emptyset)
   connect trans(emptyset)\wedge irrefrelon(emptyset,mem(emptyset))\wedge wordon(emptyset,mem(emptyset))
   expand trans(emptyset)\wedge irrefrelon(emptyset,mem(emptyset))\wedge wordon(emptyset,mem(emptyset)) for ord conclude ord(emptyset)
 }

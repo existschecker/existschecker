@@ -484,18 +484,14 @@ def render_node(node: Include | Declaration | DeclarationSupport | Control, cont
                         render_keyword("substitute"),
                         render_expr(node.fact, context),
                         render_keyword("for"),
-                        env_parts,
-                        render_keyword("conclude"),
-                        render_expr(node.conclusion, context)]
+                        env_parts]
         if context.decl.equality is None:
             raise Exception("context.equality is None")
         header_parts_jp = [bullet,
                            render_expr(node.fact, context),
                            "に",
                            ",".join([render_expr(Symbol(Pred(context.decl.equality.equal.name), (k, v)), context) for k, v in node.env.items()]),
-                           "を代入して",
-                           render_expr(node.conclusion, context),
-                           "を得る。"]
+                           "を代入する。"]
     elif isinstance(node, Show):
         header_parts = [toggle,
                         render_keyword("show"),

@@ -973,19 +973,14 @@ def check_substitute(node: Substitute, context: Context, indent: int):
         logger.debug(f"{debug_prefix}Fact: {pretty_expr(equation, context)}")
         premises_equal.append(equation)
     subst = Substitutor(node.env, node.indexes)
-    fact_subst = subst.substitute_formula(fact)
-    logger.debug(f"{debug_prefix}fact_subst: {pretty_expr(fact_subst, context)}")
-    logger.debug(f"{debug_prefix}node.conclusion: {pretty_expr(node.conclusion, context)}")
-    if not alpha_equiv_with_defs(node.conclusion, fact_subst, context):
-        logger.error(f"{error_prefix}Not matched")
-        node.proofinfo.status = "ERROR"
-        return False
+    conclusion = subst.substitute_formula(fact)
+    logger.debug(f"{debug_prefix}conclusion: {pretty_expr(conclusion, context)}")
     logger.debug(f"{debug_prefix}Matched")
     node.proofinfo.status = "OK"
     node.proofinfo.premises = [fact] + premises_equal
-    node.proofinfo.conclusions = [node.conclusion]
-    add_conclusion(context, node.conclusion)
-    logger.debug(f"{debug_prefix}Added {pretty_expr(node.conclusion, context)}")
+    node.proofinfo.conclusions = [conclusion]
+    add_conclusion(context, conclusion)
+    logger.debug(f"{debug_prefix}Added {pretty_expr(conclusion, context)}")
     return True
 
 def check_show(node: Show, context: Context, indent: int):

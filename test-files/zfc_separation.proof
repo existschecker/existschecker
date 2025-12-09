@@ -79,7 +79,7 @@ theorem bigcap_cor1 equal(bigcap(emptyset),emptyset) {
   apply sep_cor1 for x:bigcup(emptyset), \phi: lambda z. \forall w(in(w,emptyset)\to in(z,w))
   expand subset(sep(bigcup(emptyset), lambda z. \forall w(in(w,emptyset)\to in(z,w))),bigcup(emptyset)) for bigcap conclude subset(bigcap(emptyset),bigcup(emptyset))
   assert bigcup_cor2
-  substitute subset(bigcap(emptyset),bigcup(emptyset)) for bigcup(emptyset):emptyset conclude subset(bigcap(emptyset),emptyset)
+  substitute subset(bigcap(emptyset),bigcup(emptyset)) for bigcup(emptyset):emptyset
   apply emptyset_subset_cor1 for x:bigcap(emptyset)
   invoke subset(bigcap(emptyset),emptyset)\to equal(bigcap(emptyset),emptyset)
 }
@@ -158,10 +158,10 @@ theorem cap_characterization \forall x\forall y\forall z(in(z,cap(x,y))\leftrigh
           invoke rightward in(w,pair(x,y))\leftrightarrow equal(w,x)\vee equal(w,y)
           divide equal(w,x)\vee equal(w,y)
             case equal(w,x) {
-              substitute in(z,x) for x:w conclude in(z,w)
+              substitute in(z,x) for x:w
             }
             case equal(w,y) {
-              substitute in(z,y) for y:w conclude in(z,w)
+              substitute in(z,y) for y:w
             }
         }
       }
@@ -214,7 +214,7 @@ theorem cartprod_characterization \forall X\forall Y\forall z(in(z,cartprod(X,Y)
         connect in(x,X)\wedge in(y,Y)
         apply cartprod_lem1 for X:X,Y:Y,x:x,y:y
         invoke in(x,X)\wedge in(y,Y)\to in(op(x,y),powerset(powerset(cup(X,Y))))
-        substitute in(op(x,y),powerset(powerset(cup(X,Y)))) for op(x,y):z conclude in(z,powerset(powerset(cup(X,Y))))
+        substitute in(op(x,y),powerset(powerset(cup(X,Y)))) for op(x,y):z
         connect in(z,powerset(powerset(cup(X,Y))))\wedge\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y)))
         invoke leftward in(z,sep(powerset(powerset(cup(X,Y))),lambda z'.\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z',op(x,y)))))\leftrightarrow in(z,powerset(powerset(cup(X,Y))))\wedge\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y)))
         expand in(z,sep(powerset(powerset(cup(X,Y))),lambda z'.\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z',op(x,y))))) for cartprod conclude in(z,cartprod(X,Y))
@@ -241,8 +241,8 @@ theorem cartprod_cor1 \forall X\forall Y\forall x\forall y(in(x,X)\wedge in(y,Y)
         apply op_characterization for x:x,y:y,x':x',y':y'
         invoke equal(op(x,y),op(x',y'))\to equal(x,x')\wedge equal(y,y')
         split equal(x,x')\wedge equal(y,y')
-        substitute in(x',X) for x':x conclude in(x,X)
-        substitute in(y',Y) for y':y conclude in(y,Y)
+        substitute in(x',X) for x':x
+        substitute in(y',Y) for y':y
         connect in(x,X)\wedge in(y,Y)
       }
     }

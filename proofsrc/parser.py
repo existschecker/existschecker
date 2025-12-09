@@ -517,9 +517,7 @@ class Parser:
                 self.stream.consume("COMMA")
             else:
                 break
-        self.stream.consume("CONCLUDE")
-        conclusion = self.parse_formula(context)
-        return Substitute(token=start_token, fact=fact, env=env, indexes=indexes, conclusion=conclusion)
+        return Substitute(token=start_token, fact=fact, env=env, indexes=indexes)
 
     def parse_show(self, context: Context) -> Show:
         start_token = self.stream.consume("SHOW")

@@ -53,7 +53,7 @@ theorem has_a_member_not_emptyset \forall x(\exists y(in(y,x))\to neq(x,emptyset
   any x {
     assume \exists y(in(y,x)) {
       deny equal(x,emptyset) {
-        substitute \exists y(in(y,x)) for x:emptyset conclude \exists y(in(y,emptyset))
+        substitute \exists y(in(y,x)) for x:emptyset
         some y:y such \exists y(in(y,emptyset)) {
           apply emptyset_existence for y:y
           contradict in(y,emptyset)

@@ -86,11 +86,11 @@ theorem cup_characterization \forall x\forall y\forall z(in(z,cup(x,y))\leftrigh
         }
         divide equal(w,x)\vee equal(w,y)
           case equal(w,x) {
-            substitute in(z,w) for w:x conclude in(z,x)
+            substitute in(z,w) for w:x
             pad in(z,x) conclude in(z,x)\vee in(z,y)
           }
           case equal(w,y) {
-            substitute in(z,w) for w:y conclude in(z,y)
+            substitute in(z,w) for w:y
             pad in(z,y) conclude in(z,x)\vee in(z,y)
           }
       }
@@ -130,7 +130,7 @@ theorem cup_commutativity \forall x\forall y(equal(cup(x,y),cup(y,x))) {
   any x,y {
     expand equal(cup(x,y),cup(x,y)) for cup conclude equal(cup(x,y),bigcup(pair(x,y)))
     apply pair_commutativity for x:x,y:y
-    substitute equal(cup(x,y),bigcup(pair(x,y))) for pair(x,y):pair(y,x) conclude equal(cup(x,y),bigcup(pair(y,x)))
+    substitute equal(cup(x,y),bigcup(pair(x,y))) for pair(x,y):pair(y,x)
     expand equal(cup(x,y),bigcup(pair(y,x))) for cup conclude equal(cup(x,y),cup(y,x))
   }
 }
@@ -164,7 +164,7 @@ theorem cup_cor2 \forall x(equal(cup(emptyset,x),x)) {
   any x {
     apply cup_commutativity for x:x,y:emptyset
     apply cup_cor1 for x:x
-    substitute equal(cup(x,emptyset),x) for cup(x,emptyset):cup(emptyset,x) conclude equal(cup(emptyset,x),x)
+    substitute equal(cup(x,emptyset),x) for cup(x,emptyset):cup(emptyset,x)
   }
 }
 
@@ -185,7 +185,7 @@ theorem cup_cor4 \forall x\forall y(subset(y,cup(x,y))) {
   any x,y {
     apply cup_commutativity for x:x,y:y
     apply cup_cor3 for x:y,y:x
-    substitute subset(y,cup(y,x)) for cup(y,x):cup(x,y) conclude subset(y,cup(x,y))
+    substitute subset(y,cup(y,x)) for cup(y,x):cup(x,y)
   }
 }
 
@@ -199,14 +199,14 @@ theorem cup_cor5 \forall x\forall y\forall X\forall Y(in(x,X)\wedge in(y,Y)\to s
           invoke rightward in(z,pair(x,y))\leftrightarrow equal(z,x)\vee equal(z,y)
           divide equal(z,x)\vee equal(z,y)
             case equal(z,x) {
-              substitute in(x,X) for x:z conclude in(z,X)
+              substitute in(x,X) for x:z
               apply cup_cor3 for x:X,y:Y
               connect in(z,X)\wedge subset(X,cup(X,Y))
               apply subset_cor1 for z:z,x:X,y:cup(X,Y)
               invoke in(z,X)\wedge subset(X,cup(X,Y))\to in(z,cup(X,Y))
             }
             case equal(z,y) {
-              substitute in(y,Y) for y:z conclude in(z,Y)
+              substitute in(y,Y) for y:z
               apply cup_cor4 for x:X,y:Y
               connect in(z,Y)\wedge subset(Y,cup(X,Y))
               apply subset_cor1 for z:z,x:Y,y:cup(X,Y)

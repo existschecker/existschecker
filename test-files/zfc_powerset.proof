@@ -52,13 +52,13 @@ theorem powerset_cor2 equal(powerset(emptyset),singleton(emptyset)) {
       apply emptyset_subset_cor1 for x:x
       invoke subset(x,emptyset)\to equal(x,emptyset)
       apply singleton_cor1 for x:emptyset
-      substitute in(emptyset,singleton(emptyset)) for emptyset@1:x conclude in(x,singleton(emptyset))
+      substitute in(emptyset,singleton(emptyset)) for emptyset@1:x
     }
     assume in(x,singleton(emptyset)) {
       apply singleton_characterization for x:emptyset,y:x
       invoke rightward in(x,singleton(emptyset))\leftrightarrow equal(x,emptyset)
       apply powerset_cor1 for x:emptyset
-      substitute in(emptyset,powerset(emptyset)) for emptyset@1:x conclude in(x,powerset(emptyset))
+      substitute in(emptyset,powerset(emptyset)) for emptyset@1:x
     }
     connect in(x,powerset(emptyset))\leftrightarrow in(x,singleton(emptyset))
   }

@@ -244,7 +244,6 @@ class Substitute(Control):
     fact: str | Formula
     env: dict[Term, Term]
     indexes: dict[Term, list[int]]
-    conclusion: Formula
 
 @dataclass
 class Show(Control):
