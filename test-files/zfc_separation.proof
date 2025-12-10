@@ -9,15 +9,13 @@ theorem separation_is_unique \forall x\forall^T\phi[1]\exists!y\forall z(in(z,y)
       any y' {
         assume \forall z(in(z,y')\leftrightarrow in(z,x)\wedge\phi(z)) {
           any z {
-            apply \forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi(z)) for z:z
-            apply \forall z(in(z,y')\leftrightarrow in(z,x)\wedge\phi(z)) for z:z
             assume in(z,y') {
-              invoke rightward in(z,y')\leftrightarrow in(z,x)\wedge\phi(z)
-              invoke leftward in(z,y)\leftrightarrow in(z,x)\wedge\phi(z)
+              apply invoke rightward \forall z(in(z,y')\leftrightarrow in(z,x)\wedge\phi(z)) for z:z
+              apply invoke leftward \forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi(z)) for z:z
             }
             assume in(z,y) {
-              invoke rightward in(z,y)\leftrightarrow in(z,x)\wedge\phi(z)
-              invoke leftward in(z,y')\leftrightarrow in(z,x)\wedge\phi(z)
+              apply invoke rightward \forall z(in(z,y)\leftrightarrow in(z,x)\wedge\phi(z)) for z:z
+              apply invoke leftward \forall z(in(z,y')\leftrightarrow in(z,x)\wedge\phi(z)) for z:z
             }
             connect in(z,y')\leftrightarrow in(z,y)
           }
@@ -38,8 +36,7 @@ theorem sep_cor1 \forall x\forall^T\phi[1](subset(sep(x,\phi),x)) {
   any x, template \phi[1] {
     any z {
       assume in(z,sep(x,\phi)) {
-        apply sep_existence for x:x, \phi:\phi, z:z
-        invoke rightward in(z,sep(x,\phi))\leftrightarrow in(z,x)\wedge\phi(z)
+        apply invoke rightward sep_existence for x:x, \phi:\phi, z:z
         split 1 in(z,x)\wedge\phi(z)
       }
     }
@@ -50,8 +47,7 @@ theorem sep_cor1 \forall x\forall^T\phi[1](subset(sep(x,\phi),x)) {
 theorem sep_cor2 \forall x\forall^T\phi[1]\forall z(in(z,sep(x,\phi))\to\phi(z)) {
   any x, template \phi[1], z {
     assume in(z,sep(x,\phi)) {
-      apply sep_existence for x:x,\phi:\phi,z:z
-      invoke rightward in(z,sep(x,\phi))\leftrightarrow in(z,x)\wedge\phi(z)
+      apply invoke rightward sep_existence for x:x,\phi:\phi,z:z
       split 2 in(z,x)\wedge\phi(z)
     }
   }
@@ -63,12 +59,10 @@ theorem bigcap_characterization \forall u\forall z(in(z,bigcap(u))\leftrightarro
   any u, z {
     assume in(z,bigcap(u)) {
       expand in(z,bigcap(u)) for bigcap
-      apply sep_existence for x:bigcup(u),\phi: lambda z'. \forall w(in(w,u)\to in(z',w)),z:z
-      invoke rightward in(z,sep(bigcup(u), lambda z'. \forall w(in(w,u)\to in(z',w))))\leftrightarrow in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
+      apply invoke rightward sep_existence for x:bigcup(u),\phi: lambda z'. \forall w(in(w,u)\to in(z',w)),z:z
     }
     assume in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w)) {
-      apply sep_existence for x:bigcup(u),\phi: lambda z'. \forall w(in(w,u)\to in(z',w)),z:z
-      invoke leftward in(z,sep(bigcup(u), lambda z'. \forall w(in(w,u)\to in(z',w))))\leftrightarrow in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
+      apply invoke leftward sep_existence for x:bigcup(u),\phi: lambda z'. \forall w(in(w,u)\to in(z',w)),z:z
       fold for bigcap conclude in(z,bigcap(u))
     }
     connect in(z,bigcap(u))\leftrightarrow in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
@@ -80,8 +74,7 @@ theorem bigcap_cor1 equal(bigcap(emptyset),emptyset) {
   fold for bigcap conclude subset(bigcap(emptyset),bigcup(emptyset))
   assert bigcup_cor2
   substitute subset(bigcap(emptyset),bigcup(emptyset)) for bigcup(emptyset):emptyset
-  apply emptyset_subset_cor1 for x:bigcap(emptyset)
-  invoke subset(bigcap(emptyset),emptyset)\to equal(bigcap(emptyset),emptyset)
+  apply invoke emptyset_subset_cor1 for x:bigcap(emptyset)
 }
 
 theorem bigcap_cor2 \forall u(neq(u,emptyset)\to\forall z(in(z,bigcap(u))\leftrightarrow\forall w(in(w,u)\to in(z,w)))) {
@@ -89,24 +82,19 @@ theorem bigcap_cor2 \forall u(neq(u,emptyset)\to\forall z(in(z,bigcap(u))\leftri
     assume neq(u,emptyset) {
       any z {
         assume in(z,bigcap(u)) {
-          apply bigcap_characterization for u:u,z:z
-          invoke rightward in(z,bigcap(u))\leftrightarrow in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
+          apply invoke rightward bigcap_characterization for u:u,z:z
           split 2 in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
         }
         assume \forall w(in(w,u)\to in(z,w)) {
-          apply not_emptyset_has_a_member for x:u
-          invoke neq(u,emptyset)\to\exists y(in(y,u))
+          apply invoke not_emptyset_has_a_member for x:u
           some y:y such \exists y(in(y,u)) {
-            apply \forall w(in(w,u)\to in(z,w)) for w:y
-            invoke in(y,u)\to in(z,y)
+            apply invoke \forall w(in(w,u)\to in(z,w)) for w:y
             connect in(z,y)\wedge in(y,u)
             lift for y:y conclude \exists y(in(z,y)\wedge in(y,u))
           }
-          apply bigcup_existence for x:u,z:z
-          invoke leftward in(z,bigcup(u))\leftrightarrow\exists y(in(z,y)\wedge in(y,u))
+          apply invoke leftward bigcup_existence for x:u,z:z
           connect in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
-          apply bigcap_characterization for u:u,z:z
-          invoke leftward in(z,bigcap(u))\leftrightarrow in(z,bigcup(u))\wedge\forall w(in(w,u)\to in(z,w))
+          apply invoke leftward bigcap_characterization for u:u,z:z
         }
         connect in(z,bigcap(u))\leftrightarrow\forall w(in(w,u)\to in(z,w))
       }
@@ -119,11 +107,9 @@ theorem bigcap_cor3 \forall x\forall y(in(y,x)\to subset(bigcap(x),y)) {
     assume in(y,x) {
       any z {
         assume in(z,bigcap(x)) {
-          apply bigcap_characterization for z:z,u:x
-          invoke rightward in(z,bigcap(x))\leftrightarrow in(z,bigcup(x))\wedge\forall w(in(w,x)\to in(z,w))
+          apply invoke rightward bigcap_characterization for z:z,u:x
           split in(z,bigcup(x))\wedge\forall w(in(w,x)\to in(z,w))
-          apply \forall w(in(w,x)\to in(z,w)) for w:y
-          invoke in(y,x)\to in(z,y)
+          apply invoke \forall w(in(w,x)\to in(z,w)) for w:y
         }
       }
       fold for subset conclude subset(bigcap(x),y)
@@ -135,27 +121,22 @@ definition function cap(x,y) as bigcap(pair(x,y)) tex "","\cap",""
 
 theorem cap_characterization \forall x\forall y\forall z(in(z,cap(x,y))\leftrightarrow in(z,x)\wedge in(z,y)) {
   any x, y, z {
-    apply bigcap_cor2 for u:pair(x,y)
     apply pair_cor9 for x:x,y:y
-    invoke neq(pair(x,y),emptyset)\to\forall z(in(z,bigcap(pair(x,y)))\leftrightarrow\forall w(in(w,pair(x,y))\to in(z,w)))
-    apply \forall z(in(z,bigcap(pair(x,y)))\leftrightarrow\forall w(in(w,pair(x,y))\to in(z,w))) for z:z
+    apply invoke bigcap_cor2 for u:pair(x,y)
     assume in(z,cap(x,y)) {
       expand in(z,cap(x,y)) for cap
-      invoke rightward in(z,bigcap(pair(x,y)))\leftrightarrow\forall w(in(w,pair(x,y))\to in(z,w))
-      apply \forall w(in(w,pair(x,y))\to in(z,w)) for w:x
+      apply invoke rightward \forall z(in(z,bigcap(pair(x,y)))\leftrightarrow\forall w(in(w,pair(x,y))\to in(z,w))) for z:z
       apply pair_cor1 for x:x,y:y
-      invoke in(x,pair(x,y))\to in(z,x)
-      apply \forall w(in(w,pair(x,y))\to in(z,w)) for w:y
+      apply invoke \forall w(in(w,pair(x,y))\to in(z,w)) for w:x
       apply pair_cor2 for x:x,y:y
-      invoke in(y,pair(x,y))\to in(z,y)
+      apply invoke \forall w(in(w,pair(x,y))\to in(z,w)) for w:y
       connect in(z,x)\wedge in(z,y)
     }
     assume in(z,x)\wedge in(z,y) {
       split in(z,x)\wedge in(z,y)
       any w {
         assume in(w,pair(x,y)) {
-          apply pair_existence for x:x,y:y,w:w
-          invoke rightward in(w,pair(x,y))\leftrightarrow equal(w,x)\vee equal(w,y)
+          apply invoke rightward pair_existence for x:x,y:y,w:w
           divide equal(w,x)\vee equal(w,y)
             case equal(w,x) {
               substitute in(z,x) for x:w
@@ -165,7 +146,7 @@ theorem cap_characterization \forall x\forall y\forall z(in(z,cap(x,y))\leftrigh
             }
         }
       }
-      invoke leftward in(z,bigcap(pair(x,y)))\leftrightarrow\forall w(in(w,pair(x,y))\to in(z,w))
+      apply invoke leftward \forall z(in(z,bigcap(pair(x,y)))\leftrightarrow\forall w(in(w,pair(x,y))\to in(z,w))) for z:z
       fold for cap conclude in(z,cap(x,y))
     }
     connect in(z,cap(x,y))\leftrightarrow in(z,x)\wedge in(z,y)
@@ -178,45 +159,36 @@ theorem cartprod_lem1 \forall X\forall Y\forall x\forall y(in(x,X)\wedge in(y,Y)
   any X,Y,x,y {
     assume in(x,X)\wedge in(y,Y) {
       split in(x,X)\wedge in(y,Y)
-      apply singleton_cor3 for x:x,y:X
-      invoke in(x,X)\to subset(singleton(x),X)
+      apply invoke singleton_cor3 for x:x,y:X
       apply cup_cor3 for x:X,y:Y
       connect subset(singleton(x),X)\wedge subset(X,cup(X,Y))
-      apply subset_trans for x:singleton(x),y:X,z:cup(X,Y)
-      invoke subset(singleton(x),X)\wedge subset(X,cup(X,Y))\to subset(singleton(x),cup(X,Y))
-      apply powerset_existence for x:cup(X,Y),z:singleton(x)
-      invoke leftward in(singleton(x),powerset(cup(X,Y)))\leftrightarrow subset(singleton(x),cup(X,Y))
-      apply cup_cor5 for x:x,y:y,X:X,Y:Y
-      invoke in(x,X)\wedge in(y,Y)\to subset(pair(x,y),cup(X,Y))
-      apply powerset_existence for x:cup(X,Y),z:pair(x,y)
-      invoke leftward in(pair(x,y),powerset(cup(X,Y)))\leftrightarrow subset(pair(x,y),cup(X,Y))
+      apply invoke subset_trans for x:singleton(x),y:X,z:cup(X,Y)
+      apply invoke leftward powerset_existence for x:cup(X,Y),z:singleton(x)
+      apply invoke cup_cor5 for x:x,y:y,X:X,Y:Y
+      apply invoke leftward powerset_existence for x:cup(X,Y),z:pair(x,y)
       connect in(singleton(x),powerset(cup(X,Y)))\wedge in(pair(x,y),powerset(cup(X,Y)))
-      apply pair_cor10 for x:singleton(x),y:pair(x,y),z:powerset(cup(X,Y))
-      invoke in(singleton(x),powerset(cup(X,Y)))\wedge in(pair(x,y),powerset(cup(X,Y)))\to subset(pair(singleton(x),pair(x,y)),powerset(cup(X,Y)))
+      apply invoke pair_cor10 for x:singleton(x),y:pair(x,y),z:powerset(cup(X,Y))
       fold for op conclude subset(op(x,y),powerset(cup(X,Y)))
-      apply powerset_existence for x:powerset(cup(X,Y)),z:op(x,y)
-      invoke leftward in(op(x,y),powerset(powerset(cup(X,Y))))\leftrightarrow subset(op(x,y),powerset(cup(X,Y)))
+      apply invoke leftward powerset_existence for x:powerset(cup(X,Y)),z:op(x,y)
     }
   }
 }
 
 theorem cartprod_characterization \forall X\forall Y\forall z(in(z,cartprod(X,Y))\leftrightarrow\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y)))) {
   any X,Y,z {
-    apply sep_existence for x:powerset(powerset(cup(X,Y))),\phi:lambda z'. \exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z',op(x,y))),z:z
     assume in(z,cartprod(X,Y)) {
       expand in(z,cartprod(X,Y)) for cartprod
-      invoke rightward in(z,sep(powerset(powerset(cup(X,Y))),lambda z'.\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z',op(x,y)))))\leftrightarrow in(z,powerset(powerset(cup(X,Y))))\wedge\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y)))
+      apply invoke rightward sep_existence for x:powerset(powerset(cup(X,Y))),\phi:lambda z'. \exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z',op(x,y))),z:z
       split in(z,powerset(powerset(cup(X,Y))))\wedge\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y)))
     }
     assume \exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y))) {
       some x:x,y:y such \exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y))) {
         split in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y))
         connect in(x,X)\wedge in(y,Y)
-        apply cartprod_lem1 for X:X,Y:Y,x:x,y:y
-        invoke in(x,X)\wedge in(y,Y)\to in(op(x,y),powerset(powerset(cup(X,Y))))
+        apply invoke cartprod_lem1 for X:X,Y:Y,x:x,y:y
         substitute in(op(x,y),powerset(powerset(cup(X,Y)))) for op(x,y):z
         connect in(z,powerset(powerset(cup(X,Y))))\wedge\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y)))
-        invoke leftward in(z,sep(powerset(powerset(cup(X,Y))),lambda z'.\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z',op(x,y)))))\leftrightarrow in(z,powerset(powerset(cup(X,Y))))\wedge\exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y)))
+        apply invoke leftward sep_existence for x:powerset(powerset(cup(X,Y))),\phi:lambda z'. \exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z',op(x,y))),z:z
         fold for cartprod conclude in(z,cartprod(X,Y))
       }
     }
@@ -230,16 +202,13 @@ theorem cartprod_cor1 \forall X\forall Y\forall x\forall y(in(x,X)\wedge in(y,Y)
       split in(x,X)\wedge in(y,Y)
       connect in(x,X)\wedge in(y,Y)\wedge equal(op(x,y),op(x,y))
       lift for x':x,y':y conclude \exists x'\exists y'(in(x',X)\wedge in(y',Y)\wedge equal(op(x,y),op(x',y')))
-      apply cartprod_characterization for X:X,Y:Y,z:op(x,y)
-      invoke leftward in(op(x,y),cartprod(X,Y))\leftrightarrow\exists x'\exists y'(in(x',X)\wedge in(y',Y)\wedge equal(op(x,y),op(x',y')))
+      apply invoke leftward cartprod_characterization for X:X,Y:Y,z:op(x,y)
     }
     assume in(op(x,y),cartprod(X,Y)) {
-      apply cartprod_characterization for X:X,Y:Y,z:op(x,y)
-      invoke rightward in(op(x,y),cartprod(X,Y))\leftrightarrow\exists x'\exists y'(in(x',X)\wedge in(y',Y)\wedge equal(op(x,y),op(x',y')))
+      apply invoke rightward cartprod_characterization for X:X,Y:Y,z:op(x,y)
       some x':x',y':y' such \exists x'\exists y'(in(x',X)\wedge in(y',Y)\wedge equal(op(x,y),op(x',y'))) {
         split in(x',X)\wedge in(y',Y)\wedge equal(op(x,y),op(x',y'))
-        apply op_characterization for x:x,y:y,x':x',y':y'
-        invoke equal(op(x,y),op(x',y'))\to equal(x,x')\wedge equal(y,y')
+        apply invoke op_characterization for x:x,y:y,x':x',y':y'
         split equal(x,x')\wedge equal(y,y')
         substitute in(x',X) for x':x
         substitute in(y',Y) for y':y
@@ -254,8 +223,7 @@ theorem cartprod_cor2 \forall X(equal(cartprod(X,emptyset),emptyset)) {
   any X {
     any z {
       deny in(z,cartprod(X,emptyset)) {
-        apply cartprod_characterization for X:X,Y:emptyset,z:z
-        invoke rightward in(z,cartprod(X,emptyset))\leftrightarrow\exists x\exists y(in(x,X)\wedge in(y,emptyset)\wedge equal(z,op(x,y)))
+        apply invoke rightward cartprod_characterization for X:X,Y:emptyset,z:z
         some x:x,y:y such \exists x\exists y(in(x,X)\wedge in(y,emptyset)\wedge equal(z,op(x,y))) {
           split 2 in(x,X)\wedge in(y,emptyset)\wedge equal(z,op(x,y))
           apply emptyset_existence for y:y
@@ -263,8 +231,7 @@ theorem cartprod_cor2 \forall X(equal(cartprod(X,emptyset),emptyset)) {
         }
       }
     }
-    apply emptyset_uniqueness for x:cartprod(X,emptyset)
-    invoke \forall z(notin(z,cartprod(X,emptyset)))\to equal(cartprod(X,emptyset),emptyset)
+    apply invoke emptyset_uniqueness for x:cartprod(X,emptyset)
   }
 }
 
@@ -272,8 +239,7 @@ theorem cartprod_cor3 \forall Y(equal(cartprod(emptyset,Y),emptyset)) {
   any Y {
     any z {
       deny in(z,cartprod(emptyset,Y)) {
-        apply cartprod_characterization for X:emptyset,Y:Y,z:z
-        invoke rightward in(z,cartprod(emptyset,Y))\leftrightarrow\exists x\exists y(in(x,emptyset)\wedge in(y,Y)\wedge equal(z,op(x,y)))
+        apply invoke rightward cartprod_characterization for X:emptyset,Y:Y,z:z
         some x:x,y:y such \exists x\exists y(in(x,emptyset)\wedge in(y,Y)\wedge equal(z,op(x,y))) {
           split 1 in(x,emptyset)\wedge in(y,Y)\wedge equal(z,op(x,y))
           apply emptyset_existence for y:x
@@ -281,8 +247,7 @@ theorem cartprod_cor3 \forall Y(equal(cartprod(emptyset,Y),emptyset)) {
         }
       }
     }
-    apply emptyset_uniqueness for x:cartprod(emptyset,Y)
-    invoke \forall z(notin(z,cartprod(emptyset,Y)))\to equal(cartprod(emptyset,Y),emptyset)
+    apply invoke emptyset_uniqueness for x:cartprod(emptyset,Y)
   }
 }
 
@@ -290,20 +255,16 @@ theorem cartprod_cor4 \forall X\forall Y(neq(X,emptyset)\wedge neq(Y,emptyset)\t
   any X,Y {
     assume neq(X,emptyset)\wedge neq(Y,emptyset) {
       split neq(X,emptyset)\wedge neq(Y,emptyset)
-      apply not_emptyset_has_a_member for x:X
-      invoke neq(X,emptyset)\to\exists x(in(x,X))
-      apply not_emptyset_has_a_member for x:Y
-      invoke neq(Y,emptyset)\to\exists y(in(y,Y))
+      apply invoke not_emptyset_has_a_member for x:X
+      apply invoke not_emptyset_has_a_member for x:Y
       some x:x such \exists x(in(x,X)) {
         some y:y such \exists y(in(y,Y)) {
           connect in(x,X)\wedge in(y,Y)
-          apply cartprod_cor1 for X:X,Y:Y,x:x,y:y
-          invoke rightward in(x,X)\wedge in(y,Y)\leftrightarrow in(op(x,y),cartprod(X,Y))
+          apply invoke rightward cartprod_cor1 for X:X,Y:Y,x:x,y:y
           lift for z:op(x,y) conclude \exists z(in(z,cartprod(X,Y)))
         }
       }
-      apply has_a_member_not_emptyset for x:cartprod(X,Y)
-      invoke \exists z(in(z,cartprod(X,Y)))\to neq(cartprod(X,Y),emptyset)
+      apply invoke has_a_member_not_emptyset for x:cartprod(X,Y)
     }
   }
 }

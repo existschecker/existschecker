@@ -10,16 +10,12 @@ theorem powerset_exists_uniquely \forall x\exists!y\forall z(in(z,y)\leftrightar
         assume \forall z(in(z,y')\leftrightarrow subset(z,x)) {
           any z {
             assume in(z,y') {
-              apply \forall z(in(z,y')\leftrightarrow subset(z,x)) for z:z
-              invoke rightward in(z,y')\leftrightarrow subset(z,x)
-              apply \forall z(in(z,y)\leftrightarrow subset(z,x)) for z:z
-              invoke leftward in(z,y)\leftrightarrow subset(z,x)
+              apply invoke rightward \forall z(in(z,y')\leftrightarrow subset(z,x)) for z:z
+              apply invoke leftward \forall z(in(z,y)\leftrightarrow subset(z,x)) for z:z
             }
             assume in(z,y) {
-              apply \forall z(in(z,y)\leftrightarrow subset(z,x)) for z:z
-              invoke rightward in(z,y)\leftrightarrow subset(z,x)
-              apply \forall z(in(z,y')\leftrightarrow subset(z,x)) for z:z
-              invoke leftward in(z,y')\leftrightarrow subset(z,x)
+              apply invoke rightward \forall z(in(z,y)\leftrightarrow subset(z,x)) for z:z
+              apply invoke leftward \forall z(in(z,y')\leftrightarrow subset(z,x)) for z:z
             }
             connect in(z,y')\leftrightarrow in(z,y)
           }
@@ -39,24 +35,20 @@ uniqueness powerset_uniqueness \forall x\forall y(\forall z(in(z,y)\leftrightarr
 theorem powerset_cor1 \forall x(in(x,powerset(x))) {
   any x {
     apply subset_reflection for x:x
-    apply powerset_existence for x:x,z:x
-    invoke leftward in(x,powerset(x))\leftrightarrow subset(x,x)
+    apply invoke leftward powerset_existence for x:x,z:x
   }
 }
 
 theorem powerset_cor2 equal(powerset(emptyset),singleton(emptyset)) {
   any x {
     assume in(x,powerset(emptyset)) {
-      apply powerset_existence for x:emptyset,z:x
-      invoke rightward in(x,powerset(emptyset))\leftrightarrow subset(x,emptyset)
-      apply emptyset_subset_cor1 for x:x
-      invoke subset(x,emptyset)\to equal(x,emptyset)
+      apply invoke rightward powerset_existence for x:emptyset,z:x
+      apply invoke emptyset_subset_cor1 for x:x
       apply singleton_cor1 for x:emptyset
       substitute in(emptyset,singleton(emptyset)) for emptyset[1]:x
     }
     assume in(x,singleton(emptyset)) {
-      apply singleton_characterization for x:emptyset,y:x
-      invoke rightward in(x,singleton(emptyset))\leftrightarrow equal(x,emptyset)
+      apply invoke rightward singleton_characterization for x:emptyset,y:x
       apply powerset_cor1 for x:emptyset
       substitute in(emptyset,powerset(emptyset)) for emptyset[1]:x
     }
