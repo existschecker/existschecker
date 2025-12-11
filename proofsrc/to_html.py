@@ -703,12 +703,17 @@ class Renderer:
         content_html = f"<div class='block-content'>{body_html}</div>"
         return f"  <div class='block'>{header_html}{proofinfo_html}{content_html}</div>"
 
-def to_html(ast: list[Include | Declaration], context: Context, title: str, mode: str):
+def to_html(ast: list[Include | Declaration], context: Context, title: str, mode: str) -> tuple[str, bool]:
+    error_found = False
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     parts: list[str] = []
     for i, node in enumerate(ast):
         print(f"\rRendering node {i + 1} / {len(ast)} finished", end="")
         parts.append(Renderer(context, mode).render_node(node))
+        if isinstance(node, Declaration) and node.proofinfo.status == "ERROR":
+            error_found = True
+            print(f"\n❌ Rendering stopped", end="")
+            break
     print()
     body_html = "\n".join(parts)
     if mode == "mathjax":
@@ -719,7 +724,7 @@ def to_html(ast: list[Include | Declaration], context: Context, title: str, mode
         header_right = ""
     else:
         raise Exception(f"Unexpected mode: {mode}")
-    return HTML_TEMPLATE.format(title=escape(title), now_str=now_str, extra_head=extra_head, body=body_html, header_right=header_right)
+    return HTML_TEMPLATE.format(title=escape(title), now_str=now_str, extra_head=extra_head, body=body_html, header_right=header_right), error_found
 
 if __name__ == "__main__":
     import sys
@@ -738,7 +743,7 @@ if __name__ == "__main__":
         parser = Parser(tokens_cache[file])
         ast, parser_context = parser.parse_file(parser_context)
         title = f"{name}_parser_{mode}"
-        parser_html = to_html(ast, parser_context, title, mode)
+        parser_html, _ = to_html(ast, parser_context, title, mode)
         f = open(os.path.join("html", f"{title}.html"), 'w', encoding='utf-8')
         f.write(parser_html)
         f.close()
@@ -749,7 +754,9 @@ if __name__ == "__main__":
         else:
             print("❌ Not all theorems proved")
         title = f"{name}_checker_{mode}"
-        checker_html = to_html(ast, checker_context, title, mode)
+        checker_html, error_found = to_html(ast, checker_context, title, mode)
         f = open(os.path.join("html", f"{title}.html"), 'w', encoding='utf-8')
         f.write(checker_html)
         f.close()
+        if error_found:
+            break
