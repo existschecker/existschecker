@@ -200,6 +200,38 @@ theorem range_of_cartprod \forall X\forall Y(neq(X,emptyset)\to equal(ran(cartpr
 
 definition function relsep(X, template \phi[2]) as sep(cartprod(X,X),lambda z.\exists x\exists y(equal(z,op(x,y))\wedge\phi(x,y)))
 
+theorem relsep_characterization \forall X\forall^T\phi[2]\forall z(in(z,relsep(X,\phi))\leftrightarrow\exists x\exists y(in(x,X)\wedge in(y,X)\wedge equal(z,op(x,y))\wedge\phi(x,y))) {
+  any X, template \phi[2], z {
+    assume in(z,relsep(X,\phi)) {
+      expand in(z,relsep(X,\phi)) for relsep
+      apply invoke rightward sep_existence for x:cartprod(X,X),\phi:lambda z.\exists x\exists y(equal(z,op(x,y))\wedge\phi(x,y))
+      split in(z,cartprod(X,X))\wedge\exists x\exists y(equal(z,op(x,y))\wedge\phi(x,y))
+      some x:x,y:y such \exists x\exists y(equal(z,op(x,y))\wedge\phi(x,y)) {
+        split equal(z,op(x,y))\wedge\phi(x,y)
+        substitute in(z,cartprod(X,X)) for z:op(x,y)
+        apply invoke leftward cartprod_cor1 for X:X,Y:X,x:x,y:y
+        split in(x,X)\wedge in(y,X)
+        connect in(x,X)\wedge in(y,X)\wedge equal(z,op(x,y))\wedge\phi(x,y)
+        lift for x:x,y:y conclude \exists x\exists y(in(x,X)\wedge in(y,X)\wedge equal(z,op(x,y))\wedge\phi(x,y))
+      }
+    }
+    assume \exists x\exists y(in(x,X)\wedge in(y,X)\wedge equal(z,op(x,y))\wedge\phi(x,y)) {
+      some x:x,y:y such \exists x\exists y(in(x,X)\wedge in(y,X)\wedge equal(z,op(x,y))\wedge\phi(x,y)) {
+        split in(x,X)\wedge in(y,X)\wedge equal(z,op(x,y))\wedge\phi(x,y)
+        connect in(x,X)\wedge in(y,X)
+        apply invoke rightward cartprod_cor1 for X:X,Y:X,x:x,y:y
+        substitute in(op(x,y),cartprod(X,X)) for op(x,y):z
+        connect equal(z,op(x,y))\wedge\phi(x,y)
+        lift for x:x,y:y conclude \exists x\exists y(equal(z,op(x,y))\wedge\phi(x,y))
+        connect in(z,cartprod(X,X))\wedge\exists x\exists y(equal(z,op(x,y))\wedge\phi(x,y))
+      }
+      apply invoke leftward sep_existence for x:cartprod(X,X),\phi:lambda z.\exists x\exists y(equal(z,op(x,y))\wedge\phi(x,y))
+      fold for relsep conclude in(z,relsep(X,\phi))
+    }
+    connect in(z,relsep(X,\phi))\leftrightarrow\exists x\exists y(in(x,X)\wedge in(y,X)\wedge equal(z,op(x,y))\wedge\phi(x,y))
+  }
+}
+
 definition function id(X) as sep(cartprod(X,X),lambda z.\exists x(equal(z,op(x,x))))
 
 theorem id_characterization \forall X\forall z(in(z,id(X))\leftrightarrow\exists x(in(x,X)\wedge equal(z,op(x,x)))) {

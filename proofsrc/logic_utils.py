@@ -431,6 +431,8 @@ def alpha_rename_formula(expr: Formula, rename_map: dict[Var | Template, Var | T
         return type(expr)(alpha_rename_formula(expr.left, rename_map), alpha_rename_formula(expr.right, rename_map))
     elif isinstance(expr, (Exists, Forall)):
         return type(expr)(alpha_rename_var(expr.var, rename_map), alpha_rename_formula(expr.body, rename_map))
+    elif isinstance(expr, TemplateCall):
+        return TemplateCall(alpha_rename_var(expr.template, rename_map), tuple(alpha_rename_term(a, rename_map) for a in expr.args))
     else:
         raise Exception(f"Unexpected type: {type(expr)}")
 
