@@ -325,7 +325,7 @@ class DefFun(Declaration):
 
 @dataclass
 class DefFunTerm(Declaration):
-    args: list[Var]
+    args: list[Var | Template]
     term: Term
     tex: list[str]
 

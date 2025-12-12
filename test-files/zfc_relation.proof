@@ -198,6 +198,8 @@ theorem range_of_cartprod \forall X\forall Y(neq(X,emptyset)\to equal(ran(cartpr
   }
 }
 
+definition function relsep(X, template \phi[2]) as sep(cartprod(X,X),lambda z.\exists x\exists y(equal(z,op(x,y))\wedge\phi(x,y)))
+
 definition function id(X) as sep(cartprod(X,X),lambda z.\exists x(equal(z,op(x,x))))
 
 theorem id_characterization \forall X\forall z(in(z,id(X))\leftrightarrow\exists x(in(x,X)\wedge equal(z,op(x,x)))) {

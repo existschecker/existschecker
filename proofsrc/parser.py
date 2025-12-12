@@ -80,69 +80,84 @@ class Parser:
         start_token = self.stream.consume("DEFINITION")
         tok = self.stream.peek()
         if tok.type == "PREDICATE":
-            self.stream.consume("PREDICATE")
-            if self.stream.peek().type == "AUTOEXPAND":
-                self.stream.consume("AUTOEXPAND")
-                autoexpand = True
-            else:
-                autoexpand =False
-            name = self.stream.consume("IDENT").value
-            self.stream.consume("LPAREN")
-            args = self.parse_vars()
-            self.stream.consume("RPAREN")
-            self.stream.consume("AS")
-            formula = self.parse_formula(context.add_form(args, []))
-            tex = self.parse_or_create_tex(name, len(args))
-            if len(tex) != len(args) + 1:
-                raise SyntaxError(f"{start_token.info()} arity of {name} is {len(args)}, but length of tex is {len(tex)}")
-            defpred = DefPred(name=name, token=start_token, args=args, formula=formula, autoexpand=autoexpand, tex=tex)
-            context.add_decl(defpred)
-            logger.debug(f"[defpred] {name}")
-            return defpred
+            return self.parse_defpred(context, start_token)
         elif tok.type == "CONSTANT":
-            self.stream.consume("CONSTANT")
-            name = self.stream.consume("IDENT").value
-            self.stream.consume("BY")
-            theorem = self.stream.consume("IDENT").value
-            tex = self.parse_or_create_tex(name, 0)
-            if len(tex) != 1:
-                raise SyntaxError(f"{start_token.info()} {name} is constant, but length of tex is {len(tex)}")
-            defcon = DefCon(name=name, token=start_token, theorem=theorem, tex=tex)
-            context.add_decl(defcon)
-            logger.debug(f"[defcon] {name}")
-            return defcon
+            return self.parse_defcon(context, start_token)
         elif tok.type == "FUNCTION":
-            self.stream.consume("FUNCTION")
-            name = self.stream.consume("IDENT").value
-            if self.stream.peek().type == "BY":
-                self.stream.consume("BY")
-                theorem = self.stream.consume("IDENT").value
-                vars_, body = collect_quantifier_vars(context.decl.theorems[theorem].conclusion, Forall)
-                if not (len(vars_) > 0 and isinstance(body, ExistsUniq)):
-                    raise SyntaxError(f"{start_token.info()} conclusion of {theorem} cannot be used for function definition")
-                arity = len(vars_)
-                tex = self.parse_or_create_tex(name, arity)
-                if len(tex) != arity + 1:
-                    raise SyntaxError(f"{start_token.info()} arity or {name} is {arity}, but length of tex is {len(tex)}")
-                deffun = DefFun(name=name, token=start_token, arity=arity, theorem=theorem, tex=tex)
-                context.add_decl(deffun)
-                logger.debug(f"[deffun] {name}")
-                return deffun
-            else:
-                self.stream.consume("LPAREN")
-                args = self.parse_vars()
-                self.stream.consume("RPAREN")
-                self.stream.consume("AS")
-                term = self.parse_term(context.add_form(args, []))
-                tex = self.parse_or_create_tex(name, len(args))
-                if len(tex) != len(args) + 1:
-                    raise SyntaxError(f"{start_token.info()} arity of {name} is {len(args)}, but length of tex is {len(tex)}")
-                deffunterm = DefFunTerm(name=name, token=start_token, args=args, term=term, tex=tex)
-                context.add_decl(deffunterm)
-                logger.debug(f"[deffunterm] {name}")
-                return deffunterm
+            return self.parse_deffun_or_deffunterm(context, start_token)
         else:
             raise SyntaxError(f"{start_token.info()} predicate, constant or function is required after definition")
+
+    def parse_defpred(self, context: Context, start_token: Token) -> DefPred:
+        self.stream.consume("PREDICATE")
+        if self.stream.peek().type == "AUTOEXPAND":
+            self.stream.consume("AUTOEXPAND")
+            autoexpand = True
+        else:
+            autoexpand =False
+        name = self.stream.consume("IDENT").value
+        self.stream.consume("LPAREN")
+        args = self.parse_vars()
+        self.stream.consume("RPAREN")
+        self.stream.consume("AS")
+        formula = self.parse_formula(context.add_form(args, []))
+        tex = self.parse_or_create_tex(name, len(args))
+        if len(tex) != len(args) + 1:
+            raise SyntaxError(f"{start_token.info()} arity of {name} is {len(args)}, but length of tex is {len(tex)}")
+        defpred = DefPred(name=name, token=start_token, args=args, formula=formula, autoexpand=autoexpand, tex=tex)
+        context.add_decl(defpred)
+        logger.debug(f"[defpred] {name}")
+        return defpred
+
+    def parse_defcon(self, context: Context, start_token: Token) -> DefCon:
+        self.stream.consume("CONSTANT")
+        name = self.stream.consume("IDENT").value
+        self.stream.consume("BY")
+        theorem = self.stream.consume("IDENT").value
+        tex = self.parse_or_create_tex(name, 0)
+        if len(tex) != 1:
+            raise SyntaxError(f"{start_token.info()} {name} is constant, but length of tex is {len(tex)}")
+        defcon = DefCon(name=name, token=start_token, theorem=theorem, tex=tex)
+        context.add_decl(defcon)
+        logger.debug(f"[defcon] {name}")
+        return defcon
+
+    def parse_deffun_or_deffunterm(self, context: Context, start_token: Token) -> DefFun | DefFunTerm:
+        self.stream.consume("FUNCTION")
+        name = self.stream.consume("IDENT").value
+        if self.stream.peek().type == "BY":
+            return self.parse_deffun(context, start_token, name)
+        else:
+            return self.parse_deffunterm(context, start_token, name)
+
+    def parse_deffun(self, context: Context, start_token: Token, name: str) -> DefFun:
+        self.stream.consume("BY")
+        theorem = self.stream.consume("IDENT").value
+        vars_, body = collect_quantifier_vars(context.decl.theorems[theorem].conclusion, Forall)
+        if not (len(vars_) > 0 and isinstance(body, ExistsUniq)):
+            raise SyntaxError(f"{start_token.info()} conclusion of {theorem} cannot be used for function definition")
+        arity = len(vars_)
+        tex = self.parse_or_create_tex(name, arity)
+        if len(tex) != arity + 1:
+            raise SyntaxError(f"{start_token.info()} arity or {name} is {arity}, but length of tex is {len(tex)}")
+        deffun = DefFun(name=name, token=start_token, arity=arity, theorem=theorem, tex=tex)
+        context.add_decl(deffun)
+        logger.debug(f"[deffun] {name}")
+        return deffun
+
+    def parse_deffunterm(self, context: Context, start_token: Token, name: str):
+        self.stream.consume("LPAREN")
+        args, local_vars, local_templates = self.parse_vars_or_templates()
+        self.stream.consume("RPAREN")
+        self.stream.consume("AS")
+        term = self.parse_term(context.add_form(local_vars, local_templates))
+        tex = self.parse_or_create_tex(name, len(args))
+        if len(tex) != len(args) + 1:
+            raise SyntaxError(f"{start_token.info()} arity of {name} is {len(args)}, but length of tex is {len(tex)}")
+        deffunterm = DefFunTerm(name=name, token=start_token, args=args, term=term, tex=tex)
+        context.add_decl(deffunterm)
+        logger.debug(f"[deffunterm] {name}")
+        return deffunterm
 
     def parse_existence(self, context: Context) -> DefConExist | DefFunExist:
         start_token = self.stream.consume("EXISTENCE")
@@ -286,23 +301,7 @@ class Parser:
 
     def parse_any(self, context: Context) -> Any:
         start_token = self.stream.consume("ANY")
-        items: list[Var | Template] = []
-        local_vars: list[Var] = []
-        local_templates: list[Template] = []
-        while True:
-            if self.stream.peek().type == "TEMPLATE":
-                self.stream.consume("TEMPLATE")
-                template = self.parse_template()
-                items.append(template)
-                local_templates.append(template)
-            else:
-                var = self.parse_var()
-                items.append(var)
-                local_vars.append(var)
-            if self.stream.peek().type == "COMMA":
-                self.stream.consume("COMMA")
-            else:
-                break
+        items, local_vars, local_templates = self.parse_vars_or_templates()
         self.stream.consume("LBRACE")
         body = self.parse_block(context.add_ctrl(local_vars, [], local_templates))
         self.stream.consume("RBRACE")
@@ -763,6 +762,26 @@ class Parser:
             tex.extend(["," for _ in range(arity - 1)])
             tex.append(")")
         return tex
+
+    def parse_vars_or_templates(self) -> tuple[list[Var | Template], list[Var], list[Template]]:
+        items: list[Var | Template] = []
+        vars: list[Var] = []
+        templates: list[Template] = []
+        while True:
+            if self.stream.peek().type == "TEMPLATE":
+                self.stream.consume("TEMPLATE")
+                template = self.parse_template()
+                items.append(template)
+                templates.append(template)
+            else:
+                var = self.parse_var()
+                items.append(var)
+                vars.append(var)
+            if self.stream.peek().type == "COMMA":
+                self.stream.consume("COMMA")
+            else:
+                break
+        return items, vars, templates
 
     def parse_vars(self) -> list[Var]:
         vars: list[Var] = []
