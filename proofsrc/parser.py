@@ -569,9 +569,7 @@ class Parser:
 
     def parse_assert(self, context: Context) -> Assert:
         start_token = self.stream.consume("ASSERT")
-        reference = self.stream.consume("IDENT").value
-        if not context.decl.has_reference(reference):
-            raise Exception(f"{start_token.info()} {reference} is unknown")
+        reference = self.parse_reference_or_formula(context)
         return Assert(token=start_token, reference=reference)
 
     def parse_reference_or_formula(self, context: Context) -> str | Formula:

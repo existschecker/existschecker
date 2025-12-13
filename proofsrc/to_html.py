@@ -609,9 +609,9 @@ class Renderer:
     def render_assert(self, node: Assert):
         header_parts = [self.bullet,
                         self.render_keyword("assert"),
-                        self.render_identifier(node.reference)]
+                        self.render_expr(node.reference)]
         header_parts_jp = [self.bullet,
-                           self.render_identifier(node.reference),
+                           self.render_expr(node.reference),
                            "を呼び出す。"]
         return header_parts, header_parts_jp, ""
 

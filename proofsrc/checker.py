@@ -1031,12 +1031,18 @@ def check_show(node: Show, context: Context, indent: int):
 
 def check_assert(node: Assert, context: Context, indent: int):
     debug_prefix = make_debug_prefix(node, indent)
+    error_prefix = make_error_prefix(node, indent)
+    if not goal_in_context(node.reference, context):
+        logger.error(f"{error_prefix}Not fact: {pretty_expr(node.reference, context)}")
+        node.proofinfo.status = "ERROR"
+        return False
+    logger.debug(f"{debug_prefix}Fact: {pretty_expr(node.reference, context)}")
     formula = get_fact(node.reference, context)
     node.proofinfo.status = "OK"
     node.proofinfo.premises = []
     node.proofinfo.conclusions = [formula]
     add_conclusion(context, formula)
-    logger.debug(f"{debug_prefix}Added {node.reference}: {pretty_expr(formula, context)}")
+    logger.debug(f"{debug_prefix}Added {pretty_expr(formula, context)}")
     return True
 
 if __name__ == "__main__":

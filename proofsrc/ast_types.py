@@ -258,7 +258,7 @@ class Show(Control):
 
 @dataclass
 class Assert(Control):
-    reference: str
+    reference: str | Formula
 
 @dataclass
 class Declaration:

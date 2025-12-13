@@ -1,0 +1,76 @@
+theorem neg_exist_leftrightarrow_forall_neg \forall^T\phi[1](\neg(\exists x(\phi(x)))\leftrightarrow\forall x(\neg(\phi(x)))) {
+  any template \phi[1] {
+    assume \neg(\exists x(\phi(x))) {
+      any x {
+        deny \phi(x) {
+          lift for x:x conclude \exists x(\phi(x))
+          contradict \exists x(\phi(x))
+        }
+      }
+    }
+    assume \forall x(\neg(\phi(x))) {
+      deny \exists x(\phi(x)) {
+        some x:x such \exists x(\phi(x)) {
+          apply \forall x(\neg(\phi(x))) for x:x
+          contradict \phi(x)
+        }
+      }
+    }
+    connect \neg(\exists x(\phi(x)))\leftrightarrow\forall x(\neg(\phi(x)))
+  }
+}
+
+theorem neg_exist_neg_leftrightarrow_forall \forall^T\phi[1](\neg(\exists x(\neg(\phi(x))))\leftrightarrow\forall x(\phi(x))) {
+  any template \psi[1] {
+    apply neg_exist_leftrightarrow_forall_neg for \phi:lambda x.\neg(\psi(x))
+  }
+}
+
+theorem exist_neg_leftrightarrow_neg_forall \forall^T\phi[1](\exists x(\neg(\phi(x)))\leftrightarrow\neg(\forall x(\phi(x)))) {
+  any template \phi[1] {
+    assume \exists x(\neg(\phi(x))) {
+      some x:x such \exists x(\neg(\phi(x))) {
+        deny \forall x(\phi(x)) {
+          apply \forall x(\phi(x)) for x:x
+          contradict \phi(x)
+        } 
+      }
+    }
+    assume \neg(\forall x(\phi(x))) {
+      deny \neg(\exists x(\neg(\phi(x)))) {
+        apply invoke rightward neg_exist_neg_leftrightarrow_forall for \phi:\phi
+        contradict \forall x(\phi(x))
+      }
+    }
+    connect \exists x(\neg(\phi(x)))\leftrightarrow\neg(\forall x(\phi(x)))
+  }
+}
+
+theorem neg_implication \forall^T\phi[0]\forall^T\psi[0](\neg(\phi\to\psi)\leftrightarrow(\phi\wedge\neg(\psi))) {
+  any template \phi[0], template \psi[0] {
+    assume \neg(\phi\to\psi) {
+      deny \neg(\phi) {
+        assume \phi {
+          contradict \phi
+          explode \psi
+        }
+        contradict \phi\to\psi
+      }
+      deny \psi {
+        assume \phi {
+          assert \psi
+        }
+        contradict \phi\to\psi
+      }
+      connect \phi\wedge\neg(\psi)
+    }
+    assume \phi\wedge\neg(\psi) {
+      deny \phi\to\psi {
+        split \phi\wedge\neg(\psi)
+        invoke \phi\to\psi
+        contradict \psi
+      }
+    }
+    connect \neg(\phi\to\psi)\leftrightarrow\phi\wedge\neg(\psi)
+  }
+}
