@@ -653,7 +653,7 @@ def check_apply(node: Apply, context: Context, indent: int):
             logger.error(f"{error_prefix}instantiation is not Implies object")
             node.proofinfo.status = "ERROR"
             return False
-        logger.debug(f"{error_prefix}instantiation is Implies object")
+        logger.debug(f"{debug_prefix}instantiation is Implies object")
         if not goal_in_context(instantiation.left, context):
             logger.error(f"{error_prefix}Left of instantiation is not derivable: {pretty_expr(instantiation.left, context)}")
             node.proofinfo.status = "ERROR"
@@ -668,7 +668,7 @@ def check_apply(node: Apply, context: Context, indent: int):
             logger.error(f"{error_prefix}instantiation is not Iff object")
             node.proofinfo.status = "ERROR"
             return False
-        logger.debug(f"{error_prefix}instantiation is Iff object")
+        logger.debug(f"{debug_prefix}instantiation is Iff object")
         if not goal_in_context(instantiation.left, context):
             logger.error(f"{error_prefix}Left of instantiation is not derivable: {pretty_expr(instantiation.left, context)}")
             node.proofinfo.status = "ERROR"
@@ -683,7 +683,7 @@ def check_apply(node: Apply, context: Context, indent: int):
             logger.error(f"{error_prefix}instantiation is not Iff object")
             node.proofinfo.status = "ERROR"
             return False
-        logger.debug(f"{error_prefix}instantiation is Iff object")
+        logger.debug(f"{debug_prefix}instantiation is Iff object")
         if not goal_in_context(instantiation.right, context):
             logger.error(f"{error_prefix}Right of instantiation is not derivable: {pretty_expr(instantiation.right, context)}")
             node.proofinfo.status = "ERROR"
