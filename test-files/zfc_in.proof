@@ -65,6 +65,26 @@ equality equal
   reflection equal_reflection
   replacement equal: equal_replacement, in: in_replacement
 
+theorem set_is_unique_for_each_predicate \forall^T\phi[1]\forall x\forall x'(\forall y(in(y,x)\leftrightarrow\phi(y))\wedge\forall y(in(y,x')\leftrightarrow\phi(y))\to equal(x,x')) {
+  any template \phi[1], x, x' {
+    assume \forall y(in(y,x)\leftrightarrow\phi(y))\wedge\forall y(in(y,x')\leftrightarrow\phi(y)) {
+      split \forall y(in(y,x)\leftrightarrow\phi(y))\wedge\forall y(in(y,x')\leftrightarrow\phi(y))
+      any y {
+        assume in(y,x) {
+          apply invoke rightward \forall y(in(y,x)\leftrightarrow\phi(y)) for y:y
+          apply invoke leftward \forall y(in(y,x')\leftrightarrow\phi(y)) for y:y
+        }
+        assume in(y,x') {
+          apply invoke rightward \forall y(in(y,x')\leftrightarrow\phi(y)) for y:y
+          apply invoke leftward \forall y(in(y,x)\leftrightarrow\phi(y)) for y:y
+        }
+        connect in(y,x)\leftrightarrow in(y,x')
+      }
+      fold for equal conclude equal(x,x')
+    }
+  }
+}
+
 definition predicate autoexpand notin(x,y) as \neg(in(x,y)) tex "","\notin",""
 
 definition predicate autoexpand neq(x,y) as \neg(equal(x,y)) tex "","\neq",""

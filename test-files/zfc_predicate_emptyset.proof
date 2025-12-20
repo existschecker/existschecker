@@ -1,0 +1,70 @@
+include "zfc_in.proof"
+
+definition predicate emptyset(x) as \forall y(notin(y,x))
+
+theorem emptyset_is_unique \forall x\forall x'(emptyset(x)\wedge emptyset(x')\to equal(x,x')) {
+  any x, x' {
+    assume emptyset(x)\wedge emptyset(x') {
+      split emptyset(x)\wedge emptyset(x')
+      expand emptyset(x) for emptyset
+      expand emptyset(x') for emptyset
+      any y {
+        assume in(y,x) {
+          expand emptyset(x) for emptyset
+          apply \forall y(notin(y,x)) for y:y
+          contradict in(y,x)
+          explode in(y,x')
+        }
+        assume in(y,x') {
+          expand emptyset(x') for emptyset
+          apply \forall y(notin(y,x')) for y:y
+          contradict in(y,x')
+          explode in(y,x)
+        }
+        connect in(y,x)\leftrightarrow in(y,x')
+      }
+      fold for equal conclude equal(x,x')
+    }
+  }
+}
+
+theorem not_emptyset_has_a_member \forall x(\neg(emptyset(x))\to\exists y(in(y,x))) {
+  any x {
+    assume \neg(emptyset(x)) {
+      expand \neg(emptyset(x)) for emptyset
+      apply invoke leftward exist_neg_leftrightarrow_neg_forall for \phi:lambda y.notin(y,x)
+    }
+  }
+}
+
+theorem has_a_member_not_emptyset \forall x(\exists y(in(y,x))\to\neg(emptyset(x))) {
+  any x {
+    assume \exists y(in(y,x)) {
+      deny emptyset(x) {
+        expand emptyset(x) for emptyset
+        apply invoke leftward neg_exist_leftrightarrow_forall_neg for \phi:lambda y.in(y,x)
+        contradict \exists y(in(y,x))
+      }
+    }
+  }
+}
+
+theorem emptyset_subset_cor1 \forall x\forall e(emptyset(e)\wedge subset(x,e)\to equal(x,e)) {
+  any x,e {
+    assume emptyset(e)\wedge subset(x,e) {
+      split emptyset(e)\wedge subset(x,e)
+      any y {
+        deny in(y,x) {
+          expand emptyset(e) for emptyset
+          apply \forall y(notin(y,e)) for y:y
+          connect in(y,x)\wedge subset(x,e)
+          apply invoke subset_cor1 for z:y,x:x,y:e
+          contradict in(y,e)
+        }
+      }
+      fold for emptyset conclude emptyset(x)
+      connect emptyset(x)\wedge emptyset(e)
+      apply invoke emptyset_is_unique for x:x,x':e
+    }
+  }
+}
