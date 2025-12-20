@@ -10,130 +10,161 @@ def flatten_op(expr: Formula, op: type[And] | type[Or]) -> list[Formula]:
     else:
         return [expr]
 
-def op_equiv(e1: Formula, e2: Formula, context: Context, env: dict[Var | Template, Var | Template], op: type[And] | type[Or]) -> bool:
-    parts1 = flatten_op(e1, op)
-    parts2 = flatten_op(e2, op)
+class AlphaEquiv:
+    def __init__(self, context: Context):
+        self.context = context
 
-    if len(parts1) != len(parts2):
-        return False
+    def log(self, depth: int, e1: Formula | Term | Pred | Fun, e2: Formula | Term | Pred | Fun):
+        if False:
+            print(f"{'  ' * depth}[{e1.__class__.__name__}] e1: {pretty_expr(e1, self.context)}")
+            print(f"{'  ' * depth}[{e2.__class__.__name__}] e2: {pretty_expr(e2, self.context)}")
 
-    matched = [False] * len(parts2)
-    for p1 in parts1:
-        found = False
-        for i, p2 in enumerate(parts2):
-            if not matched[i] and alpha_equiv(p1, p2, context, env):
-                matched[i] = True
-                found = True
-                break
-        if not found:
-            return False
-
-    return True
-
-def alpha_equiv(e1: Formula | Term | Pred | Fun, e2: Formula | Term | Pred | Fun, context: Context, env: dict[Var | Template, Var | Template] | None = None) -> bool:
-    if env is None:
-        env = {}
-
-    if isinstance(e1, Var) and isinstance(e2, Var):
+    def alpha_equiv_var(self, e1: Var | Template, e2: Var | Template, env: dict[Var | Template, Var | Template], depth: int) -> bool:
         return env.get(e1, e1) == e2
 
-    if isinstance(e1, Template) and isinstance(e2, Template):
-        return env.get(e1, e1) == e2
-
-    if isinstance(e1, Con) and isinstance(e2, Con):
+    def alpha_equiv_con(self, e1: Con | Fun | Pred, e2: Con | Fun | Pred, depth: int) -> bool:
         return e1.name == e2.name
 
-    if isinstance(e1, Fun) and isinstance(e2, Fun):
-        return e1.name == e2.name
-
-    if isinstance(e1, Pred) and isinstance(e2, Pred):
-        return e1.name == e2.name
-
-    if isinstance(e1, Compound) and isinstance(e2, Compound):
-        if not alpha_equiv(e1.fun, e2.fun, context, env):
+    def alpha_equiv_compound(self, e1: Compound, e2: Compound, env: dict[Var | Template, Var | Template], depth: int) -> bool:
+        if not self.alpha_equiv_con(e1.fun, e2.fun, depth+1):
             return False
         if len(e1.args) != len(e2.args):
             return False
         for a, b in zip(e1.args, e2.args):
-            if not alpha_equiv(a, b, context, env):
+            if not self.alpha_equiv_term(a, b, env, depth+1):
                 return False
         return True
 
-    if isinstance(e1, Symbol) and isinstance(e2, Symbol):
-        if not alpha_equiv(e1.pred, e2.pred, context, env):
-            return False
-        if len(e1.args) != len(e2.args):
-            return False
-        if context.decl.equality is not None and e1.pred.name == context.decl.equality.equal.name:
-            a1, b1 = e1.args
-            a2, b2 = e2.args
-            return (alpha_equiv(a1, a2, context, env) and alpha_equiv(b1, b2, context, env)) or (alpha_equiv(a1, b2, context, env) and alpha_equiv(b1, a2, context, env))
-        for a, b in zip(e1.args, e2.args):
-            if not alpha_equiv(a, b, context, env):
-                return False
-        return True
-
-    if isinstance(e1, TemplateCall) and isinstance(e2, TemplateCall):
-        if not alpha_equiv(e1.template, e2.template, context, env):
-            return False
-        for a, b in zip(e1.args, e2.args):
-            if not alpha_equiv(a, b, context, env):
-                return False
-        return True
-
-    if isinstance(e1, Not) and isinstance(e2, Not):
-        return alpha_equiv(e1.body, e2.body, context, env)
-
-    if isinstance(e1, And) and isinstance(e2, And):
-        return op_equiv(e1, e2, context, env, And)
-
-    if isinstance(e1, Or) and isinstance(e2, Or):
-        return op_equiv(e1, e2, context, env, Or)
-
-    if isinstance(e1, Implies) and isinstance(e2, Implies):
-        return alpha_equiv(e1.left, e2.left, context, env) and alpha_equiv(e1.right, e2.right, context, env)
-
-    if isinstance(e1, Iff) and isinstance(e2, Iff):
-        return alpha_equiv(e1.left, e2.left, context, env) and alpha_equiv(e1.right, e2.right, context, env)
-
-    if isinstance(e1, Lambda) and isinstance(e2, Lambda):
+    def alpha_equiv_lambda(self, e1: Lambda, e2: Lambda, env: dict[Var | Template, Var | Template], depth: int) -> bool:
         if len(e1.args) != len(e2.args):
             return False
         newenv = env.copy()
         for a, b in zip(e1.args, e2.args):
             newenv[a] = b
-        return alpha_equiv(e1.body, e2.body, context, newenv)
+        return self.alpha_equiv_formula(e1.body, e2.body, newenv, depth+1)
 
-    for quantifier_type in (Forall, Exists, ExistsUniq):
-        if isinstance(e1, quantifier_type) and isinstance(e2, quantifier_type):
-            vars1, body1 = collect_quantifier_vars(e1, quantifier_type)
-            vars2, body2 = collect_quantifier_vars(e2, quantifier_type)
-
-            if len(vars1) != len(vars2):
-                return False
-
-            for perm in permutations(vars2):
-                newenv = env.copy()
-                skip_perm = False
-                for v1, v2 in zip(vars1, perm):
-                    if isinstance(v1, Var) and isinstance(v2, Template):
-                        skip_perm = True
-                        break
-                    if isinstance(v1, Template) and isinstance(v2, Var):
-                        skip_perm = True
-                        break
-                    if isinstance(v1, Template) and isinstance(v2, Template):
-                        if v1.arity != v2.arity:
-                            skip_perm = True
-                            break
-                    newenv[v1] = v2
-                if skip_perm:
-                    continue
-                if alpha_equiv(body1, body2, context, newenv):
-                    return True
+    def alpha_equiv_term(self, e1: Term, e2: Term, env: dict[Var | Template, Var | Template], depth: int) -> bool:
+        self.log(depth, e1, e2)
+        if isinstance(e1, Var) and isinstance(e2, Var):
+            return self.alpha_equiv_var(e1, e2, env, depth)
+        elif isinstance(e1, Template) and isinstance(e2, Template):
+            return self.alpha_equiv_var(e1, e2, env, depth)
+        elif isinstance(e1, Con) and isinstance(e2, Con):
+            return self.alpha_equiv_con(e1, e2, depth)
+        elif isinstance(e1, Fun) and isinstance(e2, Fun):
+            return self.alpha_equiv_con(e1, e2, depth)
+        elif isinstance(e1, Pred) and isinstance(e2, Pred):
+            return self.alpha_equiv_con(e1, e2, depth)
+        elif isinstance(e1, Compound) and isinstance(e2, Compound):
+            return self.alpha_equiv_compound(e1, e2, env, depth)
+        elif isinstance(e1, Lambda) and isinstance(e2, Lambda):
+            return self.alpha_equiv_lambda(e1, e2, env, depth)
+        else:
             return False
 
-    return False
+    def alpha_equiv_symbol(self, e1: Symbol, e2: Symbol, env: dict[Var | Template, Var | Template], depth: int) -> bool:
+        if not self.alpha_equiv_con(e1.pred, e2.pred, depth+1):
+            return False
+        if len(e1.args) != len(e2.args):
+            return False
+        if self.context.decl.equality is not None and e1.pred.name == self.context.decl.equality.equal.name:
+            a1, b1 = e1.args
+            a2, b2 = e2.args
+            return (self.alpha_equiv_term(a1, a2, env, depth+1) and self.alpha_equiv_term(b1, b2, env, depth+1)) or (self.alpha_equiv_term(a1, b2, env, depth+1) and self.alpha_equiv_term(b1, a2, env, depth+1))
+        for a, b in zip(e1.args, e2.args):
+            if not self.alpha_equiv_term(a, b, env, depth+1):
+                return False
+        return True
+
+    def alpha_equiv_template_call(self, e1: TemplateCall, e2: TemplateCall, env: dict[Var | Template, Var | Template], depth: int) -> bool:
+        if not self.alpha_equiv_var(e1.template, e2.template, env, depth+1):
+            return False
+        for a, b in zip(e1.args, e2.args):
+            if not self.alpha_equiv_term(a, b, env, depth+1):
+                return False
+        return True
+
+    def alpha_equiv_not(self, e1: Not, e2: Not, env: dict[Var | Template, Var | Template], depth: int) -> bool:
+        return self.alpha_equiv_formula(e1.body, e2.body, env, depth+1)
+
+    def alpha_equiv_and(self, e1: Formula, e2: Formula, env: dict[Var | Template, Var | Template], op: type[And] | type[Or], depth: int) -> bool:
+        parts1 = flatten_op(e1, op)
+        parts2 = flatten_op(e2, op)
+
+        if len(parts1) != len(parts2):
+            return False
+
+        matched = [False] * len(parts2)
+        for p1 in parts1:
+            found = False
+            for i, p2 in enumerate(parts2):
+                if not matched[i] and self.alpha_equiv_formula(p1, p2, env, depth+1):
+                    matched[i] = True
+                    found = True
+                    break
+            if not found:
+                return False
+
+        return True
+
+    def alpha_equiv_implies(self, e1: Implies | Iff, e2: Implies | Iff, env: dict[Var | Template, Var | Template], depth: int) -> bool:
+        return self.alpha_equiv_formula(e1.left, e2.left, env, depth+1) and self.alpha_equiv_formula(e1.right, e2.right, env, depth+1)
+
+    def alpha_equiv_quantifier(self, e1: Forall | Exists | ExistsUniq, e2: Forall | Exists | ExistsUniq, env: dict[Var | Template, Var | Template], quantifier_type: type[Forall] | type[Exists] | type[ExistsUniq], depth: int) -> bool:
+        vars1, body1 = collect_quantifier_vars(e1, quantifier_type)
+        vars2, body2 = collect_quantifier_vars(e2, quantifier_type)
+
+        if len(vars1) != len(vars2):
+            return False
+
+        for perm in permutations(vars2):
+            newenv = env.copy()
+            skip_perm = False
+            for v1, v2 in zip(vars1, perm):
+                if isinstance(v1, Var) and isinstance(v2, Template):
+                    skip_perm = True
+                    break
+                if isinstance(v1, Template) and isinstance(v2, Var):
+                    skip_perm = True
+                    break
+                if isinstance(v1, Template) and isinstance(v2, Template):
+                    if v1.arity != v2.arity:
+                        skip_perm = True
+                        break
+                newenv[v1] = v2
+            if skip_perm:
+                continue
+            if self.alpha_equiv_formula(body1, body2, newenv, depth+1):
+                return True
+        return False
+
+    def alpha_equiv_formula(self, e1: Formula, e2: Formula, env: dict[Var | Template, Var | Template], depth: int) -> bool:
+        self.log(depth, e1, e2)
+        if isinstance(e1, Symbol) and isinstance(e2, Symbol):
+            return self.alpha_equiv_symbol(e1, e2, env, depth)
+        elif isinstance(e1, TemplateCall) and isinstance(e2, TemplateCall):
+            return self.alpha_equiv_template_call(e1, e2, env, depth)
+        elif isinstance(e1, Not) and isinstance(e2, Not):
+            return self.alpha_equiv_not(e1, e2, env, depth)
+        elif isinstance(e1, And) and isinstance(e2, And):
+            return self.alpha_equiv_and(e1, e2, env, And, depth)
+        elif isinstance(e1, Or) and isinstance(e2, Or):
+            return self.alpha_equiv_and(e1, e2, env, Or, depth)
+        elif isinstance(e1, Implies) and isinstance(e2, Implies):
+            return self.alpha_equiv_implies(e1, e2, env, depth)
+        elif isinstance(e1, Iff) and isinstance(e2, Iff):
+            return self.alpha_equiv_implies(e1, e2, env, depth)
+        elif isinstance(e1, Forall) and isinstance(e2, Forall):
+            return self.alpha_equiv_quantifier(e1, e2, env, Forall, depth)
+        elif isinstance(e1, Exists) and isinstance(e2, Exists):
+            return self.alpha_equiv_quantifier(e1, e2, env, Exists, depth)
+        elif isinstance(e1, ExistsUniq) and isinstance(e2, ExistsUniq):
+            return self.alpha_equiv_quantifier(e1, e2, env, ExistsUniq, depth)
+        else:
+            return False
+
+    def alpha_equiv(self, e1: Formula, e2: Formula) -> bool:
+        return self.alpha_equiv_formula(e1, e2, {}, 0)
 
 def collect_quantifier_vars(e: Formula, quantifier_type: type[Forall] | type[Exists] | type[ExistsUniq]) -> tuple[list[Var | Template], Formula]:
     vars_: list[Var | Template] = []
@@ -210,7 +241,7 @@ def alpha_equiv_with_defs(e1: Bottom | Formula, e2: Bottom | Formula, context: C
         e1_exp = normalize_neg(exp.expand_defs_formula(e1))
         exp = DefExpander(context, defs)
         e2_exp = normalize_neg(exp.expand_defs_formula(e2))
-        return alpha_equiv(e1_exp, e2_exp, context)
+        return AlphaEquiv(context).alpha_equiv(e1_exp, e2_exp)
 
 @dataclass
 class DefExpander:
