@@ -465,6 +465,11 @@ def check_divide(node: Divide, context: Context, indent: int):
         goal = local_ctx.ctrl.formulas[-1]
         logger.debug(f"{debug_prefix}derived goal: {pretty_expr(goal, context)}")
         goals.append(goal)
+    for i in range(len(goals) - 1):
+        if not alpha_equiv_with_defs(goals[i], goals[i + 1], context):
+            logger.error(f"{error_prefix}Not matched: goals[{i}]: {pretty_expr(goals[i], context)}, goals[{i + 1}]: {pretty_expr(goals[i + 1], context)}")
+            node.proofinfo.status = "ERROR"
+            return False
     node.proofinfo.status = "OK"
     node.proofinfo.premises = [fact]
     node.proofinfo.conclusions = [goals[0]]
