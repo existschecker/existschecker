@@ -18,8 +18,7 @@ theorem minimum_implies_minimal \forall X\forall^T\psi[2]\forall^T\phi[1]\forall
   any X, template \psi[2], template \phi[1], a {
     assume antisymrelon(X,\psi)\wedge minimum(X,\psi,\phi,a) {
       split antisymrelon(X,\psi)\wedge minimum(X,\psi,\phi,a)
-      expand minimum(X,\psi,\phi,a) for minimum
-      split in(a,X)\wedge\phi(a)\wedge\forall x(in(x,X)\wedge\phi(x)\wedge neq(x,a)\to\psi(a,x))
+      split minimum(X,\psi,\phi,a)
       any x {
         assume in(x,X)\wedge\phi(x)\wedge neq(x,a) {
           split in(x,X)\wedge\phi(x)\wedge neq(x,a)
@@ -45,14 +44,12 @@ theorem linorder_and_minmal_implies_minimum \forall X\forall^T\psi[2]\forall^T\p
   any X, template \psi[2], template \phi[1], a {
     assume linorder(X,\psi)\wedge minimal(X,\psi,\phi,a) {
       split linorder(X,\psi)\wedge minimal(X,\psi,\phi,a)
-      expand minimal(X,\psi,\phi,a) for minimal
-      split in(a,X)\wedge\phi(a)\wedge\forall x(in(x,X)\wedge\phi(x)\wedge neq(x,a)\to\neg(\psi(x,a)))
+      split minimal(X,\psi,\phi,a)
       any x {
         assume in(x,X)\wedge\phi(x)\wedge neq(x,a) {
           apply invoke \forall x(in(x,X)\wedge\phi(x)\wedge neq(x,a)\to\neg(\psi(x,a))) for x
           split in(x,X)\wedge\phi(x)\wedge neq(x,a)
-          expand linorder(X,\psi) for linorder
-          split 2 orderon(X,\psi)\wedge\forall x\forall y(in(x,X)\wedge in(y,X)\to\psi(x,y)\vee equal(x,y)\vee\psi(y,x))
+          split 2 linorder(X,\psi)
           connect in(x,X)\wedge\phi(x)
           connect in(a,X)\wedge\phi(a)
           connect in(x,X)\wedge in(a,X)
@@ -83,8 +80,7 @@ theorem linorder_and_wellfounded_implies_wellorder \forall X\forall^T\psi[2](lin
   any X, template \psi[2] {
     assume linorder(X,\psi)\wedge wellfounded(X,\psi) {
       split linorder(X,\psi)\wedge wellfounded(X,\psi)
-      expand linorder(X,\psi) for linorder
-      split orderon(X,\psi)\wedge\forall x\forall y(in(x,X)\wedge in(y,X)\to\psi(x,y)\vee equal(x,y)\vee\psi(y,x))
+      split linorder(X,\psi)
       any template \phi[1] {
         assume \exists z(in(z,X)\wedge\phi(z)) {
           apply invoke wellfounded(X,\psi) for \phi
@@ -104,8 +100,7 @@ theorem linorder_and_wellfounded_implies_wellorder \forall X\forall^T\psi[2](lin
 theorem wellorder_implies_linorder \forall X\forall^T\psi[2](wellorder(X,\psi)\to linorder(X,\psi)) {
   any X, template \psi[2] {
     assume wellorder(X,\psi) {
-      expand wellorder(X,\psi) for wellorder
-      split orderon(X,\psi)\wedge\forall^T\phi[1](\exists z(in(z,X)\wedge\phi(z))\to\exists a(minimum(X,\psi,\phi,a)))
+      split wellorder(X,\psi)
       any x,y {
         assume in(x,X)\wedge in(y,X) {
           split in(x,X)\wedge in(y,X)
@@ -114,8 +109,7 @@ theorem wellorder_implies_linorder \forall X\forall^T\psi[2](wellorder(X,\psi)\t
           lift for z:x conclude \exists z(in(z,X)\wedge(equal(z,x)\vee equal(z,y)))
           apply invoke \forall^T\phi[1](\exists z(in(z,X)\wedge\phi(z))\to\exists a(minimum(X,\psi,\phi,a))) for lambda z.equal(z,x)\vee equal(z,y)
           some a:a such \exists a(minimum(X,\psi,lambda z.equal(z,x)\vee equal(z,y),a)) {
-            expand minimum(X,\psi,lambda z.equal(z,x)\vee equal(z,y),a) for minimum
-            split in(a,X)\wedge(equal(a,x)\vee equal(a,y))\wedge\forall z(in(z,X)\wedge(equal(z,x)\vee equal(z,y))\wedge neq(z,a)\to\psi(a,z))
+            split minimum(X,\psi,lambda z.equal(z,x)\vee equal(z,y),a)
             apply law_of_excluded_middle for lambda.equal(x,y)
             divide equal(x,y)\vee neq(x,y)
               case equal(x,y) {
@@ -150,10 +144,8 @@ theorem wellorder_implies_linorder \forall X\forall^T\psi[2](wellorder(X,\psi)\t
 theorem wellorder_implies_wellfounded \forall X\forall^T\psi[2](wellorder(X,\psi)\to wellfounded(X,\psi)) {
   any X, template \psi[2] {
     assume wellorder(X,\psi) {
-      expand wellorder(X,\psi) for wellorder
-      split orderon(X,\psi)\wedge\forall^T\phi[1](\exists z(in(z,X)\wedge\phi(z))\to\exists a(minimum(X,\psi,\phi,a)))
-      expand orderon(X,\psi) for orderon
-      split 2 transrelon(X,\psi)\wedge antisymrelon(X,\psi)
+      split wellorder(X,\psi)
+      split 2 orderon(X,\psi)
       any template \phi[1] {
         assume \exists z(in(z,X)\wedge\phi(z)) {
           apply invoke \forall^T\phi[1](\exists z(in(z,X)\wedge\phi(z))\to\exists a(minimum(X,\psi,\phi,a))) for \phi
@@ -229,8 +221,7 @@ theorem orderon_subset \forall X\forall^T\phi[2]\forall Y(orderon(X,\phi)\wedge 
   any X, template \phi[2], Y {
     assume orderon(X,\phi)\wedge subset(Y,X) {
       split orderon(X,\phi)\wedge subset(Y,X)
-      expand orderon(X,\phi) for orderon
-      split transrelon(X,\phi)\wedge antisymrelon(X,\phi)
+      split orderon(X,\phi)
       connect transrelon(X,\phi)\wedge subset(Y,X)
       apply invoke transrelon_subset for X,\phi,Y
       connect antisymrelon(X,\phi)\wedge subset(Y,X)
@@ -261,8 +252,7 @@ theorem wellorder_subset \forall X\forall^T\psi[2]\forall Y(wellorder(X,\psi)\we
   any X, template \psi[2], Y {
     assume wellorder(X,\psi)\wedge subset(Y,X) {
       split wellorder(X,\psi)\wedge subset(Y,X)
-      expand wellorder(X,\psi) for wellorder
-      split orderon(X,\psi)\wedge\forall^T\phi[1](\exists z(in(z,X)\wedge\phi(z))\to\exists a(minimum(X,\psi,\phi,a)))
+      split wellorder(X,\psi)
       connect orderon(X,\psi)\wedge subset(Y,X)
       apply invoke orderon_subset for X,\psi,Y
       any template \chi[1] {
@@ -276,8 +266,7 @@ theorem wellorder_subset \forall X\forall^T\psi[2]\forall Y(wellorder(X,\psi)\we
           }
           apply invoke \forall^T\phi[1](\exists z(in(z,X)\wedge\phi(z))\to\exists a(minimum(X,\psi,\phi,a))) for lambda w.in(w,Y)\wedge\chi(w)
           some a:a such \exists a(minimum(X,\psi,lambda w.in(w,Y)\wedge\chi(w),a)) {
-            expand minimum(X,\psi,lambda w.in(w,Y)\wedge\chi(w),a) for minimum
-            split in(a,X)\wedge in(a,Y)\wedge\chi(a)\wedge\forall x(in(x,X)\wedge in(x,Y)\wedge\chi(x)\wedge neq(x,a)\to\psi(a,x))
+            split minimum(X,\psi,lambda w.in(w,Y)\wedge\chi(w),a)
             any x {
               assume in(x,Y)\wedge\chi(x)\wedge neq(x,a) {
                 split in(x,Y)\wedge\chi(x)\wedge neq(x,a)

@@ -273,8 +273,7 @@ definition predicate subsetneq(x,y) as subset(x,y)\wedge neq(x,y) tex "","\subse
 theorem subsetneq_implies_exist \forall x\forall y(subsetneq(x,y)\to\exists z(in(z,y)\wedge notin(z,x))) {
   any x,y {
     assume subsetneq(x,y) {
-      expand subsetneq(x,y) for subsetneq
-      split subset(x,y)\wedge neq(x,y)
+      split subsetneq(x,y)
       apply invoke rightward neq_cor1 for x,y
       some z:z such \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))) {
         divide (in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))
@@ -309,8 +308,7 @@ theorem subset_subsetneq \forall x\forall y(subset(x,y)\leftrightarrow subsetneq
     assume subsetneq(x,y)\vee equal(x,y) {
       divide subsetneq(x,y)\vee equal(x,y)
         case subsetneq(x,y) {
-          expand subsetneq(x,y) for subsetneq
-          split 1 subset(x,y)\wedge neq(x,y)
+          split 1 subsetneq(x,y)
         }
         case equal(x,y) {
           apply invoke leftward subset_antisymmetry for x,y

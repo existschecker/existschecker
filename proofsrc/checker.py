@@ -922,11 +922,12 @@ def check_split(node: Split, context: Context, indent: int):
         logger.error(f"{error_prefix}Not derivable: {pretty_expr(node.fact, context)}")
         node.proofinfo.status = "ERROR"
         return False
-    logger.debug(f"{debug_prefix}Derivable: {pretty_expr(node.fact, context)}")
-    if isinstance(node.fact, And):
-        logger.debug(f"{debug_prefix}And object: {pretty_expr(node.fact, context)}")
-        fact_parts = flatten_op(node.fact, And)
-        node.proofinfo.premises = [node.fact]
+    fact = get_fact(node.fact, context, True)
+    logger.debug(f"{debug_prefix}Derivable: {pretty_expr(fact, context)}")
+    if isinstance(fact, And):
+        logger.debug(f"{debug_prefix}And object: {pretty_expr(fact, context)}")
+        fact_parts = flatten_op(fact, And)
+        node.proofinfo.premises = [fact]
         if node.index is None:
             node.proofinfo.conclusions = fact_parts
             for f in fact_parts:
@@ -943,12 +944,12 @@ def check_split(node: Split, context: Context, indent: int):
             logger.debug(f"{debug_prefix}added {pretty_expr(f, context)}")
         node.proofinfo.status = "OK"
         return True
-    elif isinstance(node.fact, Iff):
-        logger.debug(f"{debug_prefix}Iff object: {pretty_expr(node.fact, context)}")
-        implication_rightward = Implies(node.fact.left, node.fact.right)
-        implication_leftward = Implies(node.fact.right, node.fact.left)
+    elif isinstance(fact, Iff):
+        logger.debug(f"{debug_prefix}Iff object: {pretty_expr(fact, context)}")
+        implication_rightward = Implies(fact.left, fact.right)
+        implication_leftward = Implies(fact.right, fact.left)
         node.proofinfo.status = "OK"
-        node.proofinfo.premises = [node.fact]
+        node.proofinfo.premises = [fact]
         node.proofinfo.conclusions = [implication_rightward, implication_leftward]
         add_conclusion(context, implication_rightward)
         add_conclusion(context, implication_leftward)
@@ -956,7 +957,7 @@ def check_split(node: Split, context: Context, indent: int):
         logger.debug(f"{debug_prefix}added {pretty_expr(implication_leftward, context)}")
         return True
     else:
-        logger.error(f"{error_prefix}Not And or Iff object: {pretty_expr(node.fact, context)}")
+        logger.error(f"{error_prefix}Not And or Iff object: {pretty_expr(fact, context)}")
         node.proofinfo.status = "ERROR"
         return False
 

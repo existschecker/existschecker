@@ -518,8 +518,6 @@ class Parser:
         else:
             index = None
         fact = self.parse_reference_or_formula(context)
-        if not isinstance(fact, (And, Iff)):
-            raise Exception(f"{start_token.info()} And or Iff object is required")
         return Split(token=start_token, index=index, fact=fact)
 
     def parse_connect(self, context: Context) -> Connect:

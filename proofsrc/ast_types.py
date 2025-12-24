@@ -239,7 +239,7 @@ class Pad(Control):
 @dataclass
 class Split(Control):
     index: int | None
-    fact: And | Iff
+    fact: str | Formula
 
 @dataclass
 class Connect(Control):

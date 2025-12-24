@@ -109,9 +109,8 @@ theorem element_of_ordinal_is_trans \forall\alpha(ordinal(\alpha)\to\forall\beta
         assume in(\beta,\alpha) {
           any \gamma,\delta {
             assume in(\delta,\gamma)\wedge in(\gamma,\beta) {
-              expand ordinal(\alpha) for ordinal
               split in(\delta,\gamma)\wedge in(\gamma,\beta)
-              split trans(\alpha)\wedge irrefrelon(\alpha,in)\wedge wellorder(\alpha,in)
+              split ordinal(\alpha)
               connect in(\gamma,\beta)\wedge in(\beta,\alpha)
               apply invoke trans(\alpha) for \beta,\gamma
               connect in(\delta,\gamma)\wedge in(\gamma,\alpha)
@@ -120,10 +119,8 @@ theorem element_of_ordinal_is_trans \forall\alpha(ordinal(\alpha)\to\forall\beta
               connect in(\delta,\alpha)\wedge in(\gamma,\alpha)\wedge in(\delta,\gamma)
               connect in(\delta,\gamma)\wedge in(\gamma,\beta)
               connect in(\delta,\alpha)\wedge in(\gamma,\alpha)\wedge in(\beta,\alpha)
-              expand wellorder(\alpha,in) for wellorder
-              split 1 orderon(\alpha,in)\wedge\forall^T\phi[1](\exists z(in(z,\alpha)\wedge\phi(z))\to\exists a(minimum(\alpha,in,\phi,a)))
-              expand orderon(\alpha,in) for orderon
-              split 1 transrelon(\alpha,in)\wedge antisymrelon(\alpha,in)
+              split 1 wellorder(\alpha,in)
+              split 1 orderon(\alpha,in)
               apply invoke transrelon(\alpha,in) for \delta,\gamma,\beta
               invoke in(\delta,\gamma)\wedge in(\gamma,\beta)\to in(\delta,\beta)
             }
@@ -142,8 +139,7 @@ theorem element_of_ordinal_is_ordinal \forall\alpha(ordinal(\alpha)\to\forall\be
         assume in(\beta,\alpha) {
           apply invoke element_of_ordinal_is_trans for \alpha
           apply invoke \forall\beta(in(\beta,\alpha)\to trans(\beta)) for \beta
-          expand ordinal(\alpha) for ordinal
-          split trans(\alpha)\wedge irrefrelon(\alpha,in)\wedge wellorder(\alpha,in)
+          split ordinal(\alpha)
           apply invoke rightward trans_cor1 for \alpha
           apply invoke \forall y(in(y,\alpha)\to subset(y,\alpha)) for \beta
           connect irrefrelon(\alpha,in)\wedge subset(\beta,\alpha)
@@ -161,8 +157,7 @@ theorem element_of_ordinal_is_ordinal \forall\alpha(ordinal(\alpha)\to\forall\be
 theorem ordinal_not_contain_itself \forall\alpha(ordinal(\alpha)\to notin(\alpha,\alpha)) {
   any \alpha {
     assume ordinal(\alpha) {
-      expand ordinal(\alpha) for ordinal
-      split 2 trans(\alpha)\wedge irrefrelon(\alpha,in)\wedge wellorder(\alpha,in)
+      split 2 ordinal(\alpha)
       apply irrefrelon(\alpha,in) for \alpha
       deny in(\alpha,\alpha) {
         invoke in(\alpha,\alpha)\to notin(\alpha,\alpha)
@@ -176,8 +171,7 @@ theorem ordianl_trans \forall\alpha\forall\beta\forall\gamma(ordinal(\alpha)\wed
   any \alpha,\beta,\gamma {
     assume ordinal(\alpha)\wedge in(\gamma,\beta)\wedge in(\beta,\alpha) {
       split ordinal(\alpha)\wedge in(\gamma,\beta)\wedge in(\beta,\alpha)
-      expand ordinal(\alpha) for ordinal
-      split 1 trans(\alpha)\wedge irrefrelon(\alpha,in)\wedge wellorder(\alpha,in)
+      split 1 ordinal(\alpha)
       connect in(\gamma,\beta)\wedge in(\beta,\alpha)
       apply invoke trans(\alpha) for \beta,\gamma
     }
@@ -191,14 +185,11 @@ theorem ordinal_subsetneq_of_ordinal_is_element \forall\alpha(ordinal(\alpha)\to
         assume subsetneq(\beta,\alpha)\wedge ordinal(\beta) {
           split subsetneq(\beta,\alpha)\wedge ordinal(\beta)
           apply invoke subsetneq_implies_exist for \beta,\alpha
-          expand ordinal(\alpha) for ordinal
-          split trans(\alpha)\wedge irrefrelon(\alpha,in)\wedge wellorder(\alpha,in)
-          expand wellorder(\alpha,in) for wellorder
-          split orderon(\alpha,in)\wedge\forall^T\phi[1](\exists z(in(z,\alpha)\wedge\phi(z))\to\exists a(minimum(\alpha,in,\phi,a)))
+          split ordinal(\alpha)
+          split wellorder(\alpha,in)
           apply invoke \forall^T\phi[1](\exists z(in(z,\alpha)\wedge\phi(z))\to\exists a(minimum(\alpha,in,\phi,a))) for lambda\gamma.notin(\gamma,\beta)
           some a:\gamma such \exists a(minimum(\alpha,in,lambda\gamma.notin(\gamma,\beta),a)) {
-            expand minimum(\alpha,in,lambda\gamma.notin(\gamma,\beta),\gamma) for minimum
-            split in(\gamma,\alpha)\wedge notin(\gamma,\beta)\wedge\forall x(in(x,\alpha)\wedge notin(x,\beta)\wedge neq(x,\gamma)\to in(\gamma,x))
+            split minimum(\alpha,in,lambda\gamma.notin(\gamma,\beta),\gamma)
             any \delta {
               assume in(\delta,\gamma) {
                 deny notin(\delta,\beta) {
@@ -216,8 +207,7 @@ theorem ordinal_subsetneq_of_ordinal_is_element \forall\alpha(ordinal(\alpha)\to
                   connect in(\delta,\alpha)\wedge notin(\delta,\beta)\wedge neq(\delta,\gamma)
                   apply invoke \forall x(in(x,\alpha)\wedge notin(x,\beta)\wedge neq(x,\gamma)\to in(\gamma,x)) for \delta
                   connect in(\delta,\gamma)\wedge in(\gamma,\delta)
-                  expand orderon(\alpha,in) for orderon
-                  split 2 transrelon(\alpha,in)\wedge antisymrelon(\alpha,in)
+                  split 2 orderon(\alpha,in)
                   connect in(\delta,\alpha)\wedge in(\gamma,\alpha)
                   apply invoke antisymrelon(\alpha,in) for \delta,\gamma
                   invoke in(\delta,\gamma)\wedge in(\gamma,\delta)\to equal(\delta,\gamma)
@@ -225,14 +215,12 @@ theorem ordinal_subsetneq_of_ordinal_is_element \forall\alpha(ordinal(\alpha)\to
                 }
               }
               assume in(\delta,\beta) {
-                expand subsetneq(\beta,\alpha) for subsetneq
-                split 1 subset(\beta,\alpha)\wedge neq(\beta,\alpha)
+                split 1 subsetneq(\beta,\alpha)
                 connect in(\delta,\beta)\wedge subset(\beta,\alpha)
                 apply invoke subset(\beta,\alpha) for \delta
                 connect in(\delta,\alpha)\wedge in(\gamma,\alpha)
                 apply invoke wellorder_implies_linorder for \alpha,in
-                expand linorder(\alpha,in) for linorder
-                split 2 orderon(\alpha,in)\wedge\forall x\forall y(in(x,\alpha)\wedge in(y,\alpha)\to in(x,y)\vee equal(x,y)\vee in(y,x))
+                split 2 linorder(\alpha,in)
                 apply invoke \forall x\forall y(in(x,\alpha)\wedge in(y,\alpha)\to in(x,y)\vee equal(x,y)\vee in(y,x)) for \delta,\gamma
                 divide in(\delta,\gamma)\vee equal(\delta,\gamma)\vee in(\gamma,\delta)
                   case in(\delta,\gamma) {}
@@ -243,8 +231,7 @@ theorem ordinal_subsetneq_of_ordinal_is_element \forall\alpha(ordinal(\alpha)\to
                   }
                   case in(\gamma,\delta) {
                     connect in(\gamma,\delta)\wedge in(\delta,\beta)
-                    expand ordinal(\beta) for ordinal
-                    split 1 trans(\beta)\wedge irrefrelon(\beta,in)\wedge wellorder(\beta,in)
+                    split 1 ordinal(\beta)
                     apply invoke trans(\beta) for \delta,\gamma
                     contradict in(\gamma,\beta)
                     explode in(\delta,\gamma)
@@ -266,8 +253,7 @@ theorem ordinal_in_iff_subsetneq \forall\alpha\forall\beta(ordinal(\alpha)\wedge
     assume ordinal(\alpha)\wedge ordinal(\beta) {
       split ordinal(\alpha)\wedge ordinal(\beta)
       assume in(\alpha,\beta) {
-        expand ordinal(\beta) for ordinal
-        split 1 trans(\beta)\wedge irrefrelon(\beta,in)\wedge wellorder(\beta,in)
+        split 1 ordinal(\beta)
         apply invoke rightward trans_cor1 for \beta
         apply invoke \forall y(in(y,\beta)\to subset(y,\beta)) for \alpha
         deny equal(\alpha,\beta) {
@@ -292,10 +278,8 @@ theorem cap_of_ordinals_is_ordinal \forall\alpha\forall\beta\forall\gamma(ordina
   any \alpha,\beta,\gamma {
     assume ordinal(\alpha)\wedge ordinal(\beta)\wedge cap(\alpha,\beta,\gamma) {
       split ordinal(\alpha)\wedge ordinal(\beta)\wedge cap(\alpha,\beta,\gamma)
-      expand ordinal(\alpha) for ordinal
-      split trans(\alpha)\wedge irrefrelon(\alpha,in)\wedge wellorder(\alpha,in)
-      expand ordinal(\beta) for ordinal
-      split trans(\beta)\wedge irrefrelon(\beta,in)\wedge wellorder(\beta,in)
+      split ordinal(\alpha)
+      split ordinal(\beta)
       connect trans(\alpha)\wedge trans(\beta)\wedge cap(\alpha,\beta,\gamma)
       apply invoke cap_of_trans_is_trans for \alpha,\beta,\gamma
       apply invoke cap_is_subset_left for \alpha,\beta,\gamma
@@ -313,18 +297,12 @@ theorem ordinals_comparable_subset \forall\alpha\forall\beta(ordinal(\alpha)\wed
   any \alpha,\beta {
     assume ordinal(\alpha)\wedge ordinal(\beta) {
       split ordinal(\alpha)\wedge ordinal(\beta)
-      expand ordinal(\alpha) for ordinal
-      split trans(\alpha)\wedge irrefrelon(\alpha,in)\wedge wellorder(\alpha,in)
-      expand wellorder(\alpha,in) for wellorder
-      split orderon(\alpha,in)\wedge\forall^T\phi[1](\exists z(in(z,\alpha)\wedge\phi(z))\to\exists a(minimum(\alpha,in,\phi,a)))
-      expand orderon(\alpha,in) for orderon
-      split transrelon(\alpha,in)\wedge antisymrelon(\alpha,in)
-      expand ordinal(\beta) for ordinal
-      split trans(\beta)\wedge irrefrelon(\beta,in)\wedge wellorder(\beta,in)
-      expand wellorder(\beta,in) for wellorder
-      split orderon(\beta,in)\wedge\forall^T\phi[1](\exists z(in(z,\beta)\wedge\phi(z))\to\exists a(minimum(\beta,in,\phi,a)))
-      expand orderon(\beta,in) for orderon
-      split transrelon(\beta,in)\wedge antisymrelon(\beta,in)
+      split ordinal(\alpha)
+      split wellorder(\alpha,in)
+      split orderon(\alpha,in)
+      split ordinal(\beta)
+      split wellorder(\beta,in)
+      split orderon(\beta,in)
       deny \neg(subset(\alpha,\beta)\vee subset(\beta,\alpha)) {
         apply invoke rightward neg_or for lambda.subset(\alpha,\beta),lambda.subset(\beta,\alpha)
         split \neg(subset(\alpha,\beta))\wedge\neg(subset(\beta,\alpha))
@@ -334,10 +312,8 @@ theorem ordinals_comparable_subset \forall\alpha\forall\beta(ordinal(\alpha)\wed
         apply invoke \forall^T\phi[1](\exists z(in(z,\beta)\wedge\phi(z))\to\exists\delta(minimum(\beta,in,\phi,\delta))) for lambda z.notin(z,\alpha)
         some \gamma:\gamma such \exists\gamma(minimum(\alpha,in,lambda z.notin(z,\beta),\gamma)) {
           some \delta:\delta such \exists\delta(minimum(\beta,in,lambda z.notin(z,\alpha),\delta)) {
-            expand minimum(\alpha,in,lambda z.notin(z,\beta),\gamma) for minimum
-            split in(\gamma,\alpha)\wedge notin(\gamma,\beta)\wedge\forall x(in(x,\alpha)\wedge notin(x,\beta)\wedge neq(x,\gamma)\to in(\gamma,x))
-            expand minimum(\beta,in,lambda z.notin(z,\alpha),\delta) for minimum
-            split in(\delta,\beta)\wedge notin(\delta,\alpha)\wedge\forall x(in(x,\beta)\wedge notin(x,\alpha)\wedge neq(x,\delta)\to in(\delta,x))
+            split minimum(\alpha,in,lambda z.notin(z,\beta),\gamma)
+            split minimum(\beta,in,lambda z.notin(z,\alpha),\delta)
             deny \neg(subset(\gamma,\delta)) {
               apply invoke rightward neg_subset for \gamma,\delta
               some \varepsilon:\varepsilon such \exists\varepsilon(in(\varepsilon,\gamma)\wedge notin(\varepsilon,\delta)) {
@@ -352,16 +328,14 @@ theorem ordinals_comparable_subset \forall\alpha\forall\beta(ordinal(\alpha)\wed
                 apply irrefrelon(\alpha,in) for \varepsilon
                 connect antisymrelon(\alpha,in)\wedge minimum(\alpha,in,lambda z.notin(z,\beta),\gamma)
                 apply invoke minimum_implies_minimal for \alpha,in,lambda z.notin(z,\beta),\gamma
-                expand minimal(\alpha,in,lambda z.notin(z,\beta),\gamma) for minimal
-                split in(\gamma,\alpha)\wedge notin(\gamma,\beta)\wedge\forall x(in(x,\alpha)\wedge notin(x,\beta)\wedge neq(x,\gamma)\to notin(x,\gamma))
+                split minimal(\alpha,in,lambda z.notin(z,\beta),\gamma)
                 deny notin(\varepsilon,\beta) {
                   connect in(\varepsilon,\alpha)\wedge notin(\varepsilon,\beta)\wedge neq(\varepsilon,\gamma)
                   apply invoke \forall x(in(x,\alpha)\wedge notin(x,\beta)\wedge neq(x,\gamma)\to notin(x,\gamma)) for \varepsilon
                   contradict in(\varepsilon,\gamma)
                 }
                 apply invoke wellorder_implies_linorder for \beta,in
-                expand linorder(\beta,in) for linorder
-                split orderon(\beta,in)\wedge\forall x\forall y(in(x,\beta)\wedge in(y,\beta)\to in(x,y)\vee equal(x,y)\vee in(y,x))
+                split linorder(\beta,in)
                 connect in(\varepsilon,\beta)\wedge in(\delta,\beta)
                 apply invoke \forall x\forall y(in(x,\beta)\wedge in(y,\beta)\to in(x,y)\vee equal(x,y)\vee in(y,x)) for \varepsilon,\delta
                 divide in(\varepsilon,\delta)\vee equal(\varepsilon,\delta)\vee in(\delta,\varepsilon)
@@ -393,16 +367,14 @@ theorem ordinals_comparable_subset \forall\alpha\forall\beta(ordinal(\alpha)\wed
                 apply irrefrelon(\beta,in) for \varepsilon
                 connect antisymrelon(\beta,in)\wedge minimum(\beta,in,lambda z.notin(z,\alpha),\delta)
                 apply invoke minimum_implies_minimal for \beta,in,lambda z.notin(z,\alpha),\delta
-                expand minimal(\beta,in,lambda z.notin(z,\alpha),\delta) for minimal
-                split in(\delta,\beta)\wedge notin(\delta,\alpha)\wedge\forall x(in(x,\beta)\wedge notin(x,\alpha)\wedge neq(x,\delta)\to notin(x,\delta))
+                split minimal(\beta,in,lambda z.notin(z,\alpha),\delta)
                 deny notin(\varepsilon,\alpha) {
                   connect in(\varepsilon,\beta)\wedge notin(\varepsilon,\alpha)\wedge neq(\varepsilon,\delta)
                   apply invoke \forall x(in(x,\beta)\wedge notin(x,\alpha)\wedge neq(x,\delta)\to notin(x,\delta)) for \varepsilon
                   contradict in(\varepsilon,\delta)
                 }
                 apply invoke wellorder_implies_linorder for \alpha,in
-                expand linorder(\alpha,in) for linorder
-                split orderon(\alpha,in)\wedge\forall x\forall y(in(x,\alpha)\wedge in(y,\alpha)\to in(x,y)\vee equal(x,y)\vee in(y,x))
+                split linorder(\alpha,in)
                 connect in(\varepsilon,\alpha)\wedge in(\gamma,\alpha)
                 apply invoke \forall x\forall y(in(x,\alpha)\wedge in(y,\alpha)\to in(x,y)\vee equal(x,y)\vee in(y,x)) for \varepsilon,\gamma
                 divide in(\varepsilon,\gamma)\vee equal(\varepsilon,\gamma)\vee in(\gamma,\varepsilon)
