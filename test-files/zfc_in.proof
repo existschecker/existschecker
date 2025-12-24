@@ -21,21 +21,15 @@ theorem equal_replacement \forall x\forall y\forall u\forall v(equal(x,y)\wedge 
         any p {
           assume in(p,y) {
             split equal(x,y)\wedge equal(u,v)
-            expand equal(x,y) for equal
-            apply invoke leftward \forall z(in(z,x)\leftrightarrow in(z,y)) for z:p
-            expand equal(x,u) for equal
-            apply invoke rightward \forall z(in(z,x)\leftrightarrow in(z,u)) for z:p
-            expand equal(u,v) for equal
-            apply invoke rightward \forall z(in(z,u)\leftrightarrow in(z,v)) for z:p
+            apply invoke leftward equal(x,y) for p
+            apply invoke rightward equal(x,u) for p
+            apply invoke rightward equal(u,v) for p
           }
           assume in(p,v) {
             split equal(x,y)\wedge equal(u,v)
-            expand equal(u,v) for equal
-            apply invoke leftward \forall z(in(z,u)\leftrightarrow in(z,v)) for z:p
-            expand equal(x,u) for equal
-            apply invoke leftward \forall z(in(z,x)\leftrightarrow in(z,u)) for z:p
-            expand equal(x,y) for equal
-            apply invoke rightward \forall z(in(z,x)\leftrightarrow in(z,y)) for z:p
+            apply invoke leftward equal(u,v) for p
+            apply invoke leftward equal(x,u) for p
+            apply invoke rightward equal(x,y) for p
           }
           connect in(p,y)\leftrightarrow in(p,v)
         }
@@ -52,10 +46,9 @@ theorem in_replacement \forall x\forall y\forall u\forall v(equal(x,y)\wedge equ
     assume equal(x,y)\wedge equal(u,v) {
       assume in(x,u) {
         split equal(x,y)\wedge equal(u,v)
-        apply invoke axiom_of_equal for x:x,y:y
-        apply invoke \forall z(in(x,z)\to in(y,z)) for z:u
-        expand equal(u,v) for equal
-        apply invoke rightward \forall z(in(z,u)\leftrightarrow in(z,v)) for z:y
+        apply invoke axiom_of_equal for x,y
+        apply invoke \forall z(in(x,z)\to in(y,z)) for u
+        apply invoke rightward equal(u,v) for y
       }
     }
   }
@@ -71,12 +64,12 @@ theorem set_is_unique_for_each_predicate \forall^T\phi[1]\forall x\forall x'(\fo
       split \forall y(in(y,x)\leftrightarrow\phi(y))\wedge\forall y(in(y,x')\leftrightarrow\phi(y))
       any y {
         assume in(y,x) {
-          apply invoke rightward \forall y(in(y,x)\leftrightarrow\phi(y)) for y:y
-          apply invoke leftward \forall y(in(y,x')\leftrightarrow\phi(y)) for y:y
+          apply invoke rightward \forall y(in(y,x)\leftrightarrow\phi(y)) for y
+          apply invoke leftward \forall y(in(y,x')\leftrightarrow\phi(y)) for y
         }
         assume in(y,x') {
-          apply invoke rightward \forall y(in(y,x')\leftrightarrow\phi(y)) for y:y
-          apply invoke leftward \forall y(in(y,x)\leftrightarrow\phi(y)) for y:y
+          apply invoke rightward \forall y(in(y,x')\leftrightarrow\phi(y)) for y
+          apply invoke leftward \forall y(in(y,x)\leftrightarrow\phi(y)) for y
         }
         connect in(y,x)\leftrightarrow in(y,x')
       }
@@ -154,16 +147,15 @@ theorem neq_cor1 \forall x\forall y(neq(x,y)\leftrightarrow\exists z((in(z,x)\we
     assume \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))) {
       some z:z such \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))) {
         deny equal(x,y) {
-          expand equal(x,y) for equal
           divide (in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))
             case in(z,x)\wedge notin(z,y) {
               split in(z,x)\wedge notin(z,y)
-              apply invoke rightward \forall z(in(z,x)\leftrightarrow in(z,y)) for z:z
+              apply invoke rightward equal(x,y) for z
               contradict in(z,y)
             }
             case notin(z,x)\wedge in(z,y) {
               split notin(z,x)\wedge in(z,y)
-              apply invoke leftward \forall z(in(z,x)\leftrightarrow in(z,y)) for z:z
+              apply invoke leftward equal(x,y) for z
               contradict in(z,x)
             }
         }
@@ -174,16 +166,6 @@ theorem neq_cor1 \forall x\forall y(neq(x,y)\leftrightarrow\exists z((in(z,x)\we
 }
 
 definition predicate subset(x,y) as \forall z(in(z,x)\to in(z,y)) tex "","\subset",""
-
-theorem subset_cor1 \forall z\forall x\forall y(in(z,x)\wedge subset(x,y)\to in(z,y)) {
-  any x,y,z {
-    assume in(z,x)\wedge subset(x,y) {
-      split in(z,x)\wedge subset(x,y)
-      expand subset(x,y) for subset
-      apply invoke \forall z(in(z,x)\to in(z,y)) for z:z
-    }
-  }
-}
 
 theorem subset_reflection \forall x(subset(x,x)) {
   any x {
@@ -201,28 +183,27 @@ theorem subset_antisymmetry \forall x\forall y(subset(x,y)\wedge subset(y,x)\lef
         assume in(z,x) {
           split subset(x,y)\wedge subset(y,x)
           connect in(z,x)\wedge subset(x,y)
-          apply invoke subset_cor1 for z:z,x:x,y:y
+          apply invoke subset(x,y) for z
         }
         assume in(z,y) {
           split subset(x,y)\wedge subset(y,x)
           connect in(z,y)\wedge subset(y,x)
-          apply invoke subset_cor1 for z:z,x:y,y:x
+          apply invoke subset(y,x) for z
         }
         connect in(z,x)\leftrightarrow in(z,y)
       }
       fold for equal conclude equal(x,y)
     }
     assume equal(x,y) {
-      expand equal(x,y) for equal
       any z {
         assume in(z,x) {
-          apply invoke rightward \forall z(in(z,x)\leftrightarrow in(z,y)) for z:z
+          apply invoke rightward equal(x,y) for z
         }
       }
       fold for subset conclude subset(x,y)
       any z {
         assume in(z,y) {
-          apply invoke leftward \forall z(in(z,x)\leftrightarrow in(z,y)) for z:z
+          apply invoke leftward equal(x,y) for z
         }
       }
       fold for subset conclude subset(y,x)
@@ -239,9 +220,9 @@ theorem subset_trans \forall x\forall y\forall z(subset(x,y)\wedge subset(y,z)\t
         assume in(w,x) {
           split subset(x,y)\wedge subset(y,z)
           connect in(w,x)\wedge subset(x,y)
-          apply invoke subset_cor1 for z:w,x:x,y:y
+          apply invoke subset(x,y) for w
           connect in(w,y)\wedge subset(y,z)
-          apply invoke subset_cor1 for z:w,x:y,y:z
+          apply invoke subset(y,z) for w
         }
       }
       fold for subset conclude subset(x,z)
@@ -253,18 +234,18 @@ theorem neg_subset \forall x\forall y(\neg(subset(x,y))\leftrightarrow\exists z(
   any x,y {
     assume \neg(subset(x,y)) {
       expand \neg(subset(x,y)) for subset
-      apply invoke leftward exist_neg_leftrightarrow_neg_forall for \phi:lambda z.in(z,x)\to in(z,y)
+      apply invoke leftward exist_neg_leftrightarrow_neg_forall for lambda z.in(z,x)\to in(z,y)
       some z:z such \exists z(\neg(in(z,x)\to in(z,y))) {
-        apply invoke rightward neg_implication for \phi:lambda.in(z,x),\psi:lambda.in(z,y)
+        apply invoke rightward neg_implication for lambda.in(z,x),lambda.in(z,y)
         lift for z:z conclude \exists z(in(z,x)\wedge notin(z,y))
       }
     }
     assume \exists z(in(z,x)\wedge notin(z,y)) {
       some z:z such \exists z(in(z,x)\wedge notin(z,y)) {
-        apply invoke leftward neg_implication for \phi:lambda.in(z,x),\psi:lambda.in(z,y)
+        apply invoke leftward neg_implication for lambda.in(z,x),lambda.in(z,y)
         lift for z:z conclude \exists z(\neg(in(z,x)\to in(z,y)))
       }
-      apply invoke rightward exist_neg_leftrightarrow_neg_forall for \phi:lambda z.in(z,x)\to in(z,y)
+      apply invoke rightward exist_neg_leftrightarrow_neg_forall for lambda z.in(z,x)\to in(z,y)
       fold for subset conclude \neg(subset(x,y))
     }
     connect \neg(subset(x,y))\leftrightarrow\exists z(in(z,x)\wedge notin(z,y))
@@ -273,14 +254,14 @@ theorem neg_subset \forall x\forall y(\neg(subset(x,y))\leftrightarrow\exists z(
 
 theorem neq_iff_subset \forall x\forall y(neq(x,y)\leftrightarrow\neg(subset(x,y))\vee\neg(subset(y,x))) {
   any x,y {
-    apply subset_antisymmetry for x:x,y:y
-    apply invoke neg_iff for \phi:lambda.subset(x,y)\wedge subset(y,x),\psi:lambda.equal(x,y)
+    apply subset_antisymmetry for x,y
+    apply invoke neg_iff for lambda.subset(x,y)\wedge subset(y,x),lambda.equal(x,y)
     assume neq(x,y) {
       invoke leftward \neg(subset(x,y)\wedge subset(y,x))\leftrightarrow neq(x,y)
-      apply invoke rightward neg_and for \phi:lambda.subset(x,y),\psi:lambda.subset(y,x)
+      apply invoke rightward neg_and for lambda.subset(x,y),lambda.subset(y,x)
     }
     assume \neg(subset(x,y))\vee\neg(subset(y,x)) {
-      apply invoke leftward neg_and for \phi:lambda.subset(x,y),\psi:lambda.subset(y,x)
+      apply invoke leftward neg_and for lambda.subset(x,y),lambda.subset(y,x)
       invoke rightward \neg(subset(x,y)\wedge subset(y,x))\leftrightarrow neq(x,y)
     }
     connect neq(x,y)\leftrightarrow\neg(subset(x,y))\vee\neg(subset(y,x))
@@ -294,13 +275,13 @@ theorem subsetneq_implies_exist \forall x\forall y(subsetneq(x,y)\to\exists z(in
     assume subsetneq(x,y) {
       expand subsetneq(x,y) for subsetneq
       split subset(x,y)\wedge neq(x,y)
-      apply invoke rightward neq_cor1 for x:x,y:y
+      apply invoke rightward neq_cor1 for x,y
       some z:z such \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))) {
         divide (in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))
           case in(z,x)\wedge notin(z,y) {
             split in(z,x)\wedge notin(z,y)
             connect in(z,x)\wedge subset(x,y)
-            apply invoke subset_cor1 for z:z,x:x,y:y
+            apply invoke subset(x,y) for z
             contradict in(z,y)
             explode notin(z,x)\wedge in(z,y)
           }
@@ -314,7 +295,7 @@ theorem subsetneq_implies_exist \forall x\forall y(subsetneq(x,y)\to\exists z(in
 theorem subset_subsetneq \forall x\forall y(subset(x,y)\leftrightarrow subsetneq(x,y)\vee equal(x,y)) {
   any x,y {
     assume subset(x,y) {
-      apply law_of_excluded_middle for \phi:lambda.equal(x,y)
+      apply law_of_excluded_middle for lambda.equal(x,y)
       divide equal(x,y)\vee neq(x,y)
         case equal(x,y) {
           pad equal(x,y) conclude subsetneq(x,y)\vee equal(x,y)
@@ -332,7 +313,7 @@ theorem subset_subsetneq \forall x\forall y(subset(x,y)\leftrightarrow subsetneq
           split 1 subset(x,y)\wedge neq(x,y)
         }
         case equal(x,y) {
-          apply invoke leftward subset_antisymmetry for x:x,y:y
+          apply invoke leftward subset_antisymmetry for x,y
           split 1 subset(x,y)\wedge subset(y,x)
         }
     }

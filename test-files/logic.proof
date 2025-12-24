@@ -11,7 +11,7 @@ theorem neg_exist_leftrightarrow_forall_neg \forall^T\phi[1](\neg(\exists x(\phi
     assume \forall x(\neg(\phi(x))) {
       deny \exists x(\phi(x)) {
         some x:x such \exists x(\phi(x)) {
-          apply \forall x(\neg(\phi(x))) for x:x
+          apply \forall x(\neg(\phi(x))) for x
           contradict \phi(x)
         }
       }
@@ -22,7 +22,7 @@ theorem neg_exist_leftrightarrow_forall_neg \forall^T\phi[1](\neg(\exists x(\phi
 
 theorem neg_exist_neg_leftrightarrow_forall \forall^T\phi[1](\neg(\exists x(\neg(\phi(x))))\leftrightarrow\forall x(\phi(x))) {
   any template \phi[1] {
-    apply neg_exist_leftrightarrow_forall_neg for \phi:lambda x.\neg(\phi(x))
+    apply neg_exist_leftrightarrow_forall_neg for lambda x.\neg(\phi(x))
   }
 }
 
@@ -31,14 +31,14 @@ theorem exist_neg_leftrightarrow_neg_forall \forall^T\phi[1](\exists x(\neg(\phi
     assume \exists x(\neg(\phi(x))) {
       some x:x such \exists x(\neg(\phi(x))) {
         deny \forall x(\phi(x)) {
-          apply \forall x(\phi(x)) for x:x
+          apply \forall x(\phi(x)) for x
           contradict \phi(x)
         } 
       }
     }
     assume \neg(\forall x(\phi(x))) {
       deny \neg(\exists x(\neg(\phi(x)))) {
-        apply invoke rightward neg_exist_neg_leftrightarrow_forall for \phi:\phi
+        apply invoke rightward neg_exist_neg_leftrightarrow_forall for \phi
         contradict \forall x(\phi(x))
       }
     }
@@ -108,7 +108,7 @@ theorem neg_and \forall^T\phi[0]\forall^T\psi[0](\neg(\phi\wedge\psi)\leftrighta
   any template \phi[0], template \psi[0] {
     assume \neg(\phi\wedge\psi) {
       deny \neg(\neg(\phi)\vee\neg(\psi)) {
-        apply invoke rightward neg_or for \phi:lambda.\neg(\phi),\psi:lambda.\neg(\psi)
+        apply invoke rightward neg_or for lambda.\neg(\phi),lambda.\neg(\psi)
         split \phi\wedge\psi
         contradict \phi\wedge\psi
       }
@@ -132,7 +132,7 @@ theorem neg_and \forall^T\phi[0]\forall^T\psi[0](\neg(\phi\wedge\psi)\leftrighta
 theorem law_of_excluded_middle \forall^T\phi[0](\phi\vee\neg(\phi)) {
   any template \phi[0] {
     deny \neg(\phi\vee\neg(\phi)) {
-      apply invoke rightward neg_or for \phi:lambda.\phi,\psi:lambda.\neg(\phi)
+      apply invoke rightward neg_or for lambda.\phi,lambda.\neg(\phi)
       split 2 \neg(\phi)\wedge\phi
       pad \phi conclude \phi\vee\neg(\phi)
       contradict \phi\vee\neg(\phi)
@@ -157,8 +157,8 @@ theorem neg_iff \forall^T\phi[0]\forall^T\psi[0]((\phi\leftrightarrow\psi)\to(\n
   any template \phi[0], template \psi[0] {
     assume \phi\leftrightarrow\psi {
       split \phi\leftrightarrow\psi
-      apply invoke contrapositive_is_equivalent for \phi:\phi,\psi:\psi
-      apply invoke contrapositive_is_equivalent for \phi:\psi,\psi:\phi
+      apply invoke contrapositive_is_equivalent for \phi,\psi
+      apply invoke contrapositive_is_equivalent for \psi,\phi
       connect \neg(\phi)\leftrightarrow\neg(\psi)
     }
   }

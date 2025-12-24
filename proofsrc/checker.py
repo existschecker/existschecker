@@ -13,13 +13,16 @@ def goal_in_context(goal: str | Bottom | Formula, context: Context) -> bool:
     else:
         return expr_in_context(goal, context)
 
-def get_fact(fact: str | Formula, context: Context) -> Formula:
+def get_fact(fact: str | Formula, context: Context, expand_symbol: bool = False) -> Formula:
     if isinstance(fact, str):
-        return context.decl.get_reference(fact)
-    elif isinstance(fact, Formula):
-        return fact
-    else:
+        fact = context.decl.get_reference(fact)
+    elif not isinstance(fact, Formula):
         raise Exception(f"Unexpected type {type(fact)}")
+    if expand_symbol and isinstance(fact, Symbol):
+        if not fact.pred.name in context.decl.defpreds:
+            raise Exception(f"Unexpected {fact.pred.name}")
+        fact = DefExpander(context, [fact.pred.name]).expand_defs_formula(fact)
+    return fact
 
 def add_conclusion(context: Context, conclusion: Bottom | Formula) -> None:
     context.ctrl.formulas.append(conclusion)
@@ -627,27 +630,38 @@ def check_apply(node: Apply, context: Context, indent: int):
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{debug_prefix}Drivable fact: {pretty_expr(node.fact, context)}")
-    fact = get_fact(node.fact, context)
+    fact = get_fact(node.fact, context, True)
     items, body = collect_quantifier_vars(fact, Forall)
-    env: dict[Term, Term] = {}
-    for k, v in node.env.items():
-        if not any(item.name == k for item in items):
-            logger.error(f"{error_prefix}Key {k} is not found in fact")
-            node.proofinfo.status = "ERROR"
-            return False
-        logger.debug(f"{debug_prefix}Key {k} is found in fact")
-        item = next(item for item in items if item.name == k)
-        if isinstance(item, Template) and isinstance(v, Lambda):
-            if item.arity != len(v.args):
-                logger.error(f"{error_prefix}arity of {item.name} is {item.arity}, args of Lambda are {",".join([arg.name for arg in v.args])}")
+    if len(items) != len(node.terms):
+        logger.error(f"{error_prefix}len(items)={len(items)}, len(node.terms)={len(node.terms)}")
+        node.proofinfo.status = "ERROR"
+        return False
+    env: dict[Var | Template, Term] = {}
+    for item, term in zip(items, node.terms):
+        if term is None:
+            continue
+        if isinstance(item, Var):
+            if not isinstance(term, (Compound, Con, Var)):
+                logger.error(f"{error_prefix}{type(term)} cannot be substituted to Var {item.name}")
                 node.proofinfo.status = "ERROR"
                 return False
-            logger.debug(f"{debug_prefix}arity of {item.name} is {item.arity}, args of Lambda are {",".join([arg.name for arg in v.args])}")
-        env[item] = v
+        elif isinstance(item, Template):
+            if not isinstance(term, (Template, Lambda)):
+                logger.error(f"{error_prefix}{type(term)} cannot be substituted to Template {item.name}")
+                node.proofinfo.status = "ERROR"
+                return False
+        else:
+            logger.error(f"{error_prefix}Unexpected item {item}")
+            node.proofinfo.status = "ERROR"
+            return False
+        env[item] = term
+    for item, term in zip(reversed(items), reversed(node.terms)):
+        if term is None:
+            body = Forall(item, body)
     used_vars: set[Var | Template] = set()
     for value in env.values():
         used_vars.update(collect_vars(value)[0])
-    rename_map: dict[Term, Term] = {}
+    rename_map: dict[Var | Template, Var | Template] = {}
     new_env: dict[Term, Term] = {}
     for item in env:
         if item in used_vars:

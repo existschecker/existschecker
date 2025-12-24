@@ -386,19 +386,17 @@ class Parser:
             invoke = "none"
         fact = self.parse_reference_or_formula(context)
         self.stream.consume("FOR")
-        env: dict[str, Term] = {}
+        terms: list[Term | None] = []
         while True:
-            bound = self.stream.consume("IDENT").value
-            if bound in env:
-                raise Exception(f"{start_token.info()} {bound} is duplicated")
-            self.stream.consume("COLON")
-            term = self.parse_term(context)
-            env[bound] = term
+            if self.stream.peek().type == "UNDERSCORE":
+                terms.append(None)
+            else:
+                terms.append(self.parse_term(context))
             if self.stream.peek().type == "COMMA":
                 self.stream.consume("COMMA")
             else:
                 break
-        return Apply(token=start_token, invoke=invoke, fact=fact, env=env)
+        return Apply(token=start_token, invoke=invoke, fact=fact, terms=terms)
 
     def parse_lift(self, context: Context) -> Lift:
         start_token = self.stream.consume("LIFT")

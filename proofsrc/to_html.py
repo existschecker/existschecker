@@ -429,28 +429,36 @@ class Renderer:
         fact = self.render_expr(node.fact)
         if node.invoke == "none":
             invoke = []
-            invoke_jp = "適用する。"
+            invoke_jp = "に適用する。"
         elif node.invoke == "invoke":
             invoke = [self.render_keyword("invoke")]
-            invoke_jp = "適用し、左側が成り立つので右側を得る。"
+            invoke_jp = "に適用し、左側が成り立つので右側を得る。"
         elif node.invoke == "invoke-rightward":
             invoke = [self.render_keyword("invoke"), self.render_keyword("rightward")]
-            invoke_jp = "適用し、左側が成り立つので右側を得る。"
+            invoke_jp = "に適用し、左側が成り立つので右側を得る。"
         elif node.invoke == "invoke-leftward":
             invoke = [self.render_keyword("invoke"), self.render_keyword("leftward")]
-            invoke_jp = "適用し、右側が成り立つので左側を得る。"
+            invoke_jp = "に適用し、右側が成り立つので左側を得る。"
         else:
             raise Exception(f"Unexpected invoke option {node.invoke}")
+        terms_str: list[str] = []
+        for term in node.terms:
+            if isinstance(term, Term):
+                terms_str.append(self.render_expr(term))
+            elif term is None:
+                terms_str.append("_")
+            else:
+                raise Exception(f"Unexpected term: {term}")
         header_parts = [self.bullet,
                         self.render_keyword("apply")]
         header_parts.extend(invoke)
         header_parts.extend([fact,
                              self.render_keyword("for"),
-                             self.render_expr_dict(node.env)])
+                             ",".join(terms_str)])
         header_parts_jp = [self.bullet,
                            fact,
-                           "の",
-                           "、".join([self.render_expr(k) + "を" + self.render_expr(v) + "に" for k, v in node.env.items()]),
+                           "を",
+                           ",".join(terms_str),
                            invoke_jp]
         return header_parts, header_parts_jp, ""
 

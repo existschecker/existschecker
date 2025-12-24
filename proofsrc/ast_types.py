@@ -202,7 +202,7 @@ class Explode(Control):
 class Apply(Control):
     invoke: Literal["none", "invoke", "invoke-rightward", "invoke-leftward"]
     fact: str | Formula
-    env: dict[str, Term]
+    terms: list[Term | None]
 
 @dataclass
 class Lift(Control):
