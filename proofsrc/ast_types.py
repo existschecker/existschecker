@@ -243,7 +243,7 @@ class Split(Control):
 
 @dataclass
 class Connect(Control):
-    conclusion: And | Iff
+    conclusion: Formula
 
 @dataclass
 class Substitute(Control):

@@ -504,8 +504,6 @@ class Parser:
     def parse_connect(self, context: Context) -> Connect:
         start_token = self.stream.consume("CONNECT")
         conclusion = self.parse_formula(context)
-        if not isinstance(conclusion, (And, Iff)):
-            raise Exception(f"{start_token.info()} And or Iff object is required")
         return Connect(token=start_token, conclusion=conclusion)
 
     def parse_substitute(self, context: Context) -> Substitute:

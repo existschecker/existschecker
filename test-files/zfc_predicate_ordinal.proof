@@ -187,7 +187,7 @@ theorem ordinal_subsetneq_of_ordinal_is_element \forall\alpha(ordinal(\alpha)\to
           apply invoke subsetneq_implies_exist for \beta,\alpha
           split ordinal(\alpha)
           split wellorder(\alpha,in)
-          apply invoke \forall^T\phi[1](\exists z(in(z,\alpha)\wedge\phi(z))\to\exists a(minimum(\alpha,in,\phi,a))) for lambda\gamma.notin(\gamma,\beta)
+          apply invoke wellorder_core(\alpha,in) for lambda\gamma.notin(\gamma,\beta)
           some \gamma such \exists a(minimum(\alpha,in,lambda\gamma.notin(\gamma,\beta),a)) {
             split minimum(\alpha,in,lambda\gamma.notin(\gamma,\beta),\gamma)
             any \delta {
@@ -205,7 +205,7 @@ theorem ordinal_subsetneq_of_ordinal_is_element \forall\alpha(ordinal(\alpha)\to
                     }
                   }
                   connect in(\delta,\alpha)\wedge notin(\delta,\beta)\wedge neq(\delta,\gamma)
-                  apply invoke \forall x(in(x,\alpha)\wedge notin(x,\beta)\wedge neq(x,\gamma)\to in(\gamma,x)) for \delta
+                  apply invoke minimum_core(\alpha,in,lambda\gamma.notin(\gamma,\beta),\gamma) for \delta
                   connect in(\delta,\gamma)\wedge in(\gamma,\delta)
                   split 2 orderon(\alpha,in)
                   connect in(\delta,\alpha)\wedge in(\gamma,\alpha)
@@ -221,7 +221,7 @@ theorem ordinal_subsetneq_of_ordinal_is_element \forall\alpha(ordinal(\alpha)\to
                 connect in(\delta,\alpha)\wedge in(\gamma,\alpha)
                 apply invoke wellorder_implies_linorder for \alpha,in
                 split 2 linorder(\alpha,in)
-                apply invoke \forall x\forall y(in(x,\alpha)\wedge in(y,\alpha)\to in(x,y)\vee equal(x,y)\vee in(y,x)) for \delta,\gamma
+                apply invoke linorder_core(\alpha,in) for \delta,\gamma
                 divide in(\delta,\gamma)\vee equal(\delta,\gamma)\vee in(\gamma,\delta)
                   case in(\delta,\gamma) {}
                   case equal(\delta,\gamma) {
@@ -307,9 +307,9 @@ theorem ordinals_comparable_subset \forall\alpha\forall\beta(ordinal(\alpha)\wed
         apply invoke rightward neg_or for lambda.subset(\alpha,\beta),lambda.subset(\beta,\alpha)
         split \neg(subset(\alpha,\beta))\wedge\neg(subset(\beta,\alpha))
         apply invoke rightward neg_subset for \alpha,\beta
-        apply invoke \forall^T\phi[1](\exists z(in(z,\alpha)\wedge\phi(z))\to\exists\gamma(minimum(\alpha,in,\phi,\gamma))) for lambda z.notin(z,\beta)
+        apply invoke wellorder_core(\alpha,in) for lambda z.notin(z,\beta)
         apply invoke rightward neg_subset for \beta,\alpha
-        apply invoke \forall^T\phi[1](\exists z(in(z,\beta)\wedge\phi(z))\to\exists\delta(minimum(\beta,in,\phi,\delta))) for lambda z.notin(z,\alpha)
+        apply invoke wellorder_core(\beta,in) for lambda z.notin(z,\alpha)
         some \gamma such \exists\gamma(minimum(\alpha,in,lambda z.notin(z,\beta),\gamma)) {
           some \delta such \exists\delta(minimum(\beta,in,lambda z.notin(z,\alpha),\delta)) {
             split minimum(\alpha,in,lambda z.notin(z,\beta),\gamma)
@@ -331,13 +331,13 @@ theorem ordinals_comparable_subset \forall\alpha\forall\beta(ordinal(\alpha)\wed
                 split minimal(\alpha,in,lambda z.notin(z,\beta),\gamma)
                 deny notin(\varepsilon,\beta) {
                   connect in(\varepsilon,\alpha)\wedge notin(\varepsilon,\beta)\wedge neq(\varepsilon,\gamma)
-                  apply invoke \forall x(in(x,\alpha)\wedge notin(x,\beta)\wedge neq(x,\gamma)\to notin(x,\gamma)) for \varepsilon
+                  apply invoke minimal_core(\alpha,in,lambda z.notin(z,\beta),\gamma) for \varepsilon
                   contradict in(\varepsilon,\gamma)
                 }
                 apply invoke wellorder_implies_linorder for \beta,in
                 split linorder(\beta,in)
                 connect in(\varepsilon,\beta)\wedge in(\delta,\beta)
-                apply invoke \forall x\forall y(in(x,\beta)\wedge in(y,\beta)\to in(x,y)\vee equal(x,y)\vee in(y,x)) for \varepsilon,\delta
+                apply invoke linorder_core(\beta,in) for \varepsilon,\delta
                 divide in(\varepsilon,\delta)\vee equal(\varepsilon,\delta)\vee in(\delta,\varepsilon)
                   case in(\varepsilon,\delta) {
                     contradict in(\varepsilon,\delta)
@@ -370,13 +370,13 @@ theorem ordinals_comparable_subset \forall\alpha\forall\beta(ordinal(\alpha)\wed
                 split minimal(\beta,in,lambda z.notin(z,\alpha),\delta)
                 deny notin(\varepsilon,\alpha) {
                   connect in(\varepsilon,\beta)\wedge notin(\varepsilon,\alpha)\wedge neq(\varepsilon,\delta)
-                  apply invoke \forall x(in(x,\beta)\wedge notin(x,\alpha)\wedge neq(x,\delta)\to notin(x,\delta)) for \varepsilon
+                  apply invoke minimal_core(\beta,in,lambda z.notin(z,\alpha),\delta) for \varepsilon
                   contradict in(\varepsilon,\delta)
                 }
                 apply invoke wellorder_implies_linorder for \alpha,in
                 split linorder(\alpha,in)
                 connect in(\varepsilon,\alpha)\wedge in(\gamma,\alpha)
-                apply invoke \forall x\forall y(in(x,\alpha)\wedge in(y,\alpha)\to in(x,y)\vee equal(x,y)\vee in(y,x)) for \varepsilon,\gamma
+                apply invoke linorder_core(\alpha,in) for \varepsilon,\gamma
                 divide in(\varepsilon,\gamma)\vee equal(\varepsilon,\gamma)\vee in(\gamma,\varepsilon)
                   case in(\varepsilon,\gamma) {
                     contradict in(\varepsilon,\gamma)

@@ -1000,9 +1000,15 @@ def check_split(node: Split, context: Context, indent: int):
 def check_connect(node: Connect, context: Context, indent: int):
     debug_prefix = make_debug_prefix(node, indent)
     error_prefix = make_error_prefix(node, indent)
-    if isinstance(node.conclusion, And):
-        logger.debug(f"{debug_prefix}And object: {pretty_expr(node.conclusion, context)}")
-        conclusion_parts = flatten_op(node.conclusion, And)
+    if isinstance(node.conclusion, Symbol):
+        if not node.conclusion.pred.name in context.decl.defpreds:
+            raise Exception(f"Unexpected {node.conclusion.pred.name}")
+        conclusion = DefExpander(context, [node.conclusion.pred.name]).expand_defs_formula(node.conclusion)
+    else:
+        conclusion = node.conclusion
+    if isinstance(conclusion, And):
+        logger.debug(f"{debug_prefix}And object: {pretty_expr(conclusion, context)}")
+        conclusion_parts = flatten_op(conclusion, And)
         for c in conclusion_parts:
             if not goal_in_context(c, context):
                 logger.error(f"{error_prefix}Not derivable: {pretty_expr(c, context)}")
@@ -1014,14 +1020,14 @@ def check_connect(node: Connect, context: Context, indent: int):
         add_conclusion(context, node.conclusion)
         logger.debug(f"{debug_prefix}Derivable, added {pretty_expr(node.conclusion, context)}")
         return True
-    elif isinstance(node.conclusion, Iff):
-        logger.debug(f"{debug_prefix}Iff object: {pretty_expr(node.conclusion, context)}")
-        implication_rightward = Implies(node.conclusion.left, node.conclusion.right)
+    elif isinstance(conclusion, Iff):
+        logger.debug(f"{debug_prefix}Iff object: {pretty_expr(conclusion, context)}")
+        implication_rightward = Implies(conclusion.left, conclusion.right)
         if not goal_in_context(implication_rightward, context):
             logger.error(f"{error_prefix}Not derivable: {pretty_expr(implication_rightward, context)}")
             node.proofinfo.status = "ERROR"
             return False
-        implication_leftward = Implies(node.conclusion.right, node.conclusion.left)
+        implication_leftward = Implies(conclusion.right, conclusion.left)
         if not goal_in_context(implication_leftward, context):
             logger.error(f"{error_prefix}Not derivable: {pretty_expr(implication_leftward, context)}")
             node.proofinfo.status = "ERROR"
