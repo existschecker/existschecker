@@ -1,5 +1,5 @@
 from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, Fun, Con, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Pred, Control, Formula, Declaration, Template, Term, Lambda, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Include, DeclarationSupport, Assert, Fold
-from logic_utils import Substitutor, DefExpander, expr_in_context, collect_quantifier_vars, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs, pretty_expr, alpha_rename_formula
+from logic_utils import Substitutor, DefExpander, expr_in_context, collect_quantifier_vars, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs, pretty_expr, alpha_safe_formula, type_safe
 from copy import deepcopy
 
 import logging
@@ -156,8 +156,12 @@ def check_defconuniq(node: DefConUniq, context: Context, indent: int):
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{debug_prefix}ExistsUniq object: {pretty_expr(existsuniq, context)}")
-    free, bound = collect_vars(existsuniq.body)
-    var = fresh_var(existsuniq.var, free | bound)
+    if not isinstance(existsuniq.var, Var):
+        logger.error(f"{error_prefix}Unexpected type: {type(existsuniq.var)}")
+        node.proofinfo.status = "ERROR"
+        return False
+    fv, bv, ft, bt = collect_vars(existsuniq.body)
+    var = fresh_var(existsuniq.var, fv | bv | ft | bt, context)
     subst = Substitutor({existsuniq.var: var})
     body = subst.substitute_formula(existsuniq.body)
     if context.decl.equality is None:
@@ -241,12 +245,12 @@ def check_deffunterm(node: DefFunTerm, context: Context, indent: int):
     debug_prefix = make_debug_prefix(node, indent)
     error_prefix = make_error_prefix(node, indent)
     logger.debug(f"{debug_prefix}name: {node.name}, args: {node.args}, term: {pretty_expr(node.term, context)}")
-    free, _ = collect_vars(node.term)
-    if set(node.args) != set(free):
-        logger.error(f"{error_prefix}args are not matched with free vars: {free}")
+    fv, _, ft, _ = collect_vars(node.term)
+    if set(node.args) != set(fv) | set(ft):
+        logger.error(f"{error_prefix}args are not matched with free vars: {set(fv) | set(ft)}")
         node.proofinfo.status = "ERROR"
         return False
-    logger.debug(f"{debug_prefix}args are mathced with free vars of term: {free}")
+    logger.debug(f"{debug_prefix}args are mathced with free vars of term: {set(fv) | set(ft)}")
     context.add_decl(node)
     node.proofinfo.status = "OK"
     return True
@@ -651,51 +655,18 @@ def check_apply(node: Apply, context: Context, indent: int):
         return False
     logger.debug(f"{debug_prefix}Drivable fact: {pretty_expr(node.fact, context)}")
     fact = get_fact(node.fact, context, True)
-    items, body = collect_quantifier_vars(fact, Forall)
-    if len(items) != len(node.terms):
-        logger.error(f"{error_prefix}len(items)={len(items)}, len(node.terms)={len(node.terms)}")
+    renamed_fact = alpha_safe_formula(fact, [term for term in node.terms if term is not None], context)
+    items, body = collect_quantifier_vars(renamed_fact, Forall)
+    if not type_safe(items, node.terms):
+        logger.error(f"{error_prefix}type_safe() failed")
         node.proofinfo.status = "ERROR"
         return False
-    env: dict[Var | Template, Term] = {}
-    for item, term in zip(items, node.terms):
-        if term is None:
-            continue
-        if isinstance(item, Var):
-            if not isinstance(term, (Compound, Con, Var)):
-                logger.error(f"{error_prefix}{type(term)} cannot be substituted to Var {item.name}")
-                node.proofinfo.status = "ERROR"
-                return False
-        elif isinstance(item, Template):
-            if not isinstance(term, (Template, Lambda)):
-                logger.error(f"{error_prefix}{type(term)} cannot be substituted to Template {item.name}")
-                node.proofinfo.status = "ERROR"
-                return False
-        else:
-            logger.error(f"{error_prefix}Unexpected item {item}")
-            node.proofinfo.status = "ERROR"
-            return False
-        env[item] = term
+    env: dict[Term, Term] = {item: term for item, term in zip(items, node.terms) if term is not None}
     for item, term in zip(reversed(items), reversed(node.terms)):
         if term is None:
             body = Forall(item, body)
-    used_vars: set[Var | Template] = set()
-    for value in env.values():
-        used_vars.update(collect_vars(value)[0])
-    rename_map: dict[Var | Template, Var | Template] = {}
-    new_env: dict[Term, Term] = {}
-    for item in env:
-        if item in used_vars:
-            new_item = fresh_var(item, used_vars)
-            used_vars.add(new_item)
-            rename_map[item] = new_item
-            new_env[new_item] = env[item]
-        else:
-            new_env[item] = env[item]
-    if rename_map:
-        body = alpha_rename_formula(body, rename_map)
     logger.debug(f"{debug_prefix}Instantiable: env={env}")
-    subst = Substitutor(new_env)
-    instantiation = subst.substitute_formula(body)
+    instantiation = Substitutor(env).substitute_formula(body)
     logger.debug(f"{debug_prefix}\\forall-elimination is done: instantiation={pretty_expr(instantiation, context)}")
     if node.invoke == "none":
         node.proofinfo.premises = [node.fact]
@@ -807,16 +778,20 @@ def check_characterize(node: Characterize, context: Context, indent: int):
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{debug_prefix}Target conclusion is ExistsUniq object: {pretty_expr(node.conclusion, context)}")
-    free, bound = collect_vars(node.conclusion.body)
-    vardash = fresh_var(Var(node.conclusion.var.name + "'"), free | bound)
+    _, used_bound_vars, _, used_bound_templates = collect_vars(node.conclusion.body)
+    fv, bv, ft, bt = collect_vars(node.term)
+    vardash = fresh_var(Var(node.conclusion.var.name + "'"), used_bound_vars | used_bound_templates | fv | bv | ft | bt, context)
+    renamed_conclusion = alpha_safe_formula(node.conclusion, [node.term], context)
+    if not isinstance(renamed_conclusion, ExistsUniq):
+        logger.error(f"{error_prefix}renamed_conclusion is not ExistsUniq object: {pretty_expr(renamed_conclusion, context)}")
+        node.proofinfo.status = "ERROR"
+        return False
+    existence = Substitutor({renamed_conclusion.var: node.term}).substitute_formula(renamed_conclusion.body)
+    existence_dash = Substitutor({renamed_conclusion.var: vardash}).substitute_formula(renamed_conclusion.body)
     if context.decl.equality is None:
         logger.error(f"{error_prefix}equality has not been declared yet")
         node.proofinfo.status = "ERROR"
         return False
-    subst = Substitutor({node.conclusion.var: node.term})
-    existence = subst.substitute_formula(node.conclusion.body)
-    subst = Substitutor({node.conclusion.var: vardash})
-    existence_dash = subst.substitute_formula(node.conclusion.body)
     fact = And(existence, Forall(vardash, Implies(existence_dash, Symbol(Pred(context.decl.equality.equal.name), (vardash, node.term)))))
     if not goal_in_context(fact, context):
         logger.error(f"{error_prefix}Not fact: {pretty_expr(fact, context)}")
@@ -1164,3 +1139,4 @@ if __name__ == "__main__":
             print("All theorems proved")
         else:
             print("❌ Not all theorems proved")
+            break

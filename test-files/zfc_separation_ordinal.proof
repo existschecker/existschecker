@@ -1,4 +1,4 @@
-include "zfc_order.proof"
+include "zfc_separation_order.proof"
 
 definition predicate trans(x) as \forall y\forall z(in(z,y)\wedge in(y,x)\to in(z,x))
 
