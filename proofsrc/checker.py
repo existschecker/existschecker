@@ -541,6 +541,18 @@ def check_some(node: Some, context: Context, indent: int):
         return False
     goal = local_ctx.ctrl.formulas[-1]
     logger.debug(f"{debug_prefix}derived goal: {pretty_expr(goal, context)}")
+    if isinstance(goal, Formula):
+        goal_fv, _, goal_ft, _ = collect_vars(goal)
+        for fv in goal_fv:
+            if fv in local_vars:
+                logger.error(f"{error_prefix}Conclusion depends on local variable {pretty_expr(fv, context)}")
+                node.proofinfo.status = "ERROR"
+                return False
+        for ft in goal_ft:
+            if ft in local_templates:
+                logger.error(f"{error_prefix}Conclusion depends on local template {pretty_expr(ft, context)}")
+                node.proofinfo.status = "ERROR"
+                return False
     node.proofinfo.status = "OK"
     node.proofinfo.premises = [node.fact]
     node.proofinfo.conclusions = [goal]
