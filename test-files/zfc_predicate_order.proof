@@ -1,8 +1,8 @@
 include "zfc_in.proof"
 
-definition predicate transrelon(X, template \psi[2]) as \forall x\forall y\forall z(in(x,X)\wedge in(y,X)\wedge in(z,X)\to(\psi(x,y)\wedge\psi(y,z)\to\psi(x,z)))
+definition predicate transrelon(X, template \psi[2]) as \forall x\forall y\forall z(in(x,X)\wedge in(y,X)\wedge in(z,X)\wedge\psi(x,y)\wedge\psi(y,z)\to\psi(x,z))
 
-definition predicate antisymrelon(X, template \psi[2]) as \forall x\forall y(in(x,X)\wedge in(y,X)\to(\psi(x,y)\wedge\psi(y,x)\to equal(x,y)))
+definition predicate antisymrelon(X, template \psi[2]) as \forall x\forall y(in(x,X)\wedge in(y,X)\wedge\psi(x,y)\wedge\psi(y,x)\to equal(x,y))
 
 definition predicate orderon(X, template \psi[2]) as transrelon(X,\psi)\wedge antisymrelon(X,\psi)
 
@@ -20,6 +20,35 @@ definition predicate minimum_core(X, template \psi[2], template \phi[1], a) as \
 
 definition predicate minimum(X, template \psi[2], template \phi[1], a) as in(a,X)\wedge\phi(a)\wedge minimum_core(X,\psi,\phi,a)
 
+theorem irrefrelon_and_transrelon_implies_antisymrelon \forall X\forall^T\psi[2](irrefrelon(X,\psi)\wedge transrelon(X,\psi)\to antisymrelon(X,\psi)) {
+  any X, template \psi[2] {
+    assume irrefrelon(X,\psi)\wedge transrelon(X,\psi) {
+      any x,y {
+        assume in(x,X)\wedge in(y,X)\wedge\psi(x,y)\wedge\psi(y,x) {
+          split irrefrelon(X,\psi)\wedge transrelon(X,\psi)
+          split in(x,X)\wedge in(y,X)\wedge\psi(x,y)\wedge\psi(y,x)
+          connect in(x,X)\wedge in(y,X)\wedge in(x,X)\wedge\psi(x,y)\wedge\psi(y,x)
+          apply invoke transrelon(X,\psi) for x,y,x
+          apply invoke irrefrelon(X,\psi) for x
+          contradict \psi(x,x)
+          explode equal(x,y)
+        }
+      }
+      fold for antisymrelon conclude antisymrelon(X,\psi)
+    }
+  }
+}
+
+theorem irrefrelon_and_transrelon_implies_orderon \forall X\forall^T\psi[2](irrefrelon(X,\psi)\wedge transrelon(X,\psi)\to orderon(X,\psi)) {
+  any X, template \psi[2] {
+    assume irrefrelon(X,\psi)\wedge transrelon(X,\psi) {
+      split irrefrelon(X,\psi)\wedge transrelon(X,\psi)
+      apply invoke irrefrelon_and_transrelon_implies_antisymrelon for X,\psi
+      connect orderon(X,\psi)
+    }
+  }
+}
+
 theorem minimum_implies_minimal \forall X\forall^T\psi[2]\forall^T\phi[1]\forall a(antisymrelon(X,\psi)\wedge minimum(X,\psi,\phi,a)\to minimal(X,\psi,\phi,a)) {
   any X, template \psi[2], template \phi[1], a {
     assume antisymrelon(X,\psi)\wedge minimum(X,\psi,\phi,a) {
@@ -30,12 +59,8 @@ theorem minimum_implies_minimal \forall X\forall^T\psi[2]\forall^T\phi[1]\forall
           split in(x,X)\wedge\phi(x)\wedge neq(x,a)
           deny \psi(x,a) {
             apply invoke minimum_core(X,\psi,\phi,a) for x
-            connect \psi(a,x)\wedge\psi(x,a)
-            connect \phi(a)\wedge in(a,X)
-            connect \phi(x)\wedge in(x,X)
-            connect in(a,X)\wedge in(x,X)
+            connect in(a,X)\wedge in(x,X)\wedge\psi(a,x)\wedge\psi(x,a)
             apply invoke antisymrelon(X,\psi) for a,x
-            invoke \psi(a,x)\wedge\psi(x,a)\to equal(a,x)
             contradict equal(a,x)
           }
         }
@@ -188,15 +213,15 @@ theorem transrelon_subset \forall X\forall^T\phi[2]\forall Y(transrelon(X,\phi)\
     assume transrelon(X,\phi)\wedge subset(Y,X) {
       split transrelon(X,\phi)\wedge subset(Y,X)
       any x,y,z {
-        assume in(x,Y)\wedge in(y,Y)\wedge in(z,Y) {
-          split in(x,Y)\wedge in(y,Y)\wedge in(z,Y)
+        assume in(x,Y)\wedge in(y,Y)\wedge in(z,Y)\wedge\phi(x,y)\wedge\phi(y,z) {
+          split in(x,Y)\wedge in(y,Y)\wedge in(z,Y)\wedge\phi(x,y)\wedge\phi(y,z)
           connect in(x,Y)\wedge subset(Y,X)
           apply invoke subset(Y,X) for x
           connect in(y,Y)\wedge subset(Y,X)
           apply invoke subset(Y,X) for y
           connect in(z,Y)\wedge subset(Y,X)
           apply invoke subset(Y,X) for z
-          connect in(x,X)\wedge in(y,X)\wedge in(z,X)
+          connect in(x,X)\wedge in(y,X)\wedge in(z,X)\wedge\phi(x,y)\wedge\phi(y,z)
           apply invoke transrelon(X,\phi) for x,y,z
         }
       }
@@ -210,13 +235,11 @@ theorem antisymrelon_subset \forall X\forall^T\phi[2]\forall Y(antisymrelon(X,\p
     assume antisymrelon(X,\phi)\wedge subset(Y,X) {
       split antisymrelon(X,\phi)\wedge subset(Y,X)
       any x,y {
-        assume in(x,Y)\wedge in(y,Y) {
-          split in(x,Y)\wedge in(y,Y)
-          connect in(x,Y)\wedge subset(Y,X)
+        assume in(x,Y)\wedge in(y,Y)\wedge\phi(x,y)\wedge\phi(y,x) {
+          split in(x,Y)\wedge in(y,Y)\wedge\phi(x,y)\wedge\phi(y,x)
           apply invoke subset(Y,X) for x
-          connect in(y,Y)\wedge subset(Y,X)
           apply invoke subset(Y,X) for y
-          connect in(x,X)\wedge in(y,X)
+          connect in(x,X)\wedge in(y,X)\wedge\phi(x,y)\wedge\phi(y,x)
           apply invoke antisymrelon(X,\phi) for x,y
         }
       }

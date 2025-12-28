@@ -200,12 +200,16 @@ def collect_vars(expr: Formula | Term, used_bv: set[Var] | None = None, used_bt:
         return set(), set(), set(), set()
     elif isinstance(expr, (Symbol, Compound)):
         found_fv: set[Var] = set()
+        found_bv: set[Var] = set()
         found_ft: set[Template] = set()
+        found_bt: set[Template] = set()
         for arg in expr.args:
-            fv, _, ft, _ = collect_vars(arg, used_bv, used_bt)
+            fv, bv, ft, bt = collect_vars(arg, used_bv, used_bt)
             found_fv.update(fv)
+            found_bv.update(bv)
             found_ft.update(ft)
-        return found_fv, set(), found_ft, set()
+            found_bt.update(bt)
+        return found_fv, found_bv, found_ft, found_bt
     elif isinstance(expr, Not):
         return collect_vars(expr.body, used_bv, used_bt)
     elif isinstance(expr, (And, Or, Implies, Iff)):

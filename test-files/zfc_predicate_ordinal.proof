@@ -115,14 +115,10 @@ theorem element_of_ordinal_is_trans \forall\alpha(ordinal(\alpha)\to\forall\beta
               apply invoke trans(\alpha) for \beta,\gamma
               connect in(\delta,\gamma)\wedge in(\gamma,\alpha)
               apply invoke trans(\alpha) for \gamma,\delta
-              connect in(\gamma,\alpha)\wedge in(\beta,\alpha)\wedge in(\gamma,\beta)
-              connect in(\delta,\alpha)\wedge in(\gamma,\alpha)\wedge in(\delta,\gamma)
-              connect in(\delta,\gamma)\wedge in(\gamma,\beta)
-              connect in(\delta,\alpha)\wedge in(\gamma,\alpha)\wedge in(\beta,\alpha)
+              connect in(\delta,\alpha)\wedge in(\gamma,\alpha)\wedge in(\beta,\alpha)\wedge in(\delta,\gamma)\wedge in(\gamma,\beta)
               split 1 wellorder(\alpha,in)
               split 1 orderon(\alpha,in)
               apply invoke transrelon(\alpha,in) for \delta,\gamma,\beta
-              invoke in(\delta,\gamma)\wedge in(\gamma,\beta)\to in(\delta,\beta)
             }
           }
           fold for trans conclude trans(\beta)
@@ -206,11 +202,9 @@ theorem ordinal_subsetneq_of_ordinal_is_element \forall\alpha(ordinal(\alpha)\to
                   }
                   connect in(\delta,\alpha)\wedge notin(\delta,\beta)\wedge neq(\delta,\gamma)
                   apply invoke minimum_core(\alpha,in,lambda\gamma.notin(\gamma,\beta),\gamma) for \delta
-                  connect in(\delta,\gamma)\wedge in(\gamma,\delta)
                   split 2 orderon(\alpha,in)
-                  connect in(\delta,\alpha)\wedge in(\gamma,\alpha)
+                  connect in(\delta,\alpha)\wedge in(\gamma,\alpha)\wedge in(\delta,\gamma)\wedge in(\gamma,\delta)
                   apply invoke antisymrelon(\alpha,in) for \delta,\gamma
-                  invoke in(\delta,\gamma)\wedge in(\gamma,\delta)\to equal(\delta,\gamma)
                   contradict equal(\delta,\gamma)
                 }
               }

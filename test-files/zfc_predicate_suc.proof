@@ -1,0 +1,205 @@
+include "zfc_predicate_ordinal.proof"
+
+definition predicate suc(x, y) as \forall z(in(z, y) \leftrightarrow in(z, x) \vee equal(z, x))
+
+theorem suc_implies_in \forall x \forall y (suc(x, y) \to in(x, y)) {
+  any x, y {
+    assume suc(x, y) {
+      pad equal(x, x) conclude in(x, x) \vee equal(x, x)
+      apply invoke leftward suc(x, y) for x
+    }
+  }
+}
+
+theorem suc_is_unique \forall x \forall y \forall y' (suc(x, y)\wedge suc(x, y') \to equal(y, y')) {
+  any x, y, y' {
+    assume suc(x, y) \wedge suc(x, y') {
+      split suc(x, y) \wedge suc(x, y')
+      expand suc(x, y) for suc
+      expand suc(x, y') for suc
+      connect \forall z(in(z, y) \leftrightarrow in(z, x) \vee equal(z, x)) \wedge \forall z (in(z, y') \leftrightarrow in(z, x) \vee equal(z, x))
+      apply invoke set_is_unique_for_each_predicate for lambda z. in(z, x) \vee equal(z, x), y, y'
+    }
+  }
+}
+
+theorem suc_of_trans_is_trans \forall x \forall y (trans(x) \wedge suc(x, y) \to trans(y)) {
+  any x, y {
+    assume trans(x) \wedge suc(x, y) {
+      split trans(x) \wedge suc(x, y)
+      any z, w {
+        assume in(w, z) \wedge in(z, y) {
+          split in(w, z) \wedge in(z, y)
+          apply invoke rightward suc(x, y) for z
+          divide in(z, x) \vee equal(z, x)
+            case in(z, x) {
+              connect in(w, z) \wedge in(z, x)
+              apply invoke trans(x) for z, w
+              pad in(w, x) conclude in(w, x) \vee equal(w, x)
+              apply invoke leftward suc(x, y) for w
+            }
+            case equal(z, x) {
+              substitute in(w, z) for z: x
+              pad in(w, x) conclude in(w, x) \vee equal(w, x)
+              apply invoke leftward suc(x, y) for w
+            }
+        }
+      }
+      fold for trans conclude trans(y)
+    }
+  }
+}
+
+theorem suc_of_irrefrelon_is_irrefrelon \forall x \forall y (irrefrelon(x, in) \wedge notin(x, x) \wedge suc(x, y) \to irrefrelon(y, in)) {
+  any x, y {
+    assume irrefrelon(x, in) \wedge notin(x, x) \wedge suc(x, y) {
+      split irrefrelon(x, in) \wedge notin(x, x) \wedge suc(x, y)
+      any z {
+        assume in(z, y) {
+          deny in(z, z) {
+            apply invoke rightward suc(x, y) for z
+            divide in(z, x) \vee equal(z, x)
+              case in(z, x) {
+                apply invoke irrefrelon(x, in) for z
+                contradict in(z, z)
+              }
+              case equal(z, x) {
+                substitute in(z, z) for z: x
+                contradict in(x, x)
+              }
+          }
+        }
+      }
+      fold for irrefrelon conclude irrefrelon(y, in)
+    }
+  }
+}
+
+theorem suc_of_trans_transrelon_is_transrelon \forall x \forall y (trans(x) \wedge transrelon(x, in) \wedge suc(x, y) \to transrelon(y, in)) {
+  any x, y {
+    assume trans(x) \wedge transrelon(x, in) \wedge suc(x, y) {
+      split trans(x) \wedge transrelon(x, in) \wedge suc(x, y)
+      any z, w, v {
+        assume in(z, y) \wedge in(w, y) \wedge in(v, y) \wedge in(z, w) \wedge in(w, v) {
+          split in(z, y) \wedge in(w, y) \wedge in(v, y) \wedge in(z, w) \wedge in(w, v)
+          apply invoke rightward suc(x, y) for v
+          divide in(v, x) \vee equal(v, x)
+            case in(v, x) {
+              connect in(w, v) \wedge in(v, x)
+              apply invoke trans(x) for v, w
+              connect in(z, w) \wedge in(w, x)
+              apply invoke trans(x) for w, z
+              connect in(z, x) \wedge in(w, x) \wedge in(v, x) \wedge in(z, w)\wedge in(w, v)
+              apply invoke transrelon(x, in) for z, w, v
+            }
+            case equal(v, x) {
+              substitute in(w, v) for v: x
+              connect in(z, w) \wedge in(w, x)
+              apply invoke trans(x) for w, z
+              substitute in(z, x) for x: v
+            }
+        }
+      }
+      fold for transrelon conclude transrelon(y, in)
+    }
+  }
+}
+
+theorem suc_of_ordinal_is_ordinal_and_vice_versa \forall \alpha \forall \beta (suc(\alpha, \beta) \to (ordinal(\alpha) \leftrightarrow ordinal(\beta))) {
+  any \alpha, \beta {
+    assume suc(\alpha, \beta) {
+      assume ordinal(\alpha) {
+        split ordinal(\alpha)
+        split wellorder(\alpha, in)
+        split orderon(\alpha, in)
+        connect trans(\alpha) \wedge suc(\alpha, \beta)
+        apply invoke suc_of_trans_is_trans for \alpha, \beta
+        apply invoke ordinal_not_contain_itself for \alpha
+        connect irrefrelon(\alpha, in) \wedge notin(\alpha, \alpha) \wedge suc(\alpha, \beta)
+        apply invoke suc_of_irrefrelon_is_irrefrelon for \alpha, \beta
+        connect trans(\alpha) \wedge transrelon(\alpha, in) \wedge suc(\alpha, \beta)
+        apply invoke suc_of_trans_transrelon_is_transrelon for \alpha, \beta
+        connect irrefrelon(\beta, in) \wedge transrelon(\beta, in)
+        apply invoke irrefrelon_and_transrelon_implies_orderon for \beta, in
+        any template \phi[1] {
+          assume \exists \gamma (in(\gamma, \beta) \wedge \phi(\gamma)) {
+            apply law_of_excluded_middle for lambda. \exists \gamma (in(\gamma, \alpha) \wedge \phi(\gamma))
+            divide \exists \gamma (in(\gamma, \alpha) \wedge \phi(\gamma)) \vee \neg(\exists \gamma (in(\gamma, \alpha) \wedge \phi(\gamma)))
+              case \exists \gamma (in(\gamma, \alpha) \wedge \phi(\gamma)) {
+                apply invoke wellorder_core(\alpha, in) for \phi
+                some \gamma such \exists \gamma (minimum(\alpha, in, \phi, \gamma)) {
+                  split minimum(\alpha, in, \phi, \gamma)
+                  pad in(\gamma, \alpha) conclude in(\gamma, \alpha) \vee equal(\gamma, \alpha)
+                  apply invoke leftward suc(\alpha, \beta) for \gamma
+                  any \delta {
+                    assume in(\delta, \beta) \wedge \phi(\delta) \wedge neq(\delta, \gamma) {
+                      split in(\delta, \beta) \wedge \phi(\delta) \wedge neq(\delta, \gamma)
+                      apply invoke rightward suc(\alpha, \beta) for \delta
+                      divide in(\delta, \alpha) \vee equal(\delta, \alpha)
+                        case in(\delta, \alpha) {
+                          connect in(\delta, \alpha) \wedge \phi(\delta) \wedge neq(\delta, \gamma)
+                          apply invoke minimum_core(\alpha, in, \phi, \gamma) for \delta
+                        }
+                        case equal(\delta, \alpha) {
+                          substitute in(\gamma, \alpha) for \alpha: \delta
+                        }
+                    }
+                  }
+                  fold for minimum_core conclude minimum_core(\beta, in, \phi, \gamma)
+                  connect minimum(\beta, in, \phi, \gamma)
+                  lift for \gamma conclude \exists \gamma (minimum(\beta, in, \phi, \gamma))
+                }
+              }
+              case \neg(\exists \gamma (in(\gamma, \alpha) \wedge \phi(\gamma))) {
+                apply invoke rightward neg_exist_leftrightarrow_forall_neg for lambda \gamma. in(\gamma, \alpha) \wedge \phi(\gamma)
+                some \gamma such \exists \gamma (in(\gamma, \beta) \wedge \phi(\gamma)) {
+                  split in(\gamma, \beta) \wedge \phi(\gamma)
+                  apply invoke rightward suc(\alpha, \beta) for \gamma
+                  divide in(\gamma, \alpha) \vee equal(\gamma, \alpha)
+                    case in(\gamma, \alpha) {
+                      connect in(\gamma, \alpha) \wedge \phi(\gamma)
+                      apply \forall \gamma (\neg(in(\gamma, \alpha) \wedge \phi(\gamma))) for \gamma
+                      contradict in(\gamma, \alpha) \wedge \phi(\gamma)
+                      explode \phi(\alpha)
+                    }
+                    case equal(\gamma, \alpha) {
+                      substitute \phi(\gamma) for \gamma: \alpha
+                    }
+                }
+                apply invoke suc_implies_in for \alpha, \beta
+                any \delta {
+                  assume in(\delta, \beta) \wedge \phi(\delta) \wedge neq(\delta, \alpha) {
+                    split in(\delta, \beta) \wedge \phi(\delta) \wedge neq(\delta, \alpha)
+                    apply invoke rightward suc(\alpha, \beta) for \delta
+                    divide in(\delta, \alpha) \vee equal(\delta, \alpha)
+                      case in(\delta, \alpha) {
+                        connect in(\delta, \alpha) \wedge \phi(\delta)
+                        apply \forall \gamma (\neg(in(\gamma, \alpha) \wedge \phi(\gamma))) for \delta
+                        contradict in(\delta, \alpha) \wedge \phi(\delta)
+                        explode in(\alpha, \delta)
+                      }
+                      case equal(\delta, \alpha) {
+                        contradict neq(\delta, \alpha)
+                        explode in(\alpha, \delta)
+                      }
+                  }
+                }
+                fold for minimum_core conclude minimum_core(\beta, in, \phi, \alpha)
+                connect minimum(\beta, in, \phi, \alpha)
+                lift for \alpha conclude \exists \gamma (minimum(\beta, in, \phi, \gamma))
+              }
+          }
+        }
+        fold for wellorder_core conclude wellorder_core(\beta, in)
+        connect wellorder(\beta, in)
+        connect ordinal(\beta)
+      }
+      assume ordinal(\beta) {
+        apply invoke suc_implies_in for \alpha, \beta
+        apply invoke element_of_ordinal_is_ordinal for \beta
+        apply invoke \forall \alpha (in(\alpha, \beta) \to ordinal(\alpha)) for \alpha
+      }
+      connect ordinal(\alpha) \leftrightarrow ordinal(\beta)
+    }
+  }
+}
