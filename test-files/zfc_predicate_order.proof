@@ -1,320 +1,340 @@
-include "zfc_in.proof"
+include "zfc_predicate_in.proof"
 
-definition predicate transrelon(X, template \psi[2]) as \forall x\forall y\forall z(in(x,X)\wedge in(y,X)\wedge in(z,X)\wedge\psi(x,y)\wedge\psi(y,z)\to\psi(x,z))
+definition predicate transrelon(template \phi[1], template \psi[2]) as \forall x \forall y \forall z (\phi(x) \wedge \phi(y) \wedge \phi(z) \wedge \psi(x, y) \wedge \psi(y, z) \to \psi(x, z))
 
-definition predicate antisymrelon(X, template \psi[2]) as \forall x\forall y(in(x,X)\wedge in(y,X)\wedge\psi(x,y)\wedge\psi(y,x)\to equal(x,y))
+definition predicate transrelon(X, template \psi[2]) as transrelon(lambda x. in(x, X), \psi)
 
-definition predicate orderon(X, template \psi[2]) as transrelon(X,\psi)\wedge antisymrelon(X,\psi)
+definition predicate antisymrelon(template \phi[1], template \psi[2]) as \forall x \forall y (\phi(x) \wedge \phi(y) \wedge \psi(x, y) \wedge \psi(y, x) \to equal(x, y))
 
-definition predicate irrefrelon(X, template \psi[2]) as \forall x(in(x,X)\to\neg(\psi(x,x)))
+definition predicate antisymrelon(X, template \psi[2]) as antisymrelon(lambda x. in(x, X), \psi)
 
-definition predicate linorder_core(X, template \psi[2]) as \forall x\forall y(in(x,X)\wedge in(y,X)\to\psi(x,y)\vee equal(x,y)\vee\psi(y,x))
+definition predicate orderon(template \phi[1], template \psi[2]) as transrelon(\phi, \psi) \wedge antisymrelon(\phi, \psi)
 
-definition predicate linorder(X, template \psi[2]) as orderon(X,\psi)\wedge linorder_core(X,\psi)
+definition predicate orderon(X, template \psi[2]) as orderon(lambda x. in(x, X), \psi)
 
-definition predicate minimal_core(X, template \psi[2], template \phi[1], a) as \forall x(in(x,X)\wedge\phi(x)\wedge neq(x,a)\to\neg(\psi(x,a)))
+definition predicate irrefrelon(template \phi[1], template \psi[2]) as \forall x (\phi(x) \to \neg(\psi(x, x)))
 
-definition predicate minimal(X, template \psi[2], template \phi[1], a) as in(a,X)\wedge\phi(a)\wedge minimal_core(X,\psi,\phi,a)
+definition predicate irrefrelon(X, template \psi[2]) as irrefrelon(lambda x. in(x, X), \psi)
 
-definition predicate minimum_core(X, template \psi[2], template \phi[1], a) as \forall x(in(x,X)\wedge\phi(x)\wedge neq(x,a)\to\psi(a,x))
+definition predicate linorder_core(template \phi[1], template \psi[2]) as \forall x \forall y (\phi(x) \wedge \phi(y) \to \psi(x, y) \vee equal(x, y) \vee \psi(y, x))
 
-definition predicate minimum(X, template \psi[2], template \phi[1], a) as in(a,X)\wedge\phi(a)\wedge minimum_core(X,\psi,\phi,a)
+definition predicate linorder_core(X, template \psi[2]) as linorder_core(lambda x. in(x, X), \psi)
 
-theorem irrefrelon_and_transrelon_implies_antisymrelon \forall X\forall^T\psi[2](irrefrelon(X,\psi)\wedge transrelon(X,\psi)\to antisymrelon(X,\psi)) {
-  any X, template \psi[2] {
-    assume irrefrelon(X,\psi)\wedge transrelon(X,\psi) {
-      any x,y {
-        assume in(x,X)\wedge in(y,X)\wedge\psi(x,y)\wedge\psi(y,x) {
-          split irrefrelon(X,\psi)\wedge transrelon(X,\psi)
-          split in(x,X)\wedge in(y,X)\wedge\psi(x,y)\wedge\psi(y,x)
-          connect in(x,X)\wedge in(y,X)\wedge in(x,X)\wedge\psi(x,y)\wedge\psi(y,x)
-          apply invoke transrelon(X,\psi) for x,y,x
-          apply invoke irrefrelon(X,\psi) for x
-          contradict \psi(x,x)
-          explode equal(x,y)
+definition predicate linorder(template \phi[1], template \psi[2]) as orderon(\phi, \psi) \wedge linorder_core(\phi, \psi)
+
+definition predicate linorder(X, template \psi[2]) as linorder(lambda x. in(x, X), \psi)
+
+definition predicate minimal_core(template \chi[1], template \psi[2], template \phi[1], a) as \forall x (\chi(x) \wedge \phi(x) \wedge neq(x, a) \to \neg(\psi(x, a)))
+
+definition predicate minimal_core(X, template \psi[2], template \phi[1], a) as minimal_core(lambda x. in(x, X), \psi, \phi, a)
+
+definition predicate minimal(template \chi[1], template \psi[2], template \phi[1], a) as \chi(a) \wedge \phi(a) \wedge minimal_core(\chi, \psi, \phi, a)
+
+definition predicate minimal(X, template \psi[2], template \phi[1], a) as minimal(lambda x. in(x, X), \psi, \phi, a)
+
+definition predicate minimum_core(template \chi[1], template \psi[2], template \phi[1], a) as \forall x (\chi(x) \wedge \phi(x) \wedge neq(x, a) \to \psi(a, x))
+
+definition predicate minimum_core(X, template \psi[2], template \phi[1], a) as minimum_core(lambda x. in(x, X), \psi, \phi, a)
+
+definition predicate minimum(template \chi[1], template \psi[2], template \phi[1], a) as \chi(a) \wedge \phi(a) \wedge minimum_core(\chi, \psi, \phi, a)
+
+definition predicate minimum(X, template \psi[2], template \phi[1], a) as minimum(lambda x. in(x, X), \psi, \phi, a)
+
+theorem irrefrelon_and_transrelon_implies_antisymrelon \forall^T \phi[1] \forall^T \psi[2] (irrefrelon(\phi, \psi) \wedge transrelon(\phi, \psi) \to antisymrelon(\phi, \psi)) {
+  any template \phi[1], template \psi[2] {
+    assume irrefrelon(\phi, \psi)\wedge transrelon(\phi, \psi) {
+      any x, y {
+        assume \phi(x) \wedge \phi(y) \wedge \psi(x, y) \wedge \psi(y, x) {
+          split irrefrelon(\phi, \psi) \wedge transrelon(\phi, \psi)
+          split \phi(x) \wedge \phi(y) \wedge \psi(x, y) \wedge \psi(y, x)
+          connect \phi(x) \wedge \phi(y) \wedge \phi(x) \wedge \psi(x, y) \wedge \psi(y, x)
+          apply invoke transrelon(\phi, \psi) for x, y, x
+          apply invoke irrefrelon(\phi, \psi) for x
+          contradict \psi(x, x)
+          explode equal(x, y)
         }
       }
-      fold for antisymrelon conclude antisymrelon(X,\psi)
+      fold for antisymrelon conclude antisymrelon(\phi, \psi)
     }
   }
 }
 
-theorem irrefrelon_and_transrelon_implies_orderon \forall X\forall^T\psi[2](irrefrelon(X,\psi)\wedge transrelon(X,\psi)\to orderon(X,\psi)) {
-  any X, template \psi[2] {
-    assume irrefrelon(X,\psi)\wedge transrelon(X,\psi) {
-      split irrefrelon(X,\psi)\wedge transrelon(X,\psi)
-      apply invoke irrefrelon_and_transrelon_implies_antisymrelon for X,\psi
-      connect orderon(X,\psi)
+theorem irrefrelon_and_transrelon_implies_orderon \forall^T \phi[1] \forall^T \psi[2] (irrefrelon(\phi, \psi)\wedge transrelon(\phi, \psi)\to orderon(\phi, \psi)) {
+  any template \phi[1], template \psi[2] {
+    assume irrefrelon(\phi, \psi) \wedge transrelon(\phi, \psi) {
+      split irrefrelon(\phi, \psi) \wedge transrelon(\phi, \psi)
+      apply invoke irrefrelon_and_transrelon_implies_antisymrelon for \phi, \psi
+      connect orderon(\phi, \psi)
     }
   }
 }
 
-theorem minimum_implies_minimal \forall X\forall^T\psi[2]\forall^T\phi[1]\forall a(antisymrelon(X,\psi)\wedge minimum(X,\psi,\phi,a)\to minimal(X,\psi,\phi,a)) {
-  any X, template \psi[2], template \phi[1], a {
-    assume antisymrelon(X,\psi)\wedge minimum(X,\psi,\phi,a) {
-      split antisymrelon(X,\psi)\wedge minimum(X,\psi,\phi,a)
-      split minimum(X,\psi,\phi,a)
+theorem minimum_implies_minimal \forall^T \chi[1] \forall^T \psi[2] \forall^T \phi[1] \forall a (antisymrelon(\chi, \psi) \wedge minimum(\chi, \psi, \phi, a) \to minimal(\chi, \psi, \phi, a)) {
+  any template \chi[1], template \psi[2], template \phi[1], a {
+    assume antisymrelon(\chi, \psi) \wedge minimum(\chi, \psi, \phi, a) {
+      split antisymrelon(\chi, \psi) \wedge minimum(\chi, \psi, \phi, a)
+      split minimum(\chi, \psi, \phi, a)
       any x {
-        assume in(x,X)\wedge\phi(x)\wedge neq(x,a) {
-          split in(x,X)\wedge\phi(x)\wedge neq(x,a)
-          deny \psi(x,a) {
-            apply invoke minimum_core(X,\psi,\phi,a) for x
-            connect in(a,X)\wedge in(x,X)\wedge\psi(a,x)\wedge\psi(x,a)
-            apply invoke antisymrelon(X,\psi) for a,x
-            contradict equal(a,x)
+        assume \chi(x) \wedge \phi(x) \wedge neq(x, a) {
+          split \chi(x) \wedge \phi(x) \wedge neq(x, a)
+          deny \psi(x, a) {
+            apply invoke minimum_core(\chi, \psi, \phi, a) for x
+            connect \chi(a) \wedge \chi(x) \wedge \psi(a, x) \wedge \psi(x, a)
+            apply invoke antisymrelon(\chi, \psi) for a, x
+            contradict equal(a, x)
           }
         }
       }
-      fold for minimal_core conclude minimal_core(X,\psi,\phi,a)
-      connect minimal(X,\psi,\phi,a)
+      fold for minimal_core conclude minimal_core(\chi, \psi, \phi, a)
+      connect minimal(\chi, \psi, \phi, a)
     }
   }
 }
 
-theorem linorder_and_minmal_implies_minimum \forall X\forall^T\psi[2]\forall^T\phi[1]\forall a(linorder(X,\psi)\wedge minimal(X,\psi,\phi,a)\to minimum(X,\psi,\phi,a)) {
-  any X, template \psi[2], template \phi[1], a {
-    assume linorder(X,\psi)\wedge minimal(X,\psi,\phi,a) {
-      split linorder(X,\psi)\wedge minimal(X,\psi,\phi,a)
-      split minimal(X,\psi,\phi,a)
+theorem linorder_and_minmal_implies_minimum \forall^T \chi[1] \forall^T \psi[2] \forall^T \phi[1] \forall a (linorder(\chi, \psi) \wedge minimal(\chi, \psi, \phi, a) \to minimum(\chi, \psi, \phi, a)) {
+  any template \chi[1], template \psi[2], template \phi[1], a {
+    assume linorder(\chi, \psi) \wedge minimal(\chi, \psi, \phi, a) {
+      split linorder(\chi, \psi) \wedge minimal(\chi, \psi, \phi, a)
+      split minimal(\chi, \psi, \phi, a)
       any x {
-        assume in(x,X)\wedge\phi(x)\wedge neq(x,a) {
-          apply invoke minimal_core(X,\psi,\phi,a) for x
-          split in(x,X)\wedge\phi(x)\wedge neq(x,a)
-          split 2 linorder(X,\psi)
-          connect in(x,X)\wedge\phi(x)
-          connect in(a,X)\wedge\phi(a)
-          connect in(x,X)\wedge in(a,X)
-          apply invoke linorder_core(X,\psi) for x,a
-          divide \psi(x,a)\vee equal(x,a)\vee\psi(a,x)
-            case \psi(x,a) {
-              contradict \psi(x,a)
-              explode \psi(a,x)
+        assume \chi(x) \wedge \phi(x) \wedge neq(x, a) {
+          apply invoke minimal_core(\chi, \psi, \phi, a) for x
+          split \chi(x) \wedge \phi(x) \wedge neq(x, a)
+          split 2 linorder(\chi, \psi)
+          connect \chi(x) \wedge \phi(x)
+          connect \chi(a) \wedge \phi(a)
+          connect \chi(x) \wedge \chi(a)
+          apply invoke linorder_core(\chi, \psi) for x, a
+          divide \psi(x, a) \vee equal(x, a) \vee \psi(a, x)
+            case \psi(x, a) {
+              contradict \psi(x, a)
+              explode \psi(a, x)
             }
-            case equal(x,a) {
-              contradict equal(x,a)
-              explode \psi(a,x)
+            case equal(x, a) {
+              contradict equal(x, a)
+              explode \psi(a, x)
             }
-            case \psi(a,x) {}
+            case \psi(a, x) {}
         }
       }
-      fold for minimum_core conclude minimum_core(X,\psi,\phi,a)
-      connect minimum(X,\psi,\phi,a)
+      fold for minimum_core conclude minimum_core(\chi, \psi, \phi, a)
+      connect minimum(\chi, \psi, \phi, a)
     }
   }
 }
 
-definition predicate wellfounded(X, template \psi[2]) as \forall^T\phi[1](\exists z(in(z,X)\wedge\phi(z))\to\exists a(minimal(X,\psi,\phi,a)))
+definition predicate wellfounded(template \chi[1], template \psi[2]) as \forall^T \phi[1] (\exists z(\chi(z) \wedge \phi(z)) \to \exists a (minimal(\chi, \psi, \phi, a)))
 
-definition predicate wellorder_core(X, template \psi[2]) as \forall^T\phi[1](\exists z(in(z,X)\wedge\phi(z))\to\exists a(minimum(X,\psi,\phi,a)))
+definition predicate wellfounded(X, template \psi[2]) as wellfounded(lambda x. in(x, X), \psi)
 
-definition predicate wellorder(X, template \psi[2]) as orderon(X,\psi)\wedge wellorder_core(X,\psi)
+definition predicate wellorder_core(template \chi[1], template \psi[2]) as \forall^T \phi[1] (\exists z(\chi(z) \wedge \phi(z)) \to \exists a (minimum(\chi, \psi, \phi, a)))
 
-theorem linorder_and_wellfounded_implies_wellorder \forall X\forall^T\psi[2](linorder(X,\psi)\wedge wellfounded(X,\psi)\to wellorder(X,\psi)) {
-  any X, template \psi[2] {
-    assume linorder(X,\psi)\wedge wellfounded(X,\psi) {
-      split linorder(X,\psi)\wedge wellfounded(X,\psi)
-      split linorder(X,\psi)
+definition predicate wellorder_core(X, template \psi[2]) as wellorder_core(lambda x. in(x, X), \psi)
+
+definition predicate wellorder(template \chi[1], template \psi[2]) as orderon(\chi, \psi) \wedge wellorder_core(\chi, \psi)
+
+definition predicate wellorder(X, template \psi[2]) as wellorder(lambda x. in(x, X), \psi)
+
+theorem linorder_and_wellfounded_implies_wellorder \forall^T \chi[1] \forall^T \psi[2] (linorder(\chi, \psi) \wedge wellfounded(\chi, \psi) \to wellorder(\chi, \psi)) {
+  any template \chi[1], template \psi[2] {
+    assume linorder(\chi, \psi) \wedge wellfounded(\chi, \psi) {
+      split linorder(\chi, \psi) \wedge wellfounded(\chi ,\psi)
+      split linorder(\chi, \psi)
       any template \phi[1] {
-        assume \exists z(in(z,X)\wedge\phi(z)) {
-          apply invoke wellfounded(X,\psi) for \phi
-          some a such \exists a(minimal(X,\psi,\phi,a)) {
-            connect linorder(X,\psi)\wedge minimal(X,\psi,\phi,a)
-            apply invoke linorder_and_minmal_implies_minimum for X,\psi,\phi,a
-            lift for a conclude \exists a(minimum(X,\psi,\phi,a))
+        assume \exists z (\chi(z) \wedge \phi(z)) {
+          apply invoke wellfounded(\chi, \psi) for \phi
+          some a such \exists a (minimal(\chi, \psi, \phi, a)) {
+            connect linorder(\chi, \psi) \wedge minimal(\chi, \psi, \phi, a)
+            apply invoke linorder_and_minmal_implies_minimum for \chi, \psi, \phi, a
+            lift for a conclude \exists a (minimum(\chi, \psi, \phi, a))
           }
         }
       }
-      fold for wellorder_core conclude wellorder_core(X,\psi)
-      connect wellorder(X,\psi)
+      fold for wellorder_core conclude wellorder_core(\chi, \psi)
+      connect wellorder(\chi, \psi)
     }
   }
 }
 
-theorem wellorder_implies_linorder \forall X\forall^T\psi[2](wellorder(X,\psi)\to linorder(X,\psi)) {
-  any X, template \psi[2] {
-    assume wellorder(X,\psi) {
-      split wellorder(X,\psi)
-      any x,y {
-        assume in(x,X)\wedge in(y,X) {
-          split in(x,X)\wedge in(y,X)
-          pad equal(x,x) conclude equal(x,x)\vee equal(x,y)
-          connect in(x,X)\wedge(equal(x,x)\vee equal(x,y))
-          lift for x conclude \exists z(in(z,X)\wedge(equal(z,x)\vee equal(z,y)))
-          apply invoke wellorder_core(X,\psi) for lambda z.equal(z,x)\vee equal(z,y)
-          some a such \exists a(minimum(X,\psi,lambda z.equal(z,x)\vee equal(z,y),a)) {
-            split minimum(X,\psi,lambda z.equal(z,x)\vee equal(z,y),a)
-            apply law_of_excluded_middle for lambda.equal(x,y)
-            divide equal(x,y)\vee neq(x,y)
-              case equal(x,y) {
-                pad equal(x,y) conclude \psi(x,y)\vee equal(x,y)\vee\psi(y,x)
+theorem wellorder_implies_linorder \forall^T \chi[1] \forall^T \psi[2] (wellorder(\chi, \psi) \to linorder(\chi, \psi)) {
+  any template \chi[1], template \psi[2] {
+    assume wellorder(\chi, \psi) {
+      split wellorder(\chi, \psi)
+      any x, y {
+        assume \chi(x) \wedge \chi(y) {
+          split \chi(x) \wedge \chi(y)
+          pad equal(x, x) conclude equal(x, x) \vee equal(x, y)
+          connect \chi(x) \wedge (equal(x, x) \vee equal(x, y))
+          lift for x conclude \exists z (\chi(z) \wedge (equal(z, x) \vee equal(z, y)))
+          apply invoke wellorder_core(\chi, \psi) for lambda z. equal(z, x) \vee equal(z, y)
+          some a such \exists a (minimum(\chi, \psi, lambda z. equal(z, x) \vee equal(z, y), a)) {
+            split minimum(\chi, \psi, lambda z. equal(z, x) \vee equal(z, y), a)
+            apply law_of_excluded_middle for lambda. equal(x, y)
+            divide equal(x, y) \vee neq(x, y)
+              case equal(x, y) {
+                pad equal(x, y) conclude \psi(x, y) \vee equal(x, y )\vee \psi(y, x)
               }
-              case neq(x,y) {
-                divide equal(a,x)\vee equal(a,y)
-                  case equal(a,x) {
-                    substitute minimum_core(X,\psi,lambda z.equal(z,x)\vee equal(z,y),a) for a:x
-                    pad equal(y,y) conclude equal(y,x)\vee equal(y,y)
-                    connect in(y,X)\wedge(equal(y,x)\vee equal(y,y))\wedge neq(y,x)
-                    apply invoke minimum_core(X,\psi,lambda z.equal(z,x)\vee equal(z,y),x) for y
-                    pad \psi(x,y) conclude \psi(x,y) \vee equal(x,y) \vee \psi(y,x)
+              case neq(x, y) {
+                divide equal(a, x) \vee equal(a, y)
+                  case equal(a, x) {
+                    substitute minimum_core(\chi, \psi, lambda z. equal(z, x) \vee equal(z, y), a) for a: x
+                    pad equal(y, y) conclude equal(y, x) \vee equal(y, y)
+                    connect \chi(y) \wedge (equal(y, x) \vee equal(y, y)) \wedge neq(y, x)
+                    apply invoke minimum_core(\chi, \psi, lambda z. equal(z, x) \vee equal(z, y), x) for y
+                    pad \psi(x, y) conclude \psi(x, y) \vee equal(x, y) \vee \psi(y, x)
                   }
-                  case equal(a,y) {
-                    substitute minimum_core(X,\psi,lambda z.equal(z,x)\vee equal(z,y),a) for a:y
-                    pad equal(x,x) conclude equal(x,x)\vee equal(x,y)
-                    connect in(x,X)\wedge(equal(x,x)\vee equal(x,y))\wedge neq(x,y)
-                    apply invoke minimum_core(X,\psi,lambda z.equal(z,x)\vee equal(z,y),y) for x
-                    pad \psi(y,x) conclude \psi(x,y)\vee equal(x,y)\vee\psi(y,x)
+                  case equal(a, y) {
+                    substitute minimum_core(\chi, \psi, lambda z. equal(z, x)\vee equal(z, y), a) for a: y
+                    pad equal(x, x) conclude equal(x, x) \vee equal(x, y)
+                    connect \chi(x) \wedge (equal(x, x) \vee equal(x, y)) \wedge neq(x, y)
+                    apply invoke minimum_core(\chi, \psi, lambda z. equal(z, x) \vee equal(z, y), y) for x
+                    pad \psi(y, x) conclude \psi(x, y) \vee equal(x, y) \vee \psi(y, x)
                   }
               }
           }
         }
       }
-      fold for linorder_core conclude linorder_core(X,\psi)
-      connect linorder(X,\psi)
+      fold for linorder_core conclude linorder_core(\chi, \psi)
+      connect linorder(\chi, \psi)
     }
   }
 }
 
-theorem wellorder_implies_wellfounded \forall X\forall^T\psi[2](wellorder(X,\psi)\to wellfounded(X,\psi)) {
-  any X, template \psi[2] {
-    assume wellorder(X,\psi) {
-      split wellorder(X,\psi)
-      split 2 orderon(X,\psi)
+theorem wellorder_implies_wellfounded \forall^T \chi[1] \forall^T \psi[2] (wellorder(\chi, \psi) \to wellfounded(\chi, \psi)) {
+  any template \chi[1], template \psi[2] {
+    assume wellorder(\chi, \psi) {
+      split wellorder(\chi, \psi)
+      split 2 orderon(\chi, \psi)
       any template \phi[1] {
-        assume \exists z(in(z,X)\wedge\phi(z)) {
-          apply invoke wellorder_core(X,\psi) for \phi
-          some a such \exists a(minimum(X,\psi,\phi,a)) {
-            connect antisymrelon(X,\psi)\wedge minimum(X,\psi,\phi,a)
-            apply invoke minimum_implies_minimal for X,\psi,\phi,a
-            lift for a conclude \exists a(minimal(X,\psi,\phi,a))
+        assume \exists z (\chi(z) \wedge \phi(z)) {
+          apply invoke wellorder_core(\chi, \psi) for \phi
+          some a such \exists a (minimum(\chi, \psi, \phi, a)) {
+            connect antisymrelon(\chi, \psi) \wedge minimum(\chi, \psi, \phi, a)
+            apply invoke minimum_implies_minimal for \chi, \psi, \phi, a
+            lift for a conclude \exists a (minimal(\chi, \psi, \phi, a))
           }
         }
       }
-      fold for wellfounded conclude wellfounded(X,\psi)
+      fold for wellfounded conclude wellfounded(\chi, \psi)
     }
   }
 }
 
-theorem wellorder_equivalent_linorder_and_wellfounded \forall X\forall^T\psi[2](wellorder(X,\psi)\leftrightarrow linorder(X,\psi)\wedge wellfounded(X,\psi)) {
-  any X, template \psi[2] {
-    assume wellorder(X,\psi) {
-      apply invoke wellorder_implies_linorder for X,\psi
-      apply invoke wellorder_implies_wellfounded for X,\psi
-      connect linorder(X,\psi)\wedge wellfounded(X,\psi)
+theorem wellorder_equivalent_linorder_and_wellfounded \forall^T \chi[1] \forall^T \psi[2] (wellorder(\chi, \psi) \leftrightarrow linorder(\chi, \psi) \wedge wellfounded(\chi, \psi)) {
+  any template \chi[1], template \psi[2] {
+    assume wellorder(\chi, \psi) {
+      apply invoke wellorder_implies_linorder for \chi, \psi
+      apply invoke wellorder_implies_wellfounded for \chi, \psi
+      connect linorder(\chi, \psi) \wedge wellfounded(\chi, \psi)
     }
-    assume linorder(X,\psi)\wedge wellfounded(X,\psi) {
-      apply invoke linorder_and_wellfounded_implies_wellorder for X,\psi
+    assume linorder(\chi, \psi) \wedge wellfounded(\chi, \psi) {
+      apply invoke linorder_and_wellfounded_implies_wellorder for \chi, \psi
     }
-    connect wellorder(X,\psi)\leftrightarrow linorder(X,\psi)\wedge wellfounded(X,\psi)
+    connect wellorder(\chi, \psi) \leftrightarrow linorder(\chi, \psi) \wedge wellfounded(\chi, \psi)
   }
 }
 
-theorem transrelon_subset \forall X\forall^T\phi[2]\forall Y(transrelon(X,\phi)\wedge subset(Y,X)\to transrelon(Y,\phi)) {
-  any X, template \phi[2], Y {
-    assume transrelon(X,\phi)\wedge subset(Y,X) {
-      split transrelon(X,\phi)\wedge subset(Y,X)
+theorem transrelon_subset \forall^T \phi[1] \forall^T \psi[2] \forall^T \chi[1] (transrelon(\phi, \psi) \wedge subset(\chi, \phi) \to transrelon(\chi, \psi)) {
+  any template \phi[1], template \psi[2], template \chi[1] {
+    assume transrelon(\phi, \psi) \wedge subset(\chi, \phi) {
+      split transrelon(\phi, \psi) \wedge subset(\chi, \phi)
       any x,y,z {
-        assume in(x,Y)\wedge in(y,Y)\wedge in(z,Y)\wedge\phi(x,y)\wedge\phi(y,z) {
-          split in(x,Y)\wedge in(y,Y)\wedge in(z,Y)\wedge\phi(x,y)\wedge\phi(y,z)
-          connect in(x,Y)\wedge subset(Y,X)
-          apply invoke subset(Y,X) for x
-          connect in(y,Y)\wedge subset(Y,X)
-          apply invoke subset(Y,X) for y
-          connect in(z,Y)\wedge subset(Y,X)
-          apply invoke subset(Y,X) for z
-          connect in(x,X)\wedge in(y,X)\wedge in(z,X)\wedge\phi(x,y)\wedge\phi(y,z)
-          apply invoke transrelon(X,\phi) for x,y,z
+        assume \chi(x) \wedge \chi(y) \wedge \chi(z) \wedge \psi(x, y) \wedge \psi(y, z) {
+          split \chi(x) \wedge \chi(y) \wedge \chi(z) \wedge \psi(x, y) \wedge \psi(y, z)
+          apply invoke subset(\chi, \phi) for x
+          apply invoke subset(\chi, \phi) for y
+          apply invoke subset(\chi, \phi) for z
+          connect \phi(x) \wedge \phi(y) \wedge \phi(z) \wedge \psi(x, y) \wedge \psi(y, z)
+          apply invoke transrelon(\phi, \psi) for x, y, z
         }
       }
-      fold for transrelon conclude transrelon(Y,\phi)
+      fold for transrelon conclude transrelon(\chi, \psi)
     }
   }
 }
 
-theorem antisymrelon_subset \forall X\forall^T\phi[2]\forall Y(antisymrelon(X,\phi)\wedge subset(Y,X)\to antisymrelon(Y,\phi)) {
-  any X, template \phi[2], Y {
-    assume antisymrelon(X,\phi)\wedge subset(Y,X) {
-      split antisymrelon(X,\phi)\wedge subset(Y,X)
+theorem antisymrelon_subset \forall^T \phi[1] \forall^T \psi[2] \forall^T \chi[1] (antisymrelon(\phi, \psi) \wedge subset(\chi, \phi) \to antisymrelon(\chi, \psi)) {
+  any template \phi[1], template \psi[2], template \chi[1] {
+    assume antisymrelon(\phi, \psi) \wedge subset(\chi, \phi) {
+      split antisymrelon(\phi, \psi) \wedge subset(\chi, \phi)
       any x,y {
-        assume in(x,Y)\wedge in(y,Y)\wedge\phi(x,y)\wedge\phi(y,x) {
-          split in(x,Y)\wedge in(y,Y)\wedge\phi(x,y)\wedge\phi(y,x)
-          apply invoke subset(Y,X) for x
-          apply invoke subset(Y,X) for y
-          connect in(x,X)\wedge in(y,X)\wedge\phi(x,y)\wedge\phi(y,x)
-          apply invoke antisymrelon(X,\phi) for x,y
+        assume \chi(x) \wedge \chi(y) \wedge \psi(x, y) \wedge \psi(y, x) {
+          split \chi(x) \wedge \chi(y) \wedge \psi(x, y) \wedge \psi(y, x)
+          apply invoke subset(\chi, \phi) for x
+          apply invoke subset(\chi, \phi) for y
+          connect \phi(x) \wedge \phi(y) \wedge \psi(x, y) \wedge \psi(y, x)
+          apply invoke antisymrelon(\phi, \psi) for x, y
         }
       }
-      fold for antisymrelon conclude antisymrelon(Y,\phi)
+      fold for antisymrelon conclude antisymrelon(\chi, \psi)
     }
   }
 }
 
-theorem orderon_subset \forall X\forall^T\phi[2]\forall Y(orderon(X,\phi)\wedge subset(Y,X)\to orderon(Y,\phi)) {
-  any X, template \phi[2], Y {
-    assume orderon(X,\phi)\wedge subset(Y,X) {
-      split orderon(X,\phi)\wedge subset(Y,X)
-      split orderon(X,\phi)
-      connect transrelon(X,\phi)\wedge subset(Y,X)
-      apply invoke transrelon_subset for X,\phi,Y
-      connect antisymrelon(X,\phi)\wedge subset(Y,X)
-      apply invoke antisymrelon_subset for X,\phi,Y
-      connect transrelon(Y,\phi)\wedge antisymrelon(Y,\phi)
-      fold for orderon conclude orderon(Y,\phi)
+theorem orderon_subset \forall^T \phi[1] \forall^T \psi[2] \forall^T \chi[1] (orderon(\phi, \psi) \wedge subset(\chi, \phi) \to orderon(\chi, \psi)) {
+  any template \phi[1], template \psi[2], template \chi[1] {
+    assume orderon(\phi, \psi) \wedge subset(\chi, \phi) {
+      split orderon(\phi, \psi) \wedge subset(\chi, \phi)
+      split orderon(\phi, \psi)
+      connect transrelon(\phi, \psi) \wedge subset(\chi, \phi)
+      apply invoke transrelon_subset for \phi, \psi, \chi
+      connect antisymrelon(\phi, \psi) \wedge subset(\chi, \phi)
+      apply invoke antisymrelon_subset for \phi, \psi, \chi
+      connect transrelon(\chi, \psi) \wedge antisymrelon(\chi, \psi)
+      fold for orderon conclude orderon(\chi, \psi)
     }
   }
 }
 
-theorem irrefrelon_subset \forall X\forall^T\phi[2]\forall Y(irrefrelon(X,\phi)\wedge subset(Y,X)\to irrefrelon(Y,\phi)) {
-  any X, template \phi[2], Y {
-    assume irrefrelon(X,\phi)\wedge subset(Y,X) {
-      split irrefrelon(X,\phi)\wedge subset(Y,X)
+theorem irrefrelon_subset \forall^T \phi[1] \forall^T \psi[2] \forall^T \chi[1] (irrefrelon(\phi, \psi) \wedge subset(\chi, \phi) \to irrefrelon(\chi, \psi)) {
+  any template \phi[1], template \psi[2], template \chi[1] {
+    assume irrefrelon(\phi, \psi) \wedge subset(\chi, \phi) {
+      split irrefrelon(\phi, \psi) \wedge subset(\chi, \phi)
       any x {
-        assume in(x,Y) {
-          connect in(x,Y)\wedge subset(Y,X)
-          apply invoke subset(Y,X) for x
-          apply invoke irrefrelon(X,\phi) for x
+        assume \chi(x) {
+          apply invoke subset(\chi, \phi) for x
+          apply invoke irrefrelon(\phi, \psi) for x
         }
       }
-      fold for irrefrelon conclude irrefrelon(Y,\phi)
+      fold for irrefrelon conclude irrefrelon(\chi, \psi)
     }
   }
 }
 
-theorem wellorder_subset \forall X\forall^T\psi[2]\forall Y(wellorder(X,\psi)\wedge subset(Y,X)\to wellorder(Y,\psi)) {
-  any X, template \psi[2], Y {
-    assume wellorder(X,\psi)\wedge subset(Y,X) {
-      split wellorder(X,\psi)\wedge subset(Y,X)
-      split wellorder(X,\psi)
-      connect orderon(X,\psi)\wedge subset(Y,X)
-      apply invoke orderon_subset for X,\psi,Y
-      any template \chi[1] {
-        assume \exists z(in(z,Y)\wedge\chi(z)) {
-          some z such \exists z(in(z,Y)\wedge\chi(z)) {
-            split in(z,Y)\wedge\chi(z)
-            connect in(z,Y)\wedge subset(Y,X)
-            apply invoke subset(Y,X) for z
-            connect in(z,X)\wedge in(z,Y)\wedge\chi(z)
-            lift for z conclude \exists z(in(z,X)\wedge in(z,Y)\wedge\chi(z))
+theorem wellorder_subset \forall^T \phi[1] \forall^T \psi[2] \forall^T \chi[1] (wellorder(\phi, \psi) \wedge subset(\chi, \phi) \to wellorder(\chi, \psi)) {
+  any template \phi[1], template \psi[2], template \chi[1] {
+    assume wellorder(\phi, \psi) \wedge subset(\chi, \phi) {
+      split wellorder(\phi, \psi) \wedge subset(\chi, \phi)
+      split wellorder(\phi, \psi)
+      connect orderon(\phi, \psi) \wedge subset(\chi, \phi)
+      apply invoke orderon_subset for \phi, \psi, \chi
+      any template \rho[1] {
+        assume \exists x (\chi(x) \wedge \rho(x)) {
+          some x such \exists x (\chi(x) \wedge \rho(x)) {
+            split \chi(x) \wedge \rho(x)
+            apply invoke subset(\chi, \phi) for x
+            connect \phi(x) \wedge \chi(x) \wedge \rho(x)
+            lift for x conclude \exists x (\phi(x) \wedge \chi(x) \wedge \rho(x))
           }
-          apply invoke wellorder_core(X,\psi) for lambda w.in(w,Y)\wedge\chi(w)
-          some a such \exists a(minimum(X,\psi,lambda w.in(w,Y)\wedge\chi(w),a)) {
-            split minimum(X,\psi,lambda w.in(w,Y)\wedge\chi(w),a)
+          apply invoke wellorder_core(\phi, \psi) for lambda x. \chi(x) \wedge \rho(x)
+          some a such \exists a (minimum(\phi, \psi, lambda x. \chi(x) \wedge \rho(x), a)) {
+            split minimum(\phi, \psi, lambda x. \chi(x) \wedge \rho(x), a)
             any x {
-              assume in(x,Y)\wedge\chi(x)\wedge neq(x,a) {
-                split in(x,Y)\wedge\chi(x)\wedge neq(x,a)
-                connect in(x,Y)\wedge subset(Y,X)
-                apply invoke subset(Y,X) for x
-                connect in(x,X)\wedge in(x,Y)\wedge\chi(x)\wedge neq(x,a)
-                apply invoke minimum_core(X,\psi,lambda w.in(w,Y)\wedge\chi(w),a) for x
+              assume \chi(x) \wedge \rho(x) \wedge neq(x, a) {
+                split \chi(x) \wedge \rho(x) \wedge neq(x, a)
+                apply invoke subset(\chi, \phi) for x
+                connect \phi(x) \wedge \chi(x) \wedge \rho(x) \wedge neq(x, a)
+                apply invoke minimum_core(\phi, \psi, lambda x. \chi(x) \wedge \rho(x), a) for x
               }
             }
-            fold for minimum_core conclude minimum_core(Y,\psi,\chi,a)
-            connect minimum(Y,\psi,\chi,a)
-            lift for a conclude \exists a(minimum(Y,\psi,\chi,a))
+            fold for minimum_core conclude minimum_core(\chi, \psi, \rho, a)
+            connect minimum(\chi, \psi, \rho, a)
+            lift for a conclude \exists a (minimum(\chi, \psi, \rho, a))
           }
         }
       }
-      fold for wellorder_core conclude wellorder_core(Y,\psi)
-      connect wellorder(Y,\psi)
+      fold for wellorder_core conclude wellorder_core(\chi, \psi)
+      connect wellorder(\chi, \psi)
     }
   }
 }

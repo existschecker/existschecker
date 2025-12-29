@@ -1,7 +1,7 @@
 from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, Symbol, Context, Compound, Fun, Con, Var, Bottom, Term, Pred, Formula, Template, Lambda, TemplateCall
 from itertools import permutations
 from copy import deepcopy
-from typing import Mapping, Sequence
+from typing import Mapping
 from dataclasses import dataclass, field
 
 def flatten_op(expr: Formula, op: type[And] | type[Or]) -> list[Formula]:
@@ -290,10 +290,10 @@ class DefExpander:
                     elif self.counter[expr.fun.name] in target_indexes:
                         should_expand = True
                 if should_expand:
-                    renamed_term = alpha_safe_term(deffunterm.term, expr.args, self.context)
-                    if not type_safe(deffunterm.args, expr.args):
+                    renamed_term, renamed_mapping = alpha_safe_term(deffunterm.term, dict(zip(deffunterm.args, expr.args)), self.context)
+                    if not type_safe(renamed_mapping):
                         raise Exception("type_safe() failed")
-                    expanded = Substitutor(dict(zip(deffunterm.args, expr.args))).substitute_term(renamed_term)
+                    expanded = Substitutor(renamed_mapping).substitute_term(renamed_term)
                     return self.expand_defs_term(expanded, bound_templates)
                 else:
                     return Compound(expr.fun, tuple(self.expand_defs_term(arg, bound_templates) for arg in expr.args))
@@ -311,7 +311,7 @@ class DefExpander:
             if expr.pred.name in self.context.decl.primpreds:
                 return Symbol(expr.pred, tuple(self.expand_defs_term(arg, bound_templates) for arg in expr.args))
             elif expr.pred.name in self.context.decl.defpreds:
-                defpred = self.context.decl.defpreds[expr.pred.name]
+                defpred = self.context.decl.get_defpred(expr.pred.name, expr.args)
                 should_expand = False
                 if len(self.defs) == 0 and defpred.autoexpand:
                     should_expand = True
@@ -323,10 +323,10 @@ class DefExpander:
                     elif self.counter[expr.pred.name] in target_indexes:
                         should_expand = True
                 if should_expand:
-                    renamed_term = alpha_safe_formula(defpred.formula, expr.args, self.context)
-                    if not type_safe(defpred.args, expr.args):
+                    renamed_formula, renamed_mapping = alpha_safe_formula(defpred.formula, dict(zip(defpred.args, expr.args)), self.context)
+                    if not type_safe(renamed_mapping):
                         raise Exception("type_safe() failed")
-                    expanded = Substitutor(dict(zip(defpred.args, expr.args))).substitute_formula(renamed_term)
+                    expanded = Substitutor(renamed_mapping).substitute_formula(renamed_formula)                    
                     return self.expand_defs_formula(expanded, bound_templates)
                 else:
                     return Symbol(expr.pred, tuple(self.expand_defs_term(arg, bound_templates) for arg in expr.args))
@@ -492,44 +492,53 @@ class AlphaRename:
         else:
             raise Exception(f"Unexpected type: {type(expr)}")
 
-def alpha_safe(expr: Formula | Term, terms: Sequence[Term], context: Context) -> tuple[dict[Var, Var], dict[Template, Template]]:
-    _, used_bound_vars, _, used_bound_templates = collect_vars(expr)
-    vars_to_substitute: set[Var] = set()
-    templates_to_substitute: set[Template] = set()
+def alpha_safe(expr: Formula | Term, mapping: dict[Term, Term], context: Context, skip_key: bool = False) -> tuple[AlphaRename, dict[Term, Term]]:
     items_to_substitute: set[Var | Template] = set()
-    for term in terms:
+    for term in mapping.values():
         fv, bv, ft, bt = collect_vars(term)
-        vars_to_substitute.update(fv | bv)
-        templates_to_substitute.update(ft | bt)
         items_to_substitute.update(fv | bv | ft | bt)
+    _, used_bound_vars, _, used_bound_templates = collect_vars(expr)
+    keys: set[Term] = set() if skip_key else set(mapping.keys())
     rename_map_var: dict[Var, Var] = {}
     rename_map_template: dict[Template, Template] = {}
-    for bv in used_bound_vars:
-        new_bv = fresh_var(bv, items_to_substitute, context)
-        if new_bv != bv:
-            rename_map_var[bv] = new_bv
-        items_to_substitute.add(new_bv)
-    for bt in used_bound_templates:
-        new_bt = fresh_template(bt, items_to_substitute, context)
-        if new_bt != bt:
-            rename_map_template[bt] = new_bt
-        items_to_substitute.add(new_bt)
-    return rename_map_var, rename_map_template
+    for target in keys | used_bound_vars | used_bound_templates:
+        if isinstance(target, Var):
+            new_v = fresh_var(target, items_to_substitute, context)
+            if new_v != target:
+                rename_map_var[target] = new_v
+            items_to_substitute.add(new_v)
+        elif isinstance(target, Template):
+            new_t = fresh_template(target, items_to_substitute, context)
+            if new_t != target:
+                rename_map_template[target] = new_t
+            items_to_substitute.add(new_t)
+        else:
+            raise Exception(f"Unexpected type: {type(target)}")
+    renamer = AlphaRename(rename_map_var, rename_map_template)
+    new_mapping: dict[Term, Term] = {}
+    if skip_key:
+        new_mapping = mapping
+    else:
+        for k, v in mapping.items():
+            if isinstance(k, Var):
+                new_k = rename_map_var.get(k, k)
+            elif isinstance(k, Template):
+                new_k = rename_map_template.get(k, k)
+            else:
+                raise Exception(f"Unexpected type: {type(k)}")
+            new_mapping[new_k] = v
+    return renamer, new_mapping
 
-def alpha_safe_term(expr: Term, terms: Sequence[Term], context: Context) -> Term:
-    rename_map_var, rename_map_template = alpha_safe(expr, terms, context)
-    return AlphaRename(rename_map_var, rename_map_template).alpha_rename_term(expr)
+def alpha_safe_term(expr: Term, mapping: dict[Term, Term], context: Context, skip_key: bool = False) -> tuple[Term, dict[Term, Term]]:
+    renamer, renamed_mapping = alpha_safe(expr, mapping, context, skip_key)
+    return renamer.alpha_rename_term(expr), renamed_mapping
 
-def alpha_safe_formula(expr: Formula, terms: Sequence[Term], context: Context) -> Formula:
-    rename_map_var, rename_map_template = alpha_safe(expr, terms, context)
-    return AlphaRename(rename_map_var, rename_map_template).alpha_rename_formula(expr)
+def alpha_safe_formula(expr: Formula, mapping: dict[Term, Term], context: Context, skip_key: bool = False) -> tuple[Formula, dict[Term, Term]]:
+    renamer, renamed_mapping = alpha_safe(expr, mapping, context, skip_key)
+    return renamer.alpha_rename_formula(expr), renamed_mapping
 
-def type_safe(items: Sequence[Var | Template], terms: Sequence[Term | None], strict: bool = False) -> bool:
-    if len(items) != len(terms):
-        return False
-    for item, term in zip(items, terms):
-        if term is None:
-            continue
+def type_safe(mapping: dict[Term, Term], strict: bool = False) -> bool:
+    for item, term in mapping.items():
         if isinstance(item, Var):
             allowed = Var if strict else (Var, Con, Compound)
             if not isinstance(term, allowed):
@@ -559,22 +568,22 @@ FORMULA_PRECEDENCE = {
     "Quantifier": 5,
 }
 
-def pretty_expr_fragments(expr: Pred | Fun, context: Context) -> list[str]:
-    if isinstance(expr, Pred):
-        if expr.name in context.decl.primpreds:
-            tex = context.decl.primpreds[expr.name].tex
-        elif expr.name in context.decl.defpreds:
-            tex = context.decl.defpreds[expr.name].tex
+def pretty_expr_fragments(expr: Symbol | Compound, context: Context) -> list[str]:
+    if isinstance(expr, Symbol):
+        if expr.pred.name in context.decl.primpreds:
+            tex = context.decl.primpreds[expr.pred.name].tex
+        elif expr.pred.name in context.decl.defpreds:
+            tex = context.decl.get_defpred(expr.pred.name, expr.args).tex
         else:
-            raise Exception(f"{expr.name} is not in primpreds or defpreds")
+            raise Exception(f"{expr.pred.name} is not in primpreds or defpreds")
         return tex
-    elif isinstance(expr, Fun):
-        if expr.name in context.decl.deffuns:
-            tex = context.decl.deffuns[expr.name].tex
-        elif expr.name in context.decl.deffunterms:
-            tex = context.decl.deffunterms[expr.name].tex
+    elif isinstance(expr, Compound):
+        if expr.fun.name in context.decl.deffuns:
+            tex = context.decl.deffuns[expr.fun.name].tex
+        elif expr.fun.name in context.decl.deffunterms:
+            tex = context.decl.deffunterms[expr.fun.name].tex
         else:
-            raise Exception(f"{expr.name} is not in deffuns or deffunterms")
+            raise Exception(f"{expr.fun.name} is not in deffuns or deffunterms")
         return tex
     else:
         raise TypeError(f"Unsupported node type: {type(expr)}")
@@ -593,7 +602,7 @@ def pretty_term(expr: Term, context: Context, parent_prec: int = TERM_PRECEDENCE
             raise Exception("arity is different")
         return tex[0]
     elif isinstance(expr, Compound):
-        tex = pretty_expr_fragments(expr.fun, context)
+        tex = pretty_expr_fragments(expr, context)
         if len(tex) != len(expr.args) + 1:
             raise Exception("arity is different")
         prec = TERM_PRECEDENCE["CompoundInfix"] if tex[0] == "" or tex[-1] == "" else TERM_PRECEDENCE["CompoundFunction"]
@@ -612,7 +621,7 @@ def pretty_term(expr: Term, context: Context, parent_prec: int = TERM_PRECEDENCE
 
 def pretty_formula(expr: Formula, context: Context, parent_prec: int = FORMULA_PRECEDENCE["Lowest"]) -> str:
     if isinstance(expr, Symbol):
-        tex = pretty_expr_fragments(expr.pred, context)
+        tex = pretty_expr_fragments(expr, context)
         if len(tex) != len(expr.args) + 1:
             raise Exception("arity is different")
         text = ""

@@ -1,4 +1,4 @@
-include "zfc_in.proof"
+include "zfc_predicate_in.proof"
 
 definition predicate adj(x,y,z) as \forall w(in(w,z)\leftrightarrow in(w,x)\vee equal(w,y))
 

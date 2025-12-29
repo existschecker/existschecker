@@ -511,8 +511,8 @@ def check_some(node: Some, context: Context, indent: int):
         return False
     logger.debug(f"{debug_prefix}derivable: {pretty_expr(node.fact, context)}")
     fact = get_fact(node.fact, context, True)
-    renamed_fact = alpha_safe_formula(fact, [item for item in node.items if item is not None], context)
-    vars, body = collect_quantifier_vars(renamed_fact, Exists)
+    vars, body = collect_quantifier_vars(fact, Exists)
+    body = make_quantifier_vars(body, Exists, [bound for bound, free in zip(vars, node.items) if free is None])
     for item in node.items:
         if item is None:
             continue
@@ -520,13 +520,13 @@ def check_some(node: Some, context: Context, indent: int):
             logger.error(f"{error_prefix}{pretty_expr(item, context)} is already used")
             node.proofinfo.status = "ERROR"
             return False
-    if not type_safe(vars, node.items, True):
+    mapping: dict[Term, Term] = {bound: free for bound, free in zip(vars, node.items) if free is not None}
+    renamed_body, renamed_mapping = alpha_safe_formula(body, mapping, context)
+    if not type_safe(renamed_mapping, True):
         logger.error(f"{error_prefix}type_safe() failed")
         node.proofinfo.status = "ERROR"
         return False
-    body = make_quantifier_vars(body, Exists, [bound for bound, free in zip(vars, node.items) if free is None])
-    env: dict[Term, Term] = {bound: free for bound, free in zip(vars, node.items) if free is not None}
-    premise = Substitutor(env).substitute_formula(body)
+    premise = Substitutor(renamed_mapping).substitute_formula(renamed_body)
     logger.debug(f"{debug_prefix}Taking {node.items}, premise={pretty_expr(premise, context)}")
     local_vars = [item for item in node.items if isinstance(item, Var)]
     local_templates = [item for item in node.items if isinstance(item, Template)]
@@ -640,16 +640,16 @@ def check_apply(node: Apply, context: Context, indent: int):
         return False
     logger.debug(f"{debug_prefix}Drivable fact: {pretty_expr(node.fact, context)}")
     fact = get_fact(node.fact, context, True)
-    renamed_fact = alpha_safe_formula(fact, [term for term in node.terms if term is not None], context)
-    items, body = collect_quantifier_vars(renamed_fact, Forall)
-    if not type_safe(items, node.terms):
+    items, body = collect_quantifier_vars(fact, Forall)
+    body = make_quantifier_vars(body, Forall, [item for item, term in zip(items, node.terms) if term is None])
+    mapping: dict[Term, Term] = {item: term for item, term in zip(items, node.terms) if term is not None}
+    renamed_body, renamed_map = alpha_safe_formula(body, mapping, context)
+    if not type_safe(renamed_map):
         logger.error(f"{error_prefix}type_safe() failed")
         node.proofinfo.status = "ERROR"
         return False
-    env: dict[Term, Term] = {item: term for item, term in zip(items, node.terms) if term is not None}
-    body = make_quantifier_vars(body, Forall, [item for item, term in zip(items, node.terms) if term is None])
-    logger.debug(f"{debug_prefix}Instantiable: env={env}")
-    instantiation = Substitutor(env).substitute_formula(body)
+    logger.debug(f"{debug_prefix}Instantiable: mapping={mapping}")
+    instantiation = Substitutor(renamed_map).substitute_formula(renamed_body)
     logger.debug(f"{debug_prefix}\\forall-elimination is done: instantiation={pretty_expr(instantiation, context)}")
     if node.invoke == "none":
         node.proofinfo.premises = [node.fact]
@@ -712,15 +712,15 @@ def check_lift(node: Lift, context: Context, indent: int):
     debug_prefix = make_debug_prefix(node, indent)
     error_prefix = make_error_prefix(node, indent)
     logger.debug(f"{debug_prefix}Target conclusion: {pretty_expr(node.conclusion, context)}")
-    renamed_conclusion = alpha_safe_formula(node.conclusion, [term for term in node.terms if term is not None], context)
-    items, body = collect_quantifier_vars(renamed_conclusion, Exists)
-    if not type_safe(items, node.terms):
+    items, body = collect_quantifier_vars(node.conclusion, Exists)
+    body = make_quantifier_vars(body, Exists, [item for item, term in zip(items, node.terms) if term is None])
+    mapping: dict[Term, Term] = {item: term for item, term in zip(items, node.terms) if term is not None}
+    renamed_body, renamed_mapping = alpha_safe_formula(body, mapping, context)
+    if not type_safe(renamed_mapping):
         logger.error(f"{error_prefix}type_safe() failed")
         node.proofinfo.status = "ERROR"
         return False
-    env: dict[Term, Term] = {item: term for item, term in zip(items, node.terms) if term is not None}
-    body = make_quantifier_vars(body, Exists, [item for item, term in zip(items, node.terms) if term is None])
-    fact = Substitutor(env).substitute_formula(body)
+    fact = Substitutor(renamed_mapping).substitute_formula(renamed_body)
     if not goal_in_context(fact, context):
         logger.error(f"{error_prefix}Not fact: {pretty_expr(fact, context)}")
         node.proofinfo.status = "ERROR"
@@ -744,7 +744,7 @@ def check_characterize(node: Characterize, context: Context, indent: int):
     _, used_bound_vars, _, used_bound_templates = collect_vars(node.conclusion.body)
     fv, bv, ft, bt = collect_vars(node.term)
     vardash = fresh_var(Var(node.conclusion.var.name + "'"), used_bound_vars | used_bound_templates | fv | bv | ft | bt, context)
-    renamed_conclusion = alpha_safe_formula(node.conclusion, [node.term], context)
+    renamed_conclusion, _ = alpha_safe_formula(node.conclusion, {node.conclusion.var: node.term}, context)
     if not isinstance(renamed_conclusion, ExistsUniq):
         logger.error(f"{error_prefix}renamed_conclusion is not ExistsUniq object: {pretty_expr(renamed_conclusion, context)}")
         node.proofinfo.status = "ERROR"
@@ -1003,7 +1003,7 @@ def check_substitute(node: Substitute, context: Context, indent: int):
             return False
         logger.debug(f"{debug_prefix}Fact: {pretty_expr(equation, context)}")
         premises_equal.append(equation)
-    renamed_fact = alpha_safe_formula(fact, list(node.env.values()), context)
+    renamed_fact, _ = alpha_safe_formula(fact, node.env, context, True)
     conclusion = Substitutor(node.env, node.indexes).substitute_formula(renamed_fact)
     logger.debug(f"{debug_prefix}conclusion: {pretty_expr(conclusion, context)}")
     logger.debug(f"{debug_prefix}Matched")

@@ -163,3 +163,59 @@ theorem neg_iff \forall^T\phi[0]\forall^T\psi[0]((\phi\leftrightarrow\psi)\to(\n
     }
   }
 }
+
+theorem neg_iff_iff \forall^T \phi[0] \forall^T \psi[0] (\neg(\phi \leftrightarrow \psi) \leftrightarrow (\phi \wedge \neg(\psi)) \vee (\neg(\phi) \wedge \psi)) {
+  any template \phi[0], template \psi[0] {
+    assume \neg(\phi \leftrightarrow \psi) {
+      apply law_of_excluded_middle for \phi
+      divide \phi \vee \neg(\phi)
+        case \phi {
+          deny \psi {
+            assume \phi {
+              assert \psi
+            }
+            assume \psi {
+              assert \phi
+            }
+            connect \phi \leftrightarrow \psi
+            contradict \phi \leftrightarrow \psi
+          }
+          connect \phi \wedge \neg(\psi)
+          pad \phi \wedge \neg(\psi) conclude (\phi \wedge \neg(\psi)) \vee (\neg(\phi) \wedge \psi)
+        }
+        case \neg(\phi) {
+          deny \neg(\psi) {
+            assume \neg(\phi) {
+              assert \neg(\psi)
+            }
+            assume \neg(\psi) {
+              assert \neg(\phi)
+            }
+            connect \neg(\phi) \leftrightarrow \neg(\psi)
+            apply invoke neg_iff for lambda. \neg(\phi), lambda. \neg(\psi)
+            contradict \phi \leftrightarrow \psi
+          }
+          connect \neg(\phi) \wedge \psi
+          pad \neg(\phi) \wedge \psi conclude (\phi \wedge \neg(\psi)) \vee (\neg(\phi) \wedge \psi)
+        }
+    }
+    assume (\phi \wedge \neg(\psi)) \vee (\neg(\phi) \wedge \psi) {
+      divide (\phi \wedge \neg(\psi)) \vee (\neg(\phi) \wedge \psi)
+        case \phi \wedge \neg(\psi) {
+          split \phi \wedge \neg(\psi)
+          deny \phi \leftrightarrow \psi {
+            invoke rightward \phi \leftrightarrow \psi 
+            contradict \psi
+          }
+        }
+        case \neg(\phi) \wedge \psi {
+          split \neg(\phi) \wedge \psi
+          deny \phi \leftrightarrow \psi {
+            invoke leftward \phi \leftrightarrow \psi
+            contradict \phi
+          }
+        }
+    }
+    connect \neg(\phi \leftrightarrow \psi) \leftrightarrow (\phi \wedge \neg(\psi)) \vee (\neg(\phi) \wedge \psi)
+  }
+}

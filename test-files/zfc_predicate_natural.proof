@@ -1,0 +1,10 @@
+include "zfc_predicate_suc.proof"
+include "zfc_predicate_emptyset.proof"
+
+definition predicate sucordinal(\alpha) as ordinal(\alpha) \wedge \exists \beta (suc(\beta, \alpha))
+
+definition predicate natural(n) as emptyset(n) \vee (sucordinal(n) \wedge \forall m (in(m, n) \to emptyset(m) \vee sucordinal(m)))
+
+definition predicate inductive(template \phi[1]) as \forall x ((emptyset(x) \to \phi(x)) \wedge (\phi(x) \to \forall y (suc(x, y) \to \phi(y))))
+
+/* theorem natural_induction \forall^T \phi[1] (inductive(\phi) \to subset(natural, \phi)) */

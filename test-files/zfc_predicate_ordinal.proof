@@ -1,149 +1,152 @@
 include "zfc_predicate_order.proof"
 
-definition predicate cap(x,y,z) as \forall w(in(w,z)\leftrightarrow in(w,x)\wedge in(w,y))
+definition predicate cap(template \phi[1], template \chi[1], template \rho[1]) as \forall x (\rho(x) \leftrightarrow \phi(x) \wedge \chi(x))
 
-theorem cap_is_subset_left \forall x\forall y\forall z(cap(x,y,z)\to subset(z,x)) {
-  any x,y,z {
-    assume cap(x,y,z) {
-      any w {
-        assume in(w,z) {
-          apply invoke rightward cap(x,y,z) for w
-          split 1 in(w,x)\wedge in(w,y)
+theorem cap_is_subset_left \forall^T \phi[1] \forall^T \chi[1] \forall^T \rho[1] (cap(\phi, \chi, \rho) \to subset(\rho, \phi)) {
+  any template \phi[1], template \chi[1], template \rho[1] {
+    assume cap(\phi, \chi, \rho) {
+      any x {
+        assume \rho(x) {
+          apply invoke rightward cap(\phi, \chi, \rho) for x
+          split 1 \phi(x) \wedge \chi(x)
         }
       }
-      fold for subset conclude subset(z,x)
+      fold for subset conclude subset(\rho, \phi)
     }
   }
 }
 
-theorem cap_is_subset_right \forall x\forall y\forall z(cap(x,y,z)\to subset(z,y)) {
-  any x,y,z {
-    assume cap(x,y,z) {
-      any w {
-        assume in(w,z) {
-          apply invoke rightward cap(x,y,z) for w
-          split 2 in(w,x)\wedge in(w,y)
+theorem cap_is_subset_right \forall^T \phi[1] \forall^T \chi[1] \forall^T \rho[1] (cap(\phi, \chi, \rho) \to subset(\rho, \chi)) {
+  any template \phi[1], template \chi[1], template \rho[1] {
+    assume cap(\phi, \chi, \rho) {
+      any x {
+        assume \rho(x) {
+          apply invoke rightward cap(\phi, \chi, \rho) for x
+          split 2 \phi(x) \wedge \chi(x)
         }
       }
-      fold for subset conclude subset(z,y)
+      fold for subset conclude subset(\rho, \chi)
     }
   }
 }
 
-definition predicate setminus(x,y,z) as \forall w(in(w,z)\leftrightarrow in(w,x)\wedge notin(w,y))
+definition predicate setminus(template \phi[1], template \chi[1], template \rho[1]) as \forall x (\rho(x) \leftrightarrow \phi(x) \wedge \neg(\chi(x)))
 
-theorem setminus_is_subset \forall x\forall y\forall z(setminus(x,y,z)\to subset(z,x)) {
-  any x,y,z {
-    assume setminus(x,y,z) {
-      any w {
-        assume in(w,z) {
-          apply invoke rightward setminus(x,y,z) for w
-          split 1 in(w,x)\wedge notin(w,y)
+theorem setminus_is_subset \forall^T \phi[1] \forall^T \chi[1] \forall^T \rho[1] (setminus(\phi, \chi, \rho) \to subset(\rho, \phi)) {
+  any template \phi[1], template \chi[1], template \rho[1] {
+    assume setminus(\phi, \chi, \rho) {
+      any x {
+        assume \rho(x) {
+          apply invoke rightward setminus(\phi, \chi, \rho) for x
+          split 1 \phi(x) \wedge \neg(\chi(x))
         }
       }
-      fold for subset conclude subset(z,x)
+      fold for subset conclude subset(\rho, \phi)
     }
   }
 }
 
-definition predicate trans(x) as \forall y\forall z(in(z,y)\wedge in(y,x)\to in(z,x))
+definition predicate trans(template \phi[1]) as \forall x \forall y (in(y, x) \wedge \phi(x) \to \phi(y))
 
-theorem trans_cor1 \forall x(trans(x)\leftrightarrow\forall y(in(y,x)\to subset(y,x))) {
-  any x {
-    assume trans(x) {
-      any y {
-        assume in(y,x) {
-          any z {
-            assume in(z,y) {
-              connect in(z,y)\wedge in(y,x)
-              apply invoke trans(x) for y,z
+definition predicate trans(x) as trans(lambda y. in(y, x))
+
+theorem trans_cor1 \forall^T \phi[1] (trans(\phi) \leftrightarrow \forall x (\phi(x) \to subset(x, \phi))) {
+  any template \phi[1] {
+    assume trans(\phi) {
+      any x {
+        assume \phi(x) {
+          any y {
+            assume in(y, x) {
+              connect in(y, x) \wedge \phi(x)
+              apply invoke trans(\phi) for x, y
             }
           }
-          fold for subset conclude subset(y,x)
+          fold for subset conclude subset(x, \phi)
         }
       }
     }
-    assume \forall y(in(y,x)\to subset(y,x)) {
-      any y,z {
-        assume in(z,y)\wedge in(y,x) {
-          split in(z,y)\wedge in(y,x)
-          apply invoke \forall y(in(y,x)\to subset(y,x)) for y
-          connect in(z,y)\wedge subset(y,x)
-          apply invoke subset(y,x) for z
+    assume \forall x (\phi(x) \to subset(x, \phi)) {
+      any x, y {
+        assume in(y, x) \wedge \phi(x) {
+          split in(y, x) \wedge \phi(x)
+          apply invoke \forall x (\phi(x) \to subset(x, \phi)) for x
+          apply invoke subset(x, \phi) for y
         }
       }
-      fold for trans conclude trans(x)
+      fold for trans conclude trans(\phi)
     }
-    connect trans(x)\leftrightarrow\forall y(in(y,x)\to subset(y,x))
+    connect trans(\phi) \leftrightarrow \forall x (\phi(x) \to subset(x, \phi))
   }
 }
 
-theorem cap_of_trans_is_trans \forall x\forall y\forall z(trans(x)\wedge trans(y)\wedge cap(x,y,z)\to trans(z)) {
-  any x,y,z {
-    assume trans(x)\wedge trans(y)\wedge cap(x,y,z) {
-      split trans(x)\wedge trans(y)\wedge cap(x,y,z)
-      any w,v {
-        assume in(v,w)\wedge in(w,z) {
-          split in(v,w)\wedge in(w,z)
-          apply invoke rightward cap(x,y,z) for w
-          split in(w,x)\wedge in(w,y)
-          connect in(v,w)\wedge in(w,x)
-          apply invoke trans(x) for w,v
-          connect in(v,w)\wedge in(w,y)
-          apply invoke trans(y) for w,v
-          connect in(v,x)\wedge in(v,y)
-          apply invoke leftward cap(x,y,z) for v
+theorem cap_of_trans_is_trans \forall^T \phi[1] \forall^T \chi[1] \forall^T \rho[1] (trans(\phi) \wedge trans(\chi) \wedge cap(\phi, \chi, \rho) \to trans(\rho)) {
+  any template \phi[1], template \chi[1], template \rho[1] {
+    assume trans(\phi) \wedge trans(\chi) \wedge cap(\phi, \chi, \rho) {
+      split trans(\phi) \wedge trans(\chi) \wedge cap(\phi, \chi, \rho)
+      any x, y {
+        assume in(y, x) \wedge \rho(x) {
+          split in(y, x) \wedge \rho(x)
+          apply invoke rightward cap(\phi, \chi, \rho) for x
+          split \phi(x) \wedge \chi(x)
+          connect in(y, x) \wedge \phi(x)
+          apply invoke trans(\phi) for x, y
+          connect in(y, x) \wedge \chi(x)
+          apply invoke trans(\chi) for x, y
+          connect \phi(y) \wedge \chi(y)
+          apply invoke leftward cap(\phi, \chi, \rho) for y
         }
       }
-      fold for trans conclude trans(z)
+      fold for trans conclude trans(\rho)
     }
   }
 }
 
-definition predicate ordinal(\alpha) as trans(\alpha)\wedge irrefrelon(\alpha,in)\wedge wellorder(\alpha,in)
+definition predicate ordinal(template \phi[1]) as trans(\phi) \wedge irrefrelon(\phi, in) \wedge wellorder(\phi, in)
 
-theorem element_of_ordinal_is_trans \forall\alpha(ordinal(\alpha)\to\forall\beta(in(\beta,\alpha)\to trans(\beta))) {
-  any \alpha {
-    assume ordinal(\alpha) {
-      any \beta {
-        assume in(\beta,\alpha) {
-          any \gamma,\delta {
-            assume in(\delta,\gamma)\wedge in(\gamma,\beta) {
-              split in(\delta,\gamma)\wedge in(\gamma,\beta)
-              split ordinal(\alpha)
-              connect in(\gamma,\beta)\wedge in(\beta,\alpha)
-              apply invoke trans(\alpha) for \beta,\gamma
-              connect in(\delta,\gamma)\wedge in(\gamma,\alpha)
-              apply invoke trans(\alpha) for \gamma,\delta
-              connect in(\delta,\alpha)\wedge in(\gamma,\alpha)\wedge in(\beta,\alpha)\wedge in(\delta,\gamma)\wedge in(\gamma,\beta)
-              split 1 wellorder(\alpha,in)
-              split 1 orderon(\alpha,in)
-              apply invoke transrelon(\alpha,in) for \delta,\gamma,\beta
+definition predicate ordinal(\alpha) as ordinal(lambda \beta. in(\beta, \alpha))
+
+theorem element_of_ordinal_is_trans \forall^T \phi[1] (ordinal(\phi) \to \forall \alpha (\phi(\alpha) \to trans(\alpha))) {
+  any template \phi[1] {
+    assume ordinal(\phi) {
+      any \alpha {
+        assume \phi(\alpha) {
+          any \beta, \gamma {
+            assume in(\gamma, \beta) \wedge in(\beta, \alpha) {
+              split in(\gamma, \beta) \wedge in(\beta, \alpha)
+              split ordinal(\phi)
+              connect in(\beta, \alpha) \wedge \phi(\alpha)
+              apply invoke trans(\phi) for \alpha, \beta
+              connect in(\gamma, \beta) \wedge \phi(\beta)
+              apply invoke trans(\phi) for \beta, \gamma
+              connect \phi(\gamma) \wedge \phi(\beta) \wedge \phi(\alpha) \wedge in(\gamma, \beta)\wedge in(\beta, \alpha)
+              split 1 wellorder(\phi, in)
+              split 1 orderon(\phi, in)
+              apply invoke transrelon(\phi, in) for \gamma, \beta, \alpha
             }
           }
-          fold for trans conclude trans(\beta)
+          fold for trans conclude trans(\alpha)
         }
       }
     }
   }
 }
 
-theorem element_of_ordinal_is_ordinal \forall\alpha(ordinal(\alpha)\to\forall\beta(in(\beta,\alpha)\to ordinal(\beta))) {
-  any \alpha {
-    assume ordinal(\alpha) {
-      any \beta {
-        assume in(\beta,\alpha) {
-          apply invoke element_of_ordinal_is_trans for \alpha
-          apply invoke \forall\beta(in(\beta,\alpha)\to trans(\beta)) for \beta
-          split ordinal(\alpha)
-          apply invoke rightward trans_cor1 for \alpha
-          apply invoke \forall y(in(y,\alpha)\to subset(y,\alpha)) for \beta
-          connect irrefrelon(\alpha,in)\wedge subset(\beta,\alpha)
-          apply invoke irrefrelon_subset for \alpha,in,\beta
-          connect wellorder(\alpha,in)\wedge subset(\beta,\alpha)
-          apply invoke wellorder_subset for \alpha,in,\beta
-          connect trans(\beta)\wedge irrefrelon(\beta,in)\wedge wellorder(\beta,in)
-          fold for ordinal conclude ordinal(\beta)
+/* theorem element_of_ordinal_is_ordinal \forall^T \phi[1] (ordinal(\phi) \to \forall \alpha (\phi(\alpha) \to ordinal(\alpha))) {
+  any template \phi[1] {
+    assume ordinal(\phi) {
+      any \alpha {
+        assume \phi(\alpha) {
+          apply invoke element_of_ordinal_is_trans for \phi
+          apply invoke \forall \alpha (\phi(\alpha) \to trans(\alpha)) for \alpha
+          split ordinal(\phi)
+          apply invoke rightward trans_cor1 for \phi
+          apply invoke \forall \alpha (\phi(\alpha) \to subset(\alpha, \phi)) for \alpha
+          connect irrefrelon(\phi, in)\wedge subset(\alpha, \phi)
+          apply invoke irrefrelon_subset for \phi, in, \alpha
+          connect wellorder(\phi, in)\wedge subset(\alpha, \phi)
+          apply invoke wellorder_subset for \phi, in, \alpha
+          connect trans(\alpha) \wedge irrefrelon(\alpha, in) \wedge wellorder(\alpha, in)
+          fold for ordinal conclude ordinal(\alpha)
         }
       }
     }
@@ -434,4 +437,4 @@ theorem ordinals_trichotomy_in \forall\alpha\forall\beta(ordinal(\alpha)\wedge o
         }
     }
   }
-}
+} */

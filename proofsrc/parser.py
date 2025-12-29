@@ -140,7 +140,7 @@ class Parser:
         tex = self.parse_or_create_tex(name, arity)
         if len(tex) != arity + 1:
             raise SyntaxError(f"{start_token.info()} arity or {name} is {arity}, but length of tex is {len(tex)}")
-        deffun = DefFun(name=name, token=start_token, arity=arity, theorem=theorem, tex=tex)
+        deffun = DefFun(name=name, token=start_token, args=vars_, returned=body.var, theorem=theorem, tex=tex)
         context.add_decl(deffun)
         logger.debug(f"[deffun] {name}")
         return deffun
@@ -201,7 +201,7 @@ class Parser:
             if equal.arity != 2:
                 raise Exception(f"{start_token.info()} arity is required to be 2, but arity of {name} is {equal.arity}")
         elif name in context.decl.defpreds:
-            equal = context.decl.defpreds[name]
+            equal = context.decl.get_defpred(name, [Var("x"), Var("y")])
             if len(equal.args) != 2:
                 raise Exception(f"{start_token.info()} arity is required to be 2, but arity of {name} is {len(equal.args)}")
         else:
@@ -606,18 +606,16 @@ class Parser:
                         raise SyntaxError(f"{tok.info()} arity of {template.name} is {template.arity}, but length of args is {len(vars)}")
                 return TemplateCall(template, tuple(vars))
             elif name in context.decl.primpreds or name in context.decl.defpreds:
+                self.stream.consume("LPAREN")
+                args = self.parse_terms(context)
+                self.stream.consume("RPAREN")
                 if name in context.decl.primpreds:
                     arity = context.decl.primpreds[name].arity
+                    if len(args) != arity:
+                        raise SyntaxError(f"{tok.info()} arity of {name} is {arity}, but length of args is {len(args)}")
                 else:
-                    arity = len(context.decl.defpreds[name].args)
-                self.stream.consume("LPAREN")
-                args = [self.parse_term(context.copy_form())]
-                while self.stream.peek().type == "COMMA":
-                    self.stream.consume("COMMA")
-                    args.append(self.parse_term(context.copy_form()))
-                if len(args) != arity:
-                    raise SyntaxError(f"{tok.info()} arity of {name} is {arity}, but length of args is {len(args)}")
-                self.stream.consume("RPAREN")
+                    if not context.decl.match_defpred(name, args):
+                        raise Exception(f"{tok.info()} signature of {name} is not matched")
                 return Symbol(Pred(name), tuple(args))
             else:
                 raise SyntaxError(f"{tok.info()} Formula object is required, but {name} is unknown")
@@ -681,6 +679,13 @@ class Parser:
                 break
         return terms
 
+    def parse_terms(self, context: Context) -> list[Term]:
+        terms = [self.parse_term(context.copy_form())]
+        while self.stream.peek().type == "COMMA":
+            self.stream.consume("COMMA")
+            terms.append(self.parse_term(context.copy_form()))
+        return terms
+
     def parse_term(self, context: Context) -> Term:
         tok = self.stream.peek()
         if tok.type == "IDENT":
@@ -697,14 +702,10 @@ class Parser:
                 return Con(name)
             elif name in context.decl.deffuns or name in context.decl.deffunterms:
                 self.stream.consume("LPAREN")
-                args = [self.parse_term(context.copy_form())]
-                while self.stream.peek().type == "COMMA":
-                    self.stream.consume("COMMA")
-                    args.append(self.parse_term(context.copy_form()))
+                args = tuple(self.parse_terms(context))
                 self.stream.consume("RPAREN")
-                args = tuple(args)
                 if name in context.decl.deffuns:
-                    arity = context.decl.deffuns[name].arity
+                    arity = len(context.decl.deffuns[name].args)
                     if len(args) != arity:
                         raise SyntaxError(f"{tok.info()} arity of {name} is {arity}, but length of args is {len(args)}")
                 else:
@@ -716,7 +717,9 @@ class Parser:
                 if name in context.decl.primpreds:
                     arity = context.decl.primpreds[name].arity
                 else:
-                    arity = len(context.decl.defpreds[name].args)
+                    if len(context.decl.defpreds[name]) > 1:
+                        raise Exception(f"{name} is found in defpreds, but signature is ambiguous due to overloading")
+                    arity = len(context.decl.defpreds[name][0].args)
                 args = [Var(f"x_{i}") for i in range(arity)]
                 return Lambda(tuple(args), Symbol(Pred(name), tuple(args)))
             else:

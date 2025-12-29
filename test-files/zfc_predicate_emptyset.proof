@@ -1,4 +1,4 @@
-include "zfc_in.proof"
+include "zfc_predicate_in.proof"
 
 definition predicate emptyset(x) as \forall y(notin(y,x))
 
