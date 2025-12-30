@@ -347,6 +347,11 @@ class Equality(Declaration):
     replacement: EqualityReplacement
 
 @dataclass
+class Membership(Declaration):
+    membership: PrimPred | DefPred
+    extensionality: str
+
+@dataclass
 class DeclarationContext:
     primpreds: dict[str, PrimPred]
     axioms: dict[str, Axiom]
@@ -360,11 +365,12 @@ class DeclarationContext:
     deffununiqs: dict[str, DefFunUniq]
     deffunterms: dict[str, DefFunTerm]
     equality: Equality | None
+    membership: Membership | None
     used_names: set[str]
 
     @staticmethod
     def init() -> "DeclarationContext":
-        return DeclarationContext(primpreds={}, axioms={}, theorems={}, defpreds={}, defcons={}, defconexists={}, defconuniqs={}, deffuns={}, deffunexists={}, deffununiqs={}, deffunterms={}, equality=None, used_names=set())
+        return DeclarationContext(primpreds={}, axioms={}, theorems={}, defpreds={}, defcons={}, defconexists={}, defconuniqs={}, deffuns={}, deffunexists={}, deffununiqs={}, deffunterms={}, equality=None, membership=None, used_names=set())
 
     def get_type_of(self, item: Term) -> type[Var] | tuple[type[Template], int]:
         if isinstance(item, (Var, Con)):
@@ -396,6 +402,11 @@ class DeclarationContext:
             if self.equality is not None:
                 raise Exception("equality is already declared")
             self.equality = declaration
+            return
+        if isinstance(declaration, Membership):
+            if self.membership is not None:
+                raise Exception("membership is already declared")
+            self.membership = declaration
             return
         if declaration.name in self.used_names:
             if not (isinstance(declaration, DefPred) and declaration.name in self.defpreds):

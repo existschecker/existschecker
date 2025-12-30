@@ -60,6 +60,16 @@ equality equal
   reflection equal_reflection
   replacement equal: equal_replacement, in: in_replacement
 
+theorem in_is_membership \forall x \forall y (\forall z (in(z, x) \leftrightarrow in(z, y)) \to equal(x, y)) {
+  any x, y {
+    assume \forall z (in(z, x) \leftrightarrow in(z, y)) {
+      fold for equal conclude equal(x, y)
+    }
+  }
+}
+
+membership in by in_is_membership
+
 theorem set_is_unique_for_each_predicate \forall^T\phi[1]\forall x\forall x'(\forall y(in(y,x)\leftrightarrow\phi(y))\wedge\forall y(in(y,x')\leftrightarrow\phi(y))\to equal(x,x')) {
   any template \phi[1], x, x' {
     assume \forall y(in(y,x)\leftrightarrow\phi(y))\wedge\forall y(in(y,x')\leftrightarrow\phi(y)) {

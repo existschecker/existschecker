@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, Fun, Con, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Pred, Control, Formula, Declaration, Template, Term, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Include, DeclarationSupport, Assert, Fold
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, Fun, Con, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Pred, Control, Formula, Declaration, Template, Term, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Include, DeclarationSupport, Assert, Fold, Membership
 from logic_utils import Substitutor, DefExpander, expr_in_context, collect_quantifier_vars, make_quantifier_vars, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs, pretty_expr, alpha_safe_formula, type_safe
 from copy import deepcopy
 
@@ -66,6 +66,8 @@ def check_declaration(node: Declaration, context: Context, indent: int = 0) -> b
         return check_deffunterm(node, context, indent)
     elif isinstance(node, Equality):
         return check_equality(node, context, indent)
+    elif isinstance(node, Membership):
+        return check_membership(node, context, indent)
     else:
         logger.error(f"{error_prefix}Unsupported node {node}")
         return False
@@ -310,6 +312,37 @@ def check_equality_replacement(node: EqualityReplacement, context: Context, inde
             node.proofinfo.status = "ERROR"
             return False
         logger.debug(f"{debug_prefix}Matched with expected formula: {pretty_expr(replacement, context)}")
+    node.proofinfo.status = "OK"
+    return True
+
+def check_membership(node: Membership, context: Context, indent: int):
+    debug_prefix = make_debug_prefix(node, indent)
+    error_prefix = make_error_prefix(node, indent)
+    logger.debug(f"{debug_prefix}name: {node.membership.name}")
+    if node.extensionality in context.decl.axioms:
+        reference = context.decl.axioms[node.extensionality].conclusion
+    elif node.extensionality in context.decl.theorems:
+        reference = context.decl.theorems[node.extensionality].conclusion
+    else:
+        logger.error(f"{error_prefix}{node.extensionality} is not found in axioms or theorems")
+        node.proofinfo.status = "ERROR"
+        return False
+    if context.decl.equality is None:
+        logger.error(f"{error_prefix}equality has not been declared")
+        node.proofinfo.status = "ERROR"
+        return False
+    x = Var("x")
+    y = Var("y")
+    z = Var("z")
+    pred_in = Pred(node.membership.name)
+    equal = Pred(context.decl.equality.equal.name)
+    extentionality = Forall(x, Forall(y, Implies(Forall(z, Iff(Symbol(pred_in, (z, x)), Symbol(pred_in, (z, y)))), Symbol(equal, (x, y)))))
+    if not alpha_equiv_with_defs(reference, extentionality, context):
+        logger.error(f"{error_prefix}Expected extentionality: {pretty_expr(extentionality, context)}, {node.extensionality}: {pretty_expr(extentionality, context)}")
+        node.proofinfo.status = "ERROR"
+        return False
+    context.add_decl(node)
+    logger.debug(f"{debug_prefix}{node.membership.name} is registered as membership")
     node.proofinfo.status = "OK"
     return True
 

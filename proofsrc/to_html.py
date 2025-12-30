@@ -1,6 +1,6 @@
 from datetime import datetime
 from html import escape
-from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Symbol, Pred, Compound, Fun, Control, Declaration, Bottom, Formula, Term, DeclarationSupport, Var, Include, Assert, Fold, Template
+from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Symbol, Pred, Compound, Fun, Control, Declaration, Bottom, Formula, Term, DeclarationSupport, Var, Include, Assert, Fold, Template, Membership
 from svg import output_svg
 from typing import Sequence, Mapping, TypeVar
 from logic_utils import pretty_expr
@@ -302,6 +302,21 @@ class Renderer:
         body_html = self.render_node(node.reflection) + self.render_node(node.replacement)
         return header_parts, header_parts_jp, body_html
 
+    def render_membership(self, node: Membership):
+        header_parts = [self.bullet,
+                        self.render_keyword("membership"),
+                        self.render_identifier(node.membership.name),
+                        self.render_keyword("by"),
+                        self.render_identifier(node.extensionality)]
+        header_parts_jp = [self.bullet,
+                           self.render_keyword("帰属関係宣言"),
+                           self.render_identifier(node.membership.name),
+                           "は帰属関係である。",
+                           "外延性は",
+                           self.render_identifier(node.extensionality),
+                           "で示された。"]
+        return header_parts, header_parts_jp, ""
+
     def render_declaration(self, node: Declaration):
         if isinstance(node, PrimPred):
             return self.render_primpred(node)
@@ -327,6 +342,8 @@ class Renderer:
             return self.render_deffunterm(node)
         elif isinstance(node, Equality):
             return self.render_equality(node)
+        elif isinstance(node, Membership):
+            return self.render_membership(node)
         else:
             raise Exception(f"Unexpected type: {type(node)}")
 

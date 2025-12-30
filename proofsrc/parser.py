@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, Template, Lambda, TemplateCall, Include, Assert, Fold
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, Template, Lambda, TemplateCall, Include, Assert, Fold, Membership
 from lexer import Token
 from token_stream import TokenStream
 from logic_utils import collect_quantifier_vars
@@ -31,6 +31,8 @@ class Parser:
                 ast.append(self.parse_uniqueness(context))
             elif tok.type == "EQUALITY":
                 ast.append(self.parse_equality(context))
+            elif tok.type == "MEMBERSHIP":
+                ast.append(self.parse_membership(context))
             elif tok.type == "EOF":
                 break
             else:
@@ -245,6 +247,26 @@ class Parser:
             else:
                 break
         return EqualityReplacement(token=start_token, equal=equal, evidence=replacement_evidence)
+
+    def parse_membership(self, context: Context) -> Membership:
+        start_token = self.stream.consume("MEMBERSHIP")
+        name = self.stream.consume("IDENT").value
+        if name in context.decl.primpreds:
+            membership = context.decl.primpreds[name]
+            if membership.arity != 2:
+                raise Exception(f"{start_token.info()} arity is required to be 2, but arity of {name} is {membership.arity}")
+        elif name in context.decl.defpreds:
+            membership = context.decl.get_defpred(name, [Var("x"), Var("y")])
+            if len(membership.args) != 2:
+                raise Exception(f"{start_token.info()} arity is required to be 2, but arity of {name} is {len(membership.args)}")
+        else:
+            raise Exception(f"{start_token.info()} primpred or defpred is required, but {name} is unknown")
+        self.stream.consume("BY")
+        extentionality = self.stream.consume("IDENT").value
+        membership = Membership(name=name, token=start_token, membership=membership, extensionality=extentionality)
+        context.add_decl(membership)
+        logger.debug(f"[membership] {type(membership)}: {membership.name}")
+        return membership
 
     def parse_include(self) -> Include:
         self.stream.consume("INCLUDE")
