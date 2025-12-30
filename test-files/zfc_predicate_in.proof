@@ -259,7 +259,7 @@ theorem subset_trans \forall^T \phi[1] \forall^T \chi[1] \forall^T \rho[1] (subs
   }
 }
 
-theorem neg_subset \forall^T \phi[1] \forall^T \chi[1] (\neg(subset(\phi, \chi)) \leftrightarrow \exists z (\phi(x) \wedge \neg(\chi(x)))) {
+theorem neg_subset \forall^T \phi[1] \forall^T \chi[1] (\neg(subset(\phi, \chi)) \leftrightarrow \exists x (\phi(x) \wedge \neg(\chi(x)))) {
   any template \phi[1], template \chi[1] {
     assume \neg(subset(\phi, \chi)) {
       expand \neg(subset(\phi, \chi)) for subset
@@ -277,7 +277,7 @@ theorem neg_subset \forall^T \phi[1] \forall^T \chi[1] (\neg(subset(\phi, \chi))
       apply invoke rightward exist_neg_leftrightarrow_neg_forall for lambda x. \phi(x) \to \chi(x)
       fold for subset conclude \neg(subset(\phi, \chi))
     }
-    connect \neg(subset(\phi, \chi)) \leftrightarrow \exists z (\phi(x) \wedge \neg(\chi(x)))
+    connect \neg(subset(\phi, \chi)) \leftrightarrow \exists x (\phi(x) \wedge \neg(\chi(x)))
   }
 }
 

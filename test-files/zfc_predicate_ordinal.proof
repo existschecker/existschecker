@@ -173,7 +173,7 @@ theorem ordianl_trans \forall\alpha\forall\beta\forall\gamma(ordinal(\alpha)\wed
   }
 }
 
-/* theorem ordinal_subsetneq_of_ordinal_is_element \forall\alpha(ordinal(\alpha)\to\forall\beta(subsetneq(\beta,\alpha)\wedge ordinal(\beta)\to in(\beta,\alpha))) {
+theorem ordinal_subsetneq_of_ordinal_is_element \forall\alpha(ordinal(\alpha)\to\forall\beta(subsetneq(\beta,\alpha)\wedge ordinal(\beta)\to in(\beta,\alpha))) {
   any \alpha {
     assume ordinal(\alpha) {
       any \beta {
@@ -433,4 +433,4 @@ theorem ordinals_trichotomy_in \forall\alpha\forall\beta(ordinal(\alpha)\wedge o
         }
     }
   }
-} */
+}

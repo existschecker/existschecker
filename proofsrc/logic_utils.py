@@ -447,7 +447,7 @@ class Substitutor:
                     raise Exception(f"{type(new_template)} cannot be substituted into TemplateCall since membership has not been declared.")
                 if len(expr.args) != 1:
                     raise Exception(f"{type(new_template)} cannot be substituted into TemplateCall with {len(expr.args)} args")
-                return Symbol(Pred(self.context.decl.membership.name), (expr.args[0], new_template))
+                return Symbol(Pred(self.context.decl.membership.name), (self.substitute_term(expr.args[0]), new_template))
             else:
                 raise Exception(f"Unexpected type: {type(new_template)}")
 
