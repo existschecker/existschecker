@@ -446,7 +446,7 @@ def check_divide(node: Divide, context: Context, indent: int):
         logger.error(f"{error_prefix}Not fact: {pretty_expr(node.fact, context)}")
         node.proofinfo.status = "ERROR"
         return False
-    fact = get_fact(node.fact, context)
+    fact = get_fact(node.fact, context, True)
     connected_premise = Or(node.cases[0].premise, node.cases[1].premise)
     i = 2
     while i < len(node.cases):

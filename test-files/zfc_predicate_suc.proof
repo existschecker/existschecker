@@ -1,4 +1,4 @@
-include "zfc_predicate_ordinal.proof"
+include "zfc_predicate_emptyset.proof"
 
 definition predicate suc(x, y) as \forall z(in(z, y) \leftrightarrow in(z, x) \vee equal(z, x))
 

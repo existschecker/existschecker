@@ -1,4 +1,4 @@
-include "zfc_predicate_in.proof"
+include "zfc_predicate_ordinal.proof"
 
 definition predicate emptyset(x) as \forall y(notin(y,x))
 
@@ -65,6 +65,96 @@ theorem emptyset_subset_cor1 \forall x\forall e(emptyset(e)\wedge subset(x,e)\to
       fold for emptyset conclude emptyset(x)
       connect emptyset(x)\wedge emptyset(e)
       apply invoke emptyset_is_unique for x,e
+    }
+  }
+}
+
+theorem emptyset_is_trans \forall n (emptyset(n) \to trans(n)) {
+  any n {
+    assume emptyset(n) {
+      any m, l {
+        assume in(l, m) \wedge in(m, n) {
+          split 2 in(l, m) \wedge in(m, n)
+          apply emptyset(n) for m
+          contradict in(m, n)
+          explode in(l, n)
+        }
+      }
+      fold for trans conclude trans(n)
+    }
+  }
+}
+
+theorem emptyset_is_transrelon \forall n (emptyset(n) \to transrelon(n, in)) {
+  any n {
+    assume emptyset(n) {
+      any m, l, k {
+        assume in(m, n) \wedge in(l, n) \wedge in(k, n) \wedge in(m, l) \wedge in(l, k) {
+          split 1 in(m, n) \wedge in(l, n) \wedge in(k, n) \wedge in(m, l) \wedge in(l, k)
+          apply emptyset(n) for m
+          contradict in(m, n)
+          explode in(m, k)
+        }
+      }
+      fold for transrelon conclude transrelon(n, in)
+    }
+  }
+}
+
+theorem emptyset_is_irrefrelon \forall n (emptyset(n) \to irrefrelon(n, in)) {
+  any n {
+    assume emptyset(n) {
+      any m {
+        assume in(m, n) {
+          apply emptyset(n) for m
+          contradict in(m, n)
+          explode notin(m, m)
+        }
+      }
+      fold for irrefrelon conclude irrefrelon(n, in)
+    }
+  }
+}
+
+theorem emptsyet_is_orderon \forall n (emptyset(n) \to orderon(n, in)) {
+  any n {
+    assume emptyset(n) {
+      apply invoke emptyset_is_transrelon for n
+      apply invoke emptyset_is_irrefrelon for n
+      connect transrelon(n, in) \wedge irrefrelon(n, in)
+      apply invoke irrefrelon_and_transrelon_implies_orderon for n, in
+    }
+  }
+}
+
+theorem emptyset_is_wellorder \forall n (emptyset(n) \to wellorder(n, in)) {
+  any n {
+    assume emptyset(n) {
+      apply invoke emptsyet_is_orderon for n
+      any template \phi[1] {
+        assume \exists m (in(m, n) \wedge \phi(m)) {
+          some m such \exists m (in(m, n) \wedge \phi(m)) {
+            split 1 in(m, n) \wedge \phi(m)
+            apply emptyset(n) for m
+            contradict in(m, n)
+          }
+          explode \exists m (minimum(n, in, \phi, m))
+        }
+      }
+      fold for wellorder_core conclude wellorder_core(n, in)
+      connect wellorder(n, in)
+    }
+  }
+}
+
+theorem emptyset_is_ordinal \forall n (emptyset(n) \to ordinal(n)) {
+  any n {
+    assume emptyset(n) {
+      apply invoke emptyset_is_trans for n
+      apply invoke emptyset_is_irrefrelon for n
+      apply invoke emptyset_is_wellorder for n
+      connect trans(n) \wedge irrefrelon(n, in) \wedge wellorder(n, in)
+      fold for ordinal conclude ordinal(n)
     }
   }
 }
