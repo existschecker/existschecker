@@ -3,6 +3,7 @@ from itertools import permutations
 from copy import deepcopy
 from typing import Mapping
 from dataclasses import dataclass, field
+import re
 
 def flatten_op(expr: Formula, op: type[And] | type[Or]) -> list[Formula]:
     if isinstance(expr, op):
@@ -380,15 +381,20 @@ def normalize_neg(expr: Formula) -> Formula:
 
 def fresh_name(item: Var | Template, used_items: set[Var | Template], context: Context) -> str:
     used_names = {item.name for item in used_items} | context.ctrl.used_names | context.decl.used_names
-    if item.name in used_names:
-        i = 0
-        new_name = f"{item.name}_{i}"
-        while new_name in used_names:
-            i += 1
-            new_name = f"{item.name}_{i}"
-        return new_name
-    else:
+    if item.name not in used_names:
         return item.name
+    match = re.match(r"^(.*)_(\d+)$", item.name)
+    if match:
+        base_name = match.group(1)
+        i = int(match.group(2)) + 1
+    else:
+        base_name = item.name
+        i = 0
+    new_name = f"{base_name}_{i}"
+    while new_name in used_names:
+        i += 1
+        new_name = f"{base_name}_{i}"
+    return new_name
 
 def fresh_var(var: Var, used_items: set[Var | Template], context: Context) -> Var:
     return Var(fresh_name(var, used_items, context))

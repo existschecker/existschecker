@@ -560,10 +560,10 @@ theorem ordinal_is_wellorder wellorder(ordinal, in) {
   apply invoke leftward wellorder_equivalent_linorder_and_wellfounded for ordinal, in
 }
 
-/* theorem ordinal_is_ordinal ordinal(ordinal) {
+theorem ordinal_is_ordinal ordinal(ordinal) {
   assert ordinal_is_trans
   assert ordinal_is_irrefrelon
   assert ordinal_is_wellorder
   connect trans(ordinal) \wedge irrefrelon(ordinal, in) \wedge wellorder(ordinal, in)
-  fold for ordinal conclude ordinal(ordinal)
-} */
+  fold for ordinal[1] conclude ordinal(ordinal)
+}
