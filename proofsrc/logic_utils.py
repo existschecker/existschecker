@@ -438,8 +438,35 @@ class Substitutor:
 
     def substitute_formula(self, expr: Formula) -> Formula:
         if isinstance(expr, Symbol):
-            return Symbol(expr.pred, tuple(self.substitute_term(arg) for arg in expr.args))
-
+            if expr.pred.name in self.context.decl.primpreds:
+                return Symbol(expr.pred, tuple(self.substitute_term(arg) for arg in expr.args))
+            elif expr.pred.name in self.context.decl.defpreds:
+                defpred = self.context.decl.get_defpred(expr.pred.name, expr.args)
+                resolved_args: list[Term] = []
+                for defarg, subarg in zip(defpred.args, expr.args):
+                    if isinstance(defarg, VarTerm):
+                        if isinstance(subarg, VarTerm):
+                            resolved_args.append(subarg)
+                        else:
+                            raise Exception(f"VarTerm must be substituted into {defarg.name}, but {type(subarg)} is substituted")
+                    elif isinstance(defarg, TemplateTerm):
+                        if isinstance(subarg, TemplateTerm):
+                            resolved_args.append(subarg)
+                        elif isinstance(subarg, VarTerm):
+                            if defarg.arity == 1:
+                                if self.context.decl.membership is None:
+                                    raise Exception(f"VarTerm is substituted into TemplateTerm with arity 1, but membership has not been declared")
+                                else:
+                                    resolved_args.append(MembershipLambda(subarg))
+                            else:
+                                raise Exception(f"VarTerm cannot be substituted into TemplateTerm with arity {defarg.arity}")
+                        else:
+                            raise Exception(f"Unexpected type: {type(subarg)}")
+                    else:
+                        raise Exception(f"Unexpected type: {type(defarg)}")
+                return Symbol(expr.pred, tuple(self.substitute_term(arg) for arg in resolved_args))
+            else:
+                raise Exception(f"{expr.pred.name} not found in primpreds or defpreds")
         elif isinstance(expr, Not):
             return Not(self.substitute_formula(expr.body))
 

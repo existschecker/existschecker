@@ -434,3 +434,14 @@ theorem ordinals_trichotomy_in \forall\alpha\forall\beta(ordinal(\alpha)\wedge o
     }
   }
 }
+
+theorem ordinal_is_trans trans(ordinal) {
+  any x, y {
+    assume in(y, x) \wedge ordinal(x) {
+      split in(y, x) \wedge ordinal(x)
+      apply invoke element_of_ordinal_is_ordinal for x
+      apply invoke \forall y (in(y, x) \to ordinal(y)) for y
+    }
+  }
+  fold for trans conclude trans(ordinal)
+}
