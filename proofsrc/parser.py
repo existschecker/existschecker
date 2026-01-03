@@ -617,10 +617,10 @@ class Parser:
                 else:
                     template = next(template for template in context.ctrl.templates if template.name == name)
                 if template.arity == 0:
-                    vars: list[Var] = []
+                    vars: list[Term] = []
                 else:
                     self.stream.consume("LPAREN")
-                    vars = self.parse_vars()
+                    vars = self.parse_terms(context)
                     self.stream.consume("RPAREN")
                     if len(vars) != template.arity:
                         raise SyntaxError(f"{tok.info()} arity of {template.name} is {template.arity}, but length of args is {len(vars)}")

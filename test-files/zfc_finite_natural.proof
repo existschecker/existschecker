@@ -1,0 +1,138 @@
+include "zfc_finite_suc.proof"
+
+definition predicate sucordinal(\alpha) as ordinal(\alpha) \wedge \exists \beta (equal(\alpha, suc(\beta)))
+
+definition predicate natural(n) as equal(n, emptyset) \vee (sucordinal(n) \wedge \forall m (in(m, n) \to equal(m, emptyset) \vee sucordinal(m)))
+
+theorem subset_natural_ordinal subset(natural, ordinal) {
+  any n {
+    assume natural(n) {
+      divide natural(n)
+        case equal(n, emptyset) {
+          substitute emptyset_is_ordinal for emptyset: n
+        }
+        case sucordinal(n) \wedge \forall m (in(m, n) \to equal(m, emptyset) \vee sucordinal(m)) {
+          split 1 sucordinal(n) \wedge \forall m (in(m, n) \to equal(m, emptyset) \vee sucordinal(m))
+          split 1 sucordinal(n)
+        }
+    }
+  }
+  fold for subset conclude subset(natural, ordinal)
+}
+
+theorem emptyset_is_natural natural(emptyset) {
+  pad equal(emptyset, emptyset) conclude equal(emptyset, emptyset) \vee (sucordinal(emptyset) \wedge \forall m (in(m, emptyset) \to equal(m, emptyset) \vee sucordinal(m)))
+  fold for natural conclude natural(emptyset)
+}
+
+theorem natural_is_trans trans(natural) {
+  any n, m {
+    assume in(m, n) \wedge natural(n) {
+      split in(m, n) \wedge natural(n)
+      divide natural(n)
+        case equal(n, emptyset) {
+          apply emptyset_existence for m
+          substitute notin(m, emptyset) for emptyset: n
+          contradict in(m, n)
+          explode natural(m)
+        }
+        case sucordinal(n) \wedge \forall m (in(m, n) \to equal(m, emptyset) \vee sucordinal(m)) {
+          split sucordinal(n) \wedge \forall m (in(m, n) \to equal(m, emptyset) \vee sucordinal(m))
+          apply invoke \forall m (in(m, n) \to equal(m, emptyset) \vee sucordinal(m)) for m
+          divide equal(m, emptyset) \vee sucordinal(m)
+            case equal(m, emptyset) {
+              substitute emptyset_is_natural for emptyset: m
+            }
+            case sucordinal(m) {
+              any l {
+                assume in (l, m) {
+                  connect in(l, m) \wedge in(m, n)
+                  apply invoke subset_natural_ordinal for n
+                  split 1 ordinal(n)
+                  apply invoke trans(n) for m, l
+                  apply invoke \forall m (in(m, n) \to equal(m, emptyset) \vee sucordinal(m)) for l
+                }
+              }
+              connect sucordinal(m) \wedge \forall l (in(l, m) \to equal(l, emptyset) \vee sucordinal(l))
+              pad sucordinal(m) \wedge \forall l (in(l, m) \to equal(l, emptyset) \vee sucordinal(l)) conclude equal(m, emptyset) \vee (sucordinal(m) \wedge \forall l (in(l, m) \to equal(l, emptyset) \vee sucordinal(l)))
+              fold for natural conclude natural(m)
+            }
+        }
+    }
+  }
+  fold for trans conclude trans(natural)
+}
+
+theorem natural_is_irrefrelon irrefrelon(natural, in) {
+  assert ordinal_is_irrefrelon
+  assert subset_natural_ordinal
+  connect irrefrelon(ordinal, in) \wedge subset(natural, ordinal)
+  apply invoke irrefrelon_subset for ordinal, in, natural
+}
+
+theorem natural_is_wellorder wellorder(natural, in) {
+  assert ordinal_is_wellorder
+  assert subset_natural_ordinal
+  connect wellorder(ordinal, in) \wedge subset(natural, ordinal)
+  apply invoke wellorder_subset for ordinal, in, natural
+}
+
+theorem natural_is_wellfounded wellfounded(natural, in) {
+  assert natural_is_wellorder
+  apply invoke wellorder_implies_wellfounded for natural, in
+}
+
+theorem natural_is_ordinal ordinal(natural) {
+  assert natural_is_trans
+  assert natural_is_irrefrelon
+  assert natural_is_wellorder
+  connect trans(natural) \wedge irrefrelon(natural, in) \wedge wellorder(natural, in)
+  fold for ordinal conclude ordinal(natural)
+}
+
+definition predicate inductive(template \phi[1]) as \phi(emptyset) \wedge \forall x (\phi(x) \to \phi(suc(x)))
+
+theorem natural_induction \forall^T \phi[1] (inductive(\phi) \to subset(natural, \phi)) {
+  any template \phi[1] {
+    assume inductive(\phi) {
+      deny \neg(subset(natural, \phi)) {
+        apply invoke rightward neg_subset for natural, \phi
+        apply invoke natural_is_wellfounded for lambda n. \neg(\phi(n))
+        some n such \exists n (minimal(natural, in, lambda m. \neg(\phi(m)), n)) {
+          split minimal(natural, in, lambda m. \neg(\phi(m)), n)
+          divide natural(n)
+            case equal(n, emptyset) {
+              split 1 inductive(\phi)
+              substitute \phi(emptyset) for emptyset: n
+              contradict \phi(n)
+            }
+            case sucordinal(n) \wedge \forall m (in(m, n) \to equal(m, emptyset) \vee sucordinal(m)) {
+              split sucordinal(n) \wedge \forall m (in(m, n) \to equal(m, emptyset) \vee sucordinal(m))
+              split sucordinal(n)
+              some m such \exists m (equal(n, suc(m))) {
+                apply suc_implies_in for m
+                substitute natural(n) for n: suc(m)
+                connect in(m, suc(m)) \wedge natural(suc(m))
+                apply invoke natural_is_trans for suc(m), m
+                deny equal(m, suc(m)) {
+                  substitute in(m, suc(m)) for m[1]: suc(m)
+                  apply invoke natural_is_irrefrelon for suc(m)
+                  contradict in(suc(m), suc(m))
+                }
+                deny \neg(\phi(m)) {
+                  connect natural(m) \wedge \neg(\phi(m)) \wedge neq(m, suc(m))
+                  substitute minimal_core(natural, in, lambda l. \neg(\phi(l)), n) for n: suc(m)
+                  apply invoke minimal_core(natural, in, lambda l. \neg(\phi(l)), suc(m)) for m
+                  contradict in(m, suc(m))
+                }
+                split 2 inductive(\phi)
+                apply invoke \forall x (\phi(x) \to \phi(suc(x))) for m
+                substitute \neg(\phi(n)) for n: suc(m)
+                contradict \phi(suc(m))
+              }
+            }
+        }
+      }
+    }
+  }
+}
