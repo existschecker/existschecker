@@ -168,7 +168,7 @@ def check_defconuniq(node: DefConUniq, context: Context, indent: int):
         logger.error(f"{error_prefix}equality has not been declared yet")
         node.proofinfo.status = "ERROR"
         return False
-    uniqueness_formula = Forall(var, Implies(body, Symbol(Pred(context.decl.equality.equal.name), (var, Con(node.con_name)))))
+    uniqueness_formula = Forall(var, Implies(body, Symbol(Pred(context.decl.equality.equal.name), (MembershipLambda(var), MembershipLambda(Con(node.con_name))))))
     if not alpha_equiv_with_defs(node.formula, uniqueness_formula, context):
         logger.error(f"{error_prefix}uniqueness_formula is not matched with theorem: {pretty_expr(node.formula, context)}")
         node.proofinfo.status = "ERROR"
@@ -772,7 +772,11 @@ def check_characterize(node: Characterize, context: Context, indent: int):
         logger.error(f"{error_prefix}equality has not been declared yet")
         node.proofinfo.status = "ERROR"
         return False
-    fact = And(existence, Forall(vardash, Implies(existence_dash, Symbol(Pred(context.decl.equality.equal.name), (vardash, node.term)))))
+    if not isinstance(node.term, VarTerm):
+        logger.error(f"{error_prefix}Unexpected type: {type(node.term)}")
+        node.proofinfo.status = "ERROR"
+        return False
+    fact = And(existence, Forall(vardash, Implies(existence_dash, Symbol(Pred(context.decl.equality.equal.name), (MembershipLambda(vardash), MembershipLambda(node.term))))))
     if not goal_in_context(fact, context):
         logger.error(f"{error_prefix}Not fact: {pretty_expr(fact, context)}")
         node.proofinfo.status = "ERROR"
