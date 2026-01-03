@@ -1,6 +1,6 @@
 from datetime import datetime
 from html import escape
-from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Symbol, Pred, Compound, Fun, Control, Declaration, Bottom, Formula, Term, DeclarationSupport, Var, Include, Assert, Fold, Template, Membership, DefFunTemplateTerm
+from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Symbol, Pred, Compound, Fun, Control, Declaration, Bottom, Formula, Term, DeclarationSupport, Var, Include, Assert, Fold, Template, Membership, DefFunTemplateTerm, CompoundTemplate
 from svg import output_svg
 from typing import Sequence, Mapping, TypeVar
 from logic_utils import pretty_expr
@@ -294,10 +294,19 @@ class Renderer:
     def render_deffuntemplateterm(self, node: DefFunTemplateTerm):
         header_parts = [self.bullet,
                         self.render_keyword("definition function template"),
-                        self.render_identifier(node.name)]
+                        f"[{node.arity}]",
+                        self.render_identifier(node.name),
+                        self.render_expr(CompoundTemplate(Fun(node.name), tuple(node.args))),
+                        self.render_keyword("as"),
+                        self.render_expr(node.term)]
         header_parts_jp = [self.bullet,
                            self.render_keyword("関数記号定義(テンプレート)"),
-                           self.render_identifier(node.name)]
+                           f"[{node.arity}]",
+                           self.render_identifier(node.name),
+                           self.render_expr(CompoundTemplate(Fun(node.name), tuple(node.args))),
+                           "を",
+                           self.render_expr(node.term),
+                           "により定める。"]
         return header_parts, header_parts_jp, ""
 
     def render_equality(self, node: Equality):

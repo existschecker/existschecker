@@ -646,13 +646,13 @@ class Parser:
             name = self.stream.consume("IDENT").value
             if any(template.name == name for template in context.form.templates):
                 pred = next(template for template in context.form.templates if template.name == name)
-                defargs = [Var(f"x_{i}") for i in range(pred.arity)]
+                defargs: list[Var | Template] = [Var(f"x_{i}") for i in range(pred.arity)]
             elif any(template.name == name for template in context.ctrl.templates):
                 pred = next(template for template in context.ctrl.templates if template.name == name)
-                defargs = [Var(f"x_{i}") for i in range(pred.arity)]
+                defargs: list[Var | Template] = [Var(f"x_{i}") for i in range(pred.arity)]
             elif name in context.decl.primpreds:
                 pred = Pred(name)
-                defargs = [Var(f"x_{i}") for i in range(context.decl.primpreds[name].arity)]
+                defargs: list[Var | Template] = [Var(f"x_{i}") for i in range(context.decl.primpreds[name].arity)]
             elif name in context.decl.defpreds:
                 pred = Pred(name)
                 defargs = context.decl.defpreds[name].args
@@ -662,7 +662,7 @@ class Parser:
                 terms = self.parse_terms(context)
                 self.stream.consume("RPAREN")
                 pred = CompoundTemplate(Fun(name), tuple(terms))
-                defargs = [Var(f"x_{i}") for i in range(deffuntemplateterm.arity)]
+                defargs: list[Var | Template] = [Var(f"x_{i}") for i in range(deffuntemplateterm.arity)]
             else:
                 raise Exception(f"{tok.info()} Unexpected name: {name}")
             if self.stream.peek().type == "LPAREN":
@@ -671,26 +671,7 @@ class Parser:
                 self.stream.consume("RPAREN")
             else:
                 subargs: list[Term] = []
-            resolved_args: list[Term] = []
-            for defarg, subarg in zip(defargs, subargs):
-                if isinstance(defarg, VarTerm):
-                    if isinstance(subarg, VarTerm):
-                        resolved_args.append(subarg)
-                    else:
-                        raise Exception(f"{tok.info()} VarTerm must be substituted into {defarg.name}, but {type(subarg)} is substituted")
-                elif isinstance(defarg, TemplateTerm):
-                    if isinstance(subarg, TemplateTerm):
-                        resolved_args.append(subarg)
-                    elif isinstance(subarg, VarTerm):
-                        if defarg.arity == 1:
-                            if context.decl.membership is None:
-                                raise Exception(f"{tok.info()} VarTerm is substituted into TemplateTerm with arity 1, but membership has not been declared")
-                            else:
-                                resolved_args.append(MembershipLambda(subarg))
-                        else:
-                            raise Exception(f"{tok.info()} VarTerm cannot be substituted into TemplateTerm with arity {defarg.arity}")
-                    else:
-                        raise Exception(f"{tok.info()} Unexpected type: {type(subarg)}")
+            resolved_args = self.match_args(defargs, subargs, context, tok)
             return Symbol(pred, tuple(resolved_args))
 
         elif tok.type == "LPAREN":
@@ -804,6 +785,13 @@ class Parser:
                         else:
                             raise Exception(f"Unexpected type: {type(arg)}")
                     return Lambda(tuple(vars), Symbol(Pred(name), tuple(items)))
+            elif name in context.decl.deffuntemplateterms:
+                defargs = context.decl.deffuntemplateterms[name].args
+                self.stream.consume("LPAREN")
+                subargs = self.parse_terms(context)
+                self.stream.consume("RPAREN")
+                resolved_args = self.match_args(defargs, subargs, context, tok)
+                return CompoundTemplate(Fun(name), tuple(resolved_args))
             else:
                 raise SyntaxError(f"{tok.info()} Term object is required, but {name} is unknown")
         elif tok.type == "LAMBDA":
@@ -884,6 +872,29 @@ class Parser:
         arity = int(self.stream.consume("NUMBER").value)
         self.stream.consume("RBRACKET")
         return Template(template_name, arity)
+
+    def match_args(self, defargs: list[Var | Template], subargs: list[Term], context: Context, tok: Token) -> list[Term]:
+        resolved_args: list[Term] = []
+        for defarg, subarg in zip(defargs, subargs):
+            if isinstance(defarg, VarTerm):
+                if isinstance(subarg, VarTerm):
+                    resolved_args.append(subarg)
+                else:
+                    raise Exception(f"{tok.info()} VarTerm must be substituted into {defarg.name}, but {type(subarg)} is substituted")
+            elif isinstance(defarg, TemplateTerm):
+                if isinstance(subarg, TemplateTerm):
+                    resolved_args.append(subarg)
+                elif isinstance(subarg, VarTerm):
+                    if defarg.arity == 1:
+                        if context.decl.membership is None:
+                            raise Exception(f"{tok.info()} VarTerm is substituted into TemplateTerm with arity 1, but membership has not been declared")
+                        else:
+                            resolved_args.append(MembershipLambda(subarg))
+                    else:
+                        raise Exception(f"{tok.info()} VarTerm cannot be substituted into TemplateTerm with arity {defarg.arity}")
+                else:
+                    raise Exception(f"{tok.info()} Unexpected type: {type(subarg)}")
+        return resolved_args
 
 if __name__ == "__main__":
     import sys

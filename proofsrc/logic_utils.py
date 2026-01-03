@@ -665,7 +665,7 @@ def pretty_term(expr: Term, context: Context, parent_prec: int = TERM_PRECEDENCE
         if len(tex) != 1:
             raise Exception("arity is different")
         return tex[0]
-    elif isinstance(expr, Compound):
+    elif isinstance(expr, (Compound, CompoundTemplate)):
         tex = pretty_expr_fragments(expr, context)
         if len(tex) != len(expr.args) + 1:
             raise Exception("arity is different")
@@ -705,17 +705,10 @@ def pretty_formula(expr: Formula, context: Context, parent_prec: int = FORMULA_P
             else:
                 return f"{expr.pred.name}({",".join([pretty_term(arg, context) for arg in expr.args])})"
         elif isinstance(expr.pred, CompoundTemplate):
-            tex = pretty_expr_fragments(expr.pred, context)
-            if len(tex) != len(expr.args) + 1:
-                raise Exception("arity is different")
-            text = ""
-            for i in range(len(expr.args)):
-                text += tex[i]
-                text += " "
-                text += pretty_term(expr.args[i], context)
-                text += " "
-            text += tex[-1]
-            return text if FORMULA_PRECEDENCE["Symbol"] > parent_prec else f"({text})"
+            if len(expr.args) == 0:
+                return pretty_term(expr.pred, context)
+            else:
+                return f"{pretty_term(expr.pred, context)}({",".join([pretty_term(arg, context) for arg in expr.args])})"
         else:
             raise Exception(f"Unexpected type: {type(expr.pred)}")
     elif isinstance(expr, Not):

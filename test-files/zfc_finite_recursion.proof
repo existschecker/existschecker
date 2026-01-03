@@ -22,10 +22,10 @@ definition function template[2] recursion(template \phi[1], template \psi[2]) as
 
 definition function template[1] tc(template \phi[1], template \psi[2]) as lambda e. \exists n \exists s (recursion(\phi, \psi)(n, s) \wedge in(e, s))
 
-/* definition function template[1] tcin(x) as tc(singleton(x), lambda p, q. in(q, p))
+definition function tcin(x) as tc(singleton(x), lambda p, q. in(q, p))
 
 definition predicate hf(x) as finite(tcin(x)) \wedge irrefrelon(tcin(x), in) \wedge wellfounded(tcin(x), in)
 
 definition predicate add(n, m, x) as recursion(lambda a. equal(a, n), lambda p, q. equal(q, suc(p)))(m, x)
 
-theorem recursion_is_unique \forall^T \phi[1] \forall^T \psi[2] \forall n \exists! x recursion(\phi, \psi)(n, x) */
+/* theorem recursion_is_unique \forall^T \phi[1] \forall^T \psi[2] \forall n \exists! x recursion(\phi, \psi)(n, x) */
