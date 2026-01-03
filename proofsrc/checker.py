@@ -227,7 +227,7 @@ def check_deffununiq(node: DefFunUniq, context: Context, indent: int):
         logger.error(f"{error_prefix}equality has not been declared yet")
         node.proofinfo.status = "ERROR"
         return False
-    uniqueness_formula = Forall(existsuniq.var, Implies(existsuniq.body, Symbol(Pred(context.decl.equality.equal.name), (Var(existsuniq.var.name), Compound(Fun(node.fun_name), tuple(args))))))
+    uniqueness_formula = Forall(existsuniq.var, Implies(existsuniq.body, Symbol(Pred(context.decl.equality.equal.name), (MembershipLambda(Var(existsuniq.var.name)), MembershipLambda(Compound(Fun(node.fun_name), tuple(args)))))))
     uniqueness_formula = make_quantifier_vars(uniqueness_formula, Forall, args)
     if not alpha_equiv_with_defs(node.formula, uniqueness_formula, context):
         logger.error(f"{error_prefix}uniqueness_formula is not matched with theorem: {pretty_expr(node.formula, context)}")
