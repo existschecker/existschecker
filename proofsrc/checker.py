@@ -8,7 +8,7 @@ logger = logging.getLogger("proof")
 def goal_in_context(goal: str | Bottom | Formula, context: Context) -> bool:
     if isinstance(goal, str):
         return context.decl.has_reference(goal)
-    elif isinstance(goal, Symbol) and context.decl.equality is not None and goal.pred.name == context.decl.equality.equal.name and goal.args[0] == goal.args[1]:
+    elif isinstance(goal, Symbol) and context.decl.equality is not None and isinstance(goal.pred, Pred) and goal.pred.name == context.decl.equality.equal.name and goal.args[0] == goal.args[1]:
         return True
     else:
         return expr_in_context(goal, context)
@@ -18,7 +18,7 @@ def get_fact(fact: str | Formula, context: Context, expand_symbol: bool = False)
         fact = context.decl.get_reference(fact)
     elif not isinstance(fact, Formula):
         raise Exception(f"Unexpected type {type(fact)}")
-    if expand_symbol and isinstance(fact, Symbol):
+    if expand_symbol and isinstance(fact, Symbol) and isinstance(fact.pred, Pred):
         if not fact.pred.name in context.decl.defpreds:
             raise Exception(f"Unexpected {fact.pred.name}")
         fact = DefExpander(context, [fact.pred.name]).expand_defs_formula(fact)
@@ -976,6 +976,8 @@ def check_connect(node: Connect, context: Context, indent: int):
     debug_prefix = make_debug_prefix(node, indent)
     error_prefix = make_error_prefix(node, indent)
     if isinstance(node.conclusion, Symbol):
+        if not isinstance(node.conclusion.pred, Pred):
+            raise Exception(f"Unexpected type: {type(node.conclusion.pred)}")
         if not node.conclusion.pred.name in context.decl.defpreds:
             raise Exception(f"Unexpected {node.conclusion.pred.name}")
         conclusion = DefExpander(context, [node.conclusion.pred.name]).expand_defs_formula(node.conclusion)

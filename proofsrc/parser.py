@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, Template, Lambda, TemplateCall, Include, Assert, Fold, Membership, MembershipLambda, VarTerm, TemplateTerm, DefFunTemplateTerm
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, Template, Lambda, Include, Assert, Fold, Membership, MembershipLambda, VarTerm, TemplateTerm, DefFunTemplateTerm
 from lexer import Token
 from token_stream import TokenStream
 from logic_utils import collect_quantifier_vars
@@ -657,7 +657,7 @@ class Parser:
                     self.stream.consume("RPAREN")
                     if len(vars) != template.arity:
                         raise SyntaxError(f"{tok.info()} arity of {template.name} is {template.arity}, but length of args is {len(vars)}")
-                return TemplateCall(template, tuple(vars))
+                return Symbol(template, tuple(vars))
             elif name in context.decl.primpreds or name in context.decl.defpreds:
                 self.stream.consume("LPAREN")
                 args = self.parse_terms(context)

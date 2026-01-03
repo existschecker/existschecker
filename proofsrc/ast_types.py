@@ -39,12 +39,12 @@ class Formula:
     pass
 
 @dataclass(frozen=True)
-class Pred:
+class Pred(TemplateTerm):
     name: str
 
 @dataclass(frozen=True)
 class Symbol(Formula):
-    pred: Pred
+    pred: TemplateTerm
     args: tuple[Term, ...]
 
 @dataclass(frozen=True)
@@ -72,15 +72,6 @@ class FormulaContext:
                 raise Exception(f"{item.name} is already used")
             new_used_names.add(item.name)
         return FormulaContext(list(self.vars + new_vars), list(self.templates + new_templates), new_used_names)
-
-@dataclass(frozen=True)
-class TemplateCall(Formula):
-    template: Template
-    args: tuple[Term, ...]
-
-    def __post_init__(self):
-        if len(self.args) != self.template.arity:
-            raise Exception(f"arity of {self.template.name} is {self.template.arity}, but length of args is {len(self.args)}")
 
 @dataclass(frozen=True)
 class Lambda(TemplateTerm):
