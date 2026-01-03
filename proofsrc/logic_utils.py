@@ -312,7 +312,7 @@ class DefExpander:
                 if expr.pred.name in self.context.decl.primpreds:
                     return Symbol(expr.pred, tuple(self.expand_defs_term(arg, bound_templates) for arg in expr.args))
                 elif expr.pred.name in self.context.decl.defpreds:
-                    defpred = self.context.decl.get_defpred(expr.pred.name, expr.args)
+                    defpred = self.context.decl.defpreds[expr.pred.name]
                     should_expand = False
                     if len(self.defs) == 0 and defpred.autoexpand:
                         should_expand = True
@@ -438,7 +438,7 @@ class Substitutor:
                 if expr.pred.name in self.context.decl.primpreds:
                     return Symbol(expr.pred, tuple(self.substitute_term(arg) for arg in expr.args))
                 elif expr.pred.name in self.context.decl.defpreds:
-                    defpred = self.context.decl.get_defpred(expr.pred.name, expr.args)
+                    defpred = self.context.decl.defpreds[expr.pred.name]
                     resolved_args: list[Term] = []
                     for defarg, subarg in zip(defpred.args, expr.args):
                         if isinstance(defarg, VarTerm):
@@ -633,7 +633,7 @@ def pretty_expr_fragments(expr: Symbol | Compound, context: Context) -> list[str
         if expr.pred.name in context.decl.primpreds:
             tex = context.decl.primpreds[expr.pred.name].tex
         elif expr.pred.name in context.decl.defpreds:
-            tex = context.decl.get_defpred(expr.pred.name, expr.args).tex
+            tex = context.decl.defpreds[expr.pred.name].tex
         else:
             raise Exception(f"{expr.pred.name} is not in primpreds or defpreds")
         return tex

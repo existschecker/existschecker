@@ -236,7 +236,7 @@ class Parser:
             if equal.arity != 2:
                 raise Exception(f"{start_token.info()} arity is required to be 2, but arity of {name} is {equal.arity}")
         elif name in context.decl.defpreds:
-            equal = context.decl.get_defpred(name, [Var("x"), Var("y")])
+            equal = context.decl.defpreds[name]
             if len(equal.args) != 2:
                 raise Exception(f"{start_token.info()} arity is required to be 2, but arity of {name} is {len(equal.args)}")
         else:
@@ -289,7 +289,7 @@ class Parser:
             if membership.arity != 2:
                 raise Exception(f"{start_token.info()} arity is required to be 2, but arity of {name} is {membership.arity}")
         elif name in context.decl.defpreds:
-            membership = context.decl.get_defpred(name, [Var("x"), Var("y")])
+            membership = context.decl.defpreds[name]
             if len(membership.args) != 2:
                 raise Exception(f"{start_token.info()} arity is required to be 2, but arity of {name} is {len(membership.args)}")
         else:
@@ -668,7 +668,7 @@ class Parser:
                         raise SyntaxError(f"{tok.info()} arity of {name} is {arity}, but length of args is {len(args)}")
                 else:
                     resolved_args: list[Term] = []
-                    defpred = context.decl.get_defpred(name, args)
+                    defpred = context.decl.defpreds[name]
                     for defarg, subarg in zip(defpred.args, args):
                         if isinstance(defarg, VarTerm):
                             if isinstance(subarg, VarTerm):
@@ -792,11 +792,9 @@ class Parser:
                     args = [Var(f"x_{i}") for i in range(arity)]
                     return Lambda(tuple(args), Symbol(Pred(name), tuple(args)))
                 else:
-                    if len(context.decl.defpreds[name]) > 1:
-                        raise Exception(f"{name} is found in defpreds, but signature is ambiguous due to overloading")
                     vars: list[Var] = []
                     items: list[Var | MembershipLambda] = []
-                    for i, arg in enumerate(context.decl.defpreds[name][0].args):
+                    for i, arg in enumerate(context.decl.defpreds[name].args):
                         var = Var(f"x_{i}")
                         vars.append(var)
                         if isinstance(arg, Var):

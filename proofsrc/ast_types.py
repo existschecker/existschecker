@@ -365,7 +365,7 @@ class DeclarationContext:
     primpreds: dict[str, PrimPred]
     axioms: dict[str, Axiom]
     theorems: dict[str, Theorem]
-    defpreds: dict[str, list[DefPred]]
+    defpreds: dict[str, DefPred]
     defcons: dict[str, DefCon]
     defconexists: dict[str, DefConExist]
     defconuniqs: dict[str, DefConUniq]
@@ -381,9 +381,6 @@ class DeclarationContext:
     @staticmethod
     def init() -> "DeclarationContext":
         return DeclarationContext(primpreds={}, axioms={}, theorems={}, defpreds={}, defcons={}, defconexists={}, defconuniqs={}, deffuns={}, deffunexists={}, deffununiqs={}, deffunterms={}, deffuntemplateterms={}, equality=None, membership=None, used_names=set())
-
-    def match_signature(self, args1: Sequence[Term], args2: Sequence[Term]) -> bool:
-        return len(args1) == len(args2)
 
     def add(self, declaration: Declaration):
         if isinstance(declaration, Equality):
@@ -406,13 +403,7 @@ class DeclarationContext:
         elif isinstance(declaration, Theorem):
             self.theorems[declaration.name] = declaration
         elif isinstance(declaration, DefPred):
-            if declaration.name in self.defpreds:
-                for existing in self.defpreds[declaration.name]:
-                    if self.match_signature(existing.args, declaration.args):
-                        raise Exception(f"Overload of {declaration.name} with the same signature")
-            else:
-                self.defpreds[declaration.name] = []
-            self.defpreds[declaration.name].append(declaration)
+            self.defpreds[declaration.name] = declaration
         elif isinstance(declaration, DefCon):
             self.defcons[declaration.name] = declaration
         elif isinstance(declaration, DefConExist):
@@ -451,44 +442,6 @@ class DeclarationContext:
             return self.deffununiqs[name].formula
         else:
             raise Exception(f"Unexpected name: {name}")
-
-    def match_defpred(self, name: str, args: Sequence[Term]) -> bool:
-        if name in self.defpreds:
-            for existing in self.defpreds[name]:
-                if self.match_signature(existing.args, args):
-                    return True
-            return False
-        else:
-            return False
-
-    def get_defpred(self, name: str, args: Sequence[Term]) -> DefPred:
-        if name in self.defpreds:
-            for existing in self.defpreds[name]:
-                if self.match_signature(existing.args, args):
-                    return existing
-            raise Exception(f"{name} is found in defpreds, but signature is not matched")
-        else:
-            raise Exception(f"{name} is not found in defpreds")
-
-    def get_deffun(self, name: str, args: Sequence[Term]) -> DefFun:
-        if name in self.deffuns:
-            existing = self.deffuns[name]
-            if self.match_signature(existing.args, args):
-                return existing
-            else:
-                raise Exception(f"{name} is found in deffuns, but signature is not matched")
-        else:
-            raise Exception(f"{name} is not found in deffuns")
-
-    def get_deffunterm(self, name: str, args: Sequence[Term]) -> DefFunTerm:
-        if name in self.deffunterms:
-            existing = self.deffunterms[name]
-            if self.match_signature(existing.args, args):
-                return existing
-            else:
-                raise Exception(f"{name} is found in deffunterms, but signature is not matched")
-        else:
-            raise Exception(f"{name} is not found in deffunterms")
 
 @dataclass
 class Context:
