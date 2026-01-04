@@ -26,7 +26,9 @@ class AlphaEquiv:
     def alpha_equiv_con(self, e1: Con | Fun | Pred, e2: Con | Fun | Pred, depth: int) -> bool:
         return e1.name == e2.name
 
-    def alpha_equiv_compound(self, e1: Compound, e2: Compound, env: dict[Var | Template, Var | Template], depth: int) -> bool:
+    def alpha_equiv_compound(self, e1: Compound | CompoundTemplate, e2: Compound | CompoundTemplate, env: dict[Var | Template, Var | Template], depth: int) -> bool:
+        if type(e1) != type(e2):
+            return False
         if not self.alpha_equiv_con(e1.fun, e2.fun, depth+1):
             return False
         if len(e1.args) != len(e2.args):
@@ -73,6 +75,8 @@ class AlphaEquiv:
             return self.alpha_equiv_con(e1, e2, depth)
         elif isinstance(e1, Template) and isinstance(e2, Template):
             return self.alpha_equiv_var(e1, e2, env, depth)
+        elif isinstance(e1, CompoundTemplate) and isinstance(e2, CompoundTemplate):
+            return self.alpha_equiv_compound(e1, e2, env, depth)
         else:
             return False
 
@@ -336,6 +340,35 @@ class DefExpander:
                     return Symbol(expr.pred, tuple(self.expand_defs_term(arg, bound_templates) for arg in expr.args))
                 else:
                     raise Exception(f"{expr.pred} in {self.context.ctrl.templates} or {expr.pred} in {bound_templates}")
+            elif isinstance(expr.pred, CompoundTemplate):
+                if expr.pred.fun.name in self.context.decl.deffuntemplateterms:
+                    should_expand = False
+                    if expr.pred.fun.name in self.defs:
+                        target_indexes = self.indexes.get(expr.pred.fun.name, [])
+                        self.counter[expr.pred.fun.name] = self.counter.get(expr.pred.fun.name, 0) + 1
+                        if not target_indexes:
+                            should_expand = True
+                        elif self.counter[expr.pred.fun.name] in target_indexes:
+                            should_expand = True
+                    if should_expand:
+                        deffuntemplateterm = self.context.decl.deffuntemplateterms[expr.pred.fun.name]
+                        renamed_term, renamed_mapping = alpha_safe_term(deffuntemplateterm.term, dict(zip(deffuntemplateterm.args, expr.pred.args)), self.context)
+                        if not type_safe(renamed_mapping, self.context):
+                            raise Exception("type_safe() failed")
+                        expanded = Substitutor(renamed_mapping, self.context).substitute_term(renamed_term)
+                        new_pred = self.expand_defs_term(expanded, bound_templates)
+                        if not isinstance(new_pred, TemplateTerm):
+                            raise Exception(f"Unexpected type: {type(new_pred)}")
+                        if isinstance(new_pred, Lambda):
+                            renamed_body, final_mapping = alpha_safe_formula(new_pred.body, dict(zip(new_pred.args, expr.args)), self.context)
+                            final_formula = Substitutor(final_mapping, self.context).substitute_formula(renamed_body)
+                            return self.expand_defs_formula(final_formula, bound_templates)
+                        else:
+                            return Symbol(new_pred, tuple(self.expand_defs_term(arg, bound_templates) for arg in expr.args))
+                    else:
+                        return Symbol(expr.pred, tuple(self.expand_defs_term(arg, bound_templates) for arg in expr.args))
+                else:
+                    raise Exception(f"Unexpected name: {expr.pred.fun.name}")
             else:
                 raise Exception(f"Unexpected type: {type(expr.pred)}")
         elif isinstance(expr, Not):
@@ -481,6 +514,8 @@ class Substitutor:
                     return Symbol(Pred(self.context.decl.membership.name), (self.substitute_term(expr.args[0]), new_template.varterm))
                 else:
                     raise Exception(f"Unexpected type: {type(new_template)}")
+            elif isinstance(expr.pred, CompoundTemplate):
+                return Symbol(CompoundTemplate(expr.pred.fun, tuple(self.substitute_term(arg) for arg in expr.pred.args)), tuple(self.substitute_term(arg) for arg in expr.args))
             else:
                 raise Exception(f"Unexpected type: {type(expr.pred)}")
 
@@ -538,6 +573,8 @@ class AlphaRename:
                 new_pred = expr.pred
             elif isinstance(expr.pred, Template):
                 new_pred = self.alpha_rename_template(expr.pred)
+            elif isinstance(expr.pred, CompoundTemplate):
+                new_pred = CompoundTemplate(expr.pred.fun, tuple(self.alpha_rename_term(a) for a in expr.pred.args))
             else:
                 raise Exception(f"Unexpected type: {type(expr.pred)}")
             return Symbol(new_pred, tuple(self.alpha_rename_term(a) for a in expr.args))
@@ -701,14 +738,16 @@ def pretty_formula(expr: Formula, context: Context, parent_prec: int = FORMULA_P
             return text if FORMULA_PRECEDENCE["Symbol"] > parent_prec else f"({text})"
         elif isinstance(expr.pred, Template):
             if expr.pred.arity == 0:
-                return expr.pred.name
+                text = expr.pred.name
             else:
-                return f"{expr.pred.name}({",".join([pretty_term(arg, context) for arg in expr.args])})"
+                text = f"{expr.pred.name}({",".join([pretty_term(arg, context) for arg in expr.args])})"
+            return text if FORMULA_PRECEDENCE["Symbol"] > parent_prec else f"({text})"
         elif isinstance(expr.pred, CompoundTemplate):
             if len(expr.args) == 0:
-                return pretty_term(expr.pred, context)
+                text = pretty_term(expr.pred, context)
             else:
-                return f"{pretty_term(expr.pred, context)}({",".join([pretty_term(arg, context) for arg in expr.args])})"
+                text = f"{pretty_term(expr.pred, context)}({",".join([pretty_term(arg, context) for arg in expr.args])})"
+            return text if FORMULA_PRECEDENCE["Symbol"] > parent_prec else f"({text})"
         else:
             raise Exception(f"Unexpected type: {type(expr.pred)}")
     elif isinstance(expr, Not):

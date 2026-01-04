@@ -83,12 +83,12 @@ definition predicate hf(x) as finite(tcin(x)) \wedge irrefrelon(tcin(x), in) \we
 
 definition predicate add(n, m, x) as recursion(lambda a. equal(a, n), lambda p, q. equal(q, suc(p)))(m, x)
 
-/* theorem recursion_is_unique \forall^T \phi[1] \forall^T \psi[2] \forall n \exists! x (recursion(\phi, \psi)(n, x)) {
+/* theorem recursion_is_unique \forall^T \phi[1] \forall^T \psi[2] (\exists! a (\phi(a)) \wedge \forall p \exists! q (\psi(p, q)) \to \forall n \exists! x (recursion(\phi, \psi)(n, x))) {
   any template \phi[1], template \psi[2] {
-    assume \exists! a (\phi(a)) {
+    assume \exists! a (\phi(a)) \wedge \forall p \exists! q (\psi(p, q)) {
+      split \exists! a (\phi(a)) \wedge \forall p \exists! q (\psi(p, q))
       some a such \exists! a (\phi(a)) {
-        assert emptyset_is_natural
-        show \exists! x (natural(emptyset) \wedge \exists g (approx(g, emptyset, \phi, \psi) \wedge in(op(emptyset, x), g))) {
+        show \exists! x (recursion(\phi, \psi)(emptyset, x)) {
           assert emptyset_is_natural
           apply singleton_op_is_fun for emptyset, a
           apply singleton_op_dom for emptyset, a
@@ -108,9 +108,10 @@ definition predicate add(n, m, x) as recursion(lambda a. equal(a, n), lambda p, 
           connect approx(singleton(op(emptyset, a)), emptyset, \phi, \psi) \wedge in(op(emptyset, a), singleton(op(emptyset, a)))
           lift for singleton(op(emptyset, a)) conclude \exists g (approx(g, emptyset, \phi, \psi) \wedge in(op(emptyset, a), g))
           connect natural(emptyset) \wedge \exists g (approx(g, emptyset, \phi, \psi) \wedge in(op(emptyset, a), g))
+          fold for recursion conclude recursion(\phi, \psi)(emptyset, a)
           any x {
-            assume natural(emptyset) \wedge \exists g (approx(g, emptyset, \phi, \psi) \wedge in(op(emptyset, x), g)) {
-              split 2 natural(emptyset) \wedge \exists g (approx(g, emptyset, \phi, \psi) \wedge in(op(emptyset, x), g))
+            assume recursion(\phi, \psi)(emptyset, x) {
+              split 2 recursion(\phi, \psi)(emptyset, x)
               some g such \exists g (approx(g, emptyset, \phi, \psi) \wedge in(op(emptyset, x), g)) {
                 split approx(g, emptyset, \phi, \psi) \wedge in(op(emptyset, x), g)
                 split approx(g, emptyset, \phi, \psi)
@@ -125,8 +126,8 @@ definition predicate add(n, m, x) as recursion(lambda a. equal(a, n), lambda p, 
               }
             }
           }
-          connect natural(emptyset) \wedge \exists g (approx(g, emptyset, \phi, \psi) \wedge in(op(emptyset, a), g)) \wedge \forall x (natural(emptyset) \wedge \exists g (approx(g, emptyset, \phi, \psi) \wedge in(op(emptyset, x), g)) \to equal(x, a))
-          characterize for a conclude \exists! x (natural(emptyset) \wedge \exists g (approx(g, emptyset, \phi, \psi) \wedge in(op(emptyset, x), g)))
+          connect recursion(\phi, \psi)(emptyset, a) \wedge \forall x (recursion(\phi, \psi)(emptyset, x) \to equal(x, a))
+          characterize for a conclude \exists! x (recursion(\phi, \psi)(emptyset, x))
         }
       }
     }

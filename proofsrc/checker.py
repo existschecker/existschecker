@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, Fun, Con, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Pred, Control, Formula, Declaration, Template, Term, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Include, DeclarationSupport, Assert, Fold, Membership, MembershipLambda, VarTerm, TemplateTerm, DefFunTemplateTerm
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, Symbol, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, Fun, Con, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Pred, Control, Formula, Declaration, Template, Term, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Include, DeclarationSupport, Assert, Fold, Membership, MembershipLambda, VarTerm, TemplateTerm, DefFunTemplateTerm, CompoundTemplate
 from logic_utils import Substitutor, DefExpander, expr_in_context, collect_quantifier_vars, make_quantifier_vars, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs, pretty_expr, alpha_safe_formula, type_safe
 from copy import deepcopy
 
@@ -22,6 +22,10 @@ def get_fact(fact: str | Formula, context: Context, expand_symbol: bool = False)
         if not fact.pred.name in context.decl.defpreds:
             raise Exception(f"Unexpected {fact.pred.name}")
         fact = DefExpander(context, [fact.pred.name]).expand_defs_formula(fact)
+    if expand_symbol and isinstance(fact, Symbol) and isinstance(fact.pred, CompoundTemplate):
+        if not fact.pred.fun.name in context.decl.deffuntemplateterms:
+            raise Exception(f"Unexpected {fact.pred.fun.name}")
+        fact = DefExpander(context, [fact.pred.fun.name]).expand_defs_formula(fact)
     return fact
 
 def add_conclusion(context: Context, conclusion: Bottom | Formula) -> None:
