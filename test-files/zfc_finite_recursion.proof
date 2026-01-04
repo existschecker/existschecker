@@ -2,13 +2,9 @@ include "zfc_finite_pair.proof"
 
 definition predicate rel(R) as \forall z (in(z, R) \to \exists x \exists y (equal(z, op(x, y))))
 
-definition predicate indom(R, x) as \exists y (in(op(x, y), R))
+definition predicate dom(R, template \phi[1]) as \forall x (\phi(x) \leftrightarrow \exists y (in(op(x, y), R)))
 
-definition predicate dom(R, template \phi[1]) as \forall x (\phi(x) \leftrightarrow indom(R, x))
-
-definition predicate inran(R, y) as \exists x (in(op(x, y), R))
-
-definition predicate ran(R, template \phi[1]) as \forall y (\phi(y) \leftrightarrow inran(R, y))
+definition predicate ran(R, template \phi[1]) as \forall y (\phi(y) \leftrightarrow \exists x (in(op(x, y), R)))
 
 definition predicate fun(f) as rel(f) \wedge \forall x \forall y \forall y' (in(op(x, y), f) \wedge in(op(x, y'), f) \to equal(y, y'))
 
@@ -38,17 +34,16 @@ theorem singleton_op_dom \forall x \forall y (dom(singleton(op(x, y)), singleton
         substitute equal(op(x, y), op(x, y)) for x[1]: p
         apply invoke leftward singleton_characterization for op(x, y), op(p, y)
         lift for y conclude \exists q (in(op(p, q), singleton(op(x, y))))
-        fold for indom conclude indom(singleton(op(x, y)), p)
       }
-      assume indom(singleton(op(x, y)), p) {
-        some q such indom(singleton(op(x, y)), p) {
+      assume \exists q (in(op(p, q), singleton(op(x, y)))) {
+        some q such \exists q (in(op(p, q), singleton(op(x, y)))) {
           apply invoke rightward singleton_characterization for op(x, y), op(p, q)
           apply invoke op_characterization for p, q, x, y
           split 1 equal(p, x) \wedge equal(q, y)
           apply invoke leftward singleton_characterization for x, p
         }
       }
-      connect in(p, singleton(x)) \leftrightarrow indom(singleton(op(x, y)), p)
+      connect in(p, singleton(x)) \leftrightarrow \exists q (in(op(p, q), singleton(op(x, y))))
     }
     fold for dom conclude dom(singleton(op(x, y)), singleton(x))
   }
@@ -70,6 +65,127 @@ theorem singleton_op_is_fun \forall x \forall y (fun(singleton(op(x, y)))) {
     connect fun(singleton(op(x, y)))
   }
 }
+
+theorem adding_op_rel \forall R \forall x \forall y (rel(R) \to rel(adj(R, op(x, y)))) {
+  any R, x, y {
+    assume rel(R) {
+      any z {
+        assume in(z, adj(R, op(x, y))) {
+          apply invoke rightward adj_existence for R, op(x, y), z
+          divide in(z, R) \vee equal(z, op(x, y))
+            case in(z, R) {
+              apply invoke rel(R) for z
+            }
+            case equal(z, op(x, y)) {
+              lift for x, y conclude \exists x \exists y (equal(z, op(x, y)))
+            }
+        }
+      }
+      fold for rel conclude rel(adj(R, op(x, y)))
+    }
+  }
+}
+
+theorem adding_op_dom \forall R \forall X \forall x \forall y (dom(R, X) \to dom(adj(R, op(x, y)), adj(X, x))) {
+  any R, X, x, y {
+    assume dom(R, X) {
+      any p {
+        assume in(p, adj(X, x)) {
+          apply invoke rightward adj_existence for X, x, p
+          divide in(p, X) \vee equal(p, x)
+            case in(p, X) {
+              apply invoke rightward dom(R, X) for p
+              some q such \exists q (in(op(p, q), R)) {
+                pad in(op(p, q), R) conclude in(op(p, q), R) \vee equal(op(p, q), op(x, y))
+                apply invoke leftward adj_existence for R, op(x, y), op(p, q)
+                lift for q conclude \exists q (in(op(p, q), adj(R, op(x, y))))
+              }
+            }
+            case equal(p, x) {
+              substitute equal(op(x, y), op(x, y)) for x[1]: p
+              pad equal(op(p, y), op(x, y)) conclude in(op(p, y), R) \vee equal(op(p, y), op(x, y))
+              apply invoke leftward adj_existence for R, op(x, y), op(p, y)
+              lift for y conclude \exists q (in(op(p, q), adj(R, op(x, y))))
+            }
+        }
+        assume \exists q (in(op(p, q), adj(R, op(x, y)))) {
+          some q such \exists q (in(op(p, q), adj(R, op(x, y)))) {
+            apply invoke rightward adj_existence for R, op(x, y), op(p, q)
+            divide in(op(p, q), R) \vee equal(op(p, q), op(x, y))
+              case in(op(p, q), R) {
+                lift for q conclude \exists q (in(op(p, q), R))
+                apply invoke leftward dom(R, X) for p
+                pad in(p, X) conclude in(p, X) \vee equal(p, x)
+                apply invoke leftward adj_existence for X, x, p
+              }
+              case equal(op(p, q), op(x, y)) {
+                apply invoke op_characterization for p, q, x, y
+                split 1 equal(p, x) \wedge equal(q, y)
+                pad equal(p, x) conclude in(p, X) \vee equal(p, x)
+                apply invoke leftward adj_existence for X, x, p
+              }
+          }
+        }
+        connect in(p, adj(X, x)) \leftrightarrow \exists q (in(op(p, q), adj(R, op(x, y))))
+      }
+      fold for dom conclude dom(adj(R, op(x, y)), adj(X, x))
+    }
+  }
+}
+
+theorem adding_op_fun \forall f \forall x \forall y (fun(f) \wedge \neg(\exists q (in(op(x, q), f))) \to fun(adj(f, op(x, y)))) {
+  any f, x, y {
+    assume fun(f) \wedge \neg(\exists q (in(op(x, q), f))) {
+      split fun(f) \wedge \neg(\exists q (in(op(x, q), f)))
+      split fun(f)
+      apply invoke adding_op_rel for f, x, y
+      any p, q, q' {
+        assume in(op(p, q), adj(f, op(x, y))) \wedge in(op(p, q'), adj(f, op(x, y))) {
+          split in(op(p, q), adj(f, op(x, y))) \wedge in(op(p, q'), adj(f, op(x, y)))
+          apply invoke rightward adj_existence for f, op(x, y), op(p, q)
+          apply invoke rightward adj_existence for f, op(x, y), op(p, q')
+          divide in(op(p, q), f) \vee equal(op(p, q), op(x, y))
+            case in(op(p, q), f) {
+              divide in(op(p, q'), f) \vee equal(op(p, q'), op(x, y))
+                case in(op(p, q'), f) {
+                  connect in(op(p, q), f) \wedge in(op(p, q'), f)
+                  apply invoke \forall x \forall y \forall y' (in(op(x, y), f) \wedge in(op(x, y'), f) \to equal(y, y')) for p, q, q'
+                }
+                case equal(op(p, q'), op(x, y)) {
+                  apply invoke op_characterization for p, q', x, y
+                  split 1 equal(p, x) \wedge equal(q', y)
+                  substitute \neg(\exists q (in(op(x, q), f))) for x: p
+                  lift for q conclude \exists q (in(op(p, q), f))
+                  contradict \exists q (in(op(p, q), f))
+                  explode equal(q, q')
+                }
+            }
+            case equal(op(p, q), op(x, y)) {
+              divide in(op(p, q'), f) \vee equal(op(p, q'), op(x, y))
+                case in(op(p, q'), f) {
+                  apply invoke op_characterization for p, q, x, y
+                  split 1 equal(p, x) \wedge equal(q, y)
+                  substitute \neg(\exists q (in(op(x, q), f))) for x: p
+                  lift for q' conclude \exists q' (in(op(p, q'), f))
+                  contradict \exists q (in(op(p, q), f))
+                  explode equal(q, q')
+                }
+                case equal(op(p, q'), op(x, y)) {
+                  apply invoke op_characterization for p, q, x, y
+                  split 2 equal(p, x) \wedge equal(q, y)
+                  apply invoke op_characterization for p, q', x, y
+                  split 2 equal(p, x) \wedge equal(q', y)
+                  substitute equal(q, y) for y: q'
+                }
+            }
+        }
+      }
+      connect fun(adj(f, op(x, y)))
+    }
+  }
+}
+
+/* theorem finite_separation \forall x \forall^T \phi[1] (finite(x) \to \exists y \forall z (in(z, y) \leftrightarrow in(z, x) \wedge \phi(z))) */
 
 definition predicate approx(g, n, template \phi[1], template \psi[2]) as fun(g) \wedge dom(g, suc(n)) \wedge \exists a (in(op(emptyset, a), g) \wedge \phi(a)) \wedge \forall k (in(k, n) \to \exists p \exists q (in(op(k, p), g) \wedge in(op(suc(k), q), g) \wedge \psi(p, q)))
 
@@ -128,6 +244,92 @@ definition predicate add(n, m, x) as recursion(lambda a. equal(a, n), lambda p, 
           }
           connect recursion(\phi, \psi)(emptyset, a) \wedge \forall x (recursion(\phi, \psi)(emptyset, x) \to equal(x, a))
           characterize for a conclude \exists! x (recursion(\phi, \psi)(emptyset, x))
+        }
+      }
+      any n {
+        assume natural(n) {
+          assume \exists! x (recursion(\phi, \psi)(n, x)) {
+            some x such \exists! x (recursion(\phi, \psi)(n, x)) {
+              apply \forall p \exists! q (\psi(p, q)) for x
+              some y such \exists! y (\psi(x, y)) {
+                split 2 recursion(\phi, \psi)(n, x)
+                apply invoke rightward suc_of_natural_is_natural_and_vice_versa for n
+                some g such \exists g (approx(g, n, \phi, \psi) \wedge in(op(n, x), g)) {
+                  split approx(g, n, \phi, \psi) \wedge in(op(n, x), g)
+                  split approx(g, n, \phi, \psi)
+                  deny \exists q (in(op(suc(n), q), g)) {
+                    some q such \exists q (in(op(suc(n), q), g)) {
+                      apply invoke leftward dom(g, suc(n)) for suc(n)
+                      apply invoke natural_is_irrefrelon for suc(n)
+                      contradict in(suc(n), suc(n))
+                    }
+                  }
+                  connect fun(g) \wedge \neg(\exists q (in(op(suc(n), q), g)))
+                  apply invoke adding_op_fun for g, suc(n), y
+                  apply invoke adding_op_dom for g, suc(n), suc(n), y
+                  fold for suc[2] conclude dom(adj(g, op(suc(n), y)), suc(suc(n)))
+                  some a such \exists a (in(op(emptyset, a), g) \wedge \phi(a)) {
+                    split in(op(emptyset, a), g) \wedge \phi(a)
+                    pad in(op(emptyset, a), g) conclude in(op(emptyset, a), g) \vee equal(op(emptyset, a), op(suc(n), y))
+                    apply invoke leftward adj_existence for g, op(suc(n), y), op(emptyset, a)
+                    connect in(op(emptyset, a), adj(g, op(suc(n), y))) \wedge \phi(a)
+                    lift for a conclude \exists a (in(op(emptyset, a), adj(g, op(suc(n), y))) \wedge \phi(a))
+                  }
+                  pad equal(op(suc(n), y), op(suc(n), y)) conclude in(op(suc(n), y), g) \vee equal(op(suc(n), y), op(suc(n), y))
+                  apply invoke leftward adj_existence for g, op(suc(n), y), op(suc(n), y)
+                  any k {
+                    assume in(k, suc(n)) {
+                      apply invoke rightward suc_characterization for n, k
+                      divide in(k, n) \vee equal(k, n)
+                        case in(k, n) {
+                          apply invoke \forall k (in(k, n) \to \exists p \exists q (in(op(k, p), g) \wedge in(op(suc(k), q), g) \wedge \psi(p, q))) for k
+                          some p, q such \exists p \exists q (in(op(k, p), g) \wedge in(op(suc(k), q), g) \wedge \psi(p, q)) {
+                            split in(op(k, p), g) \wedge in(op(suc(k), q), g) \wedge \psi(p, q)
+                            pad in(op(k, p), g) conclude in(op(k, p), g) \vee equal(op(k, p), op(suc(n), y))
+                            apply invoke leftward adj_existence for g, op(suc(n), y), op(k, p)
+                            pad in(op(suc(k), q), g) conclude in(op(suc(k), q), g) \vee equal(op(suc(k), q), op(suc(n), y))
+                            apply invoke leftward adj_existence for g, op(suc(n), y), op(suc(k), q)
+                            connect in(op(k, p), adj(g, op(suc(n), y))) \wedge in(op(suc(k), q), adj(g, op(suc(n), y))) \wedge \psi(p, q)
+                            lift for p, q conclude \exists p \exists q (in(op(k, p), adj(g, op(suc(n), y))) \wedge in(op(suc(k), q), adj(g, op(suc(n), y))) \wedge \psi(p, q))
+                          }
+                        }
+                        case equal(k, n) {
+                          pad in(op(n, x), g) conclude in(op(n, x), g) \vee equal(op(n, x), op(suc(n), y))
+                          apply invoke leftward adj_existence for g, op(suc(n), y), op(n, x)
+                          substitute in(op(n, x), adj(g, op(suc(n), y))) for n[1]: k
+                          substitute in(op(suc(n), y), adj(g, op(suc(n), y))) for n[1]: k
+                          connect in(op(k, x), adj(g, op(suc(n), y))) \wedge in(op(suc(k), y), adj(g, op(suc(n), y))) \wedge \psi(x, y)
+                          lift for x, y conclude \exists p \exists q (in(op(k, p), adj(g, op(suc(n), y))) \wedge in(op(suc(k), q), adj(g, op(suc(n), y))) \wedge \psi(p, q))
+                        }
+                    }
+                  }
+                  connect approx(adj(g, op(suc(n), y)), suc(n), \phi, \psi)
+                  connect approx(adj(g, op(suc(n), y)), suc(n), \phi, \psi) \wedge in(op(suc(n), y), adj(g, op(suc(n), y)))
+                  lift for adj(g, op(suc(n), y)) conclude \exists h (approx(h, suc(n), \phi, \psi) \wedge in(op(suc(n), y), h))
+                }
+                connect natural(suc(n)) \wedge \exists h (approx(h, suc(n), \phi, \psi) \wedge in(op(suc(n), y), h))
+                fold for recursion conclude recursion(\phi, \psi)(suc(n), y)
+                any y' {
+                  assume recursion(\phi, \psi)(suc(n), y') {
+                    split 2 recursion(\phi, \psi)(suc(n), y')
+                    some h' such \exists h' (approx(h', suc(n), \phi, \psi) \wedge in(op(suc(n), y'), h')) {
+                      split approx(h', suc(n), \phi, \psi) \wedge in(op(suc(n), y'), h')
+                      split approx(h', suc(n), \phi, \psi)
+                      apply suc_implies_in for n
+                      apply invoke \forall k (in(k, suc(n)) \to \exists p \exists q (in(op(k, p), h') \wedge in(op(suc(k), q), h') \wedge \psi(p, q))) for n
+                      some p, q such \exists p \exists q (in(op(n, p), h') \wedge in(op(suc(n), q), h') \wedge \psi(p, q)) {
+                        split in(op(n, p), h') \wedge in(op(suc(n), q), h') \wedge \psi(p, q)
+                        connect in(op(suc(n), q), h') \wedge in(op(suc(n), y'), h')
+                        split 2 fun(h')
+                        apply invoke \forall x \forall y \forall y' (in(op(x, y), h') \wedge in(op(x, y'), h') \to equal(y, y')) for suc(n), q, y'
+                        substitute \psi(p, q) for q: y'
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       }
     }

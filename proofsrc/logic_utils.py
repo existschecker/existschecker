@@ -525,7 +525,7 @@ class Substitutor:
         elif isinstance(expr, (And, Or, Implies, Iff)):
             return type(expr)(self.substitute_formula(expr.left), self.substitute_formula(expr.right))
 
-        elif isinstance(expr, (Forall, Exists)):
+        elif isinstance(expr, (Forall, Exists, ExistsUniq)):
             return type(expr)(expr.var, self.substitute_formula(expr.body))
 
         else:

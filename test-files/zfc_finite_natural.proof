@@ -90,6 +90,82 @@ theorem natural_is_ordinal ordinal(natural) {
   fold for ordinal conclude ordinal(natural)
 }
 
+theorem suc_of_natural_is_natural_and_vice_versa \forall n (natural(n) \leftrightarrow natural(suc(n))) {
+  any n {
+    assume natural(n) {
+      apply invoke subset_natural_ordinal for n
+      apply invoke rightward suc_of_ordinal_is_ordinal_and_vice_versa for n
+      lift for n conclude \exists n (equal(suc(n), suc(n)))
+      connect sucordinal(suc(n))
+      any m {
+        assume in(m, suc(n)) {
+          apply invoke rightward suc_characterization for n, m
+          divide in(m, n) \vee equal(m, n)
+            case in(m, n) {
+              divide natural(n)
+                case equal(n, emptyset) {
+                  apply emptyset_existence for m
+                  substitute in(m, n) for n: emptyset
+                  contradict in(m, emptyset)
+                  explode equal(m, emptyset) \vee sucordinal(m)
+                }
+                case sucordinal(n) \wedge \forall m (in(m, n) \to equal(m, emptyset) \vee sucordinal(m)) {
+                  split 2 sucordinal(n) \wedge \forall m (in(m, n) \to equal(m, emptyset) \vee sucordinal(m))
+                  apply invoke \forall m (in(m, n) \to equal(m, emptyset) \vee sucordinal(m)) for m
+                }
+            }
+            case equal(m, n) {
+              substitute natural(n) for n: m
+              divide natural(m)
+                case equal(m, emptyset) {
+                  pad equal(m, emptyset) conclude equal(m, emptyset) \vee sucordinal(m)
+                }
+                case sucordinal(m) \wedge \forall l (in(l, m) \to equal(l, emptyset) \vee sucordinal(l)) {
+                  split 1 sucordinal(m) \wedge \forall l (in(l, m) \to equal(l, emptyset) \vee sucordinal(l))
+                  pad sucordinal(m) conclude equal(m, emptyset) \vee sucordinal(m)
+                }
+            }
+        }
+      }
+      connect sucordinal(suc(n)) \wedge \forall m (in(m, suc(n)) \to equal(m, emptyset) \vee sucordinal(m))
+      pad sucordinal(suc(n)) \wedge \forall m (in(m, suc(n)) \to equal(m, emptyset) \vee sucordinal(m)) conclude equal(suc(n), emptyset) \vee (sucordinal(suc(n)) \wedge \forall m (in(m, suc(n)) \to equal(m, emptyset) \vee sucordinal(m)))
+      fold for natural conclude natural(suc(n))
+    }
+    assume natural(suc(n)) {
+      apply suc_implies_in for n
+      divide natural(suc(n))
+        case equal(suc(n), emptyset) {
+          substitute in(n, suc(n)) for suc(n): emptyset
+          apply emptyset_existence for n
+          contradict in(n, emptyset)
+          explode natural(n)
+        }
+        case sucordinal(suc(n)) \wedge \forall m (in(m, suc(n)) \to equal(m, emptyset) \vee sucordinal(m)) {
+          split sucordinal(suc(n)) \wedge \forall m (in(m, suc(n)) \to equal(m, emptyset) \vee sucordinal(m))
+          apply invoke \forall m (in(m, suc(n)) \to equal(m, emptyset) \vee sucordinal(m)) for n
+          divide equal(n, emptyset) \vee sucordinal(n)
+            case equal(n, emptyset) {
+              pad equal(n, emptyset) conclude equal(n, emptyset) \vee (sucordinal(n) \wedge \forall m (in(m, n) \to equal(m, emptyset) \vee sucordinal(m)))
+              fold for natural conclude natural(n)
+            }
+            case sucordinal(n) {
+              any m {
+                assume in(m, n) {
+                  pad in(m, n) conclude in(m, n) \vee equal(m, n)
+                  apply invoke leftward suc_characterization for n, m
+                  apply invoke \forall m (in(m, suc(n)) \to equal(m, emptyset) \vee sucordinal(m)) for m
+                }
+              }
+              connect sucordinal(n) \wedge \forall m (in(m, n) \to equal(m, emptyset) \vee sucordinal(m))
+              pad sucordinal(n) \wedge \forall m (in(m, n) \to equal(m, emptyset) \vee sucordinal(m)) conclude equal(n, emptyset) \vee (sucordinal(n) \wedge \forall m (in(m, n) \to equal(m, emptyset) \vee sucordinal(m)))
+              fold for natural conclude natural(n)
+            }
+        }
+    }
+    connect natural(n) \leftrightarrow natural(suc(n))
+  }
+}
+
 definition predicate inductive(template \phi[1]) as \phi(emptyset) \wedge \forall x (\phi(x) \to \phi(suc(x)))
 
 theorem natural_induction \forall^T \phi[1] (inductive(\phi) \to subset(natural, \phi)) {
