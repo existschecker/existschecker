@@ -54,6 +54,29 @@ theorem singleton_cor3 \forall x \forall y (in(x, y) \to subset(singleton(x), y)
   }
 }
 
+theorem suc_emptyset_is_singleton_emptyset equal(suc(emptyset), singleton(emptyset)) {
+  any x {
+    assume in(x, suc(emptyset)) {
+      apply invoke rightward suc_characterization for emptyset, x
+      divide in(x, emptyset) \vee equal(x, emptyset)
+        case in(x, emptyset) {
+          apply emptyset_existence for x
+          contradict in(x, emptyset)
+          explode equal(x, emptyset)
+        }
+        case equal(x, emptyset) {}
+      apply invoke leftward singleton_characterization for emptyset, x
+    }
+    assume in(x, singleton(emptyset)) {
+      apply invoke rightward singleton_characterization for emptyset, x
+      pad equal(x, emptyset) conclude in(x, emptyset) \vee equal(x, emptyset)
+      apply invoke leftward suc_characterization for emptyset, x
+    }
+    connect in(x, suc(emptyset)) \leftrightarrow in(x, singleton(emptyset))
+  }
+  fold for equal conclude equal(suc(emptyset), singleton(emptyset))
+}
+
 definition function pair(x, y) as adj(singleton(x), y) tex "\{", ",", "\}"
 
 theorem pair_characterization \forall x \forall y \forall z (in(z, pair(x, y)) \leftrightarrow equal(z, x) \vee equal(z, y)) {

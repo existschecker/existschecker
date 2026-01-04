@@ -18,7 +18,62 @@ definition predicate equipotent(template \phi[1], template \chi[1]) as \exists f
 
 definition predicate finite(template \phi[1]) as \exists n (natural(n) \wedge equipotent(n, \phi))
 
-definition function template[2] recursion(template \phi[1], template \psi[2]) as lambda n, x. natural(n) \wedge \exists g (fun(g) \wedge dom(g, suc(n)) \wedge \exists a (in(op(emptyset, a), g) \wedge \phi(a)) \wedge \forall k (in(k, n) \to \exists p \exists q (in(op(k, p), g) \wedge in(op(suc(k), q), g) \wedge \psi(p, q))) \wedge in(op(n, x), g))
+theorem singleton_op_is_rel \forall x \forall y (rel(singleton(op(x, y)))) {
+  any x, y {
+    any z {
+      assume in(z, singleton(op(x, y))) {
+        apply invoke rightward singleton_characterization for op(x, y), z
+        lift for x, y conclude \exists x \exists y (equal(z, op(x, y)))
+      }
+    }
+    fold for rel conclude rel(singleton(op(x, y)))
+  }
+}
+
+theorem singleton_op_dom \forall x \forall y (dom(singleton(op(x, y)), singleton(x))) {
+  any x, y {
+    any p {
+      assume in(p, singleton(x)) {
+        apply invoke rightward singleton_characterization for x, p
+        substitute equal(op(x, y), op(x, y)) for x[1]: p
+        apply invoke leftward singleton_characterization for op(x, y), op(p, y)
+        lift for y conclude \exists q (in(op(p, q), singleton(op(x, y))))
+        fold for indom conclude indom(singleton(op(x, y)), p)
+      }
+      assume indom(singleton(op(x, y)), p) {
+        some q such indom(singleton(op(x, y)), p) {
+          apply invoke rightward singleton_characterization for op(x, y), op(p, q)
+          apply invoke op_characterization for p, q, x, y
+          split 1 equal(p, x) \wedge equal(q, y)
+          apply invoke leftward singleton_characterization for x, p
+        }
+      }
+      connect in(p, singleton(x)) \leftrightarrow indom(singleton(op(x, y)), p)
+    }
+    fold for dom conclude dom(singleton(op(x, y)), singleton(x))
+  }
+}
+
+theorem singleton_op_is_fun \forall x \forall y (fun(singleton(op(x, y)))) {
+  any x, y {
+    apply singleton_op_is_rel for x, y
+    any p, q, q' {
+      assume in(op(p, q), singleton(op(x, y))) \wedge in(op(p, q'), singleton(op(x, y))) {
+        split in(op(p, q), singleton(op(x, y))) \wedge in(op(p, q'), singleton(op(x, y)))
+        apply invoke rightward singleton_characterization for op(x, y), op(p, q)
+        apply invoke rightward singleton_characterization for op(x, y), op(p, q')
+        substitute equal(op(x, y), op(p, q)) for op(x, y): op(p, q')
+        apply invoke op_characterization for p, q', p, q
+        split 2 equal(p, p) \wedge equal(q', q)
+      }
+    }
+    connect fun(singleton(op(x, y)))
+  }
+}
+
+definition predicate approx(g, n, template \phi[1], template \psi[2]) as fun(g) \wedge dom(g, suc(n)) \wedge \exists a (in(op(emptyset, a), g) \wedge \phi(a)) \wedge \forall k (in(k, n) \to \exists p \exists q (in(op(k, p), g) \wedge in(op(suc(k), q), g) \wedge \psi(p, q)))
+
+definition function template[2] recursion(template \phi[1], template \psi[2]) as lambda n, x. natural(n) \wedge \exists g (approx(g, n, \phi, \psi) \wedge in(op(n, x), g))
 
 definition function template[1] tc(template \phi[1], template \psi[2]) as lambda e. \exists n \exists s (recursion(\phi, \psi)(n, s) \wedge in(e, s))
 
@@ -28,4 +83,52 @@ definition predicate hf(x) as finite(tcin(x)) \wedge irrefrelon(tcin(x), in) \we
 
 definition predicate add(n, m, x) as recursion(lambda a. equal(a, n), lambda p, q. equal(q, suc(p)))(m, x)
 
-/* theorem recursion_is_unique \forall^T \phi[1] \forall^T \psi[2] \forall n \exists! x recursion(\phi, \psi)(n, x) */
+/* theorem recursion_is_unique \forall^T \phi[1] \forall^T \psi[2] \forall n \exists! x (recursion(\phi, \psi)(n, x)) {
+  any template \phi[1], template \psi[2] {
+    assume \exists! a (\phi(a)) {
+      some a such \exists! a (\phi(a)) {
+        assert emptyset_is_natural
+        show \exists! x (natural(emptyset) \wedge \exists g (approx(g, emptyset, \phi, \psi) \wedge in(op(emptyset, x), g))) {
+          assert emptyset_is_natural
+          apply singleton_op_is_fun for emptyset, a
+          apply singleton_op_dom for emptyset, a
+          assert suc_emptyset_is_singleton_emptyset
+          substitute dom(singleton(op(emptyset, a)), singleton(emptyset)) for singleton(emptyset): suc(emptyset)
+          apply singleton_cor1 for op(emptyset, a)
+          connect in(op(emptyset, a), singleton(op(emptyset, a))) \wedge \phi(a)
+          lift for a conclude \exists a (in(op(emptyset, a), singleton(op(emptyset, a))) \wedge \phi(a))
+          any k {
+            assume in(k, emptyset) {
+              apply emptyset_existence for k
+              contradict in(k, emptyset)
+              explode \exists p \exists q (in(op(k, p), singleton(op(emptyset, a))) \wedge in(op(suc(k), q), singleton(op(emptyset, a))) \wedge \psi(p, q))
+            }
+          }
+          connect approx(singleton(op(emptyset, a)), emptyset, \phi, \psi)
+          connect approx(singleton(op(emptyset, a)), emptyset, \phi, \psi) \wedge in(op(emptyset, a), singleton(op(emptyset, a)))
+          lift for singleton(op(emptyset, a)) conclude \exists g (approx(g, emptyset, \phi, \psi) \wedge in(op(emptyset, a), g))
+          connect natural(emptyset) \wedge \exists g (approx(g, emptyset, \phi, \psi) \wedge in(op(emptyset, a), g))
+          any x {
+            assume natural(emptyset) \wedge \exists g (approx(g, emptyset, \phi, \psi) \wedge in(op(emptyset, x), g)) {
+              split 2 natural(emptyset) \wedge \exists g (approx(g, emptyset, \phi, \psi) \wedge in(op(emptyset, x), g))
+              some g such \exists g (approx(g, emptyset, \phi, \psi) \wedge in(op(emptyset, x), g)) {
+                split approx(g, emptyset, \phi, \psi) \wedge in(op(emptyset, x), g)
+                split approx(g, emptyset, \phi, \psi)
+                some a' such \exists a' (in(op(emptyset, a'), g) \wedge \phi(a')) {
+                  split in(op(emptyset, a'), g) \wedge \phi(a')
+                  apply invoke \forall a' (\phi(a') \to equal(a', a)) for a'
+                  substitute in(op(emptyset, a'), g) for a': a
+                }
+                connect in(op(emptyset, x), g) \wedge in(op(emptyset, a), g)
+                split 2 fun(g)
+                apply invoke \forall x \forall y \forall y' (in(op(x, y), g) \wedge in(op(x, y'), g) \to equal(y, y')) for emptyset, x, a
+              }
+            }
+          }
+          connect natural(emptyset) \wedge \exists g (approx(g, emptyset, \phi, \psi) \wedge in(op(emptyset, a), g)) \wedge \forall x (natural(emptyset) \wedge \exists g (approx(g, emptyset, \phi, \psi) \wedge in(op(emptyset, x), g)) \to equal(x, a))
+          characterize for a conclude \exists! x (natural(emptyset) \wedge \exists g (approx(g, emptyset, \phi, \psi) \wedge in(op(emptyset, x), g)))
+        }
+      }
+    }
+  }
+} */

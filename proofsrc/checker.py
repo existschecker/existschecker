@@ -537,8 +537,23 @@ def check_some(node: Some, context: Context, indent: int):
         return False
     logger.debug(f"{debug_prefix}derivable: {pretty_expr(node.fact, context)}")
     fact = get_fact(node.fact, context, True)
-    vars, body = collect_quantifier_vars(fact, Exists)
-    body = make_quantifier_vars(body, Exists, [bound for bound, free in zip(vars, node.items) if free is None])
+    if isinstance(fact, Exists):
+        vars, body = collect_quantifier_vars(fact, Exists)
+        body = make_quantifier_vars(body, Exists, [bound for bound, free in zip(vars, node.items) if free is None])
+    elif isinstance(fact, ExistsUniq):
+        vars, body= collect_quantifier_vars(fact, ExistsUniq)
+        if len(vars) != 1:
+            logger.error(f"{error_prefix}Unexpected len(vars): {len(vars)}")
+            node.proofinfo.status = "ERROR"
+            return False
+    else:
+        logger.error(f"{error_prefix}Unexpected type: {type(fact)}")
+        node.proofinfo.status = "ERROR"
+        return False
+    if len(vars) != len(node.items):
+        logger.error(f"{error_prefix}len(vars): {len(vars)}, len(node.items): {len(node.items)}")
+        node.proofinfo.status = "ERROR"
+        return False
     for item in node.items:
         if item is None:
             continue
@@ -552,11 +567,27 @@ def check_some(node: Some, context: Context, indent: int):
         logger.error(f"{error_prefix}type_safe() failed")
         node.proofinfo.status = "ERROR"
         return False
-    premise = Substitutor(renamed_mapping, context).substitute_formula(renamed_body)
-    logger.debug(f"{debug_prefix}Taking {node.items}, premise={pretty_expr(premise, context)}")
+    existence = Substitutor(renamed_mapping, context).substitute_formula(renamed_body)
+    if isinstance(fact, Exists):
+        premises: list[Bottom | Formula] = [existence]
+    else:
+        fv, bv, ft, bt = collect_vars(existence)
+        if not isinstance(vars[0], Var):
+            logger.error(f"{error_prefix}Unexpected type: {type(vars[0])}")
+            node.proofinfo.status = "ERROR"
+            return False
+        var = fresh_var(vars[0], fv | bv | ft | bt, context)
+        body = Substitutor({vars[0]: var}, context).substitute_formula(existence)
+        if context.decl.equality is None:
+            logger.error(f"{error_prefix}equality has not been declared yet")
+            node.proofinfo.status = "ERROR"
+            return False
+        uniqueness = Forall(var, Implies(body, Symbol(Pred(context.decl.equality.equal.name), (MembershipLambda(var), MembershipLambda(vars[0])))))
+        premises: list[Bottom | Formula] = [existence, uniqueness]
+    logger.debug(f"{debug_prefix}Taking {node.items}, premise={pretty_expr(existence, context)}")
     local_vars = [item for item in node.items if isinstance(item, Var)]
     local_templates = [item for item in node.items if isinstance(item, Template)]
-    local_ctx = context.add_ctrl(local_vars, [premise], local_templates)
+    local_ctx = context.add_ctrl(local_vars, premises, local_templates)
     for stmt in node.body:
         if not check_control(stmt, local_ctx, indent+1):
             node.proofinfo.status = "ERROR"
@@ -583,7 +614,7 @@ def check_some(node: Some, context: Context, indent: int):
     node.proofinfo.premises = [node.fact]
     node.proofinfo.conclusions = [goal]
     node.proofinfo.local_vars = list(local_vars)
-    node.proofinfo.local_premise = [premise]
+    node.proofinfo.local_premise = premises
     node.proofinfo.local_conclusion = [goal]
     add_conclusion(context, goal)
     logger.debug(f"{debug_prefix}Added goal {pretty_expr(goal, context)}")

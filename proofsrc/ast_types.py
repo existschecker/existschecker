@@ -159,7 +159,7 @@ class ProofInfo:
     premises: Sequence[str | Bottom | Formula] = field(init=False, default_factory=list[str | Bottom | Formula])
     conclusions: Sequence[Bottom | Formula] = field(init=False, default_factory=list[Bottom | Formula])
     local_vars: Sequence[Var] = field(init=False, default_factory=list[Var])
-    local_premise: Sequence[Formula] = field(init=False, default_factory=list[Formula])
+    local_premise: Sequence[Bottom | Formula] = field(init=False, default_factory=list[Formula])
     local_conclusion: Sequence[Bottom | Formula] = field(init=False, default_factory=list[Bottom | Formula])
 
 @dataclass
