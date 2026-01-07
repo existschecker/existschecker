@@ -1,7 +1,9 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, PredTemplate, Lambda, Include, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, DefFunTemplateTerm, CompoundPredTerm
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, PredTemplate, Lambda, Include, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, DefFunTemplateTerm, CompoundPredTerm, FunTemplate
 from lexer import Token
 from token_stream import TokenStream
 from logic_utils import collect_quantifier_vars
+
+from typing import Sequence
 
 import logging
 logger = logging.getLogger("proof")
@@ -102,7 +104,7 @@ class Parser:
         args, local_vars, local_pred_tmpls = self.parse_vars_or_pred_tmpls()
         self.stream.consume("RPAREN")
         self.stream.consume("AS")
-        formula = self.parse_formula(context.add_form(local_vars, local_pred_tmpls))
+        formula = self.parse_formula(context.add_form(local_vars, local_pred_tmpls, []))
         tex = self.parse_or_create_tex(name, len(args))
         if len(tex) != len(args) + 1:
             raise SyntaxError(f"{start_token.info()} arity of {name} is {len(args)}, but length of tex is {len(tex)}")
@@ -161,7 +163,7 @@ class Parser:
         args, local_vars, local_pred_tmpls = self.parse_vars_or_pred_tmpls()
         self.stream.consume("RPAREN")
         self.stream.consume("AS")
-        term = self.parse_term(context.add_form(local_vars, local_pred_tmpls))
+        term = self.parse_term(context.add_form(local_vars, local_pred_tmpls, []))
         tex = self.parse_or_create_tex(name, len(args))
         if len(tex) != len(args) + 1:
             raise SyntaxError(f"{start_token.info()} arity of {name} is {len(args)}, but length of tex is {len(tex)}")
@@ -180,7 +182,7 @@ class Parser:
         args, local_vars, local_pred_tmpls = self.parse_vars_or_pred_tmpls()
         self.stream.consume("RPAREN")
         self.stream.consume("AS")
-        term = self.parse_term(context.add_form(local_vars, local_pred_tmpls))
+        term = self.parse_term(context.add_form(local_vars, local_pred_tmpls, []))
         if isinstance(term, Lambda):
             if len(term.args) != arity:
                 raise Exception(f"arity is {arity}, but length of term.args is {len(term.args)}")
@@ -354,9 +356,9 @@ class Parser:
 
     def parse_any(self, context: Context) -> Any:
         start_token = self.stream.consume("ANY")
-        items, local_vars, local_pred_tmpls = self.parse_vars_or_pred_tmpls()
+        items, local_vars, local_pred_tmpls, local_fun_tmpls = self.parse_vars_or_pred_tmpls_or_fun_tmpls()
         self.stream.consume("LBRACE")
-        body = self.parse_block(context.add_ctrl(local_vars, [], local_pred_tmpls))
+        body = self.parse_block(context.add_ctrl(local_vars, [], local_pred_tmpls, local_fun_tmpls))
         self.stream.consume("RBRACE")
         return Any(token=start_token, items=items, body=body)
 
@@ -388,7 +390,7 @@ class Parser:
     
     def parse_some(self, context: Context) -> Some:
         start_token = self.stream.consume("SOME")
-        items: list[Var | PredTemplate | None] = []
+        items: list[Var | None] = []
         while True:
             if self.stream.peek().type == "UNDERSCORE":
                 items.append(None)
@@ -402,8 +404,7 @@ class Parser:
         fact = self.parse_reference_or_formula(context)
         self.stream.consume("LBRACE")
         local_vars = [item for item in items if isinstance(item, Var)]
-        local_pred_tmpls = [item for item in items if isinstance(item, PredTemplate)]
-        body = self.parse_block(context.add_ctrl(local_vars, [], local_pred_tmpls))
+        body = self.parse_block(context.add_ctrl(local_vars, [], [], []))
         self.stream.consume("RBRACE")
         return Some(token=start_token, items=items, fact=fact, body=body)
     
@@ -687,34 +688,44 @@ class Parser:
             self.stream.consume("RPAREN")
             return Not(body)
 
-        elif tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ", "FORALL_PRED_TMPL"):
-            quantifiers: list[str] = []
-            items: list[Var | PredTemplate] = []
+        elif tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ", "FORALL_PRED_TMPL", "FORALL_FUN_TMPL"):
+            quantified_pairs: list[tuple[str, Var | PredTemplate | FunTemplate]] = []
             local_bound_vars: list[Var] = []
             local_bound_pred_tmpls: list[PredTemplate] = []
-            while tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ", "FORALL_PRED_TMPL"):
+            local_bound_fun_tmpls: list[FunTemplate] = []
+            while tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ", "FORALL_PRED_TMPL", "FORALL_FUN_TMPL"):
+                q_type = self.stream.consume(tok.type).type
                 if tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ"):
-                    quantifiers.append(self.stream.consume(tok.type).type)
                     var = self.parse_var()
-                    items.append(var)
+                    quantified_pairs.append((q_type, var))
                     local_bound_vars.append(var)
                     tok = self.stream.peek()
-                else:
-                    quantifiers.append(self.stream.consume(tok.type).type)
+                elif tok.type == "FORALL_PRED_TMPL":
                     pred_tmpl = self.parse_pred_tmpl()
-                    items.append(pred_tmpl)
+                    quantified_pairs.append((q_type, pred_tmpl))
                     local_bound_pred_tmpls.append(pred_tmpl)
                     tok = self.stream.peek()
+                else:
+                    fun_tmpl = self.parse_fun_tmpl()
+                    quantified_pairs.append((q_type, fun_tmpl))
+                    local_bound_fun_tmpls.append(fun_tmpl)
+                    tok = self.stream.peek()
             self.stream.consume("LPAREN")
-            body = self.parse_formula(context.add_form(local_bound_vars, local_bound_pred_tmpls))
+            body = self.parse_formula(context.add_form(local_bound_vars, local_bound_pred_tmpls, local_bound_fun_tmpls))
             self.stream.consume("RPAREN")
-            for quantifier, item in zip(reversed(quantifiers), reversed(items)):
-                if quantifier == "FORALL" or quantifier == "FORALL_PRED_TMPL":
+            for q_type, item in reversed(quantified_pairs):
+                if q_type in ("FORALL", "FORALL_PRED_TMPL", "FORALL_FUN_TMPL"):
                     body = Forall(item, body)
-                elif quantifier == "EXISTS":
-                    body = Exists(item, body)
-                elif quantifier == "EXISTS_UNIQ":
-                    body = ExistsUniq(item, body)
+                elif q_type == "EXISTS":
+                    if isinstance(item, Var):
+                        body = Exists(item, body)
+                    else:
+                        raise Exception(f"{tok.info()}Unexpected type: {type(item)}")
+                elif q_type == "EXISTS_UNIQ":
+                    if isinstance(item, Var):
+                        body = ExistsUniq(item, body)
+                    else:
+                        raise Exception(f"{tok.info()}Unexpected type: {type(item)}")
             return body
 
         else:
@@ -767,6 +778,20 @@ class Parser:
                     if len(args) != arity:
                         raise SyntaxError(f"{tok.info()} arity of {name} is {arity}, but lenfth of args is {len(args)}")
                 return Compound(Fun(name), args)
+            elif any(fun_tmpl.name == name for fun_tmpl in context.form.fun_tmpls) or any(fun_tmpl.name == name for fun_tmpl in context.ctrl.fun_tmpls):
+                if any(fun_tmpl.name == name for fun_tmpl in context.form.fun_tmpls):
+                    fun = next(fun_tmpl for fun_tmpl in context.form.fun_tmpls if fun_tmpl.name == name)
+                else:
+                    fun = next(fun_tmpl for fun_tmpl in context.ctrl.fun_tmpls if fun_tmpl.name == name)
+                defargs = [Var(f"x_{i}") for i in range(fun.arity)]
+                if self.stream.peek().type == "LPAREN":
+                    self.stream.consume("LPAREN")
+                    subargs = self.parse_terms(context)
+                    self.stream.consume("RPAREN")
+                else:
+                    subargs: list[Term] = []
+                resolved_args = self.match_args(defargs, subargs, context, tok)
+                return Compound(fun, tuple(resolved_args))
             elif name in context.decl.primpreds or name in context.decl.defpreds:
                 if name in context.decl.primpreds:
                     arity = context.decl.primpreds[name].arity
@@ -801,7 +826,7 @@ class Parser:
             else:
                 vars = self.parse_vars()
             self.stream.consume("DOT")
-            formula = self.parse_formula(context.add_form(vars, []))
+            formula = self.parse_formula(context.add_form(vars, [], []))
             return Lambda(tuple(vars), formula)
         else:
             raise SyntaxError(f"{tok.info()} Term object is required, but unknown token is found at")
@@ -831,6 +856,32 @@ class Parser:
             tex.extend(["," for _ in range(arity - 1)])
             tex.append(")")
         return tex
+
+    def parse_vars_or_pred_tmpls_or_fun_tmpls(self) -> tuple[list[Var | PredTemplate | FunTemplate], list[Var], list[PredTemplate], list[FunTemplate]]:
+        items: list[Var | PredTemplate | FunTemplate] = []
+        vars: list[Var] = []
+        pred_tmpls: list[PredTemplate] = []
+        fun_tmpls: list[FunTemplate] = []
+        while True:
+            if self.stream.peek().type == "PREDICATE":
+                self.stream.consume("PREDICATE")
+                pred_tmpl = self.parse_pred_tmpl()
+                items.append(pred_tmpl)
+                pred_tmpls.append(pred_tmpl)
+            elif self.stream.peek().type == "FUNCTION":
+                self.stream.consume("FUNCTION")
+                fun_tmpl = self.parse_fun_tmpl()
+                items.append(fun_tmpl)
+                fun_tmpls.append(fun_tmpl)
+            else:
+                var = self.parse_var()
+                items.append(var)
+                vars.append(var)
+            if self.stream.peek().type == "COMMA":
+                self.stream.consume("COMMA")
+            else:
+                break
+        return items, vars, pred_tmpls, fun_tmpls
 
     def parse_vars_or_pred_tmpls(self) -> tuple[list[Var | PredTemplate], list[Var], list[PredTemplate]]:
         items: list[Var | PredTemplate] = []
@@ -873,7 +924,14 @@ class Parser:
         self.stream.consume("RBRACKET")
         return PredTemplate(pred_tmpl_name, arity)
 
-    def match_args(self, defargs: list[Var | PredTemplate], subargs: list[Term], context: Context, tok: Token) -> list[Term]:
+    def parse_fun_tmpl(self) -> FunTemplate:
+        fun_tmpl_name = self.stream.consume("IDENT").value
+        self.stream.consume("LBRACKET")
+        arity = int(self.stream.consume("NUMBER").value)
+        self.stream.consume("RBRACKET")
+        return FunTemplate(fun_tmpl_name, arity)
+
+    def match_args(self, defargs: Sequence[Var | PredTemplate], subargs: Sequence[Term], context: Context, tok: Token) -> list[Term]:
         resolved_args: list[Term] = []
         for defarg, subarg in zip(defargs, subargs):
             if isinstance(defarg, VarTerm):

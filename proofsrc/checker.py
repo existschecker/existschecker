@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, Fun, Con, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Pred, Control, Formula, Declaration, PredTemplate, Term, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Include, DeclarationSupport, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, DefFunTemplateTerm, CompoundPredTerm
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, Fun, Con, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Pred, Control, Formula, Declaration, PredTemplate, Term, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Include, DeclarationSupport, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, DefFunTemplateTerm, CompoundPredTerm, FunTemplate
 from logic_utils import Substitutor, DefExpander, expr_in_context, collect_quantifier_vars, make_quantifier_vars, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs, pretty_expr, alpha_safe_formula, type_safe
 from copy import deepcopy
 
@@ -401,7 +401,8 @@ def check_any(node: Any, context: Context, indent: int):
     logger.debug(f"{debug_prefix}Taking {node.items}")
     local_vars = [item for item in node.items if isinstance(item, Var)]
     local_pred_tmpls = [item for item in node.items if isinstance(item, PredTemplate)]
-    local_ctx = context.add_ctrl(local_vars, [], local_pred_tmpls)
+    local_fun_tmpls = [item for item in node.items if isinstance(item, FunTemplate)]
+    local_ctx = context.add_ctrl(local_vars, [], local_pred_tmpls, local_fun_tmpls)
     for stmt in node.body:
         if not check_control(stmt, local_ctx, indent+1):
             node.proofinfo.status = "ERROR"
@@ -433,7 +434,7 @@ def check_assume(node: Assume, context: Context, indent: int):
     debug_prefix = make_debug_prefix(node, indent)
     error_prefix = make_error_prefix(node, indent)
     logger.debug(f"{debug_prefix}premise={pretty_expr(node.premise, context)}")
-    local_ctx = context.add_ctrl([], [node.premise], [])
+    local_ctx = context.add_ctrl([], [node.premise], [], [])
     for stmt in node.body:
         if not check_control(stmt, local_ctx, indent+1):
             node.proofinfo.status = "ERROR"
@@ -511,7 +512,7 @@ def check_case(node: Case, context: Context, indent: int):
     debug_prefix = make_debug_prefix(node, indent)
     error_prefix = make_error_prefix(node, indent)
     logger.debug(f"{debug_prefix}premise={pretty_expr(node.premise, context)}")
-    local_ctx = context.add_ctrl([], [node.premise], [])
+    local_ctx = context.add_ctrl([], [node.premise], [], [])
     for stmt in node.body:
         if not check_control(stmt, local_ctx, indent+1):
             node.proofinfo.status = "ERROR"
@@ -590,8 +591,7 @@ def check_some(node: Some, context: Context, indent: int):
         premises: list[Bottom | Formula] = [existence, uniqueness]
     logger.debug(f"{debug_prefix}Taking {node.items}, premise={pretty_expr(existence, context)}")
     local_vars = [item for item in node.items if isinstance(item, Var)]
-    local_pred_tmpls = [item for item in node.items if isinstance(item, PredTemplate)]
-    local_ctx = context.add_ctrl(local_vars, premises, local_pred_tmpls)
+    local_ctx = context.add_ctrl(local_vars, premises, [], [])
     for stmt in node.body:
         if not check_control(stmt, local_ctx, indent+1):
             node.proofinfo.status = "ERROR"
@@ -603,15 +603,10 @@ def check_some(node: Some, context: Context, indent: int):
     goal = local_ctx.ctrl.formulas[-1]
     logger.debug(f"{debug_prefix}derived goal: {pretty_expr(goal, context)}")
     if isinstance(goal, Formula):
-        goal_fv, _, goal_ft, _ = collect_vars(goal)
+        goal_fv, _, _, _ = collect_vars(goal)
         for fv in goal_fv:
             if fv in local_vars:
                 logger.error(f"{error_prefix}Conclusion depends on local variable {pretty_expr(fv, context)}")
-                node.proofinfo.status = "ERROR"
-                return False
-        for ft in goal_ft:
-            if ft in local_pred_tmpls:
-                logger.error(f"{error_prefix}Conclusion depends on local predicate template {pretty_expr(ft, context)}")
                 node.proofinfo.status = "ERROR"
                 return False
     node.proofinfo.status = "OK"
@@ -628,7 +623,7 @@ def check_deny(node: Deny, context: Context, indent: int):
     debug_prefix = make_debug_prefix(node, indent)
     error_prefix = make_error_prefix(node, indent)
     logger.debug(f"{debug_prefix}premise={pretty_expr(node.premise, context)}")
-    local_ctx = context.add_ctrl([], [node.premise], [])
+    local_ctx = context.add_ctrl([], [node.premise], [], [])
     for stmt in node.body:
         if not check_control(stmt, local_ctx, indent+1):
             node.proofinfo.status = "ERROR"
