@@ -338,7 +338,7 @@ class DefFunUniq(Declaration):
 
 @dataclass
 class DefFun(Declaration):
-    args: list[Var | PredTemplate]
+    args: list[Var | PredTemplate | FunTemplate]
     returned: Var | PredTemplate
     theorem: str
     tex: list[str]

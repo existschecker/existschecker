@@ -15,11 +15,16 @@ class AlphaEquiv:
     def __init__(self, context: Context):
         self.context = context
 
-    def log(self, depth: int, e1: Formula | Term | Pred | Fun, e2: Formula | Term | Pred | Fun, env: dict[Var | PredTemplate | FunTemplate, Var | PredTemplate | FunTemplate]):
+    def begin_log(self, depth: int, e1: Formula | Term, e2: Formula | Term, env: dict[Var | PredTemplate | FunTemplate, Var | PredTemplate | FunTemplate]):
         if False:
             print(f"{'  ' * depth}[{e1.__class__.__name__}] e1: {pretty_expr(e1, self.context)}")
             print(f"{'  ' * depth}[{e2.__class__.__name__}] e2: {pretty_expr(e2, self.context)}")
             print(f"{'  ' * depth}[env] {", ".join([pretty_expr(k, self.context) + ": " + pretty_expr(v, self.context) for k, v in env.items()])}")
+
+    def end_log(self, depth: int, result: bool):
+        if False:
+            mark = "✅ True" if result else f"❌ False"
+            print(f"{'  ' * depth}{mark}")
 
     def alpha_equiv_var(self, e1: Var | PredTemplate | FunTemplate, e2: Var | PredTemplate | FunTemplate, env: dict[Var | PredTemplate | FunTemplate, Var | PredTemplate | FunTemplate], depth: int) -> bool:
         return env.get(e1, e1) == e2
@@ -59,25 +64,29 @@ class AlphaEquiv:
         return self.alpha_equiv_term(e1.varterm, e2.varterm, env, depth+1)
 
     def alpha_equiv_term(self, e1: Term, e2: Term, env: dict[Var | PredTemplate | FunTemplate, Var | PredTemplate | FunTemplate], depth: int) -> bool:
-        self.log(depth, e1, e2, env)
+        self.begin_log(depth, e1, e2, env)
         if isinstance(e1, Var) and isinstance(e2, Var):
-            return self.alpha_equiv_var(e1, e2, env, depth)
+            result = self.alpha_equiv_var(e1, e2, env, depth)
         elif isinstance(e1, PredTemplate) and isinstance(e2, PredTemplate):
-            return self.alpha_equiv_var(e1, e2, env, depth)
+            result = self.alpha_equiv_var(e1, e2, env, depth)
+        elif isinstance(e1, FunTemplate) and isinstance(e2, FunTemplate):
+            result = self.alpha_equiv_var(e1, e2, env, depth)
         elif isinstance(e1, Con) and isinstance(e2, Con):
-            return self.alpha_equiv_con(e1, e2, depth)
+            result = self.alpha_equiv_con(e1, e2, depth)
         elif isinstance(e1, Fun) and isinstance(e2, Fun):
-            return self.alpha_equiv_con(e1, e2, depth)
+            result = self.alpha_equiv_con(e1, e2, depth)
         elif isinstance(e1, Pred) and isinstance(e2, Pred):
-            return self.alpha_equiv_con(e1, e2, depth)
+            result = self.alpha_equiv_con(e1, e2, depth)
         elif isinstance(e1, Compound) and isinstance(e2, Compound):
-            return self.alpha_equiv_compound(e1, e2, env, depth)
+            result = self.alpha_equiv_compound(e1, e2, env, depth)
         elif isinstance(e1, Lambda) and isinstance(e2, Lambda):
-            return self.alpha_equiv_lambda(e1, e2, env, depth)
+            result = self.alpha_equiv_lambda(e1, e2, env, depth)
         elif isinstance(e1, MembershipLambda) and isinstance(e2, MembershipLambda):
-            return self.alpha_equiv_membership_lambda(e1, e2, env, depth)
+            result = self.alpha_equiv_membership_lambda(e1, e2, env, depth)
         else:
-            return False
+            result = False
+        self.end_log(depth, result)
+        return result
 
     def alpha_equiv_pred_term(self, e1: PredTerm, e2: PredTerm, env: dict[Var | PredTemplate | FunTemplate, Var | PredTemplate | FunTemplate], depth: int) -> bool:
         if isinstance(e1, Pred) and isinstance(e2, Pred):
@@ -159,27 +168,29 @@ class AlphaEquiv:
         return False
 
     def alpha_equiv_formula(self, e1: Formula, e2: Formula, env: dict[Var | PredTemplate | FunTemplate, Var | PredTemplate | FunTemplate], depth: int) -> bool:
-        self.log(depth, e1, e2, env)
+        self.begin_log(depth, e1, e2, env)
         if isinstance(e1, AtomicFormula) and isinstance(e2, AtomicFormula):
-            return self.alpha_equiv_symbol(e1, e2, env, depth)
+            result = self.alpha_equiv_symbol(e1, e2, env, depth)
         elif isinstance(e1, Not) and isinstance(e2, Not):
-            return self.alpha_equiv_not(e1, e2, env, depth)
+            result = self.alpha_equiv_not(e1, e2, env, depth)
         elif isinstance(e1, And) and isinstance(e2, And):
-            return self.alpha_equiv_and(e1, e2, env, And, depth)
+            result = self.alpha_equiv_and(e1, e2, env, And, depth)
         elif isinstance(e1, Or) and isinstance(e2, Or):
-            return self.alpha_equiv_and(e1, e2, env, Or, depth)
+            result = self.alpha_equiv_and(e1, e2, env, Or, depth)
         elif isinstance(e1, Implies) and isinstance(e2, Implies):
-            return self.alpha_equiv_implies(e1, e2, env, depth)
+            result = self.alpha_equiv_implies(e1, e2, env, depth)
         elif isinstance(e1, Iff) and isinstance(e2, Iff):
-            return self.alpha_equiv_implies(e1, e2, env, depth)
+            result = self.alpha_equiv_implies(e1, e2, env, depth)
         elif isinstance(e1, Forall) and isinstance(e2, Forall):
-            return self.alpha_equiv_quantifier(e1, e2, env, Forall, depth)
+            result = self.alpha_equiv_quantifier(e1, e2, env, Forall, depth)
         elif isinstance(e1, Exists) and isinstance(e2, Exists):
-            return self.alpha_equiv_quantifier(e1, e2, env, Exists, depth)
+            result = self.alpha_equiv_quantifier(e1, e2, env, Exists, depth)
         elif isinstance(e1, ExistsUniq) and isinstance(e2, ExistsUniq):
-            return self.alpha_equiv_quantifier(e1, e2, env, ExistsUniq, depth)
+            result = self.alpha_equiv_quantifier(e1, e2, env, ExistsUniq, depth)
         else:
-            return False
+            result = False
+        self.end_log(depth, result)
+        return result
 
     def alpha_equiv(self, e1: Formula, e2: Formula) -> bool:
         return self.alpha_equiv_formula(e1, e2, {}, 0)
@@ -265,30 +276,25 @@ def alpha_equiv_with_defs(e1: Bottom | Formula, e2: Bottom | Formula, context: C
     if isinstance(e1, Bottom) or isinstance(e2, Bottom):
         return isinstance(e1, Bottom) and isinstance(e2, Bottom)
     else:
-        exp = DefExpander(context, defs)
-        e1_exp = normalize_neg(exp.expand_defs_formula(e1))
-        exp = DefExpander(context, defs)
-        e2_exp = normalize_neg(exp.expand_defs_formula(e2))
+        e1_exp = normalize_neg(DefExpander(defs).expand_defs_formula(e1, context))
+        e2_exp = normalize_neg(DefExpander(defs).expand_defs_formula(e2, context))
         return AlphaEquiv(context).alpha_equiv(e1_exp, e2_exp)
 
 @dataclass
 class DefExpander:
-    context: Context
     defs: list[str]
     indexes: dict[str, list[int]] = field(default_factory=dict[str, list[int]])
     counter: dict[str, int] = field(init=False, default_factory=dict[str, int])
 
-    def expand_defs_term(self, expr: Term, bound_pred_tmpls: list[PredTemplate] | None = None) -> Term:
-        if bound_pred_tmpls is None:
-            bound_pred_tmpls = []
-        if isinstance(expr, (Var, Con, PredTemplate)):
+    def expand_defs_term(self, expr: Term, context: Context) -> Term:
+        if isinstance(expr, (Var, Con, PredTemplate, FunTemplate)):
             return expr
         elif isinstance(expr, Compound):
             if isinstance(expr.fun, Fun):
-                if expr.fun.name in self.context.decl.deffuns:
-                    return Compound(expr.fun, tuple(self.expand_defs_term(arg, bound_pred_tmpls) for arg in expr.args))
-                elif expr.fun.name in self.context.decl.deffunterms:
-                    deffunterm = self.context.decl.deffunterms[expr.fun.name]
+                if expr.fun.name in context.decl.deffuns:
+                    return Compound(expr.fun, tuple(self.expand_defs_term(arg, context.copy_form()) for arg in expr.args))
+                elif expr.fun.name in context.decl.deffunterms:
+                    deffunterm = context.decl.deffunterms[expr.fun.name]
                     should_expand = False
                     if expr.fun.name in self.defs:
                         target_indexes = self.indexes.get(expr.fun.name, [])
@@ -298,41 +304,39 @@ class DefExpander:
                         elif self.counter[expr.fun.name] in target_indexes:
                             should_expand = True
                     if should_expand:
-                        renamed_term, renamed_mapping = alpha_safe_term(deffunterm.term, dict(zip(deffunterm.args, expr.args)), self.context)
-                        if not type_safe(renamed_mapping, self.context):
+                        renamed_term, renamed_mapping = alpha_safe_term(deffunterm.term, dict(zip(deffunterm.args, expr.args)), context)
+                        if not type_safe(renamed_mapping, context):
                             raise Exception("type_safe() failed")
-                        expanded = Substitutor(renamed_mapping, self.context).substitute_term(renamed_term)
-                        return self.expand_defs_term(expanded, bound_pred_tmpls)
+                        expanded = Substitutor(renamed_mapping, context).substitute_term(renamed_term)
+                        return self.expand_defs_term(expanded, context.copy_form())
                     else:
-                        return Compound(expr.fun, tuple(self.expand_defs_term(arg, bound_pred_tmpls) for arg in expr.args))
+                        return Compound(expr.fun, tuple(self.expand_defs_term(arg, context.copy_form()) for arg in expr.args))
                 else:
                     raise Exception(f"Unexpected function name: {expr.fun.name}")
             elif isinstance(expr.fun, FunTemplate):
-                if expr.fun in self.context.ctrl.fun_tmpls: # or expr.fun in bound_pred_tmpls:
-                    return Compound(expr.fun, tuple(self.expand_defs_term(arg, bound_pred_tmpls) for arg in expr.args))
+                if expr.fun in context.ctrl.fun_tmpls or expr.fun in context.form.fun_tmpls:
+                    return Compound(expr.fun, tuple(self.expand_defs_term(arg, context.copy_form()) for arg in expr.args))
                 else:
-                    raise Exception(f"{expr.fun} in {self.context.ctrl.fun_tmpls}") # or {expr.fun} in {bound_pred_tmpls}")
+                    raise Exception(f"{expr.fun} in {context.ctrl.fun_tmpls}") # or {expr.fun} in {bound_pred_tmpls}")
             else:
                 raise Exception(f"Unexpected type: {type(expr.fun)}")
         elif isinstance(expr, Lambda):
-            return Lambda(expr.args, self.expand_defs_formula(expr.body, bound_pred_tmpls))
+            return Lambda(expr.args, self.expand_defs_formula(expr.body, context.copy_form()))
         elif isinstance(expr, MembershipLambda):
-            expanded = self.expand_defs_term(expr.varterm, bound_pred_tmpls)
+            expanded = self.expand_defs_term(expr.varterm, context.copy_form())
             if not isinstance(expanded, VarTerm):
                 raise Exception(f"Unexpected type: {type(expanded)}")
             return MembershipLambda(expanded)
         else:
             raise Exception(f"Unexpected type: {type(expr)}")
 
-    def expand_defs_formula(self, expr: Formula, bound_pred_tmpls: list[PredTemplate] | None = None) -> Formula:
-        if bound_pred_tmpls is None:
-            bound_pred_tmpls = []
+    def expand_defs_formula(self, expr: Formula, context: Context) -> Formula:
         if isinstance(expr, AtomicFormula):
             if isinstance(expr.pred, Pred):
-                if expr.pred.name in self.context.decl.primpreds:
-                    return AtomicFormula(expr.pred, tuple(self.expand_defs_term(arg, bound_pred_tmpls) for arg in expr.args))
-                elif expr.pred.name in self.context.decl.defpreds:
-                    defpred = self.context.decl.defpreds[expr.pred.name]
+                if expr.pred.name in context.decl.primpreds:
+                    return AtomicFormula(expr.pred, tuple(self.expand_defs_term(arg, context.copy_form()) for arg in expr.args))
+                elif expr.pred.name in context.decl.defpreds:
+                    defpred = context.decl.defpreds[expr.pred.name]
                     should_expand = False
                     if len(self.defs) == 0 and defpred.autoexpand:
                         should_expand = True
@@ -344,22 +348,22 @@ class DefExpander:
                         elif self.counter[expr.pred.name] in target_indexes:
                             should_expand = True
                     if should_expand:
-                        renamed_formula, renamed_mapping = alpha_safe_formula(defpred.formula, dict(zip(defpred.args, expr.args)), self.context)
-                        if not type_safe(renamed_mapping, self.context):
+                        renamed_formula, renamed_mapping = alpha_safe_formula(defpred.formula, dict(zip(defpred.args, expr.args)), context)
+                        if not type_safe(renamed_mapping, context):
                             raise Exception("type_safe() failed")
-                        expanded = Substitutor(renamed_mapping, self.context).substitute_formula(renamed_formula)
-                        return self.expand_defs_formula(expanded, bound_pred_tmpls)
+                        expanded = Substitutor(renamed_mapping, context).substitute_formula(renamed_formula)
+                        return self.expand_defs_formula(expanded, context.copy_form())
                     else:
-                        return AtomicFormula(expr.pred, tuple(self.expand_defs_term(arg, bound_pred_tmpls) for arg in expr.args))
+                        return AtomicFormula(expr.pred, tuple(self.expand_defs_term(arg, context.copy_form()) for arg in expr.args))
                 else:
                     raise Exception(f"Unexpected predicate name: {expr.pred.name}")
             elif isinstance(expr.pred, PredTemplate):
-                if expr.pred in self.context.ctrl.pred_tmpls or expr.pred in bound_pred_tmpls:
-                    return AtomicFormula(expr.pred, tuple(self.expand_defs_term(arg, bound_pred_tmpls) for arg in expr.args))
+                if expr.pred in context.ctrl.pred_tmpls or expr.pred in context.form.pred_tmpls:
+                    return AtomicFormula(expr.pred, tuple(self.expand_defs_term(arg, context.copy_form()) for arg in expr.args))
                 else:
-                    raise Exception(f"{expr.pred} in {self.context.ctrl.pred_tmpls} or {expr.pred} in {bound_pred_tmpls}")
+                    raise Exception(f"{expr.pred} in {context.ctrl.pred_tmpls} or {expr.pred} in {context.form.pred_tmpls}")
             elif isinstance(expr.pred, CompoundPredTerm):
-                if expr.pred.fun.name in self.context.decl.deffuntemplateterms:
+                if expr.pred.fun.name in context.decl.deffuntemplateterms:
                     should_expand = False
                     if expr.pred.fun.name in self.defs:
                         target_indexes = self.indexes.get(expr.pred.fun.name, [])
@@ -369,39 +373,40 @@ class DefExpander:
                         elif self.counter[expr.pred.fun.name] in target_indexes:
                             should_expand = True
                     if should_expand:
-                        deffuntemplateterm = self.context.decl.deffuntemplateterms[expr.pred.fun.name]
-                        renamed_term, renamed_mapping = alpha_safe_term(deffuntemplateterm.term, dict(zip(deffuntemplateterm.args, expr.pred.args)), self.context)
-                        if not type_safe(renamed_mapping, self.context):
+                        deffuntemplateterm = context.decl.deffuntemplateterms[expr.pred.fun.name]
+                        renamed_term, renamed_mapping = alpha_safe_term(deffuntemplateterm.term, dict(zip(deffuntemplateterm.args, expr.pred.args)), context)
+                        if not type_safe(renamed_mapping, context):
                             raise Exception("type_safe() failed")
-                        expanded = Substitutor(renamed_mapping, self.context).substitute_term(renamed_term)
-                        new_pred = self.expand_defs_term(expanded, bound_pred_tmpls)
+                        expanded = Substitutor(renamed_mapping, context).substitute_term(renamed_term)
+                        new_pred = self.expand_defs_term(expanded, context.copy_form())
                         if not isinstance(new_pred, PredTerm):
                             raise Exception(f"Unexpected type: {type(new_pred)}")
                         if isinstance(new_pred, Lambda):
-                            renamed_body, final_mapping = alpha_safe_formula(new_pred.body, dict(zip(new_pred.args, expr.args)), self.context)
-                            final_formula = Substitutor(final_mapping, self.context).substitute_formula(renamed_body)
-                            return self.expand_defs_formula(final_formula, bound_pred_tmpls)
+                            renamed_body, final_mapping = alpha_safe_formula(new_pred.body, dict(zip(new_pred.args, expr.args)), context)
+                            final_formula = Substitutor(final_mapping, context).substitute_formula(renamed_body)
+                            return self.expand_defs_formula(final_formula, context.copy_form())
                         else:
-                            return AtomicFormula(new_pred, tuple(self.expand_defs_term(arg, bound_pred_tmpls) for arg in expr.args))
+                            return AtomicFormula(new_pred, tuple(self.expand_defs_term(arg, context.copy_form()) for arg in expr.args))
                     else:
-                        return AtomicFormula(expr.pred, tuple(self.expand_defs_term(arg, bound_pred_tmpls) for arg in expr.args))
+                        return AtomicFormula(expr.pred, tuple(self.expand_defs_term(arg, context.copy_form()) for arg in expr.args))
                 else:
                     raise Exception(f"Unexpected name: {expr.pred.fun.name}")
             else:
                 raise Exception(f"Unexpected type: {type(expr.pred)}")
         elif isinstance(expr, Not):
-            return Not(self.expand_defs_formula(expr.body, bound_pred_tmpls))
+            return Not(self.expand_defs_formula(expr.body, context.copy_form()))
         elif isinstance(expr, (And, Or, Implies, Iff)):
-            return type(expr)(self.expand_defs_formula(expr.left, bound_pred_tmpls), self.expand_defs_formula(expr.right, bound_pred_tmpls))
+            return type(expr)(self.expand_defs_formula(expr.left, context.copy_form()), self.expand_defs_formula(expr.right, context.copy_form()))
         elif isinstance(expr, Forall):
+            pred_tmpls: list[PredTemplate] = []
+            fun_tmpls: list[FunTemplate] = []
             if isinstance(expr.var, PredTemplate):
-                new_bound_pred_tmpls = list(bound_pred_tmpls) 
-                new_bound_pred_tmpls.append(expr.var)
-            else:
-                new_bound_pred_tmpls = bound_pred_tmpls
-            return Forall(expr.var, self.expand_defs_formula(expr.body, new_bound_pred_tmpls))
+                pred_tmpls.append(expr.var)
+            elif isinstance(expr.var, FunTemplate):
+                fun_tmpls.append(expr.var)
+            return Forall(expr.var, self.expand_defs_formula(expr.body, context.add_form([], pred_tmpls, fun_tmpls)))
         elif isinstance(expr, (Exists, ExistsUniq)):
-            return type(expr)(expr.var, self.expand_defs_formula(expr.body, bound_pred_tmpls))
+            return type(expr)(expr.var, self.expand_defs_formula(expr.body, context.copy_form()))
         else:
             raise Exception(f"Unexpected type: {type(expr)}")
 

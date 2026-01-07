@@ -21,11 +21,11 @@ def get_fact(fact: str | Formula, context: Context, expand_symbol: bool = False)
     if expand_symbol and isinstance(fact, AtomicFormula) and isinstance(fact.pred, Pred):
         if not fact.pred.name in context.decl.defpreds:
             raise Exception(f"Unexpected {fact.pred.name}")
-        fact = DefExpander(context, [fact.pred.name]).expand_defs_formula(fact)
+        fact = DefExpander([fact.pred.name]).expand_defs_formula(fact, context)
     if expand_symbol and isinstance(fact, AtomicFormula) and isinstance(fact.pred, CompoundPredTerm):
         if not fact.pred.fun.name in context.decl.deffuntemplateterms:
             raise Exception(f"Unexpected {fact.pred.fun.name}")
-        fact = DefExpander(context, [fact.pred.fun.name]).expand_defs_formula(fact)
+        fact = DefExpander([fact.pred.fun.name]).expand_defs_formula(fact, context)
     return fact
 
 def add_conclusion(context: Context, conclusion: Bottom | Formula) -> None:
@@ -186,14 +186,7 @@ def check_defconuniq(node: DefConUniq, context: Context, indent: int):
 
 def check_deffun(node: DefFun, context: Context, indent: int):
     debug_prefix = make_debug_prefix(node, indent)
-    error_prefix = make_error_prefix(node, indent)
     logger.debug(f"{debug_prefix}name: {node.name}, theorem: {node.theorem}")
-    _, existsuniq = collect_quantifier_vars(context.decl.theorems[node.theorem].conclusion, Forall)
-    if not isinstance(existsuniq, ExistsUniq):
-        logger.error(f"{error_prefix}Not ExistsUniq object: {pretty_expr(existsuniq, context)}")
-        node.proofinfo.status = "ERROR"
-        return False
-    logger.debug(f"{debug_prefix}ExistsUniq object: {pretty_expr(existsuniq, context)}")
     context.add_decl(node)
     node.proofinfo.status = "OK"
     return True
@@ -202,13 +195,15 @@ def check_deffunexist(node: DefFunExist, context: Context, indent: int):
     debug_prefix = make_debug_prefix(node, indent)
     error_prefix = make_error_prefix(node, indent)
     logger.debug(f"{debug_prefix}name: {node.name}, fun_name: {node.fun_name}")
-    args, existsuniq = collect_quantifier_vars(context.decl.theorems[context.decl.deffuns[node.fun_name].theorem].conclusion, Forall)
-    if not isinstance(existsuniq, ExistsUniq):
-        logger.error(f"{error_prefix}Not ExistsUniq object: {pretty_expr(existsuniq, context)}")
+    args, body = collect_quantifier_vars(context.decl.theorems[context.decl.deffuns[node.fun_name].theorem].conclusion, Forall)
+    if isinstance(body, ExistsUniq):
+        existence_formula = Substitutor({body.var: Compound(Fun(node.fun_name), tuple(args))}, context).substitute_formula(body.body)
+    elif isinstance(body, Implies) and isinstance(body.right, ExistsUniq):
+        existence_formula = Implies(body.left, Substitutor({body.right.var: Compound(Fun(node.fun_name), tuple(args))}, context).substitute_formula(body.right.body))
+    else:
+        logger.error(f"{error_prefix}Unexpected formula: {pretty_expr(body, context)}")
         node.proofinfo.status = "ERROR"
         return False
-    logger.debug(f"{debug_prefix}ExistsUniq object: {pretty_expr(existsuniq, context)}")
-    existence_formula = Substitutor({existsuniq.var: Compound(Fun(node.fun_name), tuple(args))}, context).substitute_formula(existsuniq.body)
     existence_formula = make_quantifier_vars(existence_formula, Forall ,args)
     if not alpha_equiv_with_defs(node.formula, existence_formula, context):
         logger.error(f"{error_prefix}existence_formula is not matched with theorem: {pretty_expr(node.formula, context)}")
@@ -223,17 +218,19 @@ def check_deffununiq(node: DefFunUniq, context: Context, indent: int):
     debug_prefix = make_debug_prefix(node, indent)
     error_prefix = make_error_prefix(node, indent)
     logger.debug(f"{debug_prefix}name: {node.name}, fun_name: {node.fun_name}")
-    args, existsuniq = collect_quantifier_vars(context.decl.theorems[context.decl.deffuns[node.fun_name].theorem].conclusion, Forall)
-    if not isinstance(existsuniq, ExistsUniq):
-        logger.error(f"{error_prefix}Not ExistsUniq object: {pretty_expr(existsuniq, context)}")
-        node.proofinfo.status = "ERROR"
-        return False
-    logger.debug(f"{debug_prefix}ExistsUniq object: {pretty_expr(existsuniq, context)}")
     if context.decl.equality is None:
         logger.error(f"{error_prefix}equality has not been declared yet")
         node.proofinfo.status = "ERROR"
         return False
-    uniqueness_formula = Forall(existsuniq.var, Implies(existsuniq.body, AtomicFormula(Pred(context.decl.equality.equal.name), (MembershipLambda(Var(existsuniq.var.name)), MembershipLambda(Compound(Fun(node.fun_name), tuple(args)))))))
+    args, body = collect_quantifier_vars(context.decl.theorems[context.decl.deffuns[node.fun_name].theorem].conclusion, Forall)
+    if isinstance(body, ExistsUniq):
+        uniqueness_formula = Forall(body.var, Implies(body.body, AtomicFormula(Pred(context.decl.equality.equal.name), (MembershipLambda(Var(body.var.name)), MembershipLambda(Compound(Fun(node.fun_name), tuple(args)))))))
+    elif isinstance(body, Implies) and isinstance(body.right, ExistsUniq):
+        uniqueness_formula = Implies(body.left, Forall(body.right.var, Implies(body.right.body, AtomicFormula(Pred(context.decl.equality.equal.name), (MembershipLambda(Var(body.right.var.name)), MembershipLambda(Compound(Fun(node.fun_name), tuple(args))))))))
+    else:
+        logger.error(f"{error_prefix}Unexpected formula: {pretty_expr(body, context)}")
+        node.proofinfo.status = "ERROR"
+        return False
     uniqueness_formula = make_quantifier_vars(uniqueness_formula, Forall, args)
     if not alpha_equiv_with_defs(node.formula, uniqueness_formula, context):
         logger.error(f"{error_prefix}uniqueness_formula is not matched with theorem: {pretty_expr(node.formula, context)}")
@@ -903,8 +900,7 @@ def check_expand(node: Expand, context: Context, indent: int):
         return False
     logger.debug(f"{debug_prefix}fact: {pretty_expr(node.fact, context)}")
     fact = get_fact(node.fact, context)
-    exp = DefExpander(context, node.defs, node.indexes)
-    conclusion = exp.expand_defs_formula(fact)
+    conclusion = DefExpander(node.defs, node.indexes).expand_defs_formula(fact, context)
     node.proofinfo.status = "OK"
     node.proofinfo.premises = [fact]
     node.proofinfo.conclusions = [conclusion]
@@ -915,8 +911,7 @@ def check_expand(node: Expand, context: Context, indent: int):
 def check_fold(node: Fold, context: Context, indent: int):
     debug_prefix = make_debug_prefix(node, indent)
     error_prefix = make_error_prefix(node, indent)
-    exp = DefExpander(context, node.defs, node.indexes)
-    fact = exp.expand_defs_formula(node.conclusion)
+    fact = DefExpander(node.defs, node.indexes).expand_defs_formula(node.conclusion, context)
     if not goal_in_context(fact, context):
         logger.error(f"{error_prefix}Not fact: {pretty_expr(fact, context)}")
         node.proofinfo.status = "ERROR"
@@ -1010,7 +1005,7 @@ def check_connect(node: Connect, context: Context, indent: int):
             raise Exception(f"Unexpected type: {type(node.conclusion.pred)}")
         if not node.conclusion.pred.name in context.decl.defpreds:
             raise Exception(f"Unexpected {node.conclusion.pred.name}")
-        conclusion = DefExpander(context, [node.conclusion.pred.name]).expand_defs_formula(node.conclusion)
+        conclusion = DefExpander([node.conclusion.pred.name]).expand_defs_formula(node.conclusion, context)
     else:
         conclusion = node.conclusion
     if isinstance(conclusion, And):

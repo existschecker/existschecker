@@ -356,3 +356,9 @@ theorem recursion_is_unique \forall c \forall^F g[1] \forall n (natural(n) \to \
     }
   }
 }
+
+definition function iterate by recursion_is_unique
+existence iterate_existence \forall c \forall^F f[1] \forall n (natural(n) \to recursion(lambda a. equal(a, c), lambda p, q. equal(q, f(p)))(n, iterate(c, f, n))) by iterate
+uniqueness iterate_uniqueness \forall c \forall^F f[1] \forall n (natural(n) \to \forall x (recursion(lambda a. equal(a, c), lambda p, q. equal(q, f(p)))(n, x) \to equal(x, iterate(c, f, n)))) by iterate
+
+/* theorem iterate_characterization \forall c \forall^F f[1] (equal(iterate(c, f, emptyset), c) \wedge \forall n (natural(n) \to equal(iterate(c, f, suc(n)), f(iterate(c, f, n))))) */

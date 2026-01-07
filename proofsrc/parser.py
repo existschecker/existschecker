@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, PredTemplate, Lambda, Include, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, DefFunTemplateTerm, CompoundPredTerm, FunTemplate
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, Fun, Con, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Pred, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, PredTemplate, Lambda, Include, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, DefFunTemplateTerm, CompoundPredTerm, FunTemplate, FunTerm
 from lexer import Token
 from token_stream import TokenStream
 from logic_utils import collect_quantifier_vars
@@ -147,13 +147,17 @@ class Parser:
         self.stream.consume("BY")
         theorem = self.stream.consume("IDENT").value
         vars_, body = collect_quantifier_vars(context.decl.theorems[theorem].conclusion, Forall)
-        if not (len(vars_) > 0 and isinstance(body, ExistsUniq)):
+        if isinstance(body, ExistsUniq):
+            existsuniq = body
+        elif isinstance(body, Implies) and isinstance(body.right, ExistsUniq):
+            existsuniq = body.right
+        else:
             raise SyntaxError(f"{start_token.info()} conclusion of {theorem} cannot be used for function definition")
         arity = len(vars_)
         tex = self.parse_or_create_tex(name, arity)
         if len(tex) != arity + 1:
             raise SyntaxError(f"{start_token.info()} arity or {name} is {arity}, but length of tex is {len(tex)}")
-        deffun = DefFun(name=name, token=start_token, args=vars_, returned=body.var, theorem=theorem, tex=tex)
+        deffun = DefFun(name=name, token=start_token, args=vars_, returned=existsuniq.var, theorem=theorem, tex=tex)
         context.add_decl(deffun)
         logger.debug(f"[deffun] {name}")
         return deffun
@@ -765,33 +769,27 @@ class Parser:
                 return next((pred_tmpl for pred_tmpl in context.ctrl.pred_tmpls if pred_tmpl.name == name))
             elif name in context.decl.defcons:
                 return Con(name)
-            elif name in context.decl.deffuns or name in context.decl.deffunterms:
-                self.stream.consume("LPAREN")
-                args = tuple(self.parse_terms(context))
-                self.stream.consume("RPAREN")
+            elif name in context.decl.deffuns or name in context.decl.deffunterms or any(fun_tmpl.name == name for fun_tmpl in context.form.fun_tmpls) or any(fun_tmpl.name == name for fun_tmpl in context.ctrl.fun_tmpls):
                 if name in context.decl.deffuns:
-                    arity = len(context.decl.deffuns[name].args)
-                    if len(args) != arity:
-                        raise SyntaxError(f"{tok.info()} arity of {name} is {arity}, but length of args is {len(args)}")
-                else:
-                    arity = len(context.decl.deffunterms[name].args)
-                    if len(args) != arity:
-                        raise SyntaxError(f"{tok.info()} arity of {name} is {arity}, but lenfth of args is {len(args)}")
-                return Compound(Fun(name), args)
-            elif any(fun_tmpl.name == name for fun_tmpl in context.form.fun_tmpls) or any(fun_tmpl.name == name for fun_tmpl in context.ctrl.fun_tmpls):
-                if any(fun_tmpl.name == name for fun_tmpl in context.form.fun_tmpls):
+                    fun = Fun(name)
+                    defargs = context.decl.deffuns[name].args
+                elif name in context.decl.deffunterms:
+                    fun = Fun(name)
+                    defargs = context.decl.deffunterms[name].args
+                elif any(fun_tmpl.name == name for fun_tmpl in context.form.fun_tmpls):
                     fun = next(fun_tmpl for fun_tmpl in context.form.fun_tmpls if fun_tmpl.name == name)
+                    defargs = [Var(f"x_{i}") for i in range(fun.arity)]
                 else:
                     fun = next(fun_tmpl for fun_tmpl in context.ctrl.fun_tmpls if fun_tmpl.name == name)
-                defargs = [Var(f"x_{i}") for i in range(fun.arity)]
+                    defargs = [Var(f"x_{i}") for i in range(fun.arity)]
                 if self.stream.peek().type == "LPAREN":
                     self.stream.consume("LPAREN")
                     subargs = self.parse_terms(context)
                     self.stream.consume("RPAREN")
+                    resolved_args = self.match_args(defargs, subargs, context, tok)
+                    return Compound(fun, tuple(resolved_args))
                 else:
-                    subargs: list[Term] = []
-                resolved_args = self.match_args(defargs, subargs, context, tok)
-                return Compound(fun, tuple(resolved_args))
+                    return fun
             elif name in context.decl.primpreds or name in context.decl.defpreds:
                 if name in context.decl.primpreds:
                     arity = context.decl.primpreds[name].arity
@@ -931,15 +929,17 @@ class Parser:
         self.stream.consume("RBRACKET")
         return FunTemplate(fun_tmpl_name, arity)
 
-    def match_args(self, defargs: Sequence[Var | PredTemplate], subargs: Sequence[Term], context: Context, tok: Token) -> list[Term]:
+    def match_args(self, defargs: Sequence[Var | PredTemplate | FunTemplate], subargs: Sequence[Term], context: Context, tok: Token) -> list[Term]:
+        if len(defargs) != len(subargs):
+            raise Exception(f"{tok.info()}len(defargs): {len(defargs)}, len(subargs): {len(subargs)}")
         resolved_args: list[Term] = []
         for defarg, subarg in zip(defargs, subargs):
-            if isinstance(defarg, VarTerm):
+            if isinstance(defarg, Var):
                 if isinstance(subarg, VarTerm):
                     resolved_args.append(subarg)
                 else:
                     raise Exception(f"{tok.info()} VarTerm must be substituted into {defarg.name}, but {type(subarg)} is substituted")
-            elif isinstance(defarg, PredTerm):
+            elif isinstance(defarg, PredTemplate):
                 if isinstance(subarg, PredTerm):
                     resolved_args.append(subarg)
                 elif isinstance(subarg, VarTerm):
@@ -952,6 +952,11 @@ class Parser:
                         raise Exception(f"{tok.info()} VarTerm cannot be substituted into PredTerm with arity {defarg.arity}")
                 else:
                     raise Exception(f"{tok.info()} Unexpected type: {type(subarg)}")
+            else:
+                if isinstance(subarg, FunTerm):
+                    resolved_args.append(subarg)
+                else:
+                    raise Exception(f"{tok.info()} FunTerm must be substituted into {defarg.name}, but {type(subarg)} is substituted")
         return resolved_args
 
 if __name__ == "__main__":
