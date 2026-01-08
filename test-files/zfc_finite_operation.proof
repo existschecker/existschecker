@@ -11,9 +11,18 @@ theorem add_characterization \forall m (equal(add(m, emptyset), m) \wedge \foral
 
 definition function mul(m, n) as iterate(emptyset, \lambda^F l. add(l, m), n) tex "", "\cdot", ""
 
-/* theorem mul_characterization \forall m (equal(mul(m, emptyset), emptyset) \wedge \forall n (natural(n) \to equal(mul(m, suc(n)), add(mul(m, n), n)))) {
+theorem mul_characterization \forall m (equal(mul(m, emptyset), emptyset) \wedge \forall n (natural(n) \to equal(mul(m, suc(n)), add(mul(m, n), m)))) {
   any m {
-    apply iterate_characterization for m, \lambda^F l. add(l, m)
-    fold for mul conclude equal(mul(m, emptyset), emptyset) \wedge \forall n (natural(n) \to equal(mul(m, suc(n)), add(mul(m, n), n)))
+    apply iterate_characterization for emptyset, \lambda^F l. add(l, m)
+    fold for mul conclude equal(mul(m, emptyset), emptyset) \wedge \forall n (natural(n) \to equal(mul(m, suc(n)), add(mul(m, n), m)))
   }
-} */
+}
+
+definition function pow(m, n) as iterate(suc(emptyset), \lambda^F l. mul(l, m), n) tex "", "^{", "}"
+
+theorem pow_characterization \forall m (equal(pow(m, emptyset), suc(emptyset)) \wedge \forall n (natural(n) \to equal(pow(m, suc(n)), mul(pow(m, n), m)))) {
+  any m {
+    apply iterate_characterization for suc(emptyset), \lambda^F l. mul(l, m)
+    fold for pow conclude equal(pow(m, emptyset), suc(emptyset)) \wedge \forall n (natural(n) \to equal(pow(m, suc(n)), mul(pow(m, n), m)))
+  }
+}
