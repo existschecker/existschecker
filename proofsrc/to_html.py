@@ -281,13 +281,13 @@ class Renderer:
                         self.render_identifier(node.name),
                         self.render_expr(Compound(RefDefFunTerm(node.name), tuple(node.args))),
                         self.render_keyword("as"),
-                        self.render_expr(node.term)]
+                        self.render_expr(node.varterm)]
         header_parts_jp = [self.bullet,
                            self.render_keyword("関数記号定義"),
                            self.render_identifier(node.name),
                            self.render_expr(Compound(RefDefFunTerm(node.name), tuple(node.args))),
                            "を",
-                           self.render_expr(node.term),
+                           self.render_expr(node.varterm),
                            "により定める。"]
         return header_parts, header_parts_jp, ""
 

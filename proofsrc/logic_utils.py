@@ -361,7 +361,7 @@ class DefExpander:
                     elif self.counter[expr.fun.name] in target_indexes:
                         should_expand = True
                 if should_expand:
-                    renamed_term, renamed_mapping = alpha_safe_term(deffunterm.term, dict(zip(deffunterm.args, expr.args)), context)
+                    renamed_term, renamed_mapping = alpha_safe_term(deffunterm.varterm, dict(zip(deffunterm.args, expr.args)), context)
                     if not type_safe(renamed_mapping, context):
                         raise Exception("type_safe() failed")
                     expanded = Substitutor(renamed_mapping, context).substitute_term(renamed_term)

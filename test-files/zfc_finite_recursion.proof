@@ -192,7 +192,3 @@ definition predicate approx(g, n, predicate \phi[1], predicate \psi[2]) as fun(g
 definition function predicate[2] recursion(predicate \phi[1], predicate \psi[2]) as \lambda^P n, x. natural(n) \wedge \exists g (approx(g, n, \phi, \psi) \wedge in(op(n, x), g))
 
 definition function predicate[1] tc(predicate \phi[1], predicate \psi[2]) as \lambda^P e. \exists n \exists s (recursion(\phi, \psi)(n, s) \wedge in(e, s))
-
-definition function tcin(x) as tc(singleton(x), \lambda^P p, q. in(q, p))
-
-definition predicate hf(x) as finite(tcin(x)) \wedge irrefrelon(tcin(x), in) \wedge wellfounded(tcin(x), in)

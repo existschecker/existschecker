@@ -167,11 +167,11 @@ class Parser:
         args, local_vars, local_pred_tmpls = self.parse_vars_or_pred_tmpls()
         self.stream.consume("RPAREN")
         self.stream.consume("AS")
-        term = self.parse_term(context.add_form(local_vars, local_pred_tmpls, []))
+        term = self.parse_var_term(context.add_form(local_vars, local_pred_tmpls, []))
         tex = self.parse_or_create_tex(name, len(args))
         if len(tex) != len(args) + 1:
             raise SyntaxError(f"{start_token.info()} arity of {name} is {len(args)}, but length of tex is {len(tex)}")
-        deffunterm = DefFunTerm(name=name, token=start_token, args=args, term=term, tex=tex)
+        deffunterm = DefFunTerm(name=name, token=start_token, args=args, varterm=term, tex=tex)
         context.add_decl(deffunterm)
         logger.debug(f"[deffunterm] {name}")
         return deffunterm

@@ -240,8 +240,8 @@ def check_deffununiq(node: DefFunUniq, context: Context, indent: int):
 def check_deffunterm(node: DefFunTerm, context: Context, indent: int):
     debug_prefix = make_debug_prefix(node, indent)
     error_prefix = make_error_prefix(node, indent)
-    logger.debug(f"{debug_prefix}name: {node.name}, args: {node.args}, term: {pretty_expr(node.term, context)}")
-    fv, _, fpt, _, fft, _ = collect_vars(node.term)
+    logger.debug(f"{debug_prefix}name: {node.name}, args: {node.args}, term: {pretty_expr(node.varterm, context)}")
+    fv, _, fpt, _, fft, _ = collect_vars(node.varterm)
     if set(node.args) != set(fv) | set(fpt) | set(fft):
         logger.error(f"{error_prefix}args are not matched with free vars: {set(fv) | set(fpt) | set(fft)}")
         node.proofinfo.status = "ERROR"
