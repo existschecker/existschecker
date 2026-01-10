@@ -755,6 +755,36 @@ class Parser:
             terms.append(self.parse_term(context.copy_form()))
         return terms
 
+    def parse_var_term(self, context: Context) -> VarTerm:
+        tok = self.stream.consume("IDENT")
+        name = tok.value
+        if any(var.name == name for var in context.form.vars):
+            return next(var for var in context.form.vars if var.name == name)
+        elif any(var.name == name for var in context.ctrl.vars):
+            return next((var for var in context.ctrl.vars if var.name == name))
+        elif name in context.decl.defcons:
+            return RefDefCon(name)
+        elif name in context.decl.deffuns or name in context.decl.deffunterms or any(fun_tmpl.name == name for fun_tmpl in context.form.fun_tmpls) or any(fun_tmpl.name == name for fun_tmpl in context.ctrl.fun_tmpls):
+            if name in context.decl.deffuns:
+                fun = RefDefFun(name)
+                defargs = context.decl.deffuns[name].args
+            elif name in context.decl.deffunterms:
+                fun = RefDefFunTerm(name)
+                defargs = context.decl.deffunterms[name].args
+            elif any(fun_tmpl.name == name for fun_tmpl in context.form.fun_tmpls):
+                fun = next(fun_tmpl for fun_tmpl in context.form.fun_tmpls if fun_tmpl.name == name)
+                defargs = [Var(f"x_{i}") for i in range(fun.arity)]
+            else:
+                fun = next(fun_tmpl for fun_tmpl in context.ctrl.fun_tmpls if fun_tmpl.name == name)
+                defargs = [Var(f"x_{i}") for i in range(fun.arity)]
+            self.stream.consume("LPAREN")
+            subargs = self.parse_terms(context)
+            self.stream.consume("RPAREN")
+            resolved_args = self.match_args(defargs, subargs, context, tok)
+            return Compound(fun, tuple(resolved_args))
+        else:
+            raise Exception(f"{tok.info()} Unexpected name: {name}")
+
     def parse_term(self, context: Context) -> Term:
         tok = self.stream.peek()
         if tok.type == "IDENT":
@@ -833,7 +863,7 @@ class Parser:
             else:
                 vars = self.parse_vars()
             self.stream.consume("DOT")
-            term = self.parse_term(context.add_form(vars, [], []))
+            term = self.parse_var_term(context.add_form(vars, [], []))
             return FunLambda(tuple(vars), term)
         else:
             raise SyntaxError(f"{tok.info()} Term object is required, but unknown token is found at")

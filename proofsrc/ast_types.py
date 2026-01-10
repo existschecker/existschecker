@@ -49,7 +49,7 @@ class FunTemplate(FunTerm):
 @dataclass(frozen=True)
 class FunLambda(FunTerm):
     args: tuple[Var, ...]
-    body: Term
+    body: VarTerm
 
 @dataclass(frozen=True)
 class Compound(VarTerm):

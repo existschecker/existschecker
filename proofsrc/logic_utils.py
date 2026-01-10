@@ -382,7 +382,10 @@ class DefExpander:
         elif isinstance(expr, PredLambda):
             return PredLambda(expr.args, self.expand_defs_formula(expr.body, context.copy_form()))
         elif isinstance(expr, FunLambda):
-            return FunLambda(expr.args, self.expand_defs_term(expr.body, context.copy_form()))
+            expanded = self.expand_defs_term(expr.body, context.copy_form())
+            if not isinstance(expanded, VarTerm):
+                raise Exception(f"Unexpected type: {type(expanded)}")
+            return FunLambda(expr.args, expanded)
         elif isinstance(expr, MembershipLambda):
             expanded = self.expand_defs_term(expr.varterm, context.copy_form())
             if not isinstance(expanded, VarTerm):
@@ -546,7 +549,10 @@ class Substitutor:
             return PredLambda(expr.args, self.substitute_formula(expr.body))
 
         elif isinstance(expr, FunLambda):
-            return FunLambda(expr.args, self.substitute_term(expr.body))
+            substituted = self.substitute_term(expr.body)
+            if not isinstance(substituted, VarTerm):
+                raise Exception(f"Unexpected type: {type(substituted)}")
+            return FunLambda(expr.args, substituted)
 
         elif isinstance(expr, MembershipLambda):
             substituted = self.substitute_term(expr.varterm)
@@ -660,7 +666,10 @@ class AlphaRename:
         elif isinstance(expr, PredLambda):
             return PredLambda(tuple(self.alpha_rename_var(a) for a in expr.args), self.alpha_rename_formula(expr.body))
         elif isinstance(expr, FunLambda):
-            return FunLambda(tuple(self.alpha_rename_var(a) for a in expr.args), self.alpha_rename_term(expr.body))
+            renamed = self.alpha_rename_term(expr.body)
+            if not isinstance(renamed, VarTerm):
+                raise Exception(f"Unexpected type: {type(renamed)}")
+            return FunLambda(tuple(self.alpha_rename_var(a) for a in expr.args), renamed)
         elif isinstance(expr, MembershipLambda):
             renamed = self.alpha_rename_term(expr.varterm)
             if not isinstance(renamed, VarTerm):
