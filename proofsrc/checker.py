@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, RefDefCon, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Control, Formula, Declaration, PredTemplate, Term, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Include, DeclarationSupport, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, DefFunTemplateTerm, CompoundPredTerm, FunTemplate, RefPrimPred, RefDefPred, RefDefFun
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, RefDefCon, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Control, Formula, Declaration, PredTemplate, Term, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Include, DeclarationSupport, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, FunTemplate, RefPrimPred, RefDefPred, RefDefFun
 from logic_utils import Substitutor, DefExpander, expr_in_context, strip_forall_vars, strip_exists_vars, make_forall_vars, make_exists_vars, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs, pretty_expr, alpha_safe_formula, type_safe
 from copy import deepcopy
 
@@ -20,8 +20,6 @@ def get_fact(fact: str | Formula, context: Context, expand_symbol: bool = False)
         raise Exception(f"Unexpected type {type(fact)}")
     if expand_symbol and isinstance(fact, AtomicFormula) and isinstance(fact.pred, RefDefPred):
         fact = DefExpander([fact.pred.name]).expand_defs_formula(fact, context)
-    if expand_symbol and isinstance(fact, AtomicFormula) and isinstance(fact.pred, CompoundPredTerm):
-        fact = DefExpander([fact.pred.fun.name]).expand_defs_formula(fact, context)
     return fact
 
 def add_conclusion(context: Context, conclusion: Bottom | Formula) -> None:
@@ -64,8 +62,6 @@ def check_declaration(node: Declaration, context: Context, indent: int = 0) -> b
         return check_deffununiq(node, context, indent)
     elif isinstance(node, DefFunTerm):
         return check_deffunterm(node, context, indent)
-    elif isinstance(node, DefFunTemplateTerm):
-        return check_deffuntemplateterm(node, context, indent)
     elif isinstance(node, Equality):
         return check_equality(node, context, indent)
     elif isinstance(node, Membership):
@@ -242,20 +238,6 @@ def check_deffunterm(node: DefFunTerm, context: Context, indent: int):
     error_prefix = make_error_prefix(node, indent)
     logger.debug(f"{debug_prefix}name: {node.name}, args: {node.args}, term: {pretty_expr(node.varterm, context)}")
     fv, _, fpt, _, fft, _ = collect_vars(node.varterm)
-    if set(node.args) != set(fv) | set(fpt) | set(fft):
-        logger.error(f"{error_prefix}args are not matched with free vars: {set(fv) | set(fpt) | set(fft)}")
-        node.proofinfo.status = "ERROR"
-        return False
-    logger.debug(f"{debug_prefix}args are mathced with free vars of term: {set(fv) | set(fpt) | set(fft)}")
-    context.add_decl(node)
-    node.proofinfo.status = "OK"
-    return True
-
-def check_deffuntemplateterm(node: DefFunTemplateTerm, context: Context, indent: int):
-    debug_prefix = make_debug_prefix(node, indent)
-    error_prefix = make_error_prefix(node, indent)
-    logger.debug(f"{debug_prefix}name: {node.name}, args: {node.args}, term: {pretty_expr(node.term, context)}")
-    fv, _, fpt, _, fft, _ = collect_vars(node.term)
     if set(node.args) != set(fv) | set(fpt) | set(fft):
         logger.error(f"{error_prefix}args are not matched with free vars: {set(fv) | set(fpt) | set(fft)}")
         node.proofinfo.status = "ERROR"
