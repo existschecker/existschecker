@@ -363,7 +363,7 @@ class DefExpander:
             raise Exception(f"Unexpected type: {type(expr)}")
 
     def expand_defs_pred_term(self, expr: PredTerm, context: Context) -> PredTerm:
-        if isinstance(expr, PredTemplate):
+        if isinstance(expr, (PredTemplate, RefPrimPred, RefDefPred)):
             return expr
         elif isinstance(expr, PredLambda):
             return PredLambda(expr.args, self.expand_defs_formula(expr.body, context.copy_form()))
@@ -535,8 +535,33 @@ class Substitutor:
     def substitute_formula(self, expr: Formula) -> Formula:
         if isinstance(expr, AtomicFormula):
             new_pred = self.substitute_pred_term(expr.pred)
-            if isinstance(new_pred, (PredTemplate, RefPrimPred, RefDefPred)):
+            if isinstance(new_pred, (PredTemplate, RefPrimPred)):
                 return AtomicFormula(new_pred, tuple(self.substitute_term(arg) for arg in expr.args))
+            elif isinstance(new_pred, RefDefPred):
+                defpred = self.context.decl.defpreds[new_pred.name]
+                resolved_args: list[Term] = []
+                for defarg, subarg in zip(defpred.args, expr.args):
+                    if isinstance(defarg, VarTerm):
+                        if isinstance(subarg, VarTerm):
+                            resolved_args.append(subarg)
+                        else:
+                            raise Exception(f"VarTerm must be substituted into {defarg.name}, but {type(subarg)} is substituted")
+                    elif isinstance(defarg, PredTerm):
+                        if isinstance(subarg, PredTerm):
+                            resolved_args.append(subarg)
+                        elif isinstance(subarg, VarTerm):
+                            if defarg.arity == 1:
+                                if self.context.decl.membership is None:
+                                    raise Exception(f"VarTerm is substituted into PredTerm with arity 1, but membership has not been declared")
+                                else:
+                                    resolved_args.append(MembershipLambda(subarg))
+                            else:
+                                raise Exception(f"VarTerm cannot be substituted into PredTerm with arity {defarg.arity}")
+                        else:
+                            raise Exception(f"Unexpected type: {type(subarg)}")
+                    else:
+                        raise Exception(f"Unexpected type: {type(defarg)}")
+                return AtomicFormula(new_pred, tuple(self.substitute_term(arg) for arg in resolved_args))
             elif isinstance(new_pred, PredLambda):
                 lambda_mapping: dict[VarTerm, VarTerm] = {}
                 for a, b in zip(new_pred.args, expr.args):
@@ -772,8 +797,10 @@ def pretty_expr_fragments(expr: AtomicFormula | Compound, context: Context) -> l
         raise TypeError(f"Unsupported node type: {type(expr)}")
 
 def pretty_term(expr: Term, context: Context, parent_prec: int = TERM_PRECEDENCE["Lowest"]) -> str:
-    if isinstance(expr, (Var, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm)):
+    if isinstance(expr, Var):
         return expr.name
+    elif isinstance(expr, (RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm)):
+        return f"\\mathrm{{{expr.name}}}"
     elif isinstance(expr, (PredTemplate, FunTemplate)):
         return f"{expr.name}[{str(expr.arity)}]"
     elif isinstance(expr, RefDefCon):

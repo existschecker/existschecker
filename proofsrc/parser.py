@@ -793,24 +793,10 @@ class Parser:
                     return Compound(fun, tuple(resolved_args))
                 else:
                     return fun
-            elif name in context.decl.primpreds or name in context.decl.defpreds:
-                if name in context.decl.primpreds:
-                    arity = context.decl.primpreds[name].arity
-                    args = [Var(f"x_{i}") for i in range(arity)]
-                    return PredLambda(tuple(args), AtomicFormula(RefPrimPred(name), tuple(args)))
-                else:
-                    vars: list[Var] = []
-                    items: list[Var | MembershipLambda] = []
-                    for i, arg in enumerate(context.decl.defpreds[name].args):
-                        var = Var(f"x_{i}")
-                        vars.append(var)
-                        if isinstance(arg, Var):
-                            items.append(var)
-                        elif isinstance(arg, PredTemplate):
-                            items.append(MembershipLambda(var))
-                        else:
-                            raise Exception(f"Unexpected type: {type(arg)}")
-                    return PredLambda(tuple(vars), AtomicFormula(RefDefPred(name), tuple(items)))
+            elif name in context.decl.primpreds:
+                return RefPrimPred(name)
+            elif name in context.decl.defpreds:
+                return RefDefPred(name)
             else:
                 raise SyntaxError(f"{tok.info()} Term object is required, but {name} is unknown")
         elif tok.type == "LAMBDA_PRED":
