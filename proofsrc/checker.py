@@ -1,5 +1,5 @@
 from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, RefDefCon, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Control, Formula, Declaration, PredTemplate, Term, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Include, DeclarationSupport, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, FunTemplate, RefPrimPred, RefDefPred, RefDefFun
-from logic_utils import Substitutor, DefExpander, expr_in_context, strip_forall_vars, strip_exists_vars, make_forall_vars, make_exists_vars, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs, pretty_expr, alpha_safe_formula, type_safe
+from logic_utils import Substitutor, DefExpander, expr_in_context, strip_forall_vars, strip_exists_vars, make_forall_vars, make_exists_vars, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs, pretty_expr, alpha_safe_formula
 from copy import deepcopy
 
 import logging
@@ -135,7 +135,7 @@ def check_defconexist(node: DefConExist, context: Context, indent: int):
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{debug_prefix}ExistsUniq object: {pretty_expr(existsuniq, context)}")
-    existence_formula = Substitutor({existsuniq.var: RefDefCon(node.con_name)}, context).substitute_formula(existsuniq.body)
+    existence_formula = Substitutor(({existsuniq.var: RefDefCon(node.con_name)}, {}, {}), context).substitute_formula(existsuniq.body)
     if not alpha_equiv_with_defs(node.formula, existence_formula, context):
         logger.error(f"{error_prefix}existence_formula is not matched with theorem: {pretty_expr(node.formula, context)}")
         node.proofinfo.status = "ERROR"
@@ -157,7 +157,7 @@ def check_defconuniq(node: DefConUniq, context: Context, indent: int):
     logger.debug(f"{debug_prefix}ExistsUniq object: {pretty_expr(existsuniq, context)}")
     fv, bv, fpt, bpt, fft, bft = collect_vars(existsuniq.body)
     var = fresh_var(existsuniq.var, fv | bv | fpt | bpt | fft | bft, context)
-    body = Substitutor({existsuniq.var: var}, context).substitute_formula(existsuniq.body)
+    body = Substitutor(({existsuniq.var: var}, {}, {}), context).substitute_formula(existsuniq.body)
     if context.decl.equality is None:
         logger.error(f"{error_prefix}equality has not been declared yet")
         node.proofinfo.status = "ERROR"
@@ -185,9 +185,9 @@ def check_deffunexist(node: DefFunExist, context: Context, indent: int):
     logger.debug(f"{debug_prefix}name: {node.name}, fun_name: {node.fun_name}")
     args, body = strip_forall_vars(context.decl.theorems[context.decl.deffuns[node.fun_name].theorem].conclusion)
     if isinstance(body, ExistsUniq):
-        existence_formula = Substitutor({body.var: Compound(RefDefFun(node.fun_name), tuple(args))}, context).substitute_formula(body.body)
+        existence_formula = Substitutor(({body.var: Compound(RefDefFun(node.fun_name), tuple(args))}, {}, {}), context).substitute_formula(body.body)
     elif isinstance(body, Implies) and isinstance(body.right, ExistsUniq):
-        existence_formula = Implies(body.left, Substitutor({body.right.var: Compound(RefDefFun(node.fun_name), tuple(args))}, context).substitute_formula(body.right.body))
+        existence_formula = Implies(body.left, Substitutor(({body.right.var: Compound(RefDefFun(node.fun_name), tuple(args))}, {}, {}), context).substitute_formula(body.right.body))
     else:
         logger.error(f"{error_prefix}Unexpected formula: {pretty_expr(body, context)}")
         node.proofinfo.status = "ERROR"
@@ -539,17 +539,13 @@ def check_some(node: Some, context: Context, indent: int):
             return False
     mapping: dict[Term, Term] = {bound: free for bound, free in zip(vars, node.items) if free is not None}
     renamed_body, renamed_mapping = alpha_safe_formula(body, mapping, context)
-    if not type_safe(renamed_mapping, context, True):
-        logger.error(f"{error_prefix}type_safe() failed")
-        node.proofinfo.status = "ERROR"
-        return False
     existence = Substitutor(renamed_mapping, context).substitute_formula(renamed_body)
     if isinstance(fact, Exists):
         premises: list[Bottom | Formula] = [existence]
     else:
         fv, bv, fpt, bpt, fft, bft = collect_vars(existence)
         var = fresh_var(vars[0], fv | bv | fpt | bpt | fft | bft, context)
-        body = Substitutor({vars[0]: var}, context).substitute_formula(existence)
+        body = Substitutor(({vars[0]: var}, {}, {}), context).substitute_formula(existence)
         if context.decl.equality is None:
             logger.error(f"{error_prefix}equality has not been declared yet")
             node.proofinfo.status = "ERROR"
@@ -674,10 +670,6 @@ def check_apply(node: Apply, context: Context, indent: int):
         else:
             mapping[item] = term
     renamed_body, renamed_map = alpha_safe_formula(body, mapping, context)
-    if not type_safe(renamed_map, context):
-        logger.error(f"{error_prefix}type_safe() failed")
-        node.proofinfo.status = "ERROR"
-        return False
     logger.debug(f"{debug_prefix}Instantiable: mapping={mapping}")
     instantiation = Substitutor(renamed_map, context).substitute_formula(renamed_body)
     logger.debug(f"{debug_prefix}\\forall-elimination is done: instantiation={pretty_expr(instantiation, context)}")
@@ -746,10 +738,6 @@ def check_lift(node: Lift, context: Context, indent: int):
     body = make_exists_vars(body, Exists, [item for item, term in zip(items, node.varterms) if term is None])
     mapping: dict[Term, Term] = {item: term for item, term in zip(items, node.varterms) if term is not None}
     renamed_body, renamed_mapping = alpha_safe_formula(body, mapping, context)
-    if not type_safe(renamed_mapping, context):
-        logger.error(f"{error_prefix}type_safe() failed")
-        node.proofinfo.status = "ERROR"
-        return False
     fact = Substitutor(renamed_mapping, context).substitute_formula(renamed_body)
     if not goal_in_context(fact, context):
         logger.error(f"{error_prefix}Not fact: {pretty_expr(fact, context)}")
@@ -774,8 +762,8 @@ def check_characterize(node: Characterize, context: Context, indent: int):
         logger.error(f"{error_prefix}renamed_conclusion is not ExistsUniq object: {pretty_expr(renamed_conclusion, context)}")
         node.proofinfo.status = "ERROR"
         return False
-    existence = Substitutor({renamed_conclusion.var: node.varterm}, context).substitute_formula(renamed_conclusion.body)
-    existence_dash = Substitutor({renamed_conclusion.var: vardash}, context).substitute_formula(renamed_conclusion.body)
+    existence = Substitutor(({renamed_conclusion.var: node.varterm}, {}, {}), context).substitute_formula(renamed_conclusion.body)
+    existence_dash = Substitutor(({renamed_conclusion.var: vardash}, {}, {}), context).substitute_formula(renamed_conclusion.body)
     if context.decl.equality is None:
         logger.error(f"{error_prefix}equality has not been declared yet")
         node.proofinfo.status = "ERROR"
@@ -1025,8 +1013,8 @@ def check_substitute(node: Substitute, context: Context, indent: int):
             return False
         logger.debug(f"{debug_prefix}Fact: {pretty_expr(equation, context)}")
         premises_equal.append(equation)
-    renamed_fact, _ = alpha_safe_formula(fact, node.env, context, True)
-    conclusion = Substitutor(node.env, context, node.indexes).substitute_formula(renamed_fact)
+    renamed_fact, mapping = alpha_safe_formula(fact, node.env, context, True)
+    conclusion = Substitutor(mapping, context, node.indexes).substitute_formula(renamed_fact)
     logger.debug(f"{debug_prefix}conclusion: {pretty_expr(conclusion, context)}")
     logger.debug(f"{debug_prefix}Matched")
     node.proofinfo.status = "OK"

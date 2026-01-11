@@ -336,13 +336,11 @@ class DefExpander:
     indexes: dict[str, list[int]] = field(default_factory=dict[str, list[int]])
     counter: dict[str, int] = field(init=False, default_factory=dict[str, int])
 
-    def expand_defs_term(self, expr: Term, context: Context) -> Term:
-        if isinstance(expr, (Var, RefDefCon, PredTemplate, RefDefFun, RefDefFunTerm, FunTemplate)):
+    def expand_defs_var_term(self, expr: VarTerm, context: Context) -> VarTerm:
+        if isinstance(expr, (Var, RefDefCon)):
             return expr
         elif isinstance(expr, Compound):
-            if isinstance(expr.fun, RefDefFun):
-                return Compound(expr.fun, tuple(self.expand_defs_term(arg, context.copy_form()) for arg in expr.args))
-            elif isinstance(expr.fun, RefDefFunTerm):
+            if isinstance(expr.fun, RefDefFunTerm):
                 deffunterm = context.decl.deffunterms[expr.fun.name]
                 should_expand = False
                 if expr.fun.name in self.defs:
@@ -353,44 +351,48 @@ class DefExpander:
                     elif self.counter[expr.fun.name] in target_indexes:
                         should_expand = True
                 if should_expand:
-                    renamed_term, renamed_mapping = alpha_safe_term(deffunterm.varterm, dict(zip(deffunterm.args, expr.args)), context)
-                    if not type_safe(renamed_mapping, context):
-                        raise Exception("type_safe() failed")
-                    expanded = Substitutor(renamed_mapping, context).substitute_term(renamed_term)
-                    return self.expand_defs_term(expanded, context.copy_form())
-                else:
-                    return Compound(expr.fun, tuple(self.expand_defs_term(arg, context.copy_form()) for arg in expr.args))
-            elif isinstance(expr.fun, FunTemplate):
-                if expr.fun in context.ctrl.fun_tmpls or expr.fun in context.form.fun_tmpls:
-                    return Compound(expr.fun, tuple(self.expand_defs_term(arg, context.copy_form()) for arg in expr.args))
-                else:
-                    raise Exception(f"{expr.fun} in {context.ctrl.fun_tmpls} or {expr.fun} in {context.form.fun_tmpls}")
+                    renamed_term, renamed_mapping = alpha_safe_var_term(deffunterm.varterm, dict(zip(deffunterm.args, expr.args)), context)
+                    expanded = Substitutor(renamed_mapping, context).substitute_var_term(renamed_term)
+                    return self.expand_defs_var_term(expanded, context.copy_form())
             elif isinstance(expr.fun, FunLambda):
-                renamed_body, renamed_mapping = alpha_safe_term(expr.fun.body, dict(zip(expr.fun.args, expr.args)), context)
-                beta_reduced = Substitutor(renamed_mapping, context).substitute_term(renamed_body)
-                return self.expand_defs_term(beta_reduced, context.copy_form())
-            else:
-                raise Exception(f"Unexpected type: {type(expr.fun)}")
+                renamed_body, renamed_mapping = alpha_safe_var_term(expr.fun.body, dict(zip(expr.fun.args, expr.args)), context)
+                beta_reduced = Substitutor(renamed_mapping, context).substitute_var_term(renamed_body)
+                return self.expand_defs_var_term(beta_reduced, context.copy_form())
+            return Compound(expr.fun, tuple(self.expand_defs_term(arg, context.copy_form()) for arg in expr.args))
+        else:
+            raise Exception(f"Unexpected type: {type(expr)}")
+
+    def expand_defs_pred_term(self, expr: PredTerm, context: Context) -> PredTerm:
+        if isinstance(expr, PredTemplate):
+            return expr
         elif isinstance(expr, PredLambda):
             return PredLambda(expr.args, self.expand_defs_formula(expr.body, context.copy_form()))
-        elif isinstance(expr, FunLambda):
-            expanded = self.expand_defs_term(expr.body, context.copy_form())
-            if not isinstance(expanded, VarTerm):
-                raise Exception(f"Unexpected type: {type(expanded)}")
-            return FunLambda(expr.args, expanded)
         elif isinstance(expr, MembershipLambda):
-            expanded = self.expand_defs_term(expr.varterm, context.copy_form())
-            if not isinstance(expanded, VarTerm):
-                raise Exception(f"Unexpected type: {type(expanded)}")
-            return MembershipLambda(expanded)
+            return MembershipLambda(self.expand_defs_var_term(expr.varterm, context.copy_form()))
+        else:
+            raise Exception(f"Unexpected type: {type(expr)}")
+
+    def expand_defs_fun_term(self, expr: FunTerm, context: Context) -> FunTerm:
+        if isinstance(expr, (FunTemplate, RefDefFun, RefDefFunTerm)):
+            return expr
+        elif isinstance(expr, FunLambda):
+            return FunLambda(expr.args, self.expand_defs_var_term(expr.body, context.copy_form()))
+        else:
+            raise Exception(f"Unexpected type: {type(expr)}")
+
+    def expand_defs_term(self, expr: Term, context: Context) -> Term:
+        if isinstance(expr, VarTerm):
+            return self.expand_defs_var_term(expr, context)
+        elif isinstance(expr, PredTerm):
+            return self.expand_defs_pred_term(expr, context)
+        elif isinstance(expr, FunTerm):
+            return self.expand_defs_fun_term(expr, context)
         else:
             raise Exception(f"Unexpected type: {type(expr)}")
 
     def expand_defs_formula(self, expr: Formula, context: Context) -> Formula:
         if isinstance(expr, AtomicFormula):
-            if isinstance(expr.pred, RefPrimPred):
-                return AtomicFormula(expr.pred, tuple(self.expand_defs_term(arg, context.copy_form()) for arg in expr.args))
-            elif isinstance(expr.pred, RefDefPred):
+            if isinstance(expr.pred, RefDefPred):
                 defpred = context.decl.defpreds[expr.pred.name]
                 should_expand = False
                 if len(self.defs) == 0 and defpred.autoexpand:
@@ -404,19 +406,9 @@ class DefExpander:
                         should_expand = True
                 if should_expand:
                     renamed_formula, renamed_mapping = alpha_safe_formula(defpred.formula, dict(zip(defpred.args, expr.args)), context)
-                    if not type_safe(renamed_mapping, context):
-                        raise Exception("type_safe() failed")
                     expanded = Substitutor(renamed_mapping, context).substitute_formula(renamed_formula)
                     return self.expand_defs_formula(expanded, context.copy_form())
-                else:
-                    return AtomicFormula(expr.pred, tuple(self.expand_defs_term(arg, context.copy_form()) for arg in expr.args))
-            elif isinstance(expr.pred, PredTemplate):
-                if expr.pred in context.ctrl.pred_tmpls or expr.pred in context.form.pred_tmpls:
-                    return AtomicFormula(expr.pred, tuple(self.expand_defs_term(arg, context.copy_form()) for arg in expr.args))
-                else:
-                    raise Exception(f"{expr.pred} in {context.ctrl.pred_tmpls} or {expr.pred} in {context.form.pred_tmpls}")
-            else:
-                raise Exception(f"Unexpected type: {type(expr.pred)}")
+            return AtomicFormula(expr.pred, tuple(self.expand_defs_term(arg, context.copy_form()) for arg in expr.args))
         elif isinstance(expr, Not):
             return Not(self.expand_defs_formula(expr.body, context.copy_form()))
         elif isinstance(expr, (And, Or, Implies, Iff)):
@@ -479,103 +471,89 @@ def fresh_fun_tmpl(fun_tmpl: FunTemplate, used_items: set[Var | PredTemplate | F
 
 @dataclass
 class Substitutor:
-    mapping: Mapping[Term, Term]
+    mapping: tuple[Mapping[VarTerm, VarTerm], Mapping[PredTerm, PredTerm], Mapping[FunTerm, FunTerm]]
     context: Context
     indexes: Mapping[Term, list[int]] = field(default_factory=dict[Term, list[int]])
     counter: dict[Term, int] = field(init=False, default_factory=dict[Term, int])
 
-    def substitute_term(self, expr: Term) -> Term:
-        for k, v in self.mapping.items():
+    def _apply_substitute[T: Term](self, expr: T, mapping: Mapping[T, T]) -> T | None:
+        for k, v in mapping.items():
             if expr == k:
-                target_indices_set = self.indexes.get(k, [])
-                if not target_indices_set:
-                    self.counter[k] = self.counter.get(k, 0) + 1
+                self.counter[k] = self.counter.get(k, 0) + 1
+                target_indices = self.indexes.get(k, [])
+                if not target_indices or self.counter[k] in target_indices:
                     return deepcopy(v)
                 else:
-                    self.counter[k] = self.counter.get(k, 0) + 1
-                    current_index = self.counter[k]
-                    if current_index in target_indices_set:
-                        return deepcopy(v)
-                    else:
-                        return expr
+                    return expr
+        return None
 
-        if isinstance(expr, (Var, RefDefCon, PredTemplate, RefDefFun, RefDefFunTerm, FunTemplate)):
+    def substitute_var_term(self, expr: VarTerm) -> VarTerm:
+        substituted = self._apply_substitute(expr, self.mapping[0])
+        if substituted is not None:
+            return substituted
+        if isinstance(expr, (Var, RefDefCon)):
             return expr
-
         elif isinstance(expr, Compound):
-            fun = self.substitute_term(expr.fun)
-            if not isinstance(fun, FunTerm):
-                raise Exception(f"Unexpected type: {type(fun)}")
-            return Compound(fun, tuple(self.substitute_term(arg) for arg in expr.args))
+            return Compound(self.substitute_fun_term(expr.fun), tuple(self.substitute_term(arg) for arg in expr.args))
+        else:
+            raise Exception(f"Unexpected type: {type(expr)}")
 
+    def substitute_pred_term(self, expr: PredTerm) -> PredTerm:
+        substituted = self._apply_substitute(expr, self.mapping[1])
+        if substituted is not None:
+            return substituted
+        if isinstance(expr, (PredTemplate, RefPrimPred, RefDefPred)):
+            return expr
         elif isinstance(expr, PredLambda):
             return PredLambda(expr.args, self.substitute_formula(expr.body))
-
-        elif isinstance(expr, FunLambda):
-            substituted = self.substitute_term(expr.body)
-            if not isinstance(substituted, VarTerm):
-                raise Exception(f"Unexpected type: {type(substituted)}")
-            return FunLambda(expr.args, substituted)
-
         elif isinstance(expr, MembershipLambda):
-            substituted = self.substitute_term(expr.varterm)
-            if not isinstance(substituted, VarTerm):
-                raise Exception(f"Unexpected type: {type(substituted)}")
-            return MembershipLambda(substituted)
+            return MembershipLambda(self.substitute_var_term(expr.varterm))
+        else:
+            raise Exception(f"Unexpected type: {type(expr)}")
 
+    def substitute_fun_term(self, expr: FunTerm) -> FunTerm:
+        substituted = self._apply_substitute(expr, self.mapping[2])
+        if substituted is not None:
+            return substituted
+        if isinstance(expr, (FunTemplate, RefDefFun, RefDefFunTerm)):
+            return expr
+        elif isinstance(expr, FunLambda):
+            return FunLambda(expr.args, self.substitute_var_term(expr.body))
+        else:
+            raise Exception(f"Unexpected type: {type(expr)}")
+
+    def substitute_term(self, expr: Term) -> Term:
+        if isinstance(expr, VarTerm):
+            return self.substitute_var_term(expr)
+        elif isinstance(expr, PredTerm):
+            return self.substitute_pred_term(expr)
+        elif isinstance(expr, FunTerm):
+            return self.substitute_fun_term(expr)
         else:
             raise Exception(f"Unexpected type: {type(expr)}")
 
     def substitute_formula(self, expr: Formula) -> Formula:
         if isinstance(expr, AtomicFormula):
-            if isinstance(expr.pred, RefPrimPred):
-                return AtomicFormula(expr.pred, tuple(self.substitute_term(arg) for arg in expr.args))
-            elif isinstance(expr.pred, RefDefPred):
-                defpred = self.context.decl.defpreds[expr.pred.name]
-                resolved_args: list[Term] = []
-                for defarg, subarg in zip(defpred.args, expr.args):
-                    if isinstance(defarg, VarTerm):
-                        if isinstance(subarg, VarTerm):
-                            resolved_args.append(subarg)
-                        else:
-                            raise Exception(f"VarTerm must be substituted into {defarg.name}, but {type(subarg)} is substituted")
-                    elif isinstance(defarg, PredTerm):
-                        if isinstance(subarg, PredTerm):
-                            resolved_args.append(subarg)
-                        elif isinstance(subarg, VarTerm):
-                            if defarg.arity == 1:
-                                if self.context.decl.membership is None:
-                                    raise Exception(f"VarTerm is substituted into PredTerm with arity 1, but membership has not been declared")
-                                else:
-                                    resolved_args.append(MembershipLambda(subarg))
-                            else:
-                                raise Exception(f"VarTerm cannot be substituted into PredTerm with arity {defarg.arity}")
-                        else:
-                            raise Exception(f"Unexpected type: {type(subarg)}")
-                    else:
-                        raise Exception(f"Unexpected type: {type(defarg)}")
-                return AtomicFormula(expr.pred, tuple(self.substitute_term(arg) for arg in resolved_args))
-            elif isinstance(expr.pred, PredTemplate):
-                new_pred_tmpl = self.substitute_term(expr.pred)
-                if isinstance(new_pred_tmpl, PredTemplate):
-                    return AtomicFormula(new_pred_tmpl, tuple(self.substitute_term(arg) for arg in expr.args))
-                elif isinstance(new_pred_tmpl, PredLambda):
-                    lambda_mapping: dict[Term, Term] = {}
-                    for a, b in zip(new_pred_tmpl.args, expr.args):
-                        lambda_mapping[a] = b
-                    subst = Substitutor(lambda_mapping, self.context)
-                    lambda_mapped = subst.substitute_formula(new_pred_tmpl.body)
-                    return self.substitute_formula(lambda_mapped)
-                elif isinstance(new_pred_tmpl, MembershipLambda):
-                    if self.context.decl.membership is None:
-                        raise Exception(f"{type(new_pred_tmpl)} cannot be substituted into TemplateCall since membership has not been declared.")
-                    if len(expr.args) != 1:
-                        raise Exception(f"{type(new_pred_tmpl)} cannot be substituted into TemplateCall with {len(expr.args)} args")
-                    return AtomicFormula(self.context.decl.membership.membership, (self.substitute_term(expr.args[0]), new_pred_tmpl.varterm))
-                else:
-                    raise Exception(f"Unexpected type: {type(new_pred_tmpl)}")
+            new_pred = self.substitute_pred_term(expr.pred)
+            if isinstance(new_pred, (PredTemplate, RefPrimPred, RefDefPred)):
+                return AtomicFormula(new_pred, tuple(self.substitute_term(arg) for arg in expr.args))
+            elif isinstance(new_pred, PredLambda):
+                lambda_mapping: dict[VarTerm, VarTerm] = {}
+                for a, b in zip(new_pred.args, expr.args):
+                    if not isinstance(b, VarTerm):
+                        raise Exception(f"Unexpected type: {type(b)}")
+                    lambda_mapping[a] = b
+                subst = Substitutor((lambda_mapping, {}, {}), self.context)
+                lambda_mapped = subst.substitute_formula(new_pred.body)
+                return self.substitute_formula(lambda_mapped)
+            elif isinstance(new_pred, MembershipLambda):
+                if self.context.decl.membership is None:
+                    raise Exception(f"{type(new_pred)} cannot be substituted into TemplateCall since membership has not been declared.")
+                if len(expr.args) != 1:
+                    raise Exception(f"{type(new_pred)} cannot be substituted into TemplateCall with {len(expr.args)} args")
+                return AtomicFormula(self.context.decl.membership.membership, (self.substitute_term(expr.args[0]), new_pred.varterm))
             else:
-                raise Exception(f"Unexpected type: {type(expr.pred)}")
+                raise Exception(f"Unexpected type: {type(new_pred)}")
 
         elif isinstance(expr, Not):
             return Not(self.substitute_formula(expr.body))
@@ -617,37 +595,51 @@ class AlphaRename:
         else:
             raise Exception(f"Unexpected type: {type(expr)}")
 
-    def alpha_rename_term(self, expr: Term) -> Term:
-        if isinstance(expr, (Var, PredTemplate, FunTemplate)):
-            return self.alpha_rename_var_or_pred_tmpl_or_fun_tmpl(expr)
-        elif isinstance(expr, (RefDefCon, RefDefFun, RefDefFunTerm)):
+    def alpha_rename_var_term(self, expr: VarTerm) -> VarTerm:
+        if isinstance(expr, Var):
+            return self.alpha_rename_var(expr)
+        elif isinstance(expr, RefDefCon):
             return expr
         elif isinstance(expr, Compound):
-            return Compound(expr.fun, tuple(self.alpha_rename_term(a) for a in expr.args))
+            return Compound(self.alpha_rename_fun_term(expr.fun), tuple(self.alpha_rename_term(a) for a in expr.args))
+        else:
+            raise Exception(f"Unexpected type: {type(expr)}")
+
+    def alpha_rename_pred_term(self, expr: PredTerm) -> PredTerm:
+        if isinstance(expr, PredTemplate):
+            return self.alpha_rename_pred_tmpl(expr)
+        elif isinstance(expr, (RefPrimPred, RefDefPred)):
+            return expr
         elif isinstance(expr, PredLambda):
             return PredLambda(tuple(self.alpha_rename_var(a) for a in expr.args), self.alpha_rename_formula(expr.body))
-        elif isinstance(expr, FunLambda):
-            renamed = self.alpha_rename_term(expr.body)
-            if not isinstance(renamed, VarTerm):
-                raise Exception(f"Unexpected type: {type(renamed)}")
-            return FunLambda(tuple(self.alpha_rename_var(a) for a in expr.args), renamed)
         elif isinstance(expr, MembershipLambda):
-            renamed = self.alpha_rename_term(expr.varterm)
-            if not isinstance(renamed, VarTerm):
-                raise Exception(f"Unexpected type: {type(renamed)}")
-            return MembershipLambda(renamed)
+            return MembershipLambda(self.alpha_rename_var_term(expr.varterm))
+        else:
+            raise Exception(f"Unexpected type: {type(expr)}")
+
+    def alpha_rename_fun_term(self, expr: FunTerm) -> FunTerm:
+        if isinstance(expr, FunTemplate):
+            return self.alpha_rename_fun_tmpl(expr)
+        elif isinstance(expr, (RefDefFun, RefDefFunTerm)):
+            return expr
+        elif isinstance(expr, FunLambda):
+            return FunLambda(tuple(self.alpha_rename_var(a) for a in expr.args), self.alpha_rename_var_term(expr.body))
+        else:
+            raise Exception(f"Unexpected type: {type(expr)}")
+
+    def alpha_rename_term(self, expr: Term) -> Term:
+        if isinstance(expr, VarTerm):
+            return self.alpha_rename_var_term(expr)
+        elif isinstance(expr, PredTerm):
+            return self.alpha_rename_pred_term(expr)
+        elif isinstance(expr, FunTerm):
+            return self.alpha_rename_fun_term(expr)
         else:
             raise Exception(f"Unexpected type: {type(expr)}")
 
     def alpha_rename_formula(self, expr: Formula) -> Formula:
         if isinstance(expr, AtomicFormula):
-            if isinstance(expr.pred, (RefPrimPred, RefDefPred)):
-                new_pred = expr.pred
-            elif isinstance(expr.pred, PredTemplate):
-                new_pred = self.alpha_rename_pred_tmpl(expr.pred)
-            else:
-                raise Exception(f"Unexpected type: {type(expr.pred)}")
-            return AtomicFormula(new_pred, tuple(self.alpha_rename_term(a) for a in expr.args))
+            return AtomicFormula(self.alpha_rename_pred_term(expr.pred), tuple(self.alpha_rename_term(a) for a in expr.args))
         elif isinstance(expr, Not):
             return Not(self.alpha_rename_formula(expr.body))
         elif isinstance(expr, (And, Or, Implies, Iff)):
@@ -659,7 +651,7 @@ class AlphaRename:
         else:
             raise Exception(f"Unexpected type: {type(expr)}")
 
-def alpha_safe(expr: Formula | Term, mapping: dict[Term, Term], context: Context, skip_key: bool = False) -> tuple[AlphaRename, dict[Term, Term]]:
+def alpha_safe(expr: Formula | Term, mapping: dict[Term, Term], context: Context, skip_key: bool = False) -> tuple[AlphaRename, tuple[dict[VarTerm, VarTerm], dict[PredTerm, PredTerm], dict[FunTerm, FunTerm]]]:
     items_to_substitute: set[Var | PredTemplate | FunTemplate] = set()
     for term in mapping.values():
         fv, bv, fpt, bpt, fft, bft = collect_vars(term)
@@ -688,47 +680,57 @@ def alpha_safe(expr: Formula | Term, mapping: dict[Term, Term], context: Context
         else:
             raise Exception(f"Unexpected type: {type(target)}")
     renamer = AlphaRename(rename_map_var, rename_map_pred_tmpl, rename_map_fun_tmpl)
-    new_mapping: dict[Term, Term] = {}
+    new_mapping_var: dict[VarTerm, VarTerm] = {}
+    new_mapping_pred: dict[PredTerm, PredTerm] = {}
+    new_mapping_fun: dict[FunTerm, FunTerm] = {}
     if skip_key:
-        new_mapping = mapping
+        for k, v in mapping.items():
+            if isinstance(k, VarTerm):
+                if not isinstance(v, VarTerm):
+                    raise Exception(f"Unexpected type: {type(v)}")
+                new_mapping_var[k] = v
+            elif isinstance(k, PredTerm):
+                if not isinstance(v, PredTerm):
+                    raise Exception(f"Unexpected type: {type(v)}")
+                new_mapping_pred[k] = v
+            elif isinstance(k, FunTerm):
+                if not isinstance(v, FunTerm):
+                    raise Exception(f"Unexpected type: {type(v)}")
+                new_mapping_fun[k] = v
+            else:
+                raise Exception(f"Unexpected type: {type(k)}")
     else:
         for k, v in mapping.items():
             if isinstance(k, Var):
+                if not isinstance(v, VarTerm):
+                    raise Exception(f"Unexpected type: {type(v)}")
                 new_k = rename_map_var.get(k, k)
+                new_mapping_var[new_k] = v
             elif isinstance(k, PredTemplate):
+                if not isinstance(v, PredTerm):
+                    raise Exception(f"Unexpected type: {type(v)}")
                 new_k = rename_map_pred_tmpl.get(k, k)
+                new_mapping_pred[new_k] = v
             elif isinstance(k, FunTemplate):
+                if not isinstance(v, FunTerm):
+                    raise Exception(f"Unexpected type: {type(v)}")
                 new_k = rename_map_fun_tmpl.get(k, k)
+                new_mapping_fun[new_k] = v
             else:
                 raise Exception(f"Unexpected type: {type(k)}")
-            new_mapping[new_k] = v
-    return renamer, new_mapping
+    return renamer, (new_mapping_var, new_mapping_pred, new_mapping_fun)
 
-def alpha_safe_term(expr: Term, mapping: dict[Term, Term], context: Context, skip_key: bool = False) -> tuple[Term, dict[Term, Term]]:
+def alpha_safe_var_term(expr: VarTerm, mapping: dict[Term, Term], context: Context, skip_key: bool = False) -> tuple[VarTerm, tuple[dict[VarTerm, VarTerm], dict[PredTerm, PredTerm], dict[FunTerm, FunTerm]]]:
+    renamer, renamed_mapping = alpha_safe(expr, mapping, context, skip_key)
+    return renamer.alpha_rename_var_term(expr), renamed_mapping
+
+def alpha_safe_term(expr: Term, mapping: dict[Term, Term], context: Context, skip_key: bool = False) -> tuple[Term, tuple[dict[VarTerm, VarTerm], dict[PredTerm, PredTerm], dict[FunTerm, FunTerm]]]:
     renamer, renamed_mapping = alpha_safe(expr, mapping, context, skip_key)
     return renamer.alpha_rename_term(expr), renamed_mapping
 
-def alpha_safe_formula(expr: Formula, mapping: dict[Term, Term], context: Context, skip_key: bool = False) -> tuple[Formula, dict[Term, Term]]:
+def alpha_safe_formula(expr: Formula, mapping: dict[Term, Term], context: Context, skip_key: bool = False) -> tuple[Formula, tuple[dict[VarTerm, VarTerm], dict[PredTerm, PredTerm], dict[FunTerm, FunTerm]]]:
     renamer, renamed_mapping = alpha_safe(expr, mapping, context, skip_key)
     return renamer.alpha_rename_formula(expr), renamed_mapping
-
-def type_safe(mapping: dict[Term, Term], context: Context, strict: bool = False) -> bool:
-    for item, term in mapping.items():
-        if isinstance(item, Var):
-            allowed = Var if strict else VarTerm
-            if not isinstance(term, allowed):
-                return False
-        elif isinstance(item, PredTemplate):
-            allowed = PredTemplate if strict else PredTerm
-            if not isinstance(term, allowed):
-                return False
-        elif isinstance(item, FunTemplate):
-            allowed = FunTemplate if strict else FunTerm
-            if not isinstance(term, allowed):
-                return False
-        else:
-            return False
-    return True
 
 TERM_PRECEDENCE = {
     "Lowest": 0,
