@@ -1,4 +1,4 @@
-include "zfc_finite_removal.proof"
+include "zfc_finite_recursion.proof"
 
 definition function add(m, n) as iterate(m, suc, n) tex "", "+", ""
 

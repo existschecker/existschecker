@@ -1,0 +1,453 @@
+include "zfc_finite_removal.proof"
+
+definition predicate rel(R) as \forall z (in(z, R) \to \exists x \exists y (equal(z, op(x, y))))
+
+definition predicate dom(R, X) as \forall x (in(x, X) \leftrightarrow \exists y (in(op(x, y), R)))
+
+definition predicate ran(R, Y) as \forall y (in(y, Y) \leftrightarrow \exists x (in(op(x, y), R)))
+
+definition predicate fun(f) as rel(f) \wedge \forall x \forall y \forall y' (in(op(x, y), f) \wedge in(op(x, y'), f) \to equal(y, y'))
+
+definition predicate inj(f) as fun(f) \wedge \forall x \forall x' \forall y (in(op(x, y), f) \wedge in(op(x', y), f) \to equal(x, x'))
+
+definition predicate surj(f, X, Y) as fun(f) \wedge dom(f, X) \wedge ran(f, Y)
+
+definition predicate bij(f, X, Y) as inj(f) \wedge surj(f, X, Y)
+
+definition predicate equipotent(X, Y) as \exists f (bij(f, X, Y))
+
+definition predicate finite(X) as \exists n (natural(n) \wedge equipotent(n, X))
+
+theorem singleton_op_is_rel \forall x \forall y (rel(singleton(op(x, y)))) {
+  any x, y {
+    any z {
+      assume in(z, singleton(op(x, y))) {
+        apply invoke rightward singleton_characterization for op(x, y), z
+        lift for x, y conclude \exists x \exists y (equal(z, op(x, y)))
+      }
+    }
+    fold for rel conclude rel(singleton(op(x, y)))
+  }
+}
+
+theorem singleton_op_dom \forall x \forall y (dom(singleton(op(x, y)), singleton(x))) {
+  any x, y {
+    any p {
+      assume in(p, singleton(x)) {
+        apply invoke rightward singleton_characterization for x, p
+        substitute equal(op(x, y), op(x, y)) for x[1]: p
+        apply invoke leftward singleton_characterization for op(x, y), op(p, y)
+        lift for y conclude \exists q (in(op(p, q), singleton(op(x, y))))
+      }
+      assume \exists q (in(op(p, q), singleton(op(x, y)))) {
+        some q such \exists q (in(op(p, q), singleton(op(x, y)))) {
+          apply invoke rightward singleton_characterization for op(x, y), op(p, q)
+          apply invoke op_characterization for p, q, x, y
+          split 1 equal(p, x) \wedge equal(q, y)
+          apply invoke leftward singleton_characterization for x, p
+        }
+      }
+      connect in(p, singleton(x)) \leftrightarrow \exists q (in(op(p, q), singleton(op(x, y))))
+    }
+    fold for dom conclude dom(singleton(op(x, y)), singleton(x))
+  }
+}
+
+theorem singleton_op_is_fun \forall x \forall y (fun(singleton(op(x, y)))) {
+  any x, y {
+    apply singleton_op_is_rel for x, y
+    any p, q, q' {
+      assume in(op(p, q), singleton(op(x, y))) \wedge in(op(p, q'), singleton(op(x, y))) {
+        split in(op(p, q), singleton(op(x, y))) \wedge in(op(p, q'), singleton(op(x, y)))
+        apply invoke rightward singleton_characterization for op(x, y), op(p, q)
+        apply invoke rightward singleton_characterization for op(x, y), op(p, q')
+        substitute equal(op(x, y), op(p, q)) for op(x, y): op(p, q')
+        apply invoke op_characterization for p, q', p, q
+        split 2 equal(p, p) \wedge equal(q', q)
+      }
+    }
+    connect fun(singleton(op(x, y)))
+  }
+}
+
+theorem adding_op_rel \forall R \forall x \forall y (rel(R) \to rel(adj(R, op(x, y)))) {
+  any R, x, y {
+    assume rel(R) {
+      any z {
+        assume in(z, adj(R, op(x, y))) {
+          apply invoke rightward adj_existence for R, op(x, y), z
+          divide in(z, R) \vee equal(z, op(x, y))
+            case in(z, R) {
+              apply invoke rel(R) for z
+            }
+            case equal(z, op(x, y)) {
+              lift for x, y conclude \exists x \exists y (equal(z, op(x, y)))
+            }
+        }
+      }
+      fold for rel conclude rel(adj(R, op(x, y)))
+    }
+  }
+}
+
+theorem adding_op_dom \forall R \forall X \forall x \forall y (dom(R, X) \to dom(adj(R, op(x, y)), adj(X, x))) {
+  any R, X, x, y {
+    assume dom(R, X) {
+      any p {
+        assume in(p, adj(X, x)) {
+          apply invoke rightward adj_existence for X, x, p
+          divide in(p, X) \vee equal(p, x)
+            case in(p, X) {
+              apply invoke rightward dom(R, X) for p
+              some q such \exists q (in(op(p, q), R)) {
+                pad in(op(p, q), R) conclude in(op(p, q), R) \vee equal(op(p, q), op(x, y))
+                apply invoke leftward adj_existence for R, op(x, y), op(p, q)
+                lift for q conclude \exists q (in(op(p, q), adj(R, op(x, y))))
+              }
+            }
+            case equal(p, x) {
+              substitute equal(op(x, y), op(x, y)) for x[1]: p
+              pad equal(op(p, y), op(x, y)) conclude in(op(p, y), R) \vee equal(op(p, y), op(x, y))
+              apply invoke leftward adj_existence for R, op(x, y), op(p, y)
+              lift for y conclude \exists q (in(op(p, q), adj(R, op(x, y))))
+            }
+        }
+        assume \exists q (in(op(p, q), adj(R, op(x, y)))) {
+          some q such \exists q (in(op(p, q), adj(R, op(x, y)))) {
+            apply invoke rightward adj_existence for R, op(x, y), op(p, q)
+            divide in(op(p, q), R) \vee equal(op(p, q), op(x, y))
+              case in(op(p, q), R) {
+                lift for q conclude \exists q (in(op(p, q), R))
+                apply invoke leftward dom(R, X) for p
+                pad in(p, X) conclude in(p, X) \vee equal(p, x)
+                apply invoke leftward adj_existence for X, x, p
+              }
+              case equal(op(p, q), op(x, y)) {
+                apply invoke op_characterization for p, q, x, y
+                split 1 equal(p, x) \wedge equal(q, y)
+                pad equal(p, x) conclude in(p, X) \vee equal(p, x)
+                apply invoke leftward adj_existence for X, x, p
+              }
+          }
+        }
+        connect in(p, adj(X, x)) \leftrightarrow \exists q (in(op(p, q), adj(R, op(x, y))))
+      }
+      fold for dom conclude dom(adj(R, op(x, y)), adj(X, x))
+    }
+  }
+}
+
+theorem adding_op_fun \forall f \forall x \forall y (fun(f) \wedge \neg(\exists q (in(op(x, q), f))) \to fun(adj(f, op(x, y)))) {
+  any f, x, y {
+    assume fun(f) \wedge \neg(\exists q (in(op(x, q), f))) {
+      split fun(f) \wedge \neg(\exists q (in(op(x, q), f)))
+      split fun(f)
+      apply invoke adding_op_rel for f, x, y
+      any p, q, q' {
+        assume in(op(p, q), adj(f, op(x, y))) \wedge in(op(p, q'), adj(f, op(x, y))) {
+          split in(op(p, q), adj(f, op(x, y))) \wedge in(op(p, q'), adj(f, op(x, y)))
+          apply invoke rightward adj_existence for f, op(x, y), op(p, q)
+          apply invoke rightward adj_existence for f, op(x, y), op(p, q')
+          divide in(op(p, q), f) \vee equal(op(p, q), op(x, y))
+            case in(op(p, q), f) {
+              divide in(op(p, q'), f) \vee equal(op(p, q'), op(x, y))
+                case in(op(p, q'), f) {
+                  connect in(op(p, q), f) \wedge in(op(p, q'), f)
+                  apply invoke \forall x \forall y \forall y' (in(op(x, y), f) \wedge in(op(x, y'), f) \to equal(y, y')) for p, q, q'
+                }
+                case equal(op(p, q'), op(x, y)) {
+                  apply invoke op_characterization for p, q', x, y
+                  split 1 equal(p, x) \wedge equal(q', y)
+                  substitute \neg(\exists q (in(op(x, q), f))) for x: p
+                  lift for q conclude \exists q (in(op(p, q), f))
+                  contradict \exists q (in(op(p, q), f))
+                  explode equal(q, q')
+                }
+            }
+            case equal(op(p, q), op(x, y)) {
+              divide in(op(p, q'), f) \vee equal(op(p, q'), op(x, y))
+                case in(op(p, q'), f) {
+                  apply invoke op_characterization for p, q, x, y
+                  split 1 equal(p, x) \wedge equal(q, y)
+                  substitute \neg(\exists q (in(op(x, q), f))) for x: p
+                  lift for q' conclude \exists q' (in(op(p, q'), f))
+                  contradict \exists q (in(op(p, q), f))
+                  explode equal(q, q')
+                }
+                case equal(op(p, q'), op(x, y)) {
+                  apply invoke op_characterization for p, q, x, y
+                  split 2 equal(p, x) \wedge equal(q, y)
+                  apply invoke op_characterization for p, q', x, y
+                  split 2 equal(p, x) \wedge equal(q', y)
+                  substitute equal(q, y) for y: q'
+                }
+            }
+        }
+      }
+      connect fun(adj(f, op(x, y)))
+    }
+  }
+}
+
+theorem removing_op_rel \forall R \forall x \forall y (rel(R) \to rel(rem(R, op(x, y)))) {
+  any R, x, y {
+    assume rel(R) {
+      any z {
+        assume in(z, rem(R, op(x, y))) {
+          apply invoke rightward rem_existence for R, op(x, y), z
+          split 1 in(z, R) \wedge neq(z, op(x, y))
+          apply invoke rel(R) for z
+        }
+      }
+      fold for rel conclude rel(rem(R, op(x, y)))
+    }
+  }
+}
+
+theorem removing_op_dom \forall f \forall X \forall x \forall y (fun(f) \wedge dom(f, X) \wedge in(op(x, y), f) \to dom(rem(f, op(x, y)), rem(X, x))) {
+  any f, X, x, y {
+    assume fun(f) \wedge dom(f, X) \wedge in(op(x, y), f) {
+      split fun(f) \wedge dom(f, X) \wedge in(op(x, y), f)
+      split fun(f)
+      any p {
+        assume in(p, rem(X, x)) {
+          apply invoke rightward rem_existence for X, x, p
+          split in(p, X) \wedge neq(p, x)
+          apply invoke rightward dom(f, X) for p
+          some q such \exists q (in(op(p, q), f)) {
+            deny equal(op(p, q), op(x, y)) {
+              apply invoke op_characterization for p, q, x, y
+              split 1 equal(p, x) \wedge equal(q, y)
+              contradict equal(p, x)
+            }
+            connect in(op(p, q), f) \wedge neq(op(p, q), op(x, y))
+            apply invoke leftward rem_existence for f, op(x, y), op(p, q)
+            lift for q conclude \exists q (in(op(p, q), rem(f, op(x, y))))
+          }
+        }
+        assume \exists q (in(op(p, q), rem(f, op(x, y)))) {
+          some q such \exists q (in(op(p, q), rem(f, op(x, y)))) {
+            apply invoke rightward rem_existence for f, op(x, y), op(p, q)
+            split in(op(p, q), f) \wedge neq(op(p, q), op(x, y))
+            lift for q conclude \exists q (in(op(p, q), f))
+            apply invoke leftward dom(f, X) for p
+            apply law_of_excluded_middle for \lambda^P. in(op(x, y), f)
+            deny equal(p, x) {
+              substitute in(op(x, y), f) for x: p
+              connect in(op(p, q), f) \wedge in(op(p, y), f)
+              apply invoke \forall x \forall y \forall y' (in(op(x, y), f) \wedge in(op(x, y'), f) \to equal(y, y')) for p, q, y
+              substitute neq(op(p, q), op(x, y)) for x: p, y: q
+              contradict equal(op(p, q), op(p, q))
+            }
+            connect in(p, X) \wedge neq(p, x)
+            apply invoke leftward rem_existence for X, x, p
+          }
+        }
+        connect in(p, rem(X, x)) \leftrightarrow \exists q (in(op(p, q), rem(f, op(x, y))))
+      }
+      fold for dom conclude dom(rem(f, op(x, y)), rem(X, x))
+    }
+  }
+}
+
+theorem removing_op_fun \forall f \forall x \forall y (fun(f) \to fun(rem(f, op(x, y)))) {
+  any f, x, y {
+    assume fun(f) {
+      split fun(f)
+      apply invoke removing_op_rel for f, x, y
+      any p, q, q' {
+        assume in(op(p, q), rem(f, op(x, y))) \wedge in(op(p, q'), rem(f, op(x, y))) {
+          split in(op(p, q), rem(f, op(x, y))) \wedge in(op(p, q'), rem(f, op(x, y)))
+          apply invoke rightward rem_existence for f, op(x, y), op(p, q)
+          apply invoke rightward rem_existence for f, op(x, y), op(p, q')
+          split 1 in(op(p, q), f) \wedge neq(op(p, q), op(x, y))
+          split 1 in(op(p, q'), f) \wedge neq(op(p, q'), op(x, y))
+          connect in(op(p, q), f) \wedge in(op(p, q'), f)
+          apply invoke \forall x \forall y \forall y' (in(op(x, y), f) \wedge in(op(x, y'), f) \to equal(y, y')) for p, q, q'
+        }
+      }
+      connect fun(rem(f, op(x, y)))
+    }
+  }
+}
+
+theorem dom_is_unique \forall R \forall X \forall X' (dom(R, X) \wedge dom(R, X') \to equal(X, X')) {
+  any R, X, X' {
+    assume dom(R, X) \wedge dom(R, X') {
+      split dom(R, X) \wedge dom(R, X')
+      expand dom(R, X) for dom
+      expand dom(R, X') for dom
+      connect \forall x (in(x, X) \leftrightarrow \exists y (in(op(x, y), R))) \wedge \forall x (in(x, X') \leftrightarrow \exists y (in(op(x, y), R)))
+      apply invoke set_is_unique_for_each_predicate for \lambda^P x. \exists y (in(op(x, y), R)), X, X'
+    }
+  }
+}
+
+theorem ran_is_unique \forall R \forall Y \forall Y' (ran(R, Y) \wedge ran(R, Y') \to equal(Y, Y')) {
+  any R, Y, Y' {
+    assume ran(R, Y) \wedge ran(R, Y') {
+      split ran(R, Y) \wedge ran(R, Y')
+      expand ran(R, Y) for ran
+      expand ran(R, Y') for ran
+      connect \forall y (in(y, Y) \leftrightarrow \exists x (in(op(x, y), R))) \wedge \forall y (in(y, Y') \leftrightarrow \exists x (in(op(x, y), R)))
+      apply invoke set_is_unique_for_each_predicate for \lambda^P y. \exists x (in(op(x, y), R)), Y, Y'
+    }
+  }
+}
+
+theorem dom_of_emptyset_is_emptyset dom(emptyset, emptyset) {
+  any x {
+    assume in(x, emptyset) {
+      apply emptyset_existence for x
+      contradict in(x, emptyset)
+      explode \exists y (in(op(x, y), emptyset))
+    }
+    assume \exists y (in(op(x, y), emptyset)) {
+      some y such \exists y (in(op(x, y), emptyset)) {
+        apply emptyset_existence for op(x, y)
+        contradict in(op(x, y), emptyset)
+        explode in(x, emptyset)
+      }
+    }
+    connect in(x, emptyset) \leftrightarrow \exists y (in(op(x, y), emptyset))
+  }
+  fold for dom conclude dom(emptyset, emptyset)
+}
+
+theorem ran_of_emptyset_is_emptyset ran(emptyset, emptyset) {
+  any y {
+    assume in(y, emptyset) {
+      apply emptyset_existence for y
+      contradict in(y, emptyset)
+      explode \exists x (in(op(x, y), emptyset))
+    }
+    assume \exists x (in(op(x, y), emptyset)) {
+      some x such \exists x (in(op(x, y), emptyset)) {
+        apply emptyset_existence for op(x, y)
+        contradict in(op(x, y), emptyset)
+        explode in(y, emptyset)
+      }
+    }
+    connect in(y, emptyset) \leftrightarrow \exists x (in(op(x, y), emptyset))
+  }
+  fold for ran conclude ran(emptyset, emptyset)
+}
+
+theorem rel_with_dom_emptyset_is_emptyset \forall R (rel(R) \wedge dom(R, emptyset) \to equal(R, emptyset)) {
+  any R {
+    assume rel(R) \wedge dom(R, emptyset) {
+      split rel(R) \wedge dom(R, emptyset)
+      any z {
+        deny in(z, R) {
+          apply invoke rel(R) for z
+          some x, y such \exists x \exists y (equal(z, op(x, y))) {
+            substitute in(z, R) for z: op(x, y)
+            lift for y conclude \exists y (in(op(x, y), R))
+            apply invoke leftward dom(R, emptyset) for x
+            apply emptyset_existence for x
+            contradict in(x, emptyset)
+          }
+        }
+      }
+      apply invoke emptyset_uniqueness for R
+    }
+  }
+}
+
+theorem rel_with_ran_emptyset_is_emptyset \forall R (rel(R) \wedge ran(R, emptyset) \to equal(R, emptyset)) {
+  any R {
+    assume rel(R) \wedge ran(R, emptyset) {
+      split rel(R) \wedge ran(R, emptyset)
+      any z {
+        deny in(z, R) {
+          apply invoke rel(R) for z
+          some x, y such \exists x \exists y (equal(z, op(x, y))) {
+            substitute in(z, R) for z: op(x, y)
+            lift for x conclude \exists x (in(op(x, y), R))
+            apply invoke leftward ran(R, emptyset) for y
+            apply emptyset_existence for y
+            contradict in(y, emptyset)
+          }
+        }
+      }
+      apply invoke emptyset_uniqueness for R
+    }
+  }
+}
+
+theorem dom_emptyset_implies_ran_emptyset \forall R (rel(R) \wedge dom(R, emptyset) \to ran(R, emptyset)) {
+  any R {
+    assume rel(R) \wedge dom(R, emptyset) {
+      apply invoke rel_with_dom_emptyset_is_emptyset for R
+      substitute ran_of_emptyset_is_emptyset for emptyset[1]: R
+    }
+  }
+}
+
+theorem ran_emptyset_implies_dom_emptyset \forall R (rel(R) \wedge ran(R, emptyset) \to dom(R, emptyset)) {
+  any R {
+    assume rel(R) \wedge ran(R, emptyset) {
+      apply invoke rel_with_ran_emptyset_is_emptyset for R
+      substitute dom_of_emptyset_is_emptyset for emptyset[1]: R
+    }
+  }
+}
+
+theorem surj_with_dom_emptyset_implies_ran_emptyset \forall f \forall X (surj(f, emptyset, X) \to equal(X, emptyset)) {
+  any f, X {
+    assume surj(f, emptyset, X) {
+      split surj(f, emptyset, X)
+      split fun(f)
+      connect rel(f) \wedge dom(f, emptyset)
+      apply invoke dom_emptyset_implies_ran_emptyset for f
+      connect ran(f, X) \wedge ran(f, emptyset)
+      apply invoke ran_is_unique for f, X, emptyset
+    }
+  }
+}
+
+theorem surj_with_ran_emptyset_implies_dom_emptyset \forall f \forall X (surj(f, X, emptyset) \to equal(X, emptyset)) {
+  any f, X {
+    assume surj(f, X, emptyset) {
+      split surj(f, X, emptyset)
+      split fun(f)
+      connect rel(f) \wedge ran(f, emptyset)
+      apply invoke ran_emptyset_implies_dom_emptyset for f
+      connect dom(f, X) \wedge dom(f, emptyset)
+      apply invoke dom_is_unique for f, X, emptyset
+    }
+  }
+}
+
+/* theorem size_is_unique \forall X \forall n \forall f \forall m \forall g (natural(n) \wedge bij(f, n, X) \wedge natural(m) \wedge bij(g, m, X) \to equal(n, m)) {
+  any X, f, m, g {
+    assume bij(f, emptyset, X) \wedge natural(m) \wedge bij(g, m, X) {
+      split bij(f, emptyset, X) \wedge natural(m) \wedge bij(g, m, X)
+      split bij(f, emptyset, X)
+      apply invoke surj_with_dom_emptyset_implies_ran_emptyset for f, X
+      substitute bij(g, m, X) for X: emptyset
+      split bij(g, m, emptyset)
+      apply invoke surj_with_ran_emptyset_implies_dom_emptyset for g, m
+    }
+  }
+  any n {
+    assume natural(n) {
+      assume \forall X \forall f \forall m \forall g (bij(f, n, X) \wedge natural(m) \wedge bij(g, m, X) \to equal(n, m)) {
+        any X, f, m, g {
+          assume bij(f, suc(n), X) \wedge natural(m) \wedge bij(g, m, X) {
+            split bij(f, suc(n), X) \wedge natural(m) \wedge bij(g, m, X)
+            split bij(f, suc(n), X)
+            split surj(f, suc(n), X)
+            apply suc_implies_in for n
+            apply invoke rightward dom(f, suc(n)) for n
+            some x such \exists x (in(op(n, x), f)) {
+              lift for n conclude \exists n (in(op(n, x), f))
+              apply invoke leftward ran(f, X) for x
+              show bij(rem(f, (n, x)), n, rem(X, x))
+            }
+          }
+        }
+      }
+    }
+  }
+} */
