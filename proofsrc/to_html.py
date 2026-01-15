@@ -786,9 +786,9 @@ if __name__ == "__main__":
         from checker import check_ast
         result, ast, checker_context = check_ast(ast, checker_context)
         if result:
-            print("All theorems proved")
+            print(f"All theorems proved: {file}")
         else:
-            print("❌ Not all theorems proved")
+            print(f"❌ Not all theorems proved: {file}")
         title = f"{name}_checker_{mode}"
         checker_html, error_found = to_html(ast, checker_context, title, mode)
         f = open(os.path.join("html", f"{title}.html"), 'w', encoding='utf-8')

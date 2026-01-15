@@ -1109,7 +1109,7 @@ if __name__ == "__main__":
         ast, parser_context = parser.parse_file(parser_context)
         result, _, checker_context = check_ast(ast, checker_context)
         if result:
-            print("All theorems proved")
+            print(f"All theorems proved: {file}")
         else:
-            print("❌ Not all theorems proved")
+            print(f"❌ Not all theorems proved: {file}")
             break

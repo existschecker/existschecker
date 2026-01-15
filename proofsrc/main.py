@@ -41,6 +41,7 @@ for file in resolved_files:
     from checker import check_ast
     result, _, checker_context = check_ast(ast, checker_context)
     if result:
-        print("All theorems proved")
+        print(f"All theorems proved: {file}")
     else:
-        print("❌ Not all theorems proved")
+        print(f"❌ Not all theorems proved: {file}")
+        break
