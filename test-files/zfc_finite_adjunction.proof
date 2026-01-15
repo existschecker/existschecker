@@ -45,3 +45,57 @@ theorem adj_cor3 \forall x \forall y (in(y, adj(x, y))) {
     apply invoke adj_cor2 for x, y, y
   }
 }
+
+theorem adj_subset_cor1 \forall x \forall y (subset(x, adj(x, y))) {
+  any x, y {
+    any z {
+      assume in(z, x) {
+        apply invoke adj_cor1 for x, y, z
+      }
+    }
+    fold for subset conclude subset(x, adj(x, y))
+  }
+}
+
+theorem adj_subset_cor2 \forall x \forall y \forall z (subset(x, y) \to subset(adj(x, z), adj(y, z))) {
+  any x, y, z {
+    assume subset(x, y) {
+      any w {
+        assume in(w, adj(x, z)) {
+          apply invoke rightward adj_existence for x, z, w
+          divide in(w, x) \vee equal(w, z)
+            case in(w, x) {
+              apply invoke subset(x, y) for w
+              apply invoke adj_cor1 for y, z, w
+            }
+            case equal(w, z) {
+              apply invoke adj_cor2 for y, z, w
+            }
+        }
+      }
+      fold for subset conclude subset(adj(x, z), adj(y, z))
+    }
+  }
+}
+
+theorem adj_subset_cor3 \forall x \forall y \forall z (subset(x, adj(y, z)) \wedge notin(z, x) \to subset(x, y)) {
+  any x, y, z {
+    assume subset(x, adj(y, z)) \wedge notin(z, x) {
+      split subset(x, adj(y, z)) \wedge notin(z, x)
+      any w {
+        assume in(w, x) {
+          apply invoke subset(x, adj(y, z)) for w
+          apply invoke rightward adj_existence for y, z, w
+          divide in(w, y) \vee equal(w, z)
+            case in(w, y) {}
+            case equal(w, z) {
+              substitute notin(z, x) for z: w
+              contradict in(w, x)
+              explode in(w, y)
+            }
+        }
+      }
+      fold for subset conclude subset(x, y)
+    }
+  }
+}

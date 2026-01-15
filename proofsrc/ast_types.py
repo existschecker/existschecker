@@ -353,7 +353,7 @@ class DefFun(Declaration):
 
 @dataclass
 class DefFunTerm(Declaration):
-    args: list[Var | PredTemplate]
+    args: list[Var | PredTemplate | FunTemplate]
     varterm: VarTerm
     tex: list[str]
 

@@ -81,6 +81,19 @@ theorem emptyset_subset_cor1 \forall x (subset(x, emptyset) \to equal(x, emptyse
   }
 }
 
+theorem emptyset_subset_cor2 \forall x (subset(emptyset, x)) {
+  any x {
+    any y {
+      assume in(y, emptyset) {
+        apply emptyset_existence for y
+        contradict in(y, emptyset)
+        explode in(y, x)
+      }
+    }
+    fold for subset conclude subset(emptyset, x)
+  }
+}
+
 theorem emptyset_is_trans trans(emptyset) {
   any n, m {
     assume in(m, n) \wedge in(n, emptyset) {

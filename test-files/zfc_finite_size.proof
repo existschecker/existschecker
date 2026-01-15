@@ -340,6 +340,12 @@ theorem finite_adj \forall Y \forall y (finite(Y) \to finite(adj(Y, y))) {
   }
 }
 
+theorem singleton_emptyset_is_finite finite(singleton(emptyset)) {
+  assert emptyset_is_finite
+  apply invoke finite_adj for emptyset, emptyset
+  fold for singleton conclude finite(singleton(emptyset))
+}
+
 theorem size_suc_decomposition \forall X \forall n (size(X, suc(n)) \to \exists X' \exists x (size(X', n) \wedge notin(x, X') \wedge equal(X, adj(X', x)))) {
   any X, n {
     assume size(X, suc(n)) {

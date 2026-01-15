@@ -1,4 +1,4 @@
-include "zfc_finite_replacement.proof"
+include "zfc_finite_powerset.proof"
 
 definition predicate approx(g, n, predicate \phi[1], predicate \psi[2]) as fun(g) \wedge dom(g, suc(n)) \wedge \exists a (in(op(emptyset, a), g) \wedge \phi(a)) \wedge \forall k (in(k, n) \to \exists p \exists q (in(op(k, p), g) \wedge in(op(suc(k), q), g) \wedge \psi(p, q)))
 

@@ -1,0 +1,128 @@
+include "zfc_finite_replacement.proof"
+
+theorem powerset_is_unique \forall X \forall Y \forall Y' (\forall y (in(y, Y) \leftrightarrow subset(y, X)) \wedge \forall y (in(y, Y') \leftrightarrow subset(y, X)) \to equal(Y, Y')) {
+  any X, Y, Y' {
+    assume \forall y (in(y, Y) \leftrightarrow subset(y, X)) \wedge \forall y (in(y, Y') \leftrightarrow subset(y, X)) {
+      apply invoke set_is_unique_for_each_predicate for \lambda^P y. subset(y, X), Y, Y'
+    }
+  }
+}
+
+theorem finite_powerset_exists_uniquely \forall X (finite(X) \to \exists! Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow subset(y, X)))) {
+  any X {
+    assume size(X, emptyset) {
+      apply invoke size_emptyset_implies_set_emptyset for X
+      assert singleton_emptyset_is_finite
+      any y {
+        assume in(y, singleton(emptyset)) {
+          apply invoke rightward singleton_characterization for emptyset, y
+          apply emptyset_subset_cor2 for X
+          substitute subset(emptyset, X) for emptyset: y
+        }
+        assume subset(y, X) {
+          substitute subset(y, X) for X: emptyset
+          apply invoke emptyset_subset_cor1 for y
+          apply invoke leftward singleton_characterization for emptyset, y
+        }
+        connect in(y, singleton(emptyset)) \leftrightarrow subset(y, X)
+      }
+      connect finite(singleton(emptyset)) \wedge \forall y (in(y, singleton(emptyset)) \leftrightarrow subset(y, X))
+      lift for singleton(emptyset) conclude \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow subset(y, X)))
+    }
+  }
+  any n {
+    assume \forall X (size(X, n) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow subset(y, X)))) {
+      any X {
+        assume size(X, suc(n)) {
+          apply invoke size_suc_decomposition for X, n
+          some X', x such \exists X' \exists x (size(X', n) \wedge notin(x, X') \wedge equal(X, adj(X', x))) {
+            split size(X', n) \wedge notin(x, X') \wedge equal(X, adj(X', x))
+            apply invoke \forall X (size(X, n) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow subset(y, X)))) for X'
+            some Y such \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow subset(y, X'))) {
+              split finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow subset(y, X'))
+              apply invoke image_fun_existence for Y, \lambda^F y. adj(y, x)
+              split finite(image_fun(Y, \lambda^F y. adj(y, x))) \wedge \forall z (in(z, image_fun(Y, \lambda^F y. adj(y, x))) \leftrightarrow \exists y (in(y, Y) \wedge equal(z, adj(y, x))))
+              connect finite(Y) \wedge finite(image_fun(Y, \lambda^F y. adj(y, x)))
+              apply invoke cup_existence for Y, image_fun(Y, \lambda^F y. adj(y, x))
+              split finite(cup(Y, image_fun(Y, \lambda^F y. adj(y, x)))) \wedge \forall w (in(w, cup(Y, image_fun(Y, \lambda^F y. adj(y, x)))) \leftrightarrow in(w, Y) \vee in(w, image_fun(Y, \lambda^F y. adj(y, x))))
+              any w {
+                assume in(w, cup(Y, image_fun(Y, \lambda^F y. adj(y, x)))) {
+                  apply invoke rightward \forall w (in(w, cup(Y, image_fun(Y, \lambda^F y. adj(y, x)))) \leftrightarrow in(w, Y) \vee in(w, image_fun(Y, \lambda^F y. adj(y, x)))) for w
+                  divide in(w, Y) \vee in(w, image_fun(Y, \lambda^F y. adj(y, x)))
+                    case in(w, Y) {
+                      apply invoke rightward \forall y (in(y, Y) \leftrightarrow subset(y, X')) for w
+                      apply adj_subset_cor1 for X', x
+                      substitute subset(X', adj(X', x)) for adj(X', x): X
+                      connect subset(w, X') \wedge subset(X', X)
+                      apply invoke subset_trans for w, X', X
+                    }
+                    case in(w, image_fun(Y, \lambda^F y. adj(y, x))) {
+                      apply invoke rightward \forall z (in(z, image_fun(Y, \lambda^F y. adj(y, x))) \leftrightarrow \exists y (in(y, Y) \wedge equal(z, adj(y, x)))) for w
+                      some y such \exists y (in(y, Y) \wedge equal(w, adj(y, x))) {
+                        split in(y, Y) \wedge equal(w, adj(y, x))
+                        apply invoke rightward \forall y (in(y, Y) \leftrightarrow subset(y, X')) for y
+                        apply invoke adj_subset_cor2 for y, X', x
+                        substitute subset(adj(y, x), adj(X', x)) for adj(y, x): w, adj(X', x): X
+                      }
+                    }
+                }
+                assume subset(w, X) {
+                  substitute subset(w, X) for X: adj(X', x)
+                  apply law_of_excluded_middle for \lambda^P. in(x, w)
+                  divide notin(x, w) \vee in(x, w)
+                    case notin(x, w) {
+                      substitute subset(w, X) for X: adj(X', x)
+                      connect subset(w, adj(X', x)) \wedge notin(x, w)
+                      apply invoke adj_subset_cor3 for w, X', x
+                      apply invoke leftward \forall y (in(y, Y) \leftrightarrow subset(y, X')) for w
+                      pad in(w, Y) conclude in(w, Y) \vee in(w, image_fun(Y, \lambda^F y. adj(y, x)))
+                      apply invoke leftward \forall w (in(w, cup(Y, image_fun(Y, \lambda^F y. adj(y, x)))) \leftrightarrow in(w, Y) \vee in(w, image_fun(Y, \lambda^F y. adj(y, x)))) for w
+                    }
+                    case in(x, w) {
+                      apply invoke rem_subset for w, X, x
+                      substitute subset(rem(w, x), rem(X, x)) for X: adj(X', x)
+                      apply invoke equal_rem_adj for X', x
+                      substitute subset(rem(w, x), rem(adj(X', x), x)) for rem(adj(X', x), x): X'
+                      apply invoke leftward \forall y (in(y, Y) \leftrightarrow subset(y, X')) for rem(w, x)
+                      apply invoke equal_adj_rem for w, x
+                      connect in(rem(w, x), Y) \wedge equal(w, adj(rem(w, x), x))
+                      lift for rem(w, x) conclude \exists y (in(y, Y) \wedge equal(w, adj(y, x)))
+                      apply invoke leftward \forall z (in(z, image_fun(Y, \lambda^F y. adj(y, x))) \leftrightarrow \exists y (in(y, Y) \wedge equal(z, adj(y, x)))) for w
+                      pad in(w, image_fun(Y, \lambda^F y. adj(y, x))) conclude in(w, Y) \vee in(w, image_fun(Y, \lambda^F y. adj(y, x)))
+                      apply invoke leftward \forall w (in(w, cup(Y, image_fun(Y, \lambda^F y. adj(y, x)))) \leftrightarrow in(w, Y) \vee in(w, image_fun(Y, \lambda^F y. adj(y, x)))) for w
+                    }
+                }
+                connect in(w, cup(Y, image_fun(Y, \lambda^F y. adj(y, x)))) \leftrightarrow subset(w, X)
+              }
+              connect finite(cup(Y, image_fun(Y, \lambda^F y. adj(y, x)))) \wedge \forall w (in(w, cup(Y, image_fun(Y, \lambda^F y. adj(y, x)))) \leftrightarrow subset(w, X))
+              lift for cup(Y, image_fun(Y, \lambda^F y. adj(y, x))) conclude \exists W (finite(W) \wedge \forall w (in(w, W) \leftrightarrow subset(w, X)))
+            }
+          }
+        }
+      }
+    }
+  }
+  connect inductive(\lambda^P n. \forall X (size(X, n) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow subset(y, X)))))
+  apply invoke natural_induction for \lambda^P n. \forall X (size(X, n) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow subset(y, X))))
+  any X {
+    assume finite(X) {
+      some n such finite(X) {
+        split 1 size(X, n)
+        apply invoke subset(natural, \lambda^P n. \forall X (size(X, n) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow subset(y, X))))) for n
+        apply invoke \forall X (size(X, n) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow subset(y, X)))) for X
+        some Y such \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow subset(y, X))) {
+          split finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow subset(y, X))
+          any Y' {
+            assume finite(Y') \wedge \forall y (in(y, Y') \leftrightarrow subset(y, X)) {
+              split 2 finite(Y') \wedge \forall y (in(y, Y') \leftrightarrow subset(y, X))
+              connect \forall y (in(y, Y) \leftrightarrow subset(y, X)) \wedge \forall y (in(y, Y') \leftrightarrow subset(y, X))
+              apply invoke powerset_is_unique for X, Y, Y'
+            }
+          }
+          connect finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow subset(y, X)) \wedge \forall Y' (finite(Y') \wedge \forall y (in(y, Y') \leftrightarrow subset(y, X)) \to equal(Y', Y))
+          characterize for Y conclude \exists! Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow subset(y, X)))
+        }
+      }
+    }
+  }
+}

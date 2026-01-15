@@ -142,3 +142,24 @@ theorem finite_replacement \forall X \forall^P \psi[2] (finite(X) \wedge \forall
     }
   }
 }
+
+definition function image by finite_replacement
+existence image_existence \forall X \forall^P \psi[2] (finite(X) \wedge \forall x (in(x, X) \to \exists! y (\psi(x, y))) \to finite(image(X, \psi)) \wedge \forall y (in(y, image(X, \psi)) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y)))) by image
+uniqueness image_uniqueness \forall X \forall^P \psi[2] (finite(X) \wedge \forall x (in(x, X) \to \exists! y(\psi(x, y))) \to \forall Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))) \to equal(Y, image(X, \psi)))) by image
+
+definition function image_fun(X, function f[1]) as image(X, \lambda^P x, y. equal(y, f(x)))
+
+theorem image_fun_existence \forall X \forall^F f[1] (finite(X) \to finite(image_fun(X, f)) \wedge \forall y (in(y, image_fun(X, f)) \leftrightarrow \exists x ((in(x, X) \wedge equal(y, f(x)))))) {
+  any X, function f[1] {
+    assume finite(X) {
+      any x {
+        assume in(x, X) {
+          apply set_is_unique for f(x)
+        }
+      }
+      connect finite(X) \wedge \forall x (in(x, X) \to \exists! y (equal(y, f(x))))
+      apply invoke image_existence for X, \lambda^P x, y. equal(y, f(x))
+      fold for image_fun conclude finite(image_fun(X, f)) \wedge \forall y (in(y, image_fun(X, f)) \leftrightarrow \exists x ((in(x, X) \wedge equal(y, f(x)))))
+    }
+  }
+}

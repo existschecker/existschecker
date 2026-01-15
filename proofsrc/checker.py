@@ -19,7 +19,7 @@ def get_fact(fact: str | Formula, context: Context, expand_symbol: bool = False)
     elif not isinstance(fact, Formula):
         raise Exception(f"Unexpected type {type(fact)}")
     if expand_symbol and isinstance(fact, AtomicFormula) and isinstance(fact.pred, RefDefPred):
-        fact = DefExpander([fact.pred.name]).expand_defs_formula(fact, context)
+        fact = DefExpander([fact.pred.name], {fact.pred.name: [1]}).expand_defs_formula(fact, context)
     return fact
 
 def add_conclusion(context: Context, conclusion: Bottom | Formula) -> None:

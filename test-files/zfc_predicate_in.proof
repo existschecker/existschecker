@@ -60,6 +60,16 @@ equality equal
   reflection equal_reflection
   replacement equal: equal_replacement, in: in_replacement
 
+theorem set_is_unique \forall x \exists! y (equal(y, x)) {
+  any x {
+    any y {
+      assume equal(y, x) {}
+    }
+    connect equal(x, x) \wedge \forall y (equal(y, x) \to equal(y, x))
+    characterize for x conclude \exists! y (equal(y, x))
+  }
+}
+
 theorem set_is_unique_for_each_predicate \forall^P\phi[1]\forall x\forall x'(\forall y(in(y,x)\leftrightarrow\phi(y))\wedge\forall y(in(y,x')\leftrightarrow\phi(y))\to equal(x,x')) {
   any predicate \phi[1], x, x' {
     assume \forall y(in(y,x)\leftrightarrow\phi(y))\wedge\forall y(in(y,x')\leftrightarrow\phi(y)) {
