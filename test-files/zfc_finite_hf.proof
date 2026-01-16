@@ -1,0 +1,7 @@
+include "zfc_finite_operation.proof"
+
+definition function V(n) as iterate(emptyset, powerset, n)
+
+definition predicate tc(X, Y) as \forall y (in(y, Y) \leftrightarrow \exists n (natural(n) \wedge in(y, iterate(X, bigcup, n))))
+
+definition predicate hf(X) as \exists Y (finite(Y) \wedge tc(X, Y))

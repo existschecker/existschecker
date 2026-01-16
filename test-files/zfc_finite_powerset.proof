@@ -126,3 +126,5 @@ theorem finite_powerset_exists_uniquely \forall X (finite(X) \to \exists! Y (fin
     }
   }
 }
+
+definition function powerset by finite_powerset_exists_uniquely

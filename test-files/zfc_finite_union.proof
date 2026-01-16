@@ -266,3 +266,5 @@ theorem finite_bigcup_exists_uniquely \forall X (finite(X) \wedge \forall x (in(
     }
   }
 }
+
+definition function bigcup by finite_bigcup_exists_uniquely
