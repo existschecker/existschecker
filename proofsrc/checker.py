@@ -26,15 +26,7 @@ def get_fact(fact: str | Formula, context: Context, expand_symbol: bool = False)
 def add_conclusion(context: Context, conclusion: Bottom | Formula) -> None:
     context.ctrl.formulas.append(conclusion)
 
-collected_diagnostics: list[lsp.Diagnostic] = []
-
-def check_for_lsp(ast: list[Include | Declaration], context: Context) -> tuple[list[lsp.Diagnostic], bool, list[Include | Declaration], Context]:
-    global collected_diagnostics
-    collected_diagnostics = []
-    result, ast, context = check_ast(ast, context)
-    return collected_diagnostics, result, ast, context
-
-def add_lsp_error(node: Declaration | DeclarationSupport | Control, message: str):
+def add_lsp_error(node: Declaration | DeclarationSupport | Control, message: str, context: Context):
     line = node.token.line - 1
     col = node.token.column - 1
     length = len(node.token.value)
@@ -46,7 +38,7 @@ def add_lsp_error(node: Declaration | DeclarationSupport | Control, message: str
         message=message,
         severity=lsp.DiagnosticSeverity.Error
     )
-    collected_diagnostics.append(diag)
+    context.diagnostics.append(diag)
 
 def make_debug_prefix(node: Declaration | DeclarationSupport | Control, indent: int) -> str:
     return "  " * indent + f"[{node.__class__.__name__}] "
@@ -115,7 +107,7 @@ def check_theorem(node: Theorem, context: Context, indent: int):
     for stmt in node.proof:
         if not check_control(stmt, local_ctx, indent+1):
             msg = f"{node.name} not proved: {pretty_expr(node.conclusion, context)}"
-            add_lsp_error(node, msg)
+            add_lsp_error(node, msg, context)
             logger.error(f"{error_prefix}{msg}")
             node.proofinfo.status = "ERROR"
             return False
@@ -126,7 +118,7 @@ def check_theorem(node: Theorem, context: Context, indent: int):
         return True
     else:
         msg = f"{node.name} not proved: {pretty_expr(node.conclusion, context)}"
-        add_lsp_error(node, msg)
+        add_lsp_error(node, msg, context)
         logger.error(f"{error_prefix}{msg}")
         node.proofinfo.status = "ERROR"
         return False    
