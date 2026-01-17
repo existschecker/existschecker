@@ -1,75 +1,33 @@
-const vscode = require('vscode');
+const vscode = require("vscode");
+const path = require("path");
+const { LanguageClient } = require("vscode-languageclient/node");
 
-let decorationsEnabled = true;
-let decorationTypes = {};
+let client;
 
-function updateDecorations(editor) {
-    if (!editor) return;
+/** @param {vscode.ExtensionContext} context */
+function activate(context) {
+    const pythonPath = context.asAbsolutePath(path.join(".venv", "Scripts", "python.exe"));
 
-    // 既存デコレーションをクリア
-    Object.values(decorationTypes).forEach(type => type.dispose());
-    decorationTypes = {};
+    const serverModule = context.asAbsolutePath(path.join("proofsrc", "lsp_server.py"));
 
-    if (!decorationsEnabled) return;
-
-    const symbols = {
-        '\\\\wedge': '∧',
-        '\\\\to': '→',
-        '\\\\leftrightarrow': '↔',
-        '\\\\forall': '∀',
-        '\\\\in': '∈',
-        '\\\\subset': '⊂'
+    const serverOptions = {
+        command: pythonPath,
+        args: [serverModule],
     };
 
-    const text = editor.document.getText();
+    const clientOptions = {
+        documentSelector: [{ scheme: "file", language: "proof" }],
+    };
 
-    for (const [pattern, symbol] of Object.entries(symbols)) {
-        const regex = new RegExp(pattern, 'g');
-        const ranges = [];
+    client = new LanguageClient("proofLSP", "Proof Language Server", serverOptions, clientOptions);
 
-        let match;
-        while ((match = regex.exec(text)) !== null) {
-            ranges.push(new vscode.Range(
-                editor.document.positionAt(match.index),
-                editor.document.positionAt(match.index + match[0].length)
-            ));
-        }
-
-        const decorationType = vscode.window.createTextEditorDecorationType({
-            before: {
-                contentText: symbol,
-            },
-            fontFamily: 'Cambria Math',
-            // 元テキストをゼロ幅で隠す
-            rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
-            opacity: '0',
-            letterSpacing: '-999em' // 強制的に詰める
-        });
-
-        editor.setDecorations(decorationType, ranges);
-        decorationTypes[pattern] = decorationType;
-    }
+    console.log("Proof LSP Client starting...");
+    client.start();
 }
 
-function activate(context) {
-    let disposable = vscode.commands.registerCommand('dsl-proof-syntax.toggleSymbols', () => {
-        decorationsEnabled = !decorationsEnabled;
-        updateDecorations(vscode.window.activeTextEditor);
-    });
-
-    context.subscriptions.push(disposable);
-
-    vscode.window.onDidChangeActiveTextEditor(editor => {
-        updateDecorations(editor);
-    }, null, context.subscriptions);
-
-    vscode.workspace.onDidChangeTextDocument(event => {
-        if (vscode.window.activeTextEditor && event.document === vscode.window.activeTextEditor.document) {
-            updateDecorations(vscode.window.activeTextEditor);
-        }
-    }, null, context.subscriptions);
+function deactivate() {
+    if (!client) return undefined;
+    return client.stop();
 }
-
-function deactivate() {}
 
 module.exports = { activate, deactivate };

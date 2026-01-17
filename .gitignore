@@ -4,3 +4,4 @@ logs/
 *.html
 svg/
 tex/
+node_modules/
