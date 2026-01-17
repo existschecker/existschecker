@@ -9,6 +9,9 @@ from typing import Sequence
 import logging
 logger = logging.getLogger("proof")
 
+class ParseError(Exception):
+    pass
+
 # === パーサー本体 ===
 class Parser:
     def __init__(self, tokens: list[Token]):
@@ -97,13 +100,14 @@ class Parser:
             arity = int(self.stream.consume("NUMBER").value)
             tex = self.parse_or_create_tex(name, arity)
             if len(tex) != arity + 1:
-                raise SyntaxError(f"{start_token.info()} arity of {name} is {arity}, but length of tex is {len(tex)}")
+                msg = f"arity of {name} is {arity}, but length of tex is {len(tex)}"
+                self.add_lsp_error(start_token, msg, context)
+                raise ParseError()
             primpred = PrimPred(name=name, token=start_token, arity=arity, tex=tex)
             context.add_decl(primpred)
             logger.debug(f"[primpred] {name}")
             return primpred
-        except Exception as e:
-            self.add_lsp_error(start_token, str(e), context)
+        except ParseError:
             return InvalidDeclaration(name=name, token=start_token)
 
     def parse_axiom(self, context: Context) -> Axiom | InvalidDeclaration:
@@ -116,8 +120,7 @@ class Parser:
             context.add_decl(axiom)
             logger.debug(f"[axiom] {name}")
             return axiom
-        except Exception as e:
-            self.add_lsp_error(start_token, str(e), context)
+        except ParseError:
             return InvalidDeclaration(name=name, token=start_token)
 
     def parse_theorem(self, context: Context) -> Theorem | InvalidDeclaration:
@@ -133,8 +136,7 @@ class Parser:
             context.add_decl(theorem)
             logger.debug(f"[theorem] {name}")
             return theorem
-        except Exception as e:
-            self.add_lsp_error(start_token, str(e), context)
+        except ParseError:
             return InvalidDeclaration(name=name, token=start_token)
 
     def parse_definition(self, context: Context) -> DefPred | DefCon | DefFun | DefFunTerm | InvalidDeclaration:
@@ -149,9 +151,10 @@ class Parser:
             elif tok.type == "FUNCTION":
                 return self.parse_deffun_or_deffunterm(context, start_token)
             else:
-                raise SyntaxError(f"{start_token.info()} predicate, constant or function is required after definition")
-        except Exception as e:
-            self.add_lsp_error(start_token, str(e), context)
+                msg = "predicate, constant or function is required after definition"
+                self.add_lsp_error(start_token, msg, context)
+                raise ParseError()
+        except ParseError:
             return InvalidDeclaration(name=name, token=start_token)
 
     def parse_defpred(self, context: Context, start_token: Token) -> DefPred | InvalidDeclaration:
@@ -171,13 +174,14 @@ class Parser:
             formula = self.parse_formula(context.add_form(local_vars, local_pred_tmpls, local_fun_tmpls))
             tex = self.parse_or_create_tex(name, len(args))
             if len(tex) != len(args) + 1:
-                raise SyntaxError(f"{start_token.info()} arity of {name} is {len(args)}, but length of tex is {len(tex)}")
+                msg = f"arity of {name} is {len(args)}, but length of tex is {len(tex)}"
+                self.add_lsp_error(start_token, msg, context)
+                raise ParseError()
             defpred = DefPred(name=name, token=start_token, args=args, formula=formula, autoexpand=autoexpand, tex=tex)
             context.add_decl(defpred)
             logger.debug(f"[defpred] {name}")
             return defpred
-        except Exception as e:
-            self.add_lsp_error(start_token, str(e), context)
+        except ParseError:
             return InvalidDeclaration(name=name, token=start_token)
 
     def parse_defcon(self, context: Context, start_token: Token) -> DefCon | InvalidDeclaration:
@@ -189,13 +193,14 @@ class Parser:
             theorem = self.stream.consume("IDENT").value
             tex = self.parse_or_create_tex(name, 0)
             if len(tex) != 1:
-                raise SyntaxError(f"{start_token.info()} {name} is constant, but length of tex is {len(tex)}")
+                msg = f"{name} is constant, but length of tex is {len(tex)}"
+                self.add_lsp_error(start_token, msg, context)
+                raise ParseError()
             defcon = DefCon(name=name, token=start_token, theorem=theorem, tex=tex)
             context.add_decl(defcon)
             logger.debug(f"[defcon] {name}")
             return defcon
-        except Exception as e:
-            self.add_lsp_error(start_token, str(e), context)
+        except ParseError:
             return InvalidDeclaration(name=name, token=start_token)
 
     def parse_deffun_or_deffunterm(self, context: Context, start_token: Token) -> DefFun | DefFunTerm | InvalidDeclaration:
@@ -207,8 +212,7 @@ class Parser:
                 return self.parse_deffun(context, start_token, name)
             else:
                 return self.parse_deffunterm(context, start_token, name)
-        except Exception as e:
-            self.add_lsp_error(start_token, str(e), context)
+        except ParseError:
             return InvalidDeclaration(name=name, token=start_token)
 
     def parse_deffun(self, context: Context, start_token: Token, name: str) -> DefFun | InvalidDeclaration:
@@ -221,17 +225,20 @@ class Parser:
             elif isinstance(body, Implies) and isinstance(body.right, ExistsUniq):
                 existsuniq = body.right
             else:
-                raise SyntaxError(f"{start_token.info()} conclusion of {theorem} cannot be used for function definition")
+                msg = f"conclusion of {theorem} cannot be used for function definition"
+                self.add_lsp_error(start_token, msg, context)
+                raise ParseError()
             arity = len(vars_)
             tex = self.parse_or_create_tex(name, arity)
             if len(tex) != arity + 1:
-                raise SyntaxError(f"{start_token.info()} arity or {name} is {arity}, but length of tex is {len(tex)}")
+                msg = f"arity or {name} is {arity}, but length of tex is {len(tex)}"
+                self.add_lsp_error(start_token, msg, context)
+                raise ParseError()
             deffun = DefFun(name=name, token=start_token, args=vars_, returned=existsuniq.var, theorem=theorem, tex=tex)
             context.add_decl(deffun)
             logger.debug(f"[deffun] {name}")
             return deffun
-        except Exception as e:
-            self.add_lsp_error(start_token, str(e), context)
+        except ParseError:
             return InvalidDeclaration(name=name, token=start_token)
 
     def parse_deffunterm(self, context: Context, start_token: Token, name: str) -> DefFunTerm | InvalidDeclaration:
@@ -243,13 +250,14 @@ class Parser:
             term = self.parse_var_term(context.add_form(local_vars, local_pred_tmpls, local_fun_tmpls))
             tex = self.parse_or_create_tex(name, len(args))
             if len(tex) != len(args) + 1:
-                raise SyntaxError(f"{start_token.info()} arity of {name} is {len(args)}, but length of tex is {len(tex)}")
+                msg = f"arity of {name} is {len(args)}, but length of tex is {len(tex)}"
+                self.add_lsp_error(start_token, msg, context)
+                raise ParseError()
             deffunterm = DefFunTerm(name=name, token=start_token, args=args, varterm=term, tex=tex)
             context.add_decl(deffunterm)
             logger.debug(f"[deffunterm] {name}")
             return deffunterm
-        except Exception as e:
-            self.add_lsp_error(start_token, str(e), context)
+        except ParseError:
             return InvalidDeclaration(name=name, token=start_token)
 
     def parse_existence(self, context: Context) -> DefConExist | DefFunExist | InvalidDeclaration:
@@ -269,9 +277,10 @@ class Parser:
                 context.add_decl(deffunexist)
                 return deffunexist
             else:
-                raise Exception(f"{start_token.info()} defcon or deffun is required, but {name} is unknown")
-        except Exception as e:
-            self.add_lsp_error(start_token, str(e), context)
+                msg = f"defcon or deffun is required, but {name} is unknown"
+                self.add_lsp_error(start_token, msg, context)
+                raise ParseError()
+        except ParseError:
             return InvalidDeclaration(name=existence_name, token=start_token)
 
     def parse_uniqueness(self, context: Context) -> DefConUniq | DefFunUniq | InvalidDeclaration:
@@ -291,9 +300,10 @@ class Parser:
                 context.add_decl(deffununiq)
                 return deffununiq
             else:
-                raise Exception(f"{start_token.info()} defcon or deffun is required, but {name} is unknown")
-        except Exception as e:
-            self.add_lsp_error(start_token, str(e), context)
+                msg = f"defcon or deffun is required, but {name} is unknown"
+                self.add_lsp_error(start_token, msg, context)
+                raise ParseError()
+        except ParseError:
             return InvalidDeclaration(name=uniqueness_name, token=start_token)
 
     def parse_equality(self, context: Context) -> Equality | InvalidDeclaration:
@@ -304,21 +314,26 @@ class Parser:
             if name in context.decl.primpreds:
                 equal = RefPrimPred(name)
                 if context.decl.primpreds[name].arity != 2:
-                    raise Exception(f"{start_token.info()} arity is required to be 2, but arity of {name} is {context.decl.primpreds[name].arity}")
+                    msg = f"arity is required to be 2, but arity of {name} is {context.decl.primpreds[name].arity}"
+                    self.add_lsp_error(start_token, msg, context)
+                    raise ParseError()
             elif name in context.decl.defpreds:
                 equal = RefDefPred(name)
                 if len(context.decl.defpreds[name].args) != 2:
-                    raise Exception(f"{start_token.info()} arity is required to be 2, but arity of {name} is {len(context.decl.defpreds[name].args)}")
+                    msg = f"arity is required to be 2, but arity of {name} is {len(context.decl.defpreds[name].args)}"
+                    self.add_lsp_error(start_token, msg, context)
+                    raise ParseError()
             else:
-                raise Exception(f"{start_token.info()} primpred or defpred is required, but {name} is unknown")
+                msg = f"primpred or defpred is required, but {name} is unknown"
+                self.add_lsp_error(start_token, msg, context)
+                raise ParseError()
             reflection = self.parse_equality_reflection(equal, context)
             replacement = self.parse_equality_replacement(equal, context)
             equality = Equality(name=name, token=start_token, equal=equal, reflection=reflection, replacement=replacement)
             context.add_decl(equality)
             logger.debug(f"[equality] {type(equal)}: {equal.name}")
             return equality
-        except Exception as e:
-            self.add_lsp_error(start_token, str(e), context)
+        except ParseError:
             return InvalidDeclaration(name=name, token=start_token)
 
     def parse_equality_reflection(self, equal: RefPrimPred | RefDefPred, context: Context) -> EqualityReflection:
@@ -329,7 +344,9 @@ class Parser:
         elif name in context.decl.theorems:
             reflection_evidence = context.decl.theorems[name]
         else:
-            raise Exception(f"{start_token.info()} axiom or theorem is required, but {name} is unknown")
+            msg = f"axiom or theorem is required, but {name} is unknown"
+            self.add_lsp_error(start_token, msg, context)
+            raise ParseError()
         return EqualityReflection(token=start_token, equal=equal, evidence=reflection_evidence)
 
     def parse_equality_replacement(self, equal: RefPrimPred | RefDefPred, context: Context) -> EqualityReplacement:
@@ -338,7 +355,9 @@ class Parser:
         while True:
             predicate = self.stream.consume("IDENT").value
             if not (predicate == equal.name or predicate in context.decl.primpreds):
-                raise Exception(f"{start_token.info()} {equal.name} or primpred is required, but {predicate} is unknown")
+                msg = f"{equal.name} or primpred is required, but {predicate} is unknown"
+                self.add_lsp_error(start_token, msg, context)
+                raise ParseError()
             self.stream.consume("COLON")
             name = self.stream.consume("IDENT").value
             if name in context.decl.axioms:
@@ -346,7 +365,9 @@ class Parser:
             elif name in context.decl.theorems:
                 formula = context.decl.theorems[name]
             else:
-                raise Exception(f"{start_token.info()} axiom or theorem is required, but {name} is unknown")
+                msg = f"axiom or theorem is required, but {name} is unknown"
+                self.add_lsp_error(start_token, msg, context)
+                raise ParseError()
             replacement_evidence[predicate] = formula
             if self.stream.peek().type == "COMMA":
                 self.stream.consume("COMMA")
@@ -360,13 +381,19 @@ class Parser:
         if name in context.decl.primpreds:
             membership = RefPrimPred(name)
             if context.decl.primpreds[name].arity != 2:
-                raise Exception(f"{start_token.info()} arity is required to be 2, but arity of {name} is {context.decl.primpreds[name].arity}")
+                msg = f"arity is required to be 2, but arity of {name} is {context.decl.primpreds[name].arity}"
+                self.add_lsp_error(start_token, msg, context)
+                raise ParseError()
         elif name in context.decl.defpreds:
             membership = RefDefPred(name)
             if len(context.decl.defpreds[name].args) != 2:
-                raise Exception(f"{start_token.info()} arity is required to be 2, but arity of {name} is {len(context.decl.defpreds[name].args)}")
+                msg = f"arity is required to be 2, but arity of {name} is {len(context.decl.defpreds[name].args)}"
+                self.add_lsp_error(start_token, msg, context)
+                raise ParseError()
         else:
-            raise Exception(f"{start_token.info()} primpred or defpred is required, but {name} is unknown")
+            msg = f"primpred or defpred is required, but {name} is unknown"
+            self.add_lsp_error(start_token, msg, context)
+            raise ParseError()
         membership = Membership(name=name, token=start_token, membership=membership)
         context.add_decl(membership)
         logger.debug(f"[membership] {type(membership)}: {membership.name}")
@@ -378,8 +405,7 @@ class Parser:
         try:
             file = self.stream.consume("STRING").value
             return Include(file, start_token)
-        except Exception as e:
-            self.add_lsp_error(start_token, str(e), context)
+        except ParseError:
             return InvalidInclude(file, start_token)
 
     def parse_block(self, context: Context) -> list[Control]:
@@ -436,9 +462,10 @@ class Parser:
             elif tok.type == "ASSERT":
                 return self.parse_assert(context)
             else:
-                raise Exception("Control is required")
-        except Exception as e:
-            self.add_lsp_error(tok, str(e), context)
+                msg = "Control is required"
+                self.add_lsp_error(tok, msg, context)
+                raise ParseError()
+        except ParseError:
             return InvalidControl(token=tok)
 
     def parse_any(self, context: Context) -> Any:
@@ -464,7 +491,9 @@ class Parser:
         while self.stream.peek().type == "CASE":
             cases.append(self.parse_case(context.copy_ctrl()))
         if len(cases) < 2:
-            raise SyntaxError(f"{start_token.info()} At least two cases are required")
+            msg = "At least two cases are required"
+            self.add_lsp_error(start_token, msg, context)
+            raise ParseError()
         return Divide(token=start_token, fact=fact, cases=cases)
     
     def parse_case(self, context: Context) -> Case:
@@ -539,7 +568,9 @@ class Parser:
         self.stream.consume("CONCLUDE")
         conclusion = self.parse_formula(context)
         if not isinstance(conclusion, Exists):
-            raise Exception(f"{start_token.info()} Exists object is required")
+            msg = "Exists object is required"
+            self.add_lsp_error(start_token, msg, context)
+            raise ParseError()
         return Lift(token=start_token, varterms=varterms, conclusion=conclusion)
 
     def parse_characterize(self, context: Context) -> Characterize:
@@ -549,7 +580,9 @@ class Parser:
         self.stream.consume("CONCLUDE")
         conclusion = self.parse_formula(context)
         if not isinstance(conclusion, ExistsUniq):
-            raise Exception(f"{start_token.info()} ExistsUniq object is required")
+            msg = "ExistsUniq object is required"
+            self.add_lsp_error(start_token, msg, context)
+            raise ParseError()
         return Characterize(token=start_token, varterm=varterm, conclusion=conclusion)
 
     def parse_invoke(self, context: Context) -> Invoke:
@@ -565,10 +598,14 @@ class Parser:
         fact = self.parse_formula(context)
         if direction == "none":
             if not isinstance(fact, Implies):
-                raise Exception(f"{start_token.info()} Implies object is required")
+                msg = "Implies object is required"
+                self.add_lsp_error(start_token, msg, context)
+                raise ParseError()
         else:
             if not isinstance(fact, Iff):
-                raise Exception(f"{start_token.info()} Iff object is required")
+                msg = "Iff object is required"
+                self.add_lsp_error(start_token, msg, context)
+                raise ParseError()
         return Invoke(token=start_token, direction=direction, fact=fact)
 
     def parse_expand(self, context: Context) -> Expand:
@@ -630,7 +667,9 @@ class Parser:
         self.stream.consume("CONCLUDE")
         conclusion = self.parse_formula(context)
         if not isinstance(conclusion, Or):
-            raise Exception(f"{start_token.info()} Or object is required")
+            msg = "Or object is required"
+            self.add_lsp_error(start_token, msg, context)
+            raise ParseError()
         return Pad(token=start_token, fact=fact, conclusion=conclusion)
 
     def parse_split(self, context: Context) -> Split:
@@ -745,7 +784,9 @@ class Parser:
                 pred = RefDefPred(name)
                 defargs = context.decl.defpreds[name].args
             else:
-                raise Exception(f"{tok.info()} Unexpected name: {name}")
+                msg = f"Unexpected name: {name}"
+                self.add_lsp_error(tok, msg, context)
+                raise ParseError()
             if self.stream.peek().type == "LPAREN":
                 self.stream.consume("LPAREN")
                 subargs = self.parse_terms(context)
@@ -800,16 +841,22 @@ class Parser:
                     if isinstance(item, Var):
                         body = Exists(item, body)
                     else:
-                        raise Exception(f"{tok.info()}Unexpected type: {type(item)}")
+                        msg = f"Unexpected type: {type(item)}"
+                        self.add_lsp_error(tok, msg, context)
+                        raise ParseError()
                 elif q_type == "EXISTS_UNIQ":
                     if isinstance(item, Var):
                         body = ExistsUniq(item, body)
                     else:
-                        raise Exception(f"{tok.info()}Unexpected type: {type(item)}")
+                        msg = f"Unexpected type: {type(item)}"
+                        self.add_lsp_error(tok, msg, context)
+                        raise ParseError()
             return body
 
         else:
-            raise SyntaxError(f"{tok.info()} Formula objct is required, but unknown token is found")
+            msg = "Formula objct is required, but unknown token is found"
+            self.add_lsp_error(tok, msg, context)
+            raise ParseError()
 
     def parse_terms_or_none(self, context: Context) -> list[Term | None]:
         terms: list[Term | None] = []
@@ -872,7 +919,9 @@ class Parser:
             resolved_args = self.match_args(defargs, subargs, context, tok)
             return Compound(fun, tuple(resolved_args))
         else:
-            raise Exception(f"{tok.info()} Unexpected name: {name}")
+            msg = f"Unexpected name: {name}"
+            self.add_lsp_error(tok, msg, context)
+            raise ParseError()
 
     def parse_term(self, context: Context) -> Term:
         tok = self.stream.peek()
@@ -914,7 +963,9 @@ class Parser:
             elif name in context.decl.defpreds:
                 return RefDefPred(name)
             else:
-                raise SyntaxError(f"{tok.info()} Term object is required, but {name} is unknown")
+                msg = f"Term object is required, but {name} is unknown"
+                self.add_lsp_error(tok, msg, context)
+                raise ParseError()
         elif tok.type == "LAMBDA_PRED":
             self.stream.consume("LAMBDA_PRED")
             if self.stream.peek().type == "DOT":
@@ -934,7 +985,9 @@ class Parser:
             term = self.parse_var_term(context.add_form(vars, [], []))
             return FunLambda(tuple(vars), term)
         else:
-            raise SyntaxError(f"{tok.info()} Term object is required, but unknown token is found at")
+            msg = "Term object is required, but unknown token is found"
+            self.add_lsp_error(tok, msg, context)
+            raise ParseError()
 
     def parse_or_create_tex(self, name: str, arity: int) -> list[str]:
         if self.stream.peek().type == "TEX":
@@ -1038,32 +1091,44 @@ class Parser:
 
     def match_args(self, defargs: Sequence[Var | PredTemplate | FunTemplate], subargs: Sequence[Term], context: Context, tok: Token) -> list[Term]:
         if len(defargs) != len(subargs):
-            raise Exception(f"{tok.info()}len(defargs): {len(defargs)}, len(subargs): {len(subargs)}")
+            msg = f"len(defargs): {len(defargs)}, len(subargs): {len(subargs)}"
+            self.add_lsp_error(tok, msg, context)
+            raise ParseError()
         resolved_args: list[Term] = []
         for defarg, subarg in zip(defargs, subargs):
             if isinstance(defarg, Var):
                 if isinstance(subarg, VarTerm):
                     resolved_args.append(subarg)
                 else:
-                    raise Exception(f"{tok.info()} VarTerm must be substituted into {defarg.name}, but {type(subarg)} is substituted")
+                    msg = f"VarTerm must be substituted into {defarg.name}, but {type(subarg)} is substituted"
+                    self.add_lsp_error(tok, msg, context)
+                    raise ParseError()
             elif isinstance(defarg, PredTemplate):
                 if isinstance(subarg, PredTerm):
                     resolved_args.append(subarg)
                 elif isinstance(subarg, VarTerm):
                     if defarg.arity == 1:
                         if context.decl.membership is None:
-                            raise Exception(f"{tok.info()} VarTerm is substituted into PredTerm with arity 1, but membership has not been declared")
+                            msg = "VarTerm is substituted into PredTerm with arity 1, but membership has not been declared"
+                            self.add_lsp_error(tok, msg, context)
+                            raise ParseError()
                         else:
                             resolved_args.append(MembershipLambda(subarg))
                     else:
-                        raise Exception(f"{tok.info()} VarTerm cannot be substituted into PredTerm with arity {defarg.arity}")
+                        msg = f"VarTerm cannot be substituted into PredTerm with arity {defarg.arity}"
+                        self.add_lsp_error(tok, msg, context)
+                        raise ParseError()
                 else:
-                    raise Exception(f"{tok.info()} Unexpected type: {type(subarg)}")
+                    msg = f"Unexpected type: {type(subarg)}"
+                    self.add_lsp_error(tok, msg, context)
+                    raise ParseError()
             else:
                 if isinstance(subarg, FunTerm):
                     resolved_args.append(subarg)
                 else:
-                    raise Exception(f"{tok.info()} FunTerm must be substituted into {defarg.name}, but {type(subarg)} is substituted")
+                    msg = f"FunTerm must be substituted into {defarg.name}, but {type(subarg)} is substituted"
+                    self.add_lsp_error(tok, msg, context)
+                    raise ParseError()
         return resolved_args
 
 if __name__ == "__main__":
