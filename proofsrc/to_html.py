@@ -170,14 +170,14 @@ class Renderer:
                         self.render_keyword("definition predicate"),
                         self.render_keyword("autoexpand") if node.autoexpand else "",
                         self.render_identifier(node.name),
-                        self.render_expr(AtomicFormula(RefDefPred(node.name), tuple(node.args))),
+                        self.render_expr(AtomicFormula(node.token, RefDefPred(node.token, node.name), tuple(node.args))),
                         self.render_keyword("as"),
                         self.render_expr(node.formula)]
         header_parts_jp = [self.bullet,
                            self.render_keyword("述語記号定義"),
                            self.render_keyword("autoexpand") if node.autoexpand else "",
                            self.render_identifier(node.name),
-                           self.render_expr(AtomicFormula(RefDefPred(node.name), tuple(node.args))),
+                           self.render_expr(AtomicFormula(node.token, RefDefPred(node.token, node.name), tuple(node.args))),
                            "を",
                            self.render_expr(node.formula),
                            "により定める。"]
@@ -279,13 +279,13 @@ class Renderer:
         header_parts = [self.bullet,
                         self.render_keyword("definition function"),
                         self.render_identifier(node.name),
-                        self.render_expr(Compound(RefDefFunTerm(node.name), tuple(node.args))),
+                        self.render_expr(Compound(node.token, RefDefFunTerm(node.token, node.name), tuple(node.args))),
                         self.render_keyword("as"),
                         self.render_expr(node.varterm)]
         header_parts_jp = [self.bullet,
                            self.render_keyword("関数記号定義"),
                            self.render_identifier(node.name),
-                           self.render_expr(Compound(RefDefFunTerm(node.name), tuple(node.args))),
+                           self.render_expr(Compound(node.token, RefDefFunTerm(node.token, node.name), tuple(node.args))),
                            "を",
                            self.render_expr(node.varterm),
                            "により定める。"]
@@ -628,7 +628,7 @@ class Renderer:
         header_parts_jp = [self.bullet,
                         self.render_expr(node.fact),
                         "に",
-                        ",".join([self.render_expr(AtomicFormula(self.context.decl.equality.equal, (k, v))) for k, v in node.env.items()]),
+                        ",".join([self.render_expr(AtomicFormula(node.token, self.context.decl.equality.equal, (k, v))) for k, v in node.env.items()]),
                         "を代入する。"]
         return header_parts, header_parts_jp, ""
 

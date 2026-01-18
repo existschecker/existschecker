@@ -1,5 +1,5 @@
 from pygls.lsp.server import LanguageServer
-from pygls.uris import to_fs_path
+from pygls import uris
 from lsprotocol import types as lsp
 import os
 
@@ -30,7 +30,7 @@ def did_open(ls: LanguageServer, params: lsp.DidOpenTextDocumentParams) -> None:
 
 @server.feature(lsp.TEXT_DOCUMENT_DID_SAVE)
 def did_save(ls: LanguageServer, params: lsp.DidSaveTextDocumentParams) -> None:
-    path = to_fs_path(params.text_document.uri)
+    path = uris.to_fs_path(params.text_document.uri)
     if path is None:
         raise Exception(f"Cannot convert {params.text_document.uri} to path")
 
@@ -54,13 +54,25 @@ def did_save(ls: LanguageServer, params: lsp.DidSaveTextDocumentParams) -> None:
     ls.window_show_message(
         lsp.ShowMessageParams(
             type=lsp.MessageType.Info,
-            message=f"{len(parser_context.diagnostics)} parser errors, {len(checker_context.diagnostics)} checker errors"
+            message=f"{sum(len(v) for v in resolver.diagnostics.values())} resolver errors, {sum(len(v) for v in parser_context.diagnostics.values())} parser errors, {sum(len(v) for v in checker_context.diagnostics.values())} checker errors"
         )
     )
 
-    ls.text_document_publish_diagnostics(
-        lsp.PublishDiagnosticsParams(uri=params.text_document.uri, diagnostics=parser_context.diagnostics + checker_context.diagnostics)
-    )
+    final_diagnostics: dict[str, list[lsp.Diagnostic]] = {}
+    for file in resolved_files:
+        uri = uris.from_fs_path(file)
+        if uri is None:
+            continue
+        final_diagnostics[uri] = []
+    for diagnostics in (resolver.diagnostics, parser_context.diagnostics, checker_context.diagnostics):
+        for uri, diags in diagnostics.items():
+            if uri not in final_diagnostics:
+                continue
+            final_diagnostics[uri].extend(diags)
+    for uri, diags in final_diagnostics.items():
+        ls.text_document_publish_diagnostics(
+            lsp.PublishDiagnosticsParams(uri=uri, diagnostics=diags)
+        )
 
 if __name__ == "__main__":
     server.start_io()

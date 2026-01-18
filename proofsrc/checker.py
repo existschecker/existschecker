@@ -1,7 +1,9 @@
+from lexer import Token
 from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, RefDefCon, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Control, Formula, Declaration, PredTemplate, Term, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Include, DeclarationSupport, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, FunTemplate, RefPrimPred, RefDefPred, RefDefFun, InvalidDeclaration, InvalidControl
 from logic_utils import Substitutor, DefExpander, expr_in_context, strip_forall_vars, strip_exists_vars, make_forall_vars, make_exists_vars, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs, pretty_expr, alpha_safe_formula
 from copy import deepcopy
 from lsprotocol import types as lsp
+from pygls import uris
 
 import logging
 logger = logging.getLogger("proof")
@@ -14,9 +16,9 @@ def goal_in_context(goal: str | Bottom | Formula, context: Context) -> bool:
     else:
         return expr_in_context(goal, context)
 
-def get_fact(fact: str | Formula, context: Context, expand_symbol: bool = False) -> Formula:
+def get_fact(fact: str | Formula, context: Context, token: Token, expand_symbol: bool = False) -> Formula:
     if isinstance(fact, str):
-        fact = context.decl.get_reference(fact)
+        fact = context.decl.get_reference(fact, token)
     elif not isinstance(fact, Formula):
         raise Exception(f"Unexpected type {type(fact)}")
     if expand_symbol and isinstance(fact, AtomicFormula) and isinstance(fact.pred, RefDefPred):
@@ -27,6 +29,9 @@ def add_conclusion(context: Context, conclusion: Bottom | Formula) -> None:
     context.ctrl.formulas.append(conclusion)
 
 def add_lsp_error(node: Declaration | DeclarationSupport | Control, message: str, context: Context):
+    uri = uris.from_fs_path(node.token.file)
+    if uri is None:
+        return
     line = node.token.line - 1
     col = node.token.column - 1
     length = len(node.token.value)
@@ -38,7 +43,9 @@ def add_lsp_error(node: Declaration | DeclarationSupport | Control, message: str
         message=message,
         severity=lsp.DiagnosticSeverity.Error
     )
-    context.diagnostics.append(diag)
+    if uri not in context.diagnostics:
+        context.diagnostics[uri] = []
+    context.diagnostics[uri].append(diag)
 
 def make_debug_prefix(node: Declaration | DeclarationSupport | Control, indent: int) -> str:
     return "  " * indent + f"[{node.__class__.__name__}] "
@@ -165,7 +172,7 @@ def check_defconexist(node: DefConExist, context: Context, indent: int):
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{debug_prefix}ExistsUniq object: {pretty_expr(existsuniq, context)}")
-    existence_formula = Substitutor(({existsuniq.var: RefDefCon(node.con_name)}, {}, {}), context).substitute_formula(existsuniq.body)
+    existence_formula = Substitutor(({existsuniq.var: RefDefCon(node.token, node.con_name)}, {}, {}), context).substitute_formula(existsuniq.body)
     if not alpha_equiv_with_defs(node.formula, existence_formula, context):
         msg = f"existence_formula is not matched with theorem: {pretty_expr(node.formula, context)}"
         add_lsp_error(node, msg, context)
@@ -198,7 +205,7 @@ def check_defconuniq(node: DefConUniq, context: Context, indent: int):
         logger.error(f"{error_prefix}{msg}")
         node.proofinfo.status = "ERROR"
         return False
-    uniqueness_formula = Forall(var, Implies(body, AtomicFormula(context.decl.equality.equal, (MembershipLambda(var), MembershipLambda(RefDefCon(node.con_name))))))
+    uniqueness_formula = Forall(node.token, var, Implies(node.token, body, AtomicFormula(node.token, context.decl.equality.equal, (MembershipLambda(node.token, var), MembershipLambda(node.token, RefDefCon(node.token, node.con_name))))))
     if not alpha_equiv_with_defs(node.formula, uniqueness_formula, context):
         msg = f"uniqueness_formula is not matched with theorem: {pretty_expr(node.formula, context)}"
         add_lsp_error(node, msg, context)
@@ -223,9 +230,9 @@ def check_deffunexist(node: DefFunExist, context: Context, indent: int):
     logger.debug(f"{debug_prefix}name: {node.name}, fun_name: {node.fun_name}")
     args, body = strip_forall_vars(context.decl.theorems[context.decl.deffuns[node.fun_name].theorem].conclusion)
     if isinstance(body, ExistsUniq):
-        existence_formula = Substitutor(({body.var: Compound(RefDefFun(node.fun_name), tuple(args))}, {}, {}), context).substitute_formula(body.body)
+        existence_formula = Substitutor(({body.var: Compound(node.token, RefDefFun(node.token, node.fun_name), tuple(args))}, {}, {}), context).substitute_formula(body.body)
     elif isinstance(body, Implies) and isinstance(body.right, ExistsUniq):
-        existence_formula = Implies(body.left, Substitutor(({body.right.var: Compound(RefDefFun(node.fun_name), tuple(args))}, {}, {}), context).substitute_formula(body.right.body))
+        existence_formula = Implies(node.token, body.left, Substitutor(({body.right.var: Compound(node.token, RefDefFun(node.token, node.fun_name), tuple(args))}, {}, {}), context).substitute_formula(body.right.body))
     else:
         msg = f"Unexpected formula: {pretty_expr(body, context)}"
         add_lsp_error(node, msg, context)
@@ -256,9 +263,9 @@ def check_deffununiq(node: DefFunUniq, context: Context, indent: int):
         return False
     args, body = strip_forall_vars(context.decl.theorems[context.decl.deffuns[node.fun_name].theorem].conclusion)
     if isinstance(body, ExistsUniq):
-        uniqueness_formula = Forall(body.var, Implies(body.body, AtomicFormula(context.decl.equality.equal, (MembershipLambda(Var(body.var.name)), MembershipLambda(Compound(RefDefFun(node.fun_name), tuple(args)))))))
+        uniqueness_formula = Forall(node.token, body.var, Implies(node.token, body.body, AtomicFormula(node.token, context.decl.equality.equal, (MembershipLambda(node.token, Var(node.token, body.var.name)), MembershipLambda(node.token, Compound(node.token, RefDefFun(node.token, node.fun_name), tuple(args)))))))
     elif isinstance(body, Implies) and isinstance(body.right, ExistsUniq):
-        uniqueness_formula = Implies(body.left, Forall(body.right.var, Implies(body.right.body, AtomicFormula(context.decl.equality.equal, (MembershipLambda(Var(body.right.var.name)), MembershipLambda(Compound(RefDefFun(node.fun_name), tuple(args))))))))
+        uniqueness_formula = Implies(node.token, body.left, Forall(node.token, body.right.var, Implies(node.token, body.right.body, AtomicFormula(node.token, context.decl.equality.equal, (MembershipLambda(node.token, Var(node.token, body.right.var.name)), MembershipLambda(node.token, Compound(node.token, RefDefFun(node.token, node.fun_name), tuple(args))))))))
     else:
         msg = f"Unexpected formula: {pretty_expr(body, context)}"
         add_lsp_error(node, msg, context)
@@ -311,7 +318,7 @@ def check_equality_reflection(node: EqualityReflection, context: Context, indent
     debug_prefix = make_debug_prefix(node, indent)
     error_prefix = make_error_prefix(node, indent)
     logger.debug(f"{debug_prefix}Checking {node.equal.name} reflection theorem: {pretty_expr(node.evidence.conclusion, context)}")
-    reflection = Forall(Var("x"), AtomicFormula(node.equal, (MembershipLambda(Var("x")), MembershipLambda(Var("x")))))
+    reflection = Forall(node.token, Var(node.token, "x"), AtomicFormula(node.token, node.equal, (MembershipLambda(node.token, Var(node.token, "x")), MembershipLambda(node.token, Var(node.token, "x")))))
     if not alpha_equiv_with_defs(node.evidence.conclusion, reflection, context):
         msg = f"Not matched with expected formula: {pretty_expr(reflection, context)}"
         add_lsp_error(node, msg, context)
@@ -455,7 +462,7 @@ def check_any(node: Any, context: Context, indent: int):
     logger.debug(f"{debug_prefix}derived local_goal: {pretty_expr(local_goal, context)}")
     goal = local_goal
     for item in reversed(node.items):
-        goal = Forall(item, goal)
+        goal = Forall(node.token, item, goal)
     node.proofinfo.status = "OK"
     node.proofinfo.premises = []
     node.proofinfo.conclusions = [goal]
@@ -489,7 +496,7 @@ def check_assume(node: Assume, context: Context, indent: int):
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{debug_prefix}derived goal: {pretty_expr(goal, context)}")
-    implication = Implies(node.premise, goal)
+    implication = Implies(node.token, node.premise, goal)
     node.proofinfo.status = "OK"
     node.proofinfo.premises = []
     node.proofinfo.conclusions = [implication]
@@ -509,11 +516,11 @@ def check_divide(node: Divide, context: Context, indent: int):
         logger.error(f"{error_prefix}{msg}")
         node.proofinfo.status = "ERROR"
         return False
-    fact = get_fact(node.fact, context, True)
-    connected_premise = Or(node.cases[0].premise, node.cases[1].premise)
+    fact = get_fact(node.fact, context, node.token, True)
+    connected_premise = Or(node.token, node.cases[0].premise, node.cases[1].premise)
     i = 2
     while i < len(node.cases):
-        connected_premise = Or(connected_premise, node.cases[i].premise)
+        connected_premise = Or(node.token, connected_premise, node.cases[i].premise)
         i += 1
     if alpha_equiv_with_defs(connected_premise, fact, context):
         logger.debug(f"{debug_prefix}mathched: fact={pretty_expr(fact, context)}, connected_premise={pretty_expr(connected_premise, context)}")
@@ -593,7 +600,7 @@ def check_some(node: Some, context: Context, indent: int):
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{debug_prefix}derivable: {pretty_expr(node.fact, context)}")
-    fact = get_fact(node.fact, context, True)
+    fact = get_fact(node.fact, context, node.token, True)
     if isinstance(fact, Exists):
         vars, body = strip_exists_vars(fact, Exists)
         body = make_exists_vars(body, Exists, [bound for bound, free in zip(vars, node.items) if free is None])
@@ -641,7 +648,7 @@ def check_some(node: Some, context: Context, indent: int):
             logger.error(f"{error_prefix}{msg}")
             node.proofinfo.status = "ERROR"
             return False
-        uniqueness = Forall(var, Implies(body, AtomicFormula(context.decl.equality.equal, (MembershipLambda(var), MembershipLambda(vars[0])))))
+        uniqueness = Forall(node.token, var, Implies(node.token, body, AtomicFormula(node.token, context.decl.equality.equal, (MembershipLambda(node.token, var), MembershipLambda(node.token, vars[0])))))
         premises: list[Bottom | Formula] = [existence, uniqueness]
     logger.debug(f"{debug_prefix}Taking {node.items}, premise={pretty_expr(existence, context)}")
     local_vars = [item for item in node.items if isinstance(item, Var)]
@@ -698,7 +705,7 @@ def check_deny(node: Deny, context: Context, indent: int):
         if isinstance(node.premise, Not):
             conclusion = node.premise.body
         else:
-            conclusion = Not(node.premise)
+            conclusion = Not(node.token, node.premise)
         node.proofinfo.status = "OK"
         node.proofinfo.premises = []
         node.proofinfo.conclusions = [conclusion]
@@ -724,16 +731,16 @@ def check_contradict(node: Contradict, context: Context, indent: int):
         logger.error(f"{error_prefix}{msg}")
         node.proofinfo.status = "ERROR"
         return False
-    if not goal_in_context(Not(node.contradiction), context):
-        msg = f"Cannot derive {pretty_expr(Not(node.contradiction), context)}"
+    if not goal_in_context(Not(node.token, node.contradiction), context):
+        msg = f"Cannot derive {pretty_expr(Not(node.token, node.contradiction), context)}"
         add_lsp_error(node, msg, context)
         logger.error(f"{error_prefix}{msg}")
         node.proofinfo.status = "ERROR"
         return False
-    logger.debug(f"{debug_prefix}Derived contradiction: {pretty_expr(node.contradiction, context)}, {pretty_expr(Not(node.contradiction), context)}")
+    logger.debug(f"{debug_prefix}Derived contradiction: {pretty_expr(node.contradiction, context)}, {pretty_expr(Not(node.token, node.contradiction), context)}")
     conclusion = Bottom()
     node.proofinfo.status = "OK"
-    node.proofinfo.premises = [node.contradiction, Not(node.contradiction)]
+    node.proofinfo.premises = [node.contradiction, Not(node.token, node.contradiction)]
     node.proofinfo.conclusions = [conclusion]
     add_conclusion(context, conclusion)
     return True
@@ -765,7 +772,7 @@ def check_apply(node: Apply, context: Context, indent: int):
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{debug_prefix}Drivable fact: {pretty_expr(node.fact, context)}")
-    fact = get_fact(node.fact, context, True)
+    fact = get_fact(node.fact, context, node.token, True)
     items, body = strip_forall_vars(fact)
     body = make_forall_vars(body, [item for item, term in zip(items, node.terms) if term is None])
     mapping: dict[Term, Term] = {}
@@ -773,7 +780,7 @@ def check_apply(node: Apply, context: Context, indent: int):
         if term is None:
             continue
         if isinstance(item, PredTerm) and item.arity == 1 and isinstance(term, VarTerm):
-            mapping[item] = MembershipLambda(term)
+            mapping[item] = MembershipLambda(node.token, term)
         else:
             mapping[item] = term
     renamed_body, renamed_map = alpha_safe_formula(body, mapping, context)
@@ -879,7 +886,7 @@ def check_characterize(node: Characterize, context: Context, indent: int):
     error_prefix = make_error_prefix(node, indent)
     _, used_bound_vars, _, used_bound_pred_tmpls, _, used_bound_fun_tmpls = collect_vars(node.conclusion.body)
     fv, bv, fpt, bpt, fft, bft = collect_vars(node.varterm)
-    vardash = fresh_var(Var(node.conclusion.var.name + "'"), used_bound_vars | used_bound_pred_tmpls | used_bound_fun_tmpls | fv | bv | fpt | bpt | fft | bft, context)
+    vardash = fresh_var(Var(node.token, node.conclusion.var.name + "'"), used_bound_vars | used_bound_pred_tmpls | used_bound_fun_tmpls | fv | bv | fpt | bpt | fft | bft, context)
     renamed_conclusion, _ = alpha_safe_formula(node.conclusion, {node.conclusion.var: node.varterm}, context)
     if not isinstance(renamed_conclusion, ExistsUniq):
         msg = f"renamed_conclusion is not ExistsUniq object: {pretty_expr(renamed_conclusion, context)}"
@@ -895,7 +902,7 @@ def check_characterize(node: Characterize, context: Context, indent: int):
         logger.error(f"{error_prefix}{msg}")
         node.proofinfo.status = "ERROR"
         return False
-    fact = And(existence, Forall(vardash, Implies(existence_dash, AtomicFormula(context.decl.equality.equal, (MembershipLambda(vardash), MembershipLambda(node.varterm))))))
+    fact = And(node.token, existence, Forall(node.token, vardash, Implies(node.token, existence_dash, AtomicFormula(node.token, context.decl.equality.equal, (MembershipLambda(node.token, vardash), MembershipLambda(node.token, node.varterm))))))
     if not goal_in_context(fact, context):
         msg = f"Not fact: {pretty_expr(fact, context)}"
         add_lsp_error(node, msg, context)
@@ -995,7 +1002,7 @@ def check_expand(node: Expand, context: Context, indent: int):
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{debug_prefix}fact: {pretty_expr(node.fact, context)}")
-    fact = get_fact(node.fact, context)
+    fact = get_fact(node.fact, context, node.token)
     conclusion = DefExpander(node.defs, node.indexes).expand_defs_formula(fact, context)
     node.proofinfo.status = "OK"
     node.proofinfo.premises = [fact]
@@ -1032,7 +1039,7 @@ def check_pad(node: Pad, context: Context, indent: int):
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{debug_prefix}Derivable: {pretty_expr(node.fact, context)}")
-    fact = get_fact(node.fact, context)
+    fact = get_fact(node.fact, context, node.token)
     fact_parts = flatten_op(fact, Or)
     conclusion_parts = flatten_op(node.conclusion, Or)
     if not all(any(alpha_equiv_with_defs(c, f, context) for c in conclusion_parts) for f in fact_parts):
@@ -1057,7 +1064,7 @@ def check_split(node: Split, context: Context, indent: int):
         logger.error(f"{error_prefix}{msg}")
         node.proofinfo.status = "ERROR"
         return False
-    fact = get_fact(node.fact, context, True)
+    fact = get_fact(node.fact, context, node.token, True)
     logger.debug(f"{debug_prefix}Derivable: {pretty_expr(fact, context)}")
     if isinstance(fact, And):
         logger.debug(f"{debug_prefix}And object: {pretty_expr(fact, context)}")
@@ -1083,8 +1090,8 @@ def check_split(node: Split, context: Context, indent: int):
         return True
     elif isinstance(fact, Iff):
         logger.debug(f"{debug_prefix}Iff object: {pretty_expr(fact, context)}")
-        implication_rightward = Implies(fact.left, fact.right)
-        implication_leftward = Implies(fact.right, fact.left)
+        implication_rightward = Implies(node.token, fact.left, fact.right)
+        implication_leftward = Implies(node.token, fact.right, fact.left)
         node.proofinfo.status = "OK"
         node.proofinfo.premises = [fact]
         node.proofinfo.conclusions = [implication_rightward, implication_leftward]
@@ -1127,14 +1134,14 @@ def check_connect(node: Connect, context: Context, indent: int):
         return True
     elif isinstance(conclusion, Iff):
         logger.debug(f"{debug_prefix}Iff object: {pretty_expr(conclusion, context)}")
-        implication_rightward = Implies(conclusion.left, conclusion.right)
+        implication_rightward = Implies(node.token, conclusion.left, conclusion.right)
         if not goal_in_context(implication_rightward, context):
             msg = f"Not derivable: {pretty_expr(implication_rightward, context)}"
             add_lsp_error(node, msg, context)
             logger.error(f"{error_prefix}{msg}")
             node.proofinfo.status = "ERROR"
             return False
-        implication_leftward = Implies(conclusion.right, conclusion.left)
+        implication_leftward = Implies(node.token, conclusion.right, conclusion.left)
         if not goal_in_context(implication_leftward, context):
             msg = f"Not derivable: {pretty_expr(implication_leftward, context)}"
             add_lsp_error(node, msg, context)
@@ -1164,7 +1171,7 @@ def check_substitute(node: Substitute, context: Context, indent: int):
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{debug_prefix}Fact: {pretty_expr(node.fact, context)}")
-    fact = get_fact(node.fact, context)
+    fact = get_fact(node.fact, context, node.token)
     if context.decl.equality is None:
         msg = "equality has not been declared yet"
         add_lsp_error(node, msg, context)
@@ -1177,7 +1184,7 @@ def check_substitute(node: Substitute, context: Context, indent: int):
             raise Exception(f"Unexpected type: {type(k)}")
         if not isinstance(v, VarTerm):
             raise Exception(f"Unexpected type: {type(v)}")
-        equation = AtomicFormula(context.decl.equality.equal, (MembershipLambda(k), MembershipLambda(v)))
+        equation = AtomicFormula(node.token, context.decl.equality.equal, (MembershipLambda(node.token, k), MembershipLambda(node.token, v)))
         if not goal_in_context(equation, context):
             msg = f"Not fact: {pretty_expr(equation, context)}"
             add_lsp_error(node, msg, context)
@@ -1241,7 +1248,7 @@ def check_assert(node: Assert, context: Context, indent: int):
         node.proofinfo.status = "ERROR"
         return False
     logger.debug(f"{debug_prefix}Fact: {pretty_expr(node.reference, context)}")
-    formula = get_fact(node.reference, context)
+    formula = get_fact(node.reference, context, node.token)
     node.proofinfo.status = "OK"
     node.proofinfo.premises = []
     node.proofinfo.conclusions = [formula]

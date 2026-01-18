@@ -1,9 +1,10 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, RefDefCon, Var, DefFunTerm, Equality, Substitute, Characterize, Show, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, PredTemplate, PredLambda, Include, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, InvalidInclude, InvalidDeclaration, InvalidControl
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, RefDefCon, Var, DefFunTerm, Equality, Substitute, Characterize, Show, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, PredTemplate, PredLambda, Include, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, InvalidInclude, InvalidDeclaration, InvalidControl, ContextError
 from lexer import Token
-from token_stream import TokenStream
+from token_stream import TokenStream, TokenStreamError
 from logic_utils import strip_forall_vars
 
 from lsprotocol import types as lsp
+from pygls import uris
 from typing import Sequence
 
 import logging
@@ -18,6 +19,9 @@ class Parser:
         self.stream = TokenStream(tokens)
 
     def add_lsp_error(self, tok: Token, message: str, context: Context):
+        uri = uris.from_fs_path(tok.file)
+        if uri is None:
+            return
         line = tok.line - 1
         col = tok.column - 1
         length = len(tok.value)
@@ -29,7 +33,9 @@ class Parser:
             message=message,
             severity=lsp.DiagnosticSeverity.Error
         )
-        context.diagnostics.append(diag)
+        if uri not in context.diagnostics:
+            context.diagnostics[uri] = []
+        context.diagnostics[uri].append(diag)
 
     def skip_until_next_inclide_or_declaration_or_EOF(self):
         while True:
@@ -94,6 +100,9 @@ class Parser:
                 raise ParseError()
         except ParseError:
             return InvalidDeclaration("<invalid>", tok)
+        except (TokenStreamError, ContextError) as e:
+            self.add_lsp_error(e.token, e.msg, context)
+            return InvalidDeclaration(name="<invalid>", token=tok)
 
     def parse_primitive(self, context: Context) -> PrimPred:
         start_token = self.stream.consume("PRIMITIVE")
@@ -271,15 +280,16 @@ class Parser:
 
     def parse_equality(self, context: Context) -> Equality:
         start_token = self.stream.consume("EQUALITY")
-        name = self.stream.consume("IDENT").value
+        tok = self.stream.consume("IDENT")
+        name = tok.value
         if name in context.decl.primpreds:
-            equal = RefPrimPred(name)
+            equal = RefPrimPred(tok, name)
             if context.decl.primpreds[name].arity != 2:
                 msg = f"arity is required to be 2, but arity of {name} is {context.decl.primpreds[name].arity}"
                 self.add_lsp_error(start_token, msg, context)
                 raise ParseError()
         elif name in context.decl.defpreds:
-            equal = RefDefPred(name)
+            equal = RefDefPred(tok, name)
             if len(context.decl.defpreds[name].args) != 2:
                 msg = f"arity is required to be 2, but arity of {name} is {len(context.decl.defpreds[name].args)}"
                 self.add_lsp_error(start_token, msg, context)
@@ -336,15 +346,16 @@ class Parser:
 
     def parse_membership(self, context: Context) -> Membership:
         start_token = self.stream.consume("MEMBERSHIP")
-        name = self.stream.consume("IDENT").value
+        tok = self.stream.consume("IDENT")
+        name = tok.value
         if name in context.decl.primpreds:
-            membership = RefPrimPred(name)
+            membership = RefPrimPred(tok, name)
             if context.decl.primpreds[name].arity != 2:
                 msg = f"arity is required to be 2, but arity of {name} is {context.decl.primpreds[name].arity}"
                 self.add_lsp_error(start_token, msg, context)
                 raise ParseError()
         elif name in context.decl.defpreds:
-            membership = RefDefPred(name)
+            membership = RefDefPred(tok, name)
             if len(context.decl.defpreds[name].args) != 2:
                 msg = f"arity is required to be 2, but arity of {name} is {len(context.decl.defpreds[name].args)}"
                 self.add_lsp_error(start_token, msg, context)
@@ -366,10 +377,14 @@ class Parser:
             return Include(file, start_token)
         except ParseError:
             return InvalidInclude(file, start_token)
+        except (TokenStreamError, ContextError) as e:
+            self.add_lsp_error(e.token, e.msg, context)
+            return InvalidInclude(file="<invalid>", token=e.token)
 
     def parse_block(self, context: Context) -> list[Control]:
         body: list[Control] = []
         while True:
+
             tok = self.stream.peek()
             if not tok or tok.type == "RBRACE":
                 break
@@ -425,6 +440,9 @@ class Parser:
                 self.add_lsp_error(tok, msg, context)
                 raise ParseError()
         except ParseError:
+            return InvalidControl(token=tok)
+        except (TokenStreamError, ContextError) as e:
+            self.add_lsp_error(e.token, e.msg, context)
             return InvalidControl(token=tok)
 
     def parse_any(self, context: Context) -> Any:
@@ -705,25 +723,25 @@ class Parser:
     def parse_implies(self, context: Context) -> Formula:
         left = self.parse_and(context.copy_form())
         while self.stream.peek().type in ("IMPLIES", "IFF"):
-            op = self.stream.peek().type
-            self.stream.consume(op)
+            tok = self.stream.peek()
+            self.stream.consume(tok.type)
             right = self.parse_and(context.copy_form())
-            if op == "IMPLIES":
-                left = Implies(left, right)
-            elif op == "IFF":
-                left = Iff(left, right)
+            if tok.type == "IMPLIES":
+                left = Implies(tok, left, right)
+            elif tok.type == "IFF":
+                left = Iff(tok, left, right)
         return left
 
     def parse_and(self, context: Context) -> Formula:
         left = self.parse_primary(context.copy_form())
         while self.stream.peek().type in ("AND", "OR"):
-            op = self.stream.peek().type
-            self.stream.consume(op)
+            tok = self.stream.peek()
+            self.stream.consume(tok.type)
             right = self.parse_primary(context.copy_form())
-            if op == "AND":
-                left = And(left, right)
-            elif op == "OR":
-                left = Or(left, right)
+            if tok.type == "AND":
+                left = And(tok, left, right)
+            elif tok.type == "OR":
+                left = Or(tok, left, right)
         return left
 
     def parse_primary(self, context: Context) -> Formula:
@@ -732,15 +750,15 @@ class Parser:
             name = self.stream.consume("IDENT").value
             if any(pred_tmpl.name == name for pred_tmpl in context.form.pred_tmpls):
                 pred = next(pred_tmpl for pred_tmpl in context.form.pred_tmpls if pred_tmpl.name == name)
-                defargs: list[Var | PredTemplate | FunTemplate] = [Var(f"x_{i}") for i in range(pred.arity)]
+                defargs: list[Var | PredTemplate | FunTemplate] = [Var(tok, f"x_{i}") for i in range(pred.arity)]
             elif any(pred_tmpl.name == name for pred_tmpl in context.ctrl.pred_tmpls):
                 pred = next(pred_tmpl for pred_tmpl in context.ctrl.pred_tmpls if pred_tmpl.name == name)
-                defargs: list[Var | PredTemplate | FunTemplate] = [Var(f"x_{i}") for i in range(pred.arity)]
+                defargs: list[Var | PredTemplate | FunTemplate] = [Var(tok, f"x_{i}") for i in range(pred.arity)]
             elif name in context.decl.primpreds:
-                pred = RefPrimPred(name)
-                defargs: list[Var | PredTemplate | FunTemplate] = [Var(f"x_{i}") for i in range(context.decl.primpreds[name].arity)]
+                pred = RefPrimPred(tok, name)
+                defargs: list[Var | PredTemplate | FunTemplate] = [Var(tok, f"x_{i}") for i in range(context.decl.primpreds[name].arity)]
             elif name in context.decl.defpreds:
-                pred = RefDefPred(name)
+                pred = RefDefPred(tok, name)
                 defargs = context.decl.defpreds[name].args
             else:
                 msg = f"Unexpected name: {name}"
@@ -753,7 +771,7 @@ class Parser:
             else:
                 subargs: list[Term] = []
             resolved_args = self.match_args(defargs, subargs, context, tok)
-            return AtomicFormula(pred, tuple(resolved_args))
+            return AtomicFormula(tok, pred, tuple(resolved_args))
 
         elif tok.type == "LPAREN":
             self.stream.consume("LPAREN")
@@ -766,46 +784,46 @@ class Parser:
             self.stream.consume("LPAREN")
             body = self.parse_formula(context.copy_form())
             self.stream.consume("RPAREN")
-            return Not(body)
+            return Not(tok, body)
 
         elif tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ", "FORALL_PRED_TMPL", "FORALL_FUN_TMPL"):
-            quantified_pairs: list[tuple[str, Var | PredTemplate | FunTemplate]] = []
+            quantified_pairs: list[tuple[Token, Var | PredTemplate | FunTemplate]] = []
             local_bound_vars: list[Var] = []
             local_bound_pred_tmpls: list[PredTemplate] = []
             local_bound_fun_tmpls: list[FunTemplate] = []
             while tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ", "FORALL_PRED_TMPL", "FORALL_FUN_TMPL"):
-                q_type = self.stream.consume(tok.type).type
+                self.stream.consume(tok.type)
                 if tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ"):
                     var = self.parse_var()
-                    quantified_pairs.append((q_type, var))
+                    quantified_pairs.append((tok, var))
                     local_bound_vars.append(var)
                     tok = self.stream.peek()
                 elif tok.type == "FORALL_PRED_TMPL":
                     pred_tmpl = self.parse_pred_tmpl()
-                    quantified_pairs.append((q_type, pred_tmpl))
+                    quantified_pairs.append((tok, pred_tmpl))
                     local_bound_pred_tmpls.append(pred_tmpl)
                     tok = self.stream.peek()
                 else:
                     fun_tmpl = self.parse_fun_tmpl()
-                    quantified_pairs.append((q_type, fun_tmpl))
+                    quantified_pairs.append((tok, fun_tmpl))
                     local_bound_fun_tmpls.append(fun_tmpl)
                     tok = self.stream.peek()
             self.stream.consume("LPAREN")
             body = self.parse_formula(context.add_form(local_bound_vars, local_bound_pred_tmpls, local_bound_fun_tmpls))
             self.stream.consume("RPAREN")
-            for q_type, item in reversed(quantified_pairs):
-                if q_type in ("FORALL", "FORALL_PRED_TMPL", "FORALL_FUN_TMPL"):
-                    body = Forall(item, body)
-                elif q_type == "EXISTS":
+            for tok, item in reversed(quantified_pairs):
+                if tok.type in ("FORALL", "FORALL_PRED_TMPL", "FORALL_FUN_TMPL"):
+                    body = Forall(tok, item, body)
+                elif tok.type == "EXISTS":
                     if isinstance(item, Var):
-                        body = Exists(item, body)
+                        body = Exists(tok, item, body)
                     else:
                         msg = f"Unexpected type: {type(item)}"
                         self.add_lsp_error(tok, msg, context)
                         raise ParseError()
-                elif q_type == "EXISTS_UNIQ":
+                elif tok.type == "EXISTS_UNIQ":
                     if isinstance(item, Var):
-                        body = ExistsUniq(item, body)
+                        body = ExistsUniq(tok, item, body)
                     else:
                         msg = f"Unexpected type: {type(item)}"
                         self.add_lsp_error(tok, msg, context)
@@ -858,25 +876,25 @@ class Parser:
         elif any(var.name == name for var in context.ctrl.vars):
             return next((var for var in context.ctrl.vars if var.name == name))
         elif name in context.decl.defcons:
-            return RefDefCon(name)
+            return RefDefCon(tok, name)
         elif name in context.decl.deffuns or name in context.decl.deffunterms or any(fun_tmpl.name == name for fun_tmpl in context.form.fun_tmpls) or any(fun_tmpl.name == name for fun_tmpl in context.ctrl.fun_tmpls):
             if name in context.decl.deffuns:
-                fun = RefDefFun(name)
+                fun = RefDefFun(tok, name)
                 defargs = context.decl.deffuns[name].args
             elif name in context.decl.deffunterms:
-                fun = RefDefFunTerm(name)
+                fun = RefDefFunTerm(tok, name)
                 defargs = context.decl.deffunterms[name].args
             elif any(fun_tmpl.name == name for fun_tmpl in context.form.fun_tmpls):
                 fun = next(fun_tmpl for fun_tmpl in context.form.fun_tmpls if fun_tmpl.name == name)
-                defargs = [Var(f"x_{i}") for i in range(fun.arity)]
+                defargs = [Var(tok, f"x_{i}") for i in range(fun.arity)]
             else:
                 fun = next(fun_tmpl for fun_tmpl in context.ctrl.fun_tmpls if fun_tmpl.name == name)
-                defargs = [Var(f"x_{i}") for i in range(fun.arity)]
+                defargs = [Var(tok, f"x_{i}") for i in range(fun.arity)]
             self.stream.consume("LPAREN")
             subargs = self.parse_terms(context)
             self.stream.consume("RPAREN")
             resolved_args = self.match_args(defargs, subargs, context, tok)
-            return Compound(fun, tuple(resolved_args))
+            return Compound(tok, fun, tuple(resolved_args))
         else:
             msg = f"Unexpected name: {name}"
             self.add_lsp_error(tok, msg, context)
@@ -895,32 +913,32 @@ class Parser:
             elif any(pred_tmpl.name == name for pred_tmpl in context.ctrl.pred_tmpls):
                 return next((pred_tmpl for pred_tmpl in context.ctrl.pred_tmpls if pred_tmpl.name == name))
             elif name in context.decl.defcons:
-                return RefDefCon(name)
+                return RefDefCon(tok, name)
             elif name in context.decl.deffuns or name in context.decl.deffunterms or any(fun_tmpl.name == name for fun_tmpl in context.form.fun_tmpls) or any(fun_tmpl.name == name for fun_tmpl in context.ctrl.fun_tmpls):
                 if name in context.decl.deffuns:
-                    fun = RefDefFun(name)
+                    fun = RefDefFun(tok, name)
                     defargs = context.decl.deffuns[name].args
                 elif name in context.decl.deffunterms:
-                    fun = RefDefFunTerm(name)
+                    fun = RefDefFunTerm(tok, name)
                     defargs = context.decl.deffunterms[name].args
                 elif any(fun_tmpl.name == name for fun_tmpl in context.form.fun_tmpls):
                     fun = next(fun_tmpl for fun_tmpl in context.form.fun_tmpls if fun_tmpl.name == name)
-                    defargs = [Var(f"x_{i}") for i in range(fun.arity)]
+                    defargs = [Var(tok, f"x_{i}") for i in range(fun.arity)]
                 else:
                     fun = next(fun_tmpl for fun_tmpl in context.ctrl.fun_tmpls if fun_tmpl.name == name)
-                    defargs = [Var(f"x_{i}") for i in range(fun.arity)]
+                    defargs = [Var(tok, f"x_{i}") for i in range(fun.arity)]
                 if self.stream.peek().type == "LPAREN":
                     self.stream.consume("LPAREN")
                     subargs = self.parse_terms(context)
                     self.stream.consume("RPAREN")
                     resolved_args = self.match_args(defargs, subargs, context, tok)
-                    return Compound(fun, tuple(resolved_args))
+                    return Compound(tok, fun, tuple(resolved_args))
                 else:
                     return fun
             elif name in context.decl.primpreds:
-                return RefPrimPred(name)
+                return RefPrimPred(tok, name)
             elif name in context.decl.defpreds:
-                return RefDefPred(name)
+                return RefDefPred(tok, name)
             else:
                 msg = f"Term object is required, but {name} is unknown"
                 self.add_lsp_error(tok, msg, context)
@@ -933,7 +951,7 @@ class Parser:
                 vars = self.parse_vars()
             self.stream.consume("DOT")
             formula = self.parse_formula(context.add_form(vars, [], []))
-            return PredLambda(tuple(vars), formula)
+            return PredLambda(tok, tuple(vars), formula)
         elif tok.type == "LAMBDA_FUN":
             self.stream.consume("LAMBDA_FUN")
             if self.stream.peek().type == "DOT":
@@ -942,7 +960,7 @@ class Parser:
                 vars = self.parse_vars()
             self.stream.consume("DOT")
             term = self.parse_var_term(context.add_form(vars, [], []))
-            return FunLambda(tuple(vars), term)
+            return FunLambda(tok, tuple(vars), term)
         else:
             msg = "Term object is required, but unknown token is found"
             self.add_lsp_error(tok, msg, context)
@@ -1031,22 +1049,25 @@ class Parser:
         return vars
 
     def parse_var(self) -> Var:
-        var_name = self.stream.consume("IDENT").value
-        return Var(var_name)
+        tok = self.stream.consume("IDENT")
+        var_name = tok.value
+        return Var(tok, var_name)
 
     def parse_pred_tmpl(self) -> PredTemplate:
-        pred_tmpl_name = self.stream.consume("IDENT").value
+        tok = self.stream.consume("IDENT")
+        pred_tmpl_name = tok.value
         self.stream.consume("LBRACKET")
         arity = int(self.stream.consume("NUMBER").value)
         self.stream.consume("RBRACKET")
-        return PredTemplate(pred_tmpl_name, arity)
+        return PredTemplate(tok, pred_tmpl_name, arity)
 
     def parse_fun_tmpl(self) -> FunTemplate:
-        fun_tmpl_name = self.stream.consume("IDENT").value
+        tok = self.stream.consume("IDENT")
+        fun_tmpl_name = tok.value
         self.stream.consume("LBRACKET")
         arity = int(self.stream.consume("NUMBER").value)
         self.stream.consume("RBRACKET")
-        return FunTemplate(fun_tmpl_name, arity)
+        return FunTemplate(tok, fun_tmpl_name, arity)
 
     def match_args(self, defargs: Sequence[Var | PredTemplate | FunTemplate], subargs: Sequence[Term], context: Context, tok: Token) -> list[Term]:
         if len(defargs) != len(subargs):
@@ -1072,7 +1093,7 @@ class Parser:
                             self.add_lsp_error(tok, msg, context)
                             raise ParseError()
                         else:
-                            resolved_args.append(MembershipLambda(subarg))
+                            resolved_args.append(MembershipLambda(tok, subarg))
                     else:
                         msg = f"VarTerm cannot be substituted into PredTerm with arity {defarg.arity}"
                         self.add_lsp_error(tok, msg, context)

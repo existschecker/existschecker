@@ -6,13 +6,18 @@ from typing import Sequence, Literal
 import logging
 logger = logging.getLogger("proof")
 
+class ContextError(Exception):
+    def __init__(self, token: Token, msg: str) -> None:
+        self.token = token
+        self.msg = msg
+
 @dataclass(frozen=True)
 class Term:
-    pass
+    token: Token = field(compare=False)
 
 @dataclass(frozen=True)
 class Formula:
-    pass
+    token: Token = field(compare=False)
 
 @dataclass(frozen=True)
 class VarTerm(Term):
@@ -97,7 +102,8 @@ class FormulaContext:
         new_used_names = self.used_names.copy()
         for item in new_vars + new_pred_tmpls + new_fun_tmpls:
             if item.name in new_used_names:
-                raise Exception(f"{item.name} is already used")
+                msg = f"{item.name} is already used"
+                raise ContextError(item.token, msg)
             new_used_names.add(item.name)
         return FormulaContext(list(self.vars + new_vars), list(self.pred_tmpls + new_pred_tmpls), list(self.fun_tmpls + new_fun_tmpls), new_used_names)
 
@@ -168,7 +174,8 @@ class ControlContext:
         new_used_names = self.used_names.copy()
         for item in new_vars + new_pred_tmpls + new_fun_tmpls:
             if item.name in new_used_names:
-                raise Exception(f"{item.name} is already used")
+                msg = f"{item.name} is already used"
+                raise ContextError(item.token, msg)
             new_used_names.add(item.name)
         return ControlContext(list(self.vars + new_vars), list(self.formulas + new_formulas), list(self.pred_tmpls + new_pred_tmpls), list(self.fun_tmpls + new_fun_tmpls), new_used_names)
 
@@ -410,17 +417,20 @@ class DeclarationContext:
     def add(self, declaration: Declaration):
         if isinstance(declaration, Equality):
             if self.equality is not None:
-                raise Exception("equality is already declared")
+                msg = "equality is already declared"
+                raise ContextError(declaration.token, msg)
             self.equality = declaration
             return
         if isinstance(declaration, Membership):
             if self.membership is not None:
-                raise Exception("membership is already declared")
+                msg = "membership is already declared"
+                raise ContextError(declaration.token, msg)
             self.membership = declaration
             return
         if declaration.name in self.used_names:
             if not (isinstance(declaration, DefPred) and declaration.name in self.defpreds):
-                raise Exception(f"{declaration.name} is already used")
+                msg = f"{declaration.name} is already used"
+                raise ContextError(declaration.token, msg)
         if isinstance(declaration, PrimPred):
             self.primpreds[declaration.name] = declaration
         elif isinstance(declaration, Axiom):
@@ -444,13 +454,14 @@ class DeclarationContext:
         elif isinstance(declaration, DefFunTerm):
             self.deffunterms[declaration.name] = declaration
         else:
-            raise Exception(f"Unexpected type: {type(declaration)}")
+            msg = f"Unexpected type: {type(declaration)}"
+            raise ContextError(declaration.token, msg)
         self.used_names.add(declaration.name)
 
     def has_reference(self, name: str) -> bool:
         return name in self.axioms or name in self.theorems or name in self.defconexists or name in self.defconuniqs or name in self.deffunexists or name in self.deffununiqs
 
-    def get_reference(self, name: str) -> Formula:
+    def get_reference(self, name: str, token: Token) -> Formula:
         if name in self.axioms:
             return self.axioms[name].conclusion
         elif name in self.theorems:
@@ -464,18 +475,19 @@ class DeclarationContext:
         elif name in self.deffununiqs:
             return self.deffununiqs[name].formula
         else:
-            raise Exception(f"Unexpected name: {name}")
+            msg = f"Unexpected name: {name}"
+            raise ContextError(token, msg)
 
 @dataclass
 class Context:
     decl: DeclarationContext
     ctrl: ControlContext
     form: FormulaContext
-    diagnostics: list[lsp.Diagnostic]
+    diagnostics: dict[str, list[lsp.Diagnostic]]
 
     @staticmethod
     def init() -> "Context":
-        return Context(DeclarationContext.init(), ControlContext.init(), FormulaContext.init(), [])
+        return Context(DeclarationContext.init(), ControlContext.init(), FormulaContext.init(), {})
 
     def add_decl(self, declaration: Declaration):
         self.decl.add(declaration)

@@ -127,7 +127,9 @@ def lex(path: str) -> list[Token]:
                     tokens.append(Token("NUMBER", text, path, i, line, column))
                     i += len(text)
                 else:
-                    raise SyntaxError(f"[{path}:{line}:{column}] Unexpected character {c}")
+                    error_token = Token("INVALID", src[i], path, i, line, column)
+                    tokens.append(error_token)
+                    i += 1
     tokens.append(Token("EOF", "", path, i, line, len(src) - line_start_pos + 1))
     return tokens
 
