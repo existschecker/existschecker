@@ -31,17 +31,18 @@ from dependency import DependencyResolver
 resolver = DependencyResolver()
 resolver.resolve(path)
 resolved_files, tokens_cache = resolver.get_result()
+from splitter import split
+workspace = split(resolved_files, tokens_cache, resolver.source_cache)
 from ast_types import Context
-parser_context = Context.init()
-checker_context = Context.init()
-for file in resolved_files:
-    from parser import Parser
-    parser = Parser(tokens_cache[file])
-    ast, parser_context = parser.parse_file(parser_context)
-    from checker import check_ast
-    result, _, checker_context = check_ast(ast, checker_context)
-    if result:
-        print(f"All theorems proved: {file}")
-    else:
-        print(f"❌ Not all theorems proved: {file}")
-        break
+context = Context.init()
+from parser import Parser
+from checker import Checker
+for file in workspace.resolved_files:
+    for unit in workspace.file_units[file]:
+        working_context = context.copy()
+        Parser(unit).parse_unit(working_context)
+        if Checker(unit).check_unit(working_context):
+            context = working_context
+        unit.context = context.copy()
+total_errors = sum(len(unit.diagnostics) for file in workspace.file_units.values() for unit in file)
+print(f"tota_errors: {total_errors}")

@@ -770,29 +770,27 @@ if __name__ == "__main__":
     resolver = DependencyResolver()
     resolver.resolve(path)
     resolved_files, tokens_cache = resolver.get_result()
-    parser_context = Context.init()
-    checker_context = Context.init()
-    for file in resolved_files:
+    from splitter import split
+    workspace = split(resolved_files, tokens_cache, resolver.source_cache)
+    context = Context.init()
+    from parser import Parser
+    from checker import Checker
+    for file in workspace.resolved_files:
+        print(file)
         import os
         name = os.path.splitext(os.path.basename(file))[0]
-        from parser import Parser
-        parser = Parser(tokens_cache[file])
-        ast, parser_context = parser.parse_file(parser_context)
-        title = f"{name}_parser_{mode}"
-        parser_html, _ = to_html(ast, parser_context, title, mode)
-        f = open(os.path.join("html", f"{title}.html"), 'w', encoding='utf-8')
-        f.write(parser_html)
-        f.close()
-        from checker import check_ast
-        result, ast, checker_context = check_ast(ast, checker_context)
-        if result:
-            print(f"All theorems proved: {file}")
-        else:
-            print(f"❌ Not all theorems proved: {file}")
+        for unit in workspace.file_units[file]:
+            working_context = context.copy()
+            Parser(unit).parse_unit(working_context)
+            if Checker(unit).check_unit(working_context):
+                context = working_context
+            unit.context = context.copy()
         title = f"{name}_checker_{mode}"
-        checker_html, error_found = to_html(ast, checker_context, title, mode)
+        checker_html, error_found = to_html([unit.ast for unit in workspace.file_units[file] if unit.ast is not None], context, title, mode)
         f = open(os.path.join("html", f"{title}.html"), 'w', encoding='utf-8')
         f.write(checker_html)
         f.close()
         if error_found:
             break
+    total_errors = sum(len(unit.diagnostics) for file in workspace.file_units.values() for unit in file)
+    print(f"tota_errors: {total_errors}")

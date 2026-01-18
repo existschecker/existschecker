@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, RefDefCon, Var, DefFunTerm, Equality, Substitute, Characterize, Show, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, PredTemplate, PredLambda, Include, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, InvalidInclude, InvalidDeclaration, InvalidControl, ContextError
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, RefDefCon, Var, DefFunTerm, Equality, Substitute, Characterize, Show, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, PredTemplate, PredLambda, Include, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, InvalidInclude, InvalidDeclaration, InvalidControl, ContextError, DeclarationUnit
 from lexer import Token
 from token_stream import TokenStream, TokenStreamError
 from logic_utils import strip_forall_vars
@@ -15,8 +15,9 @@ class ParseError(Exception):
 
 # === パーサー本体 ===
 class Parser:
-    def __init__(self, tokens: list[Token]):
-        self.stream = TokenStream(tokens)
+    def __init__(self, unit: DeclarationUnit):
+        self.unit = unit
+        self.stream = TokenStream(unit.tokens)
 
     def add_lsp_error(self, tok: Token, message: str, context: Context):
         uri = uris.from_fs_path(tok.file)
@@ -31,19 +32,10 @@ class Parser:
                 end=lsp.Position(line=line, character=col + length)
             ),
             message=message,
+            source="Parser",
             severity=lsp.DiagnosticSeverity.Error
         )
-        if uri not in context.diagnostics:
-            context.diagnostics[uri] = []
-        context.diagnostics[uri].append(diag)
-
-    def skip_until_next_inclide_or_declaration_or_EOF(self):
-        while True:
-            tok = self.stream.peek()
-            if tok.type in ("INCLUDE", "PRIMITIVE", "AXIOM", "THEOREM", "DEFINITION", "EXISTENCE", "UNIQUENESS", "EQUALITY", "MEMBERSHIP", "EOF"):
-                return
-            else:
-                self.stream.consume(tok.type)
+        self.unit.diagnostics.append(diag)
 
     def skip_until_next_RBRACE_or_control(self):
         nest_level = 0
@@ -58,23 +50,24 @@ class Parser:
                     nest_level -= 1
                 self.stream.consume(tok.type)
 
-    def parse_file(self, context: Context) -> tuple[list[Include | Declaration], Context]:
-        ast: list[Include | Declaration] = []
-        while True:
-            tok = self.stream.peek()
-            if tok.type == "EOF":
-                break
-            elif tok.type == "INCLUDE":
-                include = self.parse_include(context)
-                ast.append(include)
-                if isinstance(include, InvalidInclude):
-                    self.skip_until_next_inclide_or_declaration_or_EOF()
+    def parse_unit(self, context: Context) -> None:
+        self.stream = TokenStream(self.unit.tokens)
+        tok = self.stream.peek()
+        try:
+            if tok.type == "INCLUDE":
+                self.unit.ast = self.parse_include(context)
             else:
-                declaration = self.parse_declaration(context, tok)
-                ast.append(declaration)
-                if isinstance(declaration, InvalidDeclaration):
-                    self.skip_until_next_inclide_or_declaration_or_EOF()
-        return ast, context
+                self.unit.ast = self.parse_declaration(context, tok)
+            tok = self.stream.peek()
+            if tok.type != "EOF":
+                msg = f"Unexpected token {tok.type} after Include or Declaration"
+                self.add_lsp_error(tok, msg, context)
+                raise ParseError()
+        except ParseError:
+            self.unit.ast = InvalidDeclaration("<invalid>", tok)
+        except (TokenStreamError, ContextError) as e:
+            self.add_lsp_error(e.token, e.msg, context)
+            self.unit.ast = InvalidDeclaration("<invalid>", tok)
 
     def parse_declaration(self, context: Context, tok: Token) -> Declaration:
         try:
@@ -116,7 +109,7 @@ class Parser:
             self.add_lsp_error(start_token, msg, context)
             raise ParseError()
         primpred = PrimPred(name=name, token=start_token, arity=arity, tex=tex)
-        context.add_decl(primpred)
+        # context.add_decl(primpred)
         logger.debug(f"[primpred] {name}")
         return primpred
 
@@ -125,7 +118,7 @@ class Parser:
         name = self.stream.consume("IDENT").value
         conclusion = self.parse_formula(context)
         axiom = Axiom(name=name, token=start_token, conclusion=conclusion)
-        context.add_decl(axiom)
+        # context.add_decl(axiom)
         logger.debug(f"[axiom] {name}")
         return axiom
 
@@ -137,7 +130,7 @@ class Parser:
         proof = self.parse_block(context.copy_ctrl())
         self.stream.consume("RBRACE")
         theorem = Theorem(name=name, token=start_token, conclusion=conclusion, proof=proof)
-        context.add_decl(theorem)
+        # context.add_decl(theorem)
         logger.debug(f"[theorem] {name}")
         return theorem
 
@@ -174,7 +167,7 @@ class Parser:
             self.add_lsp_error(start_token, msg, context)
             raise ParseError()
         defpred = DefPred(name=name, token=start_token, args=args, formula=formula, autoexpand=autoexpand, tex=tex)
-        context.add_decl(defpred)
+        # context.add_decl(defpred)
         logger.debug(f"[defpred] {name}")
         return defpred
 
@@ -189,7 +182,7 @@ class Parser:
             self.add_lsp_error(start_token, msg, context)
             raise ParseError()
         defcon = DefCon(name=name, token=start_token, theorem=theorem, tex=tex)
-        context.add_decl(defcon)
+        # context.add_decl(defcon)
         logger.debug(f"[defcon] {name}")
         return defcon
 
@@ -220,7 +213,7 @@ class Parser:
             self.add_lsp_error(start_token, msg, context)
             raise ParseError()
         deffun = DefFun(name=name, token=start_token, args=vars_, returned=existsuniq.var, theorem=theorem, tex=tex)
-        context.add_decl(deffun)
+        # context.add_decl(deffun)
         logger.debug(f"[deffun] {name}")
         return deffun
 
@@ -236,7 +229,7 @@ class Parser:
             self.add_lsp_error(start_token, msg, context)
             raise ParseError()
         deffunterm = DefFunTerm(name=name, token=start_token, args=args, varterm=term, tex=tex)
-        context.add_decl(deffunterm)
+        # context.add_decl(deffunterm)
         logger.debug(f"[deffunterm] {name}")
         return deffunterm
 
@@ -248,11 +241,11 @@ class Parser:
         name = self.stream.consume("IDENT").value
         if name in context.decl.defcons:
             defconexist = DefConExist(name=existence_name, token=start_token, formula=existence_formula, con_name=name)
-            context.add_decl(defconexist)
+            # context.add_decl(defconexist)
             return defconexist
         elif name in context.decl.deffuns:
             deffunexist = DefFunExist(name=existence_name, token=start_token, formula=existence_formula, fun_name=name)
-            context.add_decl(deffunexist)
+            # context.add_decl(deffunexist)
             return deffunexist
         else:
             msg = f"defcon or deffun is required, but {name} is unknown"
@@ -267,11 +260,11 @@ class Parser:
         name = self.stream.consume("IDENT").value
         if name in context.decl.defcons:
             defconuniq = DefConUniq(name=uniqueness_name, token=start_token, formula=uniqueness_formula, con_name=name)
-            context.add_decl(defconuniq)
+            # context.add_decl(defconuniq)
             return defconuniq
         elif name in context.decl.deffuns:
             deffununiq = DefFunUniq(name=uniqueness_name, token=start_token, formula=uniqueness_formula, fun_name=name)
-            context.add_decl(deffununiq)
+            # context.add_decl(deffununiq)
             return deffununiq
         else:
             msg = f"defcon or deffun is required, but {name} is unknown"
@@ -301,7 +294,7 @@ class Parser:
         reflection = self.parse_equality_reflection(equal, context)
         replacement = self.parse_equality_replacement(equal, context)
         equality = Equality(name=name, token=start_token, equal=equal, reflection=reflection, replacement=replacement)
-        context.add_decl(equality)
+        # context.add_decl(equality)
         logger.debug(f"[equality] {type(equal)}: {equal.name}")
         return equality
 
@@ -365,7 +358,7 @@ class Parser:
             self.add_lsp_error(start_token, msg, context)
             raise ParseError()
         membership = Membership(name=name, token=start_token, membership=membership)
-        context.add_decl(membership)
+        # context.add_decl(membership)
         logger.debug(f"[membership] {type(membership)}: {membership.name}")
         return membership
 
@@ -1110,39 +1103,3 @@ class Parser:
                     self.add_lsp_error(tok, msg, context)
                     raise ParseError()
         return resolved_args
-
-if __name__ == "__main__":
-    import sys
-    path = sys.argv[1]
-
-    import os
-    import logging
-
-    logger = logging.getLogger("proof")
-    logger.setLevel(logging.DEBUG)
-
-    # 標準出力用ハンドラ
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.DEBUG)
-
-    # ファイル出力用ハンドラ
-    file_handler = logging.FileHandler(os.path.join("logs", os.path.basename(path).replace(".proof", "_parser.log")), mode='w', encoding='utf-8')
-    file_handler.setLevel(logging.DEBUG)
-
-    # 共通フォーマット
-    formatter = logging.Formatter("[%(filename)s] %(message)s")
-    console_handler.setFormatter(formatter)
-    file_handler.setFormatter(formatter)
-
-    # ハンドラ登録
-    logger.addHandler(console_handler)
-    logger.addHandler(file_handler)
-
-    from dependency import DependencyResolver
-    resolver = DependencyResolver()
-    resolver.resolve(path)
-    resolved_files, tokens_cache = resolver.get_result()
-    parser_context = Context.init()
-    for file in resolved_files:
-        parser = Parser(tokens_cache[file])
-        _, parser_context = parser.parse_file(parser_context)

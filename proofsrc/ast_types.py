@@ -478,6 +478,9 @@ class DeclarationContext:
             msg = f"Unexpected name: {name}"
             raise ContextError(token, msg)
 
+    def copy(self) -> "DeclarationContext":
+        return DeclarationContext(self.primpreds.copy(), self.axioms.copy(), self.theorems.copy(), self.defpreds.copy(), self.defcons.copy(), self.defconexists.copy(), self.defconuniqs.copy(), self.deffuns.copy(), self.deffunexists.copy(), self.deffununiqs.copy(), self.deffunterms.copy(), self.equality, self.membership, set(self.used_names))
+
 @dataclass
 class Context:
     decl: DeclarationContext
@@ -504,6 +507,9 @@ class Context:
     def add_form(self, new_vars: list[Var], new_pred_tmpls: list[PredTemplate], new_fun_tmpls: list[FunTemplate]):
         return Context(self.decl, self.ctrl, self.form.add(new_vars, new_pred_tmpls, new_fun_tmpls), self.diagnostics)
 
+    def copy(self):
+        return Context(self.decl.copy(), self.ctrl.copy(), self.form.copy(), self.diagnostics.copy())
+
 @dataclass
 class Include:
     file: str
@@ -512,3 +518,24 @@ class Include:
 @dataclass
 class InvalidInclude(Include):
     pass
+
+@dataclass
+class DeclarationUnit:
+    file: str
+    tokens: list[Token]
+    hash: str
+    ast: Include | Declaration | None = None
+    context: Context = field(default_factory=Context.init)
+    diagnostics: list[lsp.Diagnostic] = field(default_factory=list[lsp.Diagnostic])
+    is_dirty: bool = True
+
+class Workspace:
+    def __init__(self, resolved_files: list[str], file_units: dict[str, list[DeclarationUnit]]):
+        self.resolved_files: list[str] = resolved_files
+        self.file_units: dict[str, list[DeclarationUnit]] = file_units
+
+    def get_all_units(self) -> list[DeclarationUnit]:
+        all_units: list[DeclarationUnit] = []
+        for file in self.resolved_files:
+            all_units.extend(self.file_units[file])
+        return all_units

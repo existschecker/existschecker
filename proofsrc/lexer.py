@@ -29,7 +29,7 @@ SYMBOLS = {
     "_": "UNDERSCORE",
 }
 
-def lex(path: str) -> list[Token]:
+def lex(path: str) -> tuple[list[Token], str]:
     f = open(path)
     src = f.read()
     f.close()
@@ -131,7 +131,7 @@ def lex(path: str) -> list[Token]:
                     tokens.append(error_token)
                     i += 1
     tokens.append(Token("EOF", "", path, i, line, len(src) - line_start_pos + 1))
-    return tokens
+    return tokens, src
 
 if __name__ == "__main__":
     import sys
@@ -160,6 +160,6 @@ if __name__ == "__main__":
     logger.addHandler(console_handler)
     logger.addHandler(file_handler)
 
-    tokens = lex(path)
+    tokens, _ = lex(path)
     for t in tokens:
         logger.debug(t)

@@ -8,6 +8,7 @@ class DependencyResolver:
     def __init__(self):
         self.resolved_files: list[str] = []
         self.tokens_cache: dict[str, list[Token]] = {}
+        self.source_cache: dict[str, str] = {}
         self.visiting_files: set[str] = set()
         self.diagnostics: dict[str, list[lsp.Diagnostic]] = {}
 
@@ -24,6 +25,7 @@ class DependencyResolver:
                 end=lsp.Position(line=line, character=col + length)
             ),
             message=message,
+            source="DependencySolver",
             severity=lsp.DiagnosticSeverity.Error
         )
         if uri not in self.diagnostics:
@@ -36,8 +38,9 @@ class DependencyResolver:
             return
         self.visiting_files.add(path)
         print(f"Visiting {path}")
-        tokens = lex(path)
+        tokens, src = lex(path)
         self.tokens_cache[path] = tokens
+        self.source_cache[path] = src
         stream = TokenStream(tokens)
         while True:
             token = stream.peek()
