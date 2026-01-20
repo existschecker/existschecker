@@ -5,7 +5,7 @@ import os
 import re
 
 from dependency import DependencyResolver
-from lexer import Token, KEYWORDS, STRINGS
+from lexer import KEYWORDS, STRINGS
 from ast_types import Context, DeclarationUnit, Workspace, Declaration
 from parser import Parser
 from checker import Checker
@@ -98,7 +98,7 @@ class ProofLanguageServer(LanguageServer):
                 return match.group()
         return None
 
-    def get_definition_token(self, params: lsp.DefinitionParams) -> Token | None:
+    def get_definition(self, params: lsp.DefinitionParams) -> lsp.Location | None:
         line = self.workspace.get_text_document(params.text_document.uri).lines[params.position.line]
         name = self.get_word_at_position(line, params.position.character)
         if name is None:
@@ -107,7 +107,17 @@ class ProofLanguageServer(LanguageServer):
             return None
         for unit in server.old_workspace.get_all_units():
             if isinstance(unit.ast, Declaration) and unit.ast.name == name:
-                return unit.ast.name_token
+                token = unit.ast.name_token
+                uri = uris.from_fs_path(token.file)
+                if uri is None:
+                    return None
+                return lsp.Location(
+                    uri=uri,
+                    range=lsp.Range(
+                        start=lsp.Position(line=token.line - 1, character=token.column - 1),
+                        end=lsp.Position(line=token.line - 1, character=token.column - 1 + len(token.value))
+                    )
+                )
         return None
 
     def get_completion(self) -> list[lsp.CompletionItem]:
@@ -195,21 +205,7 @@ def did_save(ls: ProofLanguageServer, params: lsp.DidSaveTextDocumentParams) -> 
 
 @server.feature(lsp.TEXT_DOCUMENT_DEFINITION)
 def lsp_definition(ls: ProofLanguageServer, params: lsp.DefinitionParams) -> lsp.Location | None:
-    token = ls.get_definition_token(params)
-    if token is None:
-        return None
-    uri = uris.from_fs_path(token.file)
-    if uri is None:
-        return
-    import sys
-    print(token, file=sys.stderr)
-    return lsp.Location(
-        uri=uri,
-        range=lsp.Range(
-            start=lsp.Position(line=token.line - 1, character=token.column - 1),
-            end=lsp.Position(line=token.line - 1, character=token.column - 1 + len(token.value))
-        )
-    )
+    return ls.get_definition(params)
 
 @server.feature(lsp.TEXT_DOCUMENT_COMPLETION)
 def lsp_completion(ls: ProofLanguageServer, params: lsp.CompletionParams):
