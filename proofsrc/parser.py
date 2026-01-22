@@ -192,6 +192,9 @@ class Parser:
         name = name_token.value
         self.stream.consume("BY")
         theorem = self.stream.consume("IDENT").value
+        if theorem not in context.decl.theorems:
+            msg = f"{theorem} is not in context.decl.theorems"
+            raise ParseError(start_token, msg)
         vars_, body = strip_forall_vars(context.decl.theorems[theorem].conclusion)
         if isinstance(body, ExistsUniq):
             existsuniq = body
