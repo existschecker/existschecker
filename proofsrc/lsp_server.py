@@ -17,6 +17,7 @@ class ProofLanguageServer(LanguageServer):
         super().__init__("proof-server", "v0.1") # type: ignore[reportUnknownMemberType]
         self.old_workspace: Workspace | None = None
         self.updated_files: set[str] = set()
+        self.resolver: DependencyResolver | None = None
 
     def run_analysis(self, path: str, save_html: bool):
         self.analyze(path)
@@ -32,10 +33,12 @@ class ProofLanguageServer(LanguageServer):
             )
         )
 
-        resolver = DependencyResolver()
-        resolver.resolve(path, self)
-        resolved_files, tokens_cache = resolver.get_result()
-        workspace = split(resolved_files, tokens_cache, resolver.source_cache)
+        if self.resolver is None:
+            self.resolver = DependencyResolver()
+        self.resolver.resolved_files = []
+        self.resolver.resolve(path, self)
+        resolved_files, tokens_cache = self.resolver.get_result()
+        workspace = split(resolved_files, tokens_cache, self.resolver.source_cache)
 
         all_units: list[DeclarationUnit] = []
         for file in workspace.resolved_files:
@@ -76,7 +79,7 @@ class ProofLanguageServer(LanguageServer):
             final_diagnostics[uri] = []
             for unit in workspace.file_units[file]:
                 final_diagnostics[uri].extend(unit.diagnostics)
-        for uri, diags in resolver.diagnostics.items():
+        for uri, diags in self.resolver.diagnostics.items():
             if uri not in final_diagnostics:
                 continue
             final_diagnostics[uri].extend(diags)

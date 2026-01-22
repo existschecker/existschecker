@@ -8,23 +8,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from lsp_server import ProofLanguageServer
 
-def get_content(target_path: str, ls: "ProofLanguageServer | None" = None) -> str:
-    if ls is None:
-        f = open(target_path)
-        src = f.read()
-        f.close()
-        return src
-    else:
-        for uri, doc in ls.workspace.text_documents.items():
-            path = uris.to_fs_path(uri)
-            if path is None:
-                continue
-            if path == target_path:
-                return doc.source
-        f = open(target_path)
-        src = f.read()
-        f.close()
-        return src
+import sys
 
 class DependencyResolver:
     def __init__(self):
@@ -51,14 +35,33 @@ class DependencyResolver:
             self.diagnostics[uri] = []
         self.diagnostics[uri].append(diag)
 
+    def get_content(self, target_path: str, ls: "ProofLanguageServer | None" = None) -> tuple[str, list[Token]]:
+        if ls is not None:
+            for uri, doc in ls.workspace.text_documents.items():
+                path = uris.to_fs_path(uri)
+                if path is None:
+                    continue
+                if path == target_path:
+                    tokens, _ = lex(path, doc.source)
+                    print(f"editor memory: {os.path.basename(target_path)} {doc.source[-10:]}", file=sys.stderr)
+                    return doc.source, tokens
+        if target_path in self.source_cache:
+            print(f"resolver cache: {os.path.basename(target_path)}", file=sys.stderr)
+            return self.source_cache[target_path], self.tokens_cache[target_path]
+        f = open(target_path)
+        src = f.read()
+        f.close()
+        tokens, _ = lex(target_path, src)
+        print(f"file content: {os.path.basename(target_path)}", file=sys.stderr)
+        return src, tokens
+
     def resolve(self, path: str, ls: "ProofLanguageServer | None" = None):
         if path in self.resolved_files:
             # print(f"Skipping {path}")
             return
         self.visiting_files.add(path)
         # print(f"Visiting {path}")
-        src = get_content(path, ls)
-        tokens, _ = lex(path, src)
+        src, tokens = self.get_content(path, ls)
         self.tokens_cache[path] = tokens
         self.source_cache[path] = src
         stream = TokenStream(tokens)
