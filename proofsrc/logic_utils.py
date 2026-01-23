@@ -805,7 +805,10 @@ class ExprFormatter:
         if isinstance(expr, Var):
             return expr.name
         elif isinstance(expr, (RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm)):
-            return f"\\mathrm{{{expr.name}}}"
+            if self.mode == "source":
+                return expr.name
+            else:
+                return f"\\mathrm{{{expr.name}}}"
         elif isinstance(expr, (PredTemplate, FunTemplate)):
             return f"{expr.name}[{str(expr.arity)}]"
         elif isinstance(expr, RefDefCon):
