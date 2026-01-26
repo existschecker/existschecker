@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, RefDefCon, Var, DefFunTerm, Equality, Substitute, Characterize, Show, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, PredTemplate, PredLambda, Include, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, InvalidInclude, InvalidDeclaration, InvalidControl, ContextError, DeclarationUnit
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, RefDefCon, Var, DefFunTerm, Equality, Substitute, Characterize, Show, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, PredTemplate, PredLambda, Include, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, InvalidInclude, InvalidDeclaration, InvalidControl, ContextError, DeclarationUnit, RefFact, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq
 from lexer import Token
 from token_stream import TokenStream, TokenStreamError
 from logic_utils import strip_forall_vars
@@ -672,11 +672,29 @@ class Parser:
         reference = self.parse_reference_or_formula(context)
         return Assert(token=start_token, reference=reference)
 
-    def parse_reference_or_formula(self, context: Context) -> str | Formula:
-        if self.stream.peek().type == "IDENT" and context.decl.has_reference(self.stream.peek().value):
-            return self.stream.consume("IDENT").value
-        else:
-            return self.parse_formula(context)
+    def parse_reference_or_formula(self, context: Context) -> RefFact | Formula:
+        token = self.stream.peek()
+        if token.type == "IDENT":
+            name = token.value
+            if name in context.decl.axioms:
+                self.stream.consume(token.type)
+                return RefAxiom(name, token)
+            elif name in context.decl.theorems:
+                self.stream.consume(token.type)
+                return RefTheorem(name, token)
+            elif name in context.decl.defconexists:
+                self.stream.consume(token.type)
+                return RefDefConExist(name, token)
+            elif name in context.decl.defconuniqs:
+                self.stream.consume(token.type)
+                return RefDefConUniq(name, token)
+            elif name in context.decl.deffunexists:
+                self.stream.consume(token.type)
+                return RefDefFunExist(name, token)
+            elif name in context.decl.deffununiqs:
+                self.stream.consume(token.type)
+                return RefDefFunUniq(name, token)
+        return self.parse_formula(context)
 
     def parse_bot_or_formula(self, context: Context) -> Bottom | Formula:
         if self.stream.peek().type == "BOT":

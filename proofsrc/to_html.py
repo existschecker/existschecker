@@ -1,6 +1,6 @@
 from datetime import datetime
 from html import escape
-from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, AtomicFormula, Compound, Control, Declaration, Bottom, Formula, Term, DeclarationSupport, Var, Include, Assert, Fold, PredTemplate, Membership, RefDefPred, RefDefFunTerm, InvalidDeclaration, InvalidControl
+from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, AtomicFormula, Compound, Control, Declaration, Bottom, Formula, Term, DeclarationSupport, Var, Include, Assert, Fold, PredTemplate, Membership, RefDefPred, RefDefFunTerm, InvalidDeclaration, InvalidControl, RefFact
 from svg import output_svg
 from typing import Sequence, Mapping, TypeVar
 from logic_utils import ExprFormatter
@@ -77,16 +77,16 @@ class Renderer:
     def render_identifier(self, name: str) -> str:
         return f"<span class='identifier'>{escape(name)}</span>"
 
-    def render_expr_mathjax(self, node: str | Bottom | Formula | Term) -> str:
-        if isinstance(node, str):
-            return self.render_identifier(node)
+    def render_expr_mathjax(self, node: RefFact | Bottom | Formula | Term) -> str:
+        if isinstance(node, RefFact):
+            return self.render_identifier(node.name)
         else:
             return escape(f"\\({ExprFormatter(self.context, "tex").pretty_expr(node)}\\)")
 
-    def render_expr_list_mathjax(self, expr_list: Sequence[str | Bottom | Formula | Term]) -> str:
+    def render_expr_list_mathjax(self, expr_list: Sequence[RefFact | Bottom | Formula | Term]) -> str:
         return ",".join(self.render_expr_mathjax(expr) for expr in expr_list)
 
-    T_Key = TypeVar("T_Key", str, Var)
+    T_Key = TypeVar("T_Key", RefFact, Var)
 
     def render_expr_dict_mathjax(self, expr_dict: Mapping[T_Key, Term]) -> str:
         parts = [f"{escape(f"\\({ExprFormatter(self.context, "tex").pretty_expr(k)}\\)")}:{escape(f"\\({ExprFormatter(self.context, "tex").pretty_expr(v)}\\)")}" for k, v in expr_dict.items()]
@@ -98,15 +98,15 @@ class Renderer:
     def img_tag(self, svg_path: str, latex_code: str) -> str:
         return f"<img src='{escape(svg_path)}' alt='{escape(latex_code)}'>"
 
-    def render_expr_svg(self, node: str | Bottom | Formula | Term) -> str:
-        if isinstance(node, str):
-            return self.render_identifier(node)
+    def render_expr_svg(self, node: RefFact | Bottom | Formula | Term) -> str:
+        if isinstance(node, RefFact):
+            return self.render_identifier(node.name)
         else:
             latex_code = ExprFormatter(self.context, "tex").pretty_expr(node)
             svg_path = output_svg(latex_code)
             return self.img_tag(svg_path, latex_code)
 
-    def render_expr_list_svg(self, expr_list: Sequence[str | Bottom | Formula | Term]) -> str:
+    def render_expr_list_svg(self, expr_list: Sequence[RefFact | Bottom | Formula | Term]) -> str:
         return ",".join((self.render_expr_svg(expr) for expr in expr_list))
 
     def render_expr_dict_svg(self, expr_dict: Mapping[T_Key, Term]) -> str:

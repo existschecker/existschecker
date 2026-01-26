@@ -1,4 +1,4 @@
-from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, AtomicFormula, Context, Compound, RefDefCon, Var, Bottom, Term, Formula, PredTemplate, PredLambda, MembershipLambda, VarTerm, PredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm
+from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, AtomicFormula, Context, Compound, RefDefCon, Var, Bottom, Term, Formula, PredTemplate, PredLambda, MembershipLambda, VarTerm, PredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, RefFact
 from itertools import permutations
 from copy import deepcopy
 from typing import Mapping, Literal
@@ -930,9 +930,9 @@ class ExprFormatter:
         else:
             raise TypeError(f"Unsupported node type: {type(expr)}")
 
-    def pretty_expr(self, expr: str | Bottom | Formula | Term) -> str:
-        if isinstance(expr, str):
-            return expr
+    def pretty_expr(self, expr: RefFact | Bottom | Formula | Term) -> str:
+        if isinstance(expr, RefFact):
+            return expr.name
         elif isinstance(expr, Bottom):
             return "\\bot"
         elif isinstance(expr, Formula):

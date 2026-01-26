@@ -179,11 +179,40 @@ class ControlContext:
             new_used_names.add(item.name)
         return ControlContext(list(self.vars + new_vars), list(self.formulas + new_formulas), list(self.pred_tmpls + new_pred_tmpls), list(self.fun_tmpls + new_fun_tmpls), new_used_names)
 
+@dataclass(frozen=True)
+class RefFact:
+    name: str
+    token: Token
+
+@dataclass(frozen=True)
+class RefAxiom(RefFact):
+    pass
+
+@dataclass(frozen=True)
+class RefTheorem(RefFact):
+    pass
+
+@dataclass(frozen=True)
+class RefDefConExist(RefFact):
+    pass
+
+@dataclass(frozen=True)
+class RefDefConUniq(RefFact):
+    pass
+
+@dataclass(frozen=True)
+class RefDefFunExist(RefFact):
+    pass
+
+@dataclass(frozen=True)
+class RefDefFunUniq(RefFact):
+    pass
+
 @dataclass
 class ProofInfo:
     status: Literal["UNCHECKED", "OK", "ERROR"] = field(init=False, default="UNCHECKED")
     ctrl_ctx: ControlContext = field(init=False, default_factory=ControlContext.init)
-    premises: Sequence[str | Bottom | Formula] = field(init=False, default_factory=list[str | Bottom | Formula])
+    premises: Sequence[RefFact | Bottom | Formula] = field(init=False, default_factory=list[RefFact | Bottom | Formula])
     conclusions: Sequence[Bottom | Formula] = field(init=False, default_factory=list[Bottom | Formula])
     local_vars: Sequence[Var] = field(init=False, default_factory=list[Var])
     local_premise: Sequence[Bottom | Formula] = field(init=False, default_factory=list[Formula])
@@ -215,13 +244,13 @@ class Case(Control):
 
 @dataclass
 class Divide(Control):
-    fact: str | Formula
+    fact: RefFact | Formula
     cases: list[Case]
 
 @dataclass
 class Some(Control):
     items: list[Var | None]
-    fact: str | Formula
+    fact: RefFact | Formula
     body: list[Control]
 
 @dataclass
@@ -240,7 +269,7 @@ class Explode(Control):
 @dataclass
 class Apply(Control):
     invoke: Literal["none", "invoke", "invoke-rightward", "invoke-leftward"]
-    fact: str | Formula
+    fact: RefFact | Formula
     terms: list[Term | None]
 
 @dataclass
@@ -260,7 +289,7 @@ class Invoke(Control):
 
 @dataclass
 class Expand(Control):
-    fact: str | Formula
+    fact: RefFact | Formula
     defs: list[str]
     indexes: dict[str, list[int]]
 
@@ -272,13 +301,13 @@ class Fold(Control):
 
 @dataclass
 class Pad(Control):
-    fact: str | Formula
+    fact: RefFact | Formula
     conclusion: Or
 
 @dataclass
 class Split(Control):
     index: int | None
-    fact: str | Formula
+    fact: RefFact | Formula
 
 @dataclass
 class Connect(Control):
@@ -286,7 +315,7 @@ class Connect(Control):
 
 @dataclass
 class Substitute(Control):
-    fact: str | Formula
+    fact: RefFact | Formula
     env: dict[Term, Term]
     indexes: dict[Term, list[int]]
 
@@ -297,7 +326,7 @@ class Show(Control):
 
 @dataclass
 class Assert(Control):
-    reference: str | Formula
+    reference: RefFact | Formula
 
 @dataclass
 class Declaration:
@@ -462,21 +491,21 @@ class DeclarationContext:
     def has_reference(self, name: str) -> bool:
         return name in self.axioms or name in self.theorems or name in self.defconexists or name in self.defconuniqs or name in self.deffunexists or name in self.deffununiqs
 
-    def get_reference(self, name: str, token: Token) -> Formula:
-        if name in self.axioms:
-            return self.axioms[name].conclusion
-        elif name in self.theorems:
-            return self.theorems[name].conclusion
-        elif name in self.defconexists:
-            return self.defconexists[name].formula
-        elif name in self.defconuniqs:
-            return self.defconuniqs[name].formula
-        elif name in self.deffunexists:
-            return self.deffunexists[name].formula
-        elif name in self.deffununiqs:
-            return self.deffununiqs[name].formula
+    def get_reference(self, ref: RefFact, token: Token) -> Formula:
+        if isinstance(ref, RefAxiom):
+            return self.axioms[ref.name].conclusion
+        elif isinstance(ref, RefTheorem):
+            return self.theorems[ref.name].conclusion
+        elif isinstance(ref, RefDefConExist):
+            return self.defconexists[ref.name].formula
+        elif isinstance(ref, RefDefConUniq):
+            return self.defconuniqs[ref.name].formula
+        elif isinstance(ref, RefDefFunExist):
+            return self.deffunexists[ref.name].formula
+        elif isinstance(ref, RefDefFunUniq):
+            return self.deffununiqs[ref.name].formula
         else:
-            msg = f"Unexpected name: {name}"
+            msg = f"Unexpected name: {ref}"
             raise ContextError(token, msg)
 
     def copy(self) -> "DeclarationContext":

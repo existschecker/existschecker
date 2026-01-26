@@ -1,5 +1,5 @@
 from lexer import Token
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, RefDefCon, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Control, Formula, Declaration, PredTemplate, Term, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Include, DeclarationSupport, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, FunTemplate, RefPrimPred, RefDefPred, RefDefFun, InvalidDeclaration, InvalidControl, InvalidInclude, DeclarationUnit
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, RefDefCon, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Control, Formula, Declaration, PredTemplate, Term, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Include, DeclarationSupport, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, FunTemplate, RefPrimPred, RefDefPred, RefDefFun, InvalidDeclaration, InvalidControl, InvalidInclude, DeclarationUnit, RefFact
 from logic_utils import Substitutor, DefExpander, ExprFormatter, expr_in_context, strip_forall_vars, strip_exists_vars, make_forall_vars, make_exists_vars, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs, alpha_safe_formula
 from copy import deepcopy
 from lsprotocol import types as lsp
@@ -13,16 +13,14 @@ class CheckError(Exception):
         self.token = token
         self.msg = msg
 
-def goal_in_context(goal: str | Bottom | Formula, context: Context) -> bool:
-    if isinstance(goal, str):
-        return context.decl.has_reference(goal)
-    elif isinstance(goal, AtomicFormula) and context.decl.equality is not None and isinstance(goal.pred, (RefPrimPred, RefDefPred)) and goal.pred == context.decl.equality.equal and goal.args[0] == goal.args[1]:
+def goal_in_context(goal: Bottom | Formula, context: Context) -> bool:
+    if isinstance(goal, AtomicFormula) and context.decl.equality is not None and isinstance(goal.pred, (RefPrimPred, RefDefPred)) and goal.pred == context.decl.equality.equal and goal.args[0] == goal.args[1]:
         return True
     else:
         return expr_in_context(goal, context)
 
-def get_fact(fact: str | Formula, context: Context, token: Token, expand_symbol: bool = False) -> Formula:
-    if isinstance(fact, str):
+def get_fact(fact: RefFact | Formula, context: Context, token: Token, expand_symbol: bool = False) -> Formula:
+    if isinstance(fact, RefFact):
         fact = context.decl.get_reference(fact, token)
     elif not isinstance(fact, Formula):
         raise Exception(f"Unexpected type {type(fact)}")
@@ -428,9 +426,10 @@ class Checker:
 
     def check_divide(self, node: Divide, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
-        if not goal_in_context(node.fact, context):
-            msg = f"Not fact: {ExprFormatter(context).pretty_expr(node.fact)}"
-            raise CheckError(node.token, msg)
+        if isinstance(node.fact, (Bottom, Formula)):
+            if not goal_in_context(node.fact, context):
+                msg = f"Not fact: {ExprFormatter(context).pretty_expr(node.fact)}"
+                raise CheckError(node.token, msg)
         fact = get_fact(node.fact, context, node.token, True)
         connected_premise = Or(node.token, node.cases[0].premise, node.cases[1].premise)
         i = 2
@@ -486,10 +485,11 @@ class Checker:
 
     def check_some(self, node: Some, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
-        if not goal_in_context(node.fact, context):
-            msg = f"not derivable: {ExprFormatter(context).pretty_expr(node.fact)}"
-            raise CheckError(node.token, msg)
-        logger.debug(f"{debug_prefix}derivable: {ExprFormatter(context).pretty_expr(node.fact)}")
+        if isinstance(node.fact, (Bottom, Formula)):
+            if not goal_in_context(node.fact, context):
+                msg = f"not derivable: {ExprFormatter(context).pretty_expr(node.fact)}"
+                raise CheckError(node.token, msg)
+            logger.debug(f"{debug_prefix}derivable: {ExprFormatter(context).pretty_expr(node.fact)}")
         fact = get_fact(node.fact, context, node.token, True)
         if isinstance(fact, Exists):
             vars, body = strip_exists_vars(fact, Exists)
@@ -603,10 +603,11 @@ class Checker:
 
     def check_apply(self, node: Apply, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
-        if not goal_in_context(node.fact, context):
-            msg = f"Cannot derive fact: {ExprFormatter(context).pretty_expr(node.fact)}"
-            raise CheckError(node.token, msg)
-        logger.debug(f"{debug_prefix}Drivable fact: {ExprFormatter(context).pretty_expr(node.fact)}")
+        if isinstance(node.fact, (Bottom, Formula)):
+            if not goal_in_context(node.fact, context):
+                msg = f"Cannot derive fact: {ExprFormatter(context).pretty_expr(node.fact)}"
+                raise CheckError(node.token, msg)
+            logger.debug(f"{debug_prefix}Drivable fact: {ExprFormatter(context).pretty_expr(node.fact)}")
         fact = get_fact(node.fact, context, node.token, True)
         items, body = strip_forall_vars(fact)
         body = make_forall_vars(body, [item for item, term in zip(items, node.terms) if term is None])
@@ -760,10 +761,11 @@ class Checker:
 
     def check_expand(self, node: Expand, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
-        if not goal_in_context(node.fact, context):
-            msg = f"Not fact: {ExprFormatter(context).pretty_expr(node.fact)}"
-            raise CheckError(node.token, msg)
-        logger.debug(f"{debug_prefix}fact: {ExprFormatter(context).pretty_expr(node.fact)}")
+        if isinstance(node.fact, (Bottom, Formula)):
+            if not goal_in_context(node.fact, context):
+                msg = f"Not fact: {ExprFormatter(context).pretty_expr(node.fact)}"
+                raise CheckError(node.token, msg)
+            logger.debug(f"{debug_prefix}fact: {ExprFormatter(context).pretty_expr(node.fact)}")
         fact = get_fact(node.fact, context, node.token)
         conclusion = DefExpander(node.defs, node.indexes).expand_defs_formula(fact, context)
         node.proofinfo.premises = [fact]
@@ -785,10 +787,11 @@ class Checker:
 
     def check_pad(self, node: Pad, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
-        if not goal_in_context(node.fact, context):
-            msg = f"Not derivable: {ExprFormatter(context).pretty_expr(node.fact)}"
-            raise CheckError(node.token, msg)
-        logger.debug(f"{debug_prefix}Derivable: {ExprFormatter(context).pretty_expr(node.fact)}")
+        if isinstance(node.fact, (Bottom, Formula)):
+            if not goal_in_context(node.fact, context):
+                msg = f"Not derivable: {ExprFormatter(context).pretty_expr(node.fact)}"
+                raise CheckError(node.token, msg)
+            logger.debug(f"{debug_prefix}Derivable: {ExprFormatter(context).pretty_expr(node.fact)}")
         fact = get_fact(node.fact, context, node.token)
         fact_parts = flatten_op(fact, Or)
         conclusion_parts = flatten_op(node.conclusion, Or)
@@ -802,9 +805,10 @@ class Checker:
 
     def check_split(self, node: Split, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
-        if not goal_in_context(node.fact, context):
-            msg = f"Not derivable: {ExprFormatter(context).pretty_expr(node.fact)}"
-            raise CheckError(node.token, msg)
+        if isinstance(node.fact, (Bottom, Formula)):
+            if not goal_in_context(node.fact, context):
+                msg = f"Not derivable: {ExprFormatter(context).pretty_expr(node.fact)}"
+                raise CheckError(node.token, msg)
         fact = get_fact(node.fact, context, node.token, True)
         logger.debug(f"{debug_prefix}Derivable: {ExprFormatter(context).pretty_expr(fact)}")
         if isinstance(fact, And):
@@ -877,15 +881,16 @@ class Checker:
 
     def check_substitute(self, node: Substitute, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
-        if not goal_in_context(node.fact, context):
-            msg = f"Not fact: {ExprFormatter(context).pretty_expr(node.fact)}"
-            raise CheckError(node.token, msg)
-        logger.debug(f"{debug_prefix}Fact: {ExprFormatter(context).pretty_expr(node.fact)}")
+        if isinstance(node.fact, (Bottom, Formula)):
+            if not goal_in_context(node.fact, context):
+                msg = f"Not fact: {ExprFormatter(context).pretty_expr(node.fact)}"
+                raise CheckError(node.token, msg)
+            logger.debug(f"{debug_prefix}Fact: {ExprFormatter(context).pretty_expr(node.fact)}")
         fact = get_fact(node.fact, context, node.token)
         if context.decl.equality is None:
             msg = "equality has not been declared yet"
             raise CheckError(node.token, msg)
-        premises_equal: list[str | AtomicFormula] = []
+        premises_equal: list[AtomicFormula] = []
         for k, v in node.env.items():
             if not isinstance(k, VarTerm):
                 raise Exception(f"Unexpected type: {type(k)}")
@@ -931,10 +936,11 @@ class Checker:
 
     def check_assert(self, node: Assert, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
-        if not goal_in_context(node.reference, context):
-            msg = f"Not fact: {ExprFormatter(context).pretty_expr(node.reference)}"
-            raise CheckError(node.token, msg)
-        logger.debug(f"{debug_prefix}Fact: {ExprFormatter(context).pretty_expr(node.reference)}")
+        if isinstance(node.reference, (Bottom, Formula)):
+            if not goal_in_context(node.reference, context):
+                msg = f"Not fact: {ExprFormatter(context).pretty_expr(node.reference)}"
+                raise CheckError(node.token, msg)
+            logger.debug(f"{debug_prefix}Fact: {ExprFormatter(context).pretty_expr(node.reference)}")
         formula = get_fact(node.reference, context, node.token)
         node.proofinfo.premises = []
         node.proofinfo.conclusions = [formula]
