@@ -19,6 +19,15 @@ def goal_in_context(goal: Bottom | Formula, context: Context) -> bool:
     else:
         return expr_in_context(goal, context)
 
+def get_fact(fact: RefFact | Formula, context: Context, token: Token, expand_symbol: bool = False) -> Formula:
+    if isinstance(fact, RefFact):
+        fact = context.decl.get_reference(fact, token)
+    elif not isinstance(fact, Formula):
+        raise Exception(f"Unexpected type {type(fact)}")
+    if expand_symbol and isinstance(fact, AtomicFormula) and isinstance(fact.pred, RefDefPred):
+        fact = DefExpander([fact.pred.name], {fact.pred.name: [1]}).expand_defs_formula(fact, context)
+    return fact
+
 def add_conclusion(context: Context, conclusion: Bottom | Formula) -> None:
     context.ctrl.formulas.append(conclusion)
 
@@ -31,18 +40,6 @@ def make_error_prefix(node: Declaration | DeclarationSupport | Control, indent: 
 class Checker:
     def __init__(self, unit: DeclarationUnit) -> None:
         self.unit = unit
-
-    def get_fact(self, fact: RefFact | Formula, context: Context, token: Token, expand_symbol: bool = False) -> Formula:
-        if isinstance(fact, RefFact):
-            if fact.name not in self.unit.decl_refs:
-                self.unit.decl_refs[fact.name] = []
-            self.unit.decl_refs[fact.name].append(fact.token)
-            fact = context.decl.get_reference(fact, token)
-        elif not isinstance(fact, Formula):
-            raise Exception(f"Unexpected type {type(fact)}")
-        if expand_symbol and isinstance(fact, AtomicFormula) and isinstance(fact.pred, RefDefPred):
-            fact = DefExpander([fact.pred.name], {fact.pred.name: [1]}).expand_defs_formula(fact, context)
-        return fact
 
     def add_lsp_error(self, token: Token, message: str, context: Context):
         uri = uris.from_fs_path(token.file)
@@ -433,7 +430,7 @@ class Checker:
             if not goal_in_context(node.fact, context):
                 msg = f"Not fact: {ExprFormatter(context).pretty_expr(node.fact)}"
                 raise CheckError(node.token, msg)
-        fact = self.get_fact(node.fact, context, node.token, True)
+        fact = get_fact(node.fact, context, node.token, True)
         connected_premise = Or(node.token, node.cases[0].premise, node.cases[1].premise)
         i = 2
         while i < len(node.cases):
@@ -493,7 +490,7 @@ class Checker:
                 msg = f"not derivable: {ExprFormatter(context).pretty_expr(node.fact)}"
                 raise CheckError(node.token, msg)
             logger.debug(f"{debug_prefix}derivable: {ExprFormatter(context).pretty_expr(node.fact)}")
-        fact = self.get_fact(node.fact, context, node.token, True)
+        fact = get_fact(node.fact, context, node.token, True)
         if isinstance(fact, Exists):
             vars, body = strip_exists_vars(fact, Exists)
             body = make_exists_vars(body, Exists, [bound for bound, free in zip(vars, node.items) if free is None])
@@ -611,7 +608,7 @@ class Checker:
                 msg = f"Cannot derive fact: {ExprFormatter(context).pretty_expr(node.fact)}"
                 raise CheckError(node.token, msg)
             logger.debug(f"{debug_prefix}Drivable fact: {ExprFormatter(context).pretty_expr(node.fact)}")
-        fact = self.get_fact(node.fact, context, node.token, True)
+        fact = get_fact(node.fact, context, node.token, True)
         items, body = strip_forall_vars(fact)
         body = make_forall_vars(body, [item for item, term in zip(items, node.terms) if term is None])
         mapping: dict[Term, Term] = {}
@@ -769,7 +766,7 @@ class Checker:
                 msg = f"Not fact: {ExprFormatter(context).pretty_expr(node.fact)}"
                 raise CheckError(node.token, msg)
             logger.debug(f"{debug_prefix}fact: {ExprFormatter(context).pretty_expr(node.fact)}")
-        fact = self.get_fact(node.fact, context, node.token)
+        fact = get_fact(node.fact, context, node.token)
         conclusion = DefExpander(node.defs, node.indexes).expand_defs_formula(fact, context)
         node.proofinfo.premises = [fact]
         node.proofinfo.conclusions = [conclusion]
@@ -795,7 +792,7 @@ class Checker:
                 msg = f"Not derivable: {ExprFormatter(context).pretty_expr(node.fact)}"
                 raise CheckError(node.token, msg)
             logger.debug(f"{debug_prefix}Derivable: {ExprFormatter(context).pretty_expr(node.fact)}")
-        fact = self.get_fact(node.fact, context, node.token)
+        fact = get_fact(node.fact, context, node.token)
         fact_parts = flatten_op(fact, Or)
         conclusion_parts = flatten_op(node.conclusion, Or)
         if not all(any(alpha_equiv_with_defs(c, f, context) for c in conclusion_parts) for f in fact_parts):
@@ -812,7 +809,7 @@ class Checker:
             if not goal_in_context(node.fact, context):
                 msg = f"Not derivable: {ExprFormatter(context).pretty_expr(node.fact)}"
                 raise CheckError(node.token, msg)
-        fact = self.get_fact(node.fact, context, node.token, True)
+        fact = get_fact(node.fact, context, node.token, True)
         logger.debug(f"{debug_prefix}Derivable: {ExprFormatter(context).pretty_expr(fact)}")
         if isinstance(fact, And):
             logger.debug(f"{debug_prefix}And object: {ExprFormatter(context).pretty_expr(fact)}")
@@ -889,7 +886,7 @@ class Checker:
                 msg = f"Not fact: {ExprFormatter(context).pretty_expr(node.fact)}"
                 raise CheckError(node.token, msg)
             logger.debug(f"{debug_prefix}Fact: {ExprFormatter(context).pretty_expr(node.fact)}")
-        fact = self.get_fact(node.fact, context, node.token)
+        fact = get_fact(node.fact, context, node.token)
         if context.decl.equality is None:
             msg = "equality has not been declared yet"
             raise CheckError(node.token, msg)
@@ -944,7 +941,7 @@ class Checker:
                 msg = f"Not fact: {ExprFormatter(context).pretty_expr(node.reference)}"
                 raise CheckError(node.token, msg)
             logger.debug(f"{debug_prefix}Fact: {ExprFormatter(context).pretty_expr(node.reference)}")
-        formula = self.get_fact(node.reference, context, node.token)
+        formula = get_fact(node.reference, context, node.token)
         node.proofinfo.premises = []
         node.proofinfo.conclusions = [formula]
         add_conclusion(context, formula)

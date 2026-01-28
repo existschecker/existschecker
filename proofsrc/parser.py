@@ -676,24 +676,25 @@ class Parser:
         token = self.stream.peek()
         if token.type == "IDENT":
             name = token.value
+            ref = None
             if name in context.decl.axioms:
-                self.stream.consume(token.type)
-                return RefAxiom(name, token)
+                ref = RefAxiom
             elif name in context.decl.theorems:
-                self.stream.consume(token.type)
-                return RefTheorem(name, token)
+                ref = RefTheorem
             elif name in context.decl.defconexists:
-                self.stream.consume(token.type)
-                return RefDefConExist(name, token)
+                ref = RefDefConExist
             elif name in context.decl.defconuniqs:
-                self.stream.consume(token.type)
-                return RefDefConUniq(name, token)
+                ref = RefDefConUniq
             elif name in context.decl.deffunexists:
-                self.stream.consume(token.type)
-                return RefDefFunExist(name, token)
+                ref = RefDefFunExist
             elif name in context.decl.deffununiqs:
+                ref = RefDefFunUniq
+            if ref is not None:
+                if name not in self.unit.decl_refs:
+                    self.unit.decl_refs[name] = []
+                self.unit.decl_refs[name].append(token)
                 self.stream.consume(token.type)
-                return RefDefFunUniq(name, token)
+                return ref(name, token)
         return self.parse_formula(context)
 
     def parse_bot_or_formula(self, context: Context) -> Bottom | Formula:
