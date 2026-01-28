@@ -36,6 +36,11 @@ class Parser:
         )
         self.unit.diagnostics.append(diag)
 
+    def add_decl_ref(self, name: str, token: Token) -> None:
+        if name not in self.unit.decl_refs:
+            self.unit.decl_refs[name] = []
+        self.unit.decl_refs[name].append(token)
+
     def skip_until_next_RBRACE_or_control(self):
         nest_level = 0
         while True:
@@ -272,6 +277,7 @@ class Parser:
         tok = self.stream.consume("IDENT")
         name = tok.value
         if name in context.decl.primpreds:
+            self.add_decl_ref(name, tok)
             equal = RefPrimPred(tok, name)
             if context.decl.primpreds[name].arity != 2:
                 msg = f"arity is required to be 2, but arity of {name} is {context.decl.primpreds[name].arity}"
@@ -332,6 +338,7 @@ class Parser:
         tok = self.stream.consume("IDENT")
         name = tok.value
         if name in context.decl.primpreds:
+            self.add_decl_ref(name, tok)
             membership = RefPrimPred(tok, name)
             if context.decl.primpreds[name].arity != 2:
                 msg = f"arity is required to be 2, but arity of {name} is {context.decl.primpreds[name].arity}"
@@ -690,9 +697,7 @@ class Parser:
             elif name in context.decl.deffununiqs:
                 ref = RefDefFunUniq
             if ref is not None:
-                if name not in self.unit.decl_refs:
-                    self.unit.decl_refs[name] = []
-                self.unit.decl_refs[name].append(token)
+                self.add_decl_ref(name, token)
                 self.stream.consume(token.type)
                 return ref(name, token)
         return self.parse_formula(context)
@@ -742,6 +747,7 @@ class Parser:
                 pred = next(pred_tmpl for pred_tmpl in context.ctrl.pred_tmpls if pred_tmpl.name == name)
                 defargs: list[Var | PredTemplate | FunTemplate] = [Var(tok, f"x_{i}") for i in range(pred.arity)]
             elif name in context.decl.primpreds:
+                self.add_decl_ref(name, tok)
                 pred = RefPrimPred(tok, name)
                 defargs: list[Var | PredTemplate | FunTemplate] = [Var(tok, f"x_{i}") for i in range(context.decl.primpreds[name].arity)]
             elif name in context.decl.defpreds:
@@ -918,6 +924,7 @@ class Parser:
                 else:
                     return fun
             elif name in context.decl.primpreds:
+                self.add_decl_ref(name, tok)
                 return RefPrimPred(tok, name)
             elif name in context.decl.defpreds:
                 return RefDefPred(tok, name)
