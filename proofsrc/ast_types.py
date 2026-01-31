@@ -566,6 +566,30 @@ class DeclarationUnit:
     context: Context = field(default_factory=Context.init)
     diagnostics: list[lsp.Diagnostic] = field(default_factory=list[lsp.Diagnostic])
     decl_refs: dict[str, list[Token]] = field(default_factory=dict[str, list[Token]])
+    ctrl_defs: dict[int, int] = field(default_factory=dict[int, int])
+    ctrl_refs: dict[int, list[int]] = field(default_factory=dict[int, list[int]])
+
+    def get_ctrl_def(self, ref_token: Token) -> Token | None:
+        ref_node = self.token_to_node[ref_token.index]
+        if id(ref_node) not in self.ctrl_defs:
+            return None
+        def_node_id = self.ctrl_defs[id(ref_node)]
+        def_token_index = self.node_to_token[def_node_id][0]
+        def_token = self.tokens[def_token_index]
+        return def_token
+
+    def get_ctrl_refs(self, ref_token: Token) -> list[Token]:
+        ref_node = self.token_to_node[ref_token.index]
+        if id(ref_node) not in self.ctrl_defs:
+            return []
+        def_node_id = self.ctrl_defs[id(ref_node)]
+        ref_node_ids = self.ctrl_refs[def_node_id]
+        ref_tokens: list[Token] = []
+        for ref_node_id in ref_node_ids:
+            ref_token_index = self.node_to_token[ref_node_id][0]
+            ref_token = self.tokens[ref_token_index]
+            ref_tokens.append(ref_token)
+        return ref_tokens
 
 class Workspace:
     def __init__(self, resolved_files: list[str], file_units: dict[str, list[DeclarationUnit]]):

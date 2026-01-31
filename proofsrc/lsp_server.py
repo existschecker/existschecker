@@ -87,6 +87,26 @@ local_conclusions: {local_conclusions}
     else:
         return node.__class__.__name__
 
+def token_to_location(token: Token) -> lsp.Location | None:
+    uri = uris.from_fs_path(token.file)
+    if uri is None:
+        return None
+    return lsp.Location(
+        uri=uri,
+        range=lsp.Range(
+            start=lsp.Position(line=token.line - 1, character=token.column - 1),
+            end=lsp.Position(line=token.line - 1, character=token.column - 1 + len(token.value))
+        )
+    )
+
+def tokens_to_locations(tokens: list[Token]) -> list[lsp.Location]:
+    locations: list[lsp.Location] = []
+    for token in tokens:
+        location = token_to_location(token)
+        if location is not None:
+            locations.append(location)
+    return locations
+
 class ProofLanguageServer(LanguageServer):
     def __init__(self):
         super().__init__("proof-server", "v0.1") # type: ignore[reportUnknownMemberType]
@@ -209,50 +229,35 @@ class ProofLanguageServer(LanguageServer):
         unit = self.get_unit_at(params.text_document.uri, params.position)
         if unit is None:
             return None
-        token = self.find_token_at(unit, params.position)
-        if token is None:
+        ref_token = self.find_token_at(unit, params.position)
+        if ref_token is None:
             return None
-        name = token.value
+        ctrl_def_token = unit.get_ctrl_def(ref_token)
+        if ctrl_def_token is not None:
+            return token_to_location(ctrl_def_token)
+        ref_name = ref_token.value
         if self.old_workspace is None:
             return None
-        token = self.old_workspace.get_decl_def(name)
-        if token is None:
+        decl_def_token = self.old_workspace.get_decl_def(ref_name)
+        if decl_def_token is None:
             return None
-        uri = uris.from_fs_path(token.file)
-        if uri is None:
-            return None
-        return lsp.Location(
-            uri=uri,
-            range=lsp.Range(
-                start=lsp.Position(line=token.line - 1, character=token.column - 1),
-                end=lsp.Position(line=token.line - 1, character=token.column - 1 + len(token.value))
-            )
-        )
+        return token_to_location(decl_def_token)
 
     def get_references(self, params: lsp.ReferenceParams) -> list[lsp.Location]:
         unit = self.get_unit_at(params.text_document.uri, params.position)
         if unit is None:
             return []
-        token = self.find_token_at(unit, params.position)
-        if token is None:
+        ref_token = self.find_token_at(unit, params.position)
+        if ref_token is None:
             return []
-        name = token.value
+        ctrl_ref_tokens = unit.get_ctrl_refs(ref_token)
+        if len(ctrl_ref_tokens) > 0:
+            return tokens_to_locations(ctrl_ref_tokens)
+        ref_name = ref_token.value
         if self.old_workspace is None:
             return []
-        all_decl_refs = self.old_workspace.get_all_decl_refs(name)
-        locations: list[lsp.Location] = []
-        for token in all_decl_refs:
-            uri = uris.from_fs_path(token.file)
-            if uri is None:
-                return []
-            locations.append(lsp.Location(
-                uri=uri,
-                range=lsp.Range(
-                    start=lsp.Position(line=token.line - 1, character=token.column - 1),
-                    end=lsp.Position(line=token.line - 1, character=token.column - 1 + len(token.value))
-                )
-            ))
-        return locations
+        decl_ref_tokens = self.old_workspace.get_all_decl_refs(ref_name)
+        return tokens_to_locations(decl_ref_tokens)
 
     def get_completion(self) -> list[lsp.CompletionItem]:
         items: list[lsp.CompletionItem] = []

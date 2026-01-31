@@ -45,6 +45,12 @@ class Parser:
             self.unit.decl_refs[name] = []
         self.unit.decl_refs[name].append(token)
 
+    def add_ctrl_defs_refs(self, def_node: Term, ref_node: Term) -> None:
+        self.unit.ctrl_defs[id(ref_node)] = id(def_node)
+        if id(def_node) not in self.unit.ctrl_refs:
+            self.unit.ctrl_refs[id(def_node)] = []
+        self.unit.ctrl_refs[id(def_node)].append(id(ref_node))
+
     def skip_until_next_RBRACE_or_control(self):
         nest_level = 0
         while True:
@@ -983,11 +989,19 @@ class Parser:
         if tok.type == "IDENT":
             name = self.stream.consume("IDENT").value
             if any(var.name == name for var in context.form.vars):
-                return next(var for var in context.form.vars if var.name == name)
+                def_var = next(var for var in context.form.vars if var.name == name)
+                ref_var = Var(name)
+                self.add_node_to_token(ref_var, tok, tok)
+                self.add_ctrl_defs_refs(def_var, ref_var)
+                return ref_var
             elif any(pred_tmpl.name == name for pred_tmpl in context.form.pred_tmpls):
                 return next(pred_tmpl for pred_tmpl in context.form.pred_tmpls if pred_tmpl.name == name)
             elif any(var.name == name for var in context.ctrl.vars):
-                return next((var for var in context.ctrl.vars if var.name == name))
+                def_var = next((var for var in context.ctrl.vars if var.name == name))
+                ref_var = Var(name)
+                self.add_node_to_token(ref_var, tok, tok)
+                self.add_ctrl_defs_refs(def_var, ref_var)
+                return ref_var
             elif any(pred_tmpl.name == name for pred_tmpl in context.ctrl.pred_tmpls):
                 return next((pred_tmpl for pred_tmpl in context.ctrl.pred_tmpls if pred_tmpl.name == name))
             elif name in context.decl.defcons:
@@ -1148,6 +1162,7 @@ class Parser:
         var_name = tok.value
         var = Var(var_name)
         self.add_node_to_token(var, tok, tok)
+        self.add_ctrl_defs_refs(var, var)
         return var
 
     def parse_pred_tmpl(self) -> PredTemplate:
