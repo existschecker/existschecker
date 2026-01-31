@@ -5,7 +5,7 @@ import os
 
 from dependency import DependencyResolver
 from lexer import KEYWORDS, STRINGS, Token
-from ast_types import Context, DeclarationUnit, Workspace, Declaration, PrimPred, Axiom, Theorem, DefPred, DefConExist, DefConUniq, DefCon, DefFunExist, DefFunUniq, DefFun, DefFunTerm, Include, DeclarationSupport, Control, Formula, Term, RefFact, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq, VarTerm, RefDefCon, PredTerm, RefPrimPred, RefDefPred, FunTerm, RefDefFun, RefDefFunTerm
+from ast_types import Context, DeclarationUnit, Workspace, Declaration, Include, DeclarationSupport, Control, Formula, Term, RefFact, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq, VarTerm, RefDefCon, PredTerm, RefPrimPred, RefDefPred, FunTerm, RefDefFun, RefDefFunTerm
 from parser import Parser
 from checker import Checker
 from splitter import split
@@ -213,22 +213,21 @@ class ProofLanguageServer(LanguageServer):
         if token is None:
             return None
         name = token.value
-        if server.old_workspace is None:
+        if self.old_workspace is None:
             return None
-        for unit in server.old_workspace.get_all_units():
-            if isinstance(unit.ast, PrimPred | Axiom | Theorem | DefPred | DefConExist | DefConUniq | DefCon | DefFunExist | DefFunUniq | DefFun | DefFunTerm) and unit.ast.name == name:
-                token = unit.tokens[unit.node_to_token[id(unit.ast.ref)][0]]
-                uri = uris.from_fs_path(token.file)
-                if uri is None:
-                    return None
-                return lsp.Location(
-                    uri=uri,
-                    range=lsp.Range(
-                        start=lsp.Position(line=token.line - 1, character=token.column - 1),
-                        end=lsp.Position(line=token.line - 1, character=token.column - 1 + len(token.value))
-                    )
-                )
-        return None
+        token = self.old_workspace.get_decl_def(name)
+        if token is None:
+            return None
+        uri = uris.from_fs_path(token.file)
+        if uri is None:
+            return None
+        return lsp.Location(
+            uri=uri,
+            range=lsp.Range(
+                start=lsp.Position(line=token.line - 1, character=token.column - 1),
+                end=lsp.Position(line=token.line - 1, character=token.column - 1 + len(token.value))
+            )
+        )
 
     def get_references(self, params: lsp.ReferenceParams) -> list[lsp.Location]:
         unit = self.get_unit_at(params.text_document.uri, params.position)
