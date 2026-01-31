@@ -5,11 +5,39 @@ import os
 
 from dependency import DependencyResolver
 from lexer import KEYWORDS, STRINGS, Token
-from ast_types import Context, DeclarationUnit, Workspace, Declaration, PrimPred, Axiom, Theorem, DefPred, DefConExist, DefConUniq, DefCon, DefFunExist, DefFunUniq, DefFun, DefFunTerm
+from ast_types import Context, DeclarationUnit, Workspace, Declaration, PrimPred, Axiom, Theorem, DefPred, DefConExist, DefConUniq, DefCon, DefFunExist, DefFunUniq, DefFun, DefFunTerm, Include, DeclarationSupport, Control, Formula, Term, RefFact
 from parser import Parser
 from checker import Checker
 from splitter import split
 from to_html import to_html
+from logic_utils import ExprFormatter
+
+def get_hover(node: Include | Declaration | DeclarationSupport | Control | Formula | Term | RefFact, context: Context) -> str:
+    if isinstance(node, Declaration):
+        return f"{node.__class__.__name__}: {node.proofinfo.status}"
+    if isinstance(node, Control):
+        formatter = ExprFormatter(context)
+        context_vars = ", ".join(formatter.pretty_expr(context_var) for context_var in node.proofinfo.ctrl_ctx.vars)
+        context_pred_tmpls = ", ".join(formatter.pretty_expr(context_pred_tmpl) for context_pred_tmpl in node.proofinfo.ctrl_ctx.pred_tmpls)
+        context_fun_tmpls = ", ".join(formatter.pretty_expr(context_fun_tmpl) for context_fun_tmpl in node.proofinfo.ctrl_ctx.fun_tmpls)
+        premises = ", ".join(formatter.pretty_expr(premise) for premise in node.proofinfo.premises)
+        conclusions = ", ".join(ExprFormatter(context).pretty_expr(conclusion) for conclusion in node.proofinfo.conclusions)
+        local_vars = ", ".join(formatter.pretty_expr(var) for var in node.proofinfo.local_vars)
+        local_premises = ", ".join(formatter.pretty_expr(local_premise) for local_premise in node.proofinfo.local_premise)
+        local_conclusions = ", ".join(formatter.pretty_expr(local_conclusion) for local_conclusion in node.proofinfo.local_conclusion)
+        return f"""{node.__class__.__name__}: {node.proofinfo.status}
+```proof
+context_vars: {context_vars}
+context_pred_tmpls: {context_pred_tmpls}
+context_fun_tmpls: {context_fun_tmpls}
+premises: {premises}
+conclusions: {conclusions}
+local_vars: {local_vars}
+local_premises: {local_premises}
+local_conclusions: {local_conclusions}
+```"""
+    else:
+        return node.__class__.__name__
 
 class ProofLanguageServer(LanguageServer):
     def __init__(self):
@@ -269,7 +297,7 @@ class ProofLanguageServer(LanguageServer):
         return lsp.Hover(
             contents=lsp.MarkupContent(
                 kind=lsp.MarkupKind.Markdown,
-                value=node.__class__.__name__
+                value=get_hover(node, unit.context)
             )
         )
 
