@@ -2,7 +2,6 @@ from pygls.lsp.server import LanguageServer
 from pygls import uris
 from lsprotocol import types as lsp
 import os
-import re
 
 from dependency import DependencyResolver
 from lexer import KEYWORDS, STRINGS, Token
@@ -131,19 +130,14 @@ class ProofLanguageServer(LanguageServer):
 
         self.updated_files.clear()
 
-    @staticmethod
-    def get_word_at_position(line: str, character: int) -> str | None:
-        word_re = re.compile(r"(\\[A-Za-z][A-Za-z0-9_]*)|([A-Za-z_][A-Za-z0-9_]*'*)")
-        for match in word_re.finditer(line):
-            if match.start() <= character <= match.end():
-                return match.group()
-        return None
-
     def get_definition(self, params: lsp.DefinitionParams) -> lsp.Location | None:
-        line = self.workspace.get_text_document(params.text_document.uri).lines[params.position.line]
-        name = self.get_word_at_position(line, params.position.character)
-        if name is None:
+        unit = self.get_unit_at(params.text_document.uri, params.position)
+        if unit is None:
             return None
+        token = self.find_token_at(unit, params.position)
+        if token is None:
+            return None
+        name = token.value
         if server.old_workspace is None:
             return None
         for unit in server.old_workspace.get_all_units():
@@ -162,10 +156,13 @@ class ProofLanguageServer(LanguageServer):
         return None
 
     def get_references(self, params: lsp.ReferenceParams) -> list[lsp.Location]:
-        line = self.workspace.get_text_document(params.text_document.uri).lines[params.position.line]
-        name = self.get_word_at_position(line, params.position.character)
-        if name is None:
+        unit = self.get_unit_at(params.text_document.uri, params.position)
+        if unit is None:
             return []
+        token = self.find_token_at(unit, params.position)
+        if token is None:
+            return []
+        name = token.value
         if self.old_workspace is None:
             return []
         all_decl_refs = self.old_workspace.get_all_decl_refs(name)
@@ -257,11 +254,8 @@ class ProofLanguageServer(LanguageServer):
         token = self.find_token_at(unit, params.position)
         if token is None:
             return None
+        name = token.value
         node = unit.token_to_node[token.index]
-        line = self.workspace.get_text_document(params.text_document.uri).lines[params.position.line]
-        name = self.get_word_at_position(line, params.position.character)
-        if name is None:
-            return None
         if self.old_workspace is None:
             return None
         for unit in self.old_workspace.get_all_units():
