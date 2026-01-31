@@ -5,7 +5,7 @@ import os
 
 from dependency import DependencyResolver
 from lexer import KEYWORDS, STRINGS, Token
-from ast_types import Context, DeclarationUnit, Workspace, Declaration, PrimPred, Axiom, Theorem, DefPred, DefConExist, DefConUniq, DefCon, DefFunExist, DefFunUniq, DefFun, DefFunTerm, Include, DeclarationSupport, Control, Formula, Term, RefFact
+from ast_types import Context, DeclarationUnit, Workspace, Declaration, PrimPred, Axiom, Theorem, DefPred, DefConExist, DefConUniq, DefCon, DefFunExist, DefFunUniq, DefFun, DefFunTerm, Include, DeclarationSupport, Control, Formula, Term, RefFact, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq, VarTerm, RefDefCon, PredTerm, RefPrimPred, RefDefPred, FunTerm, RefDefFun, RefDefFunTerm
 from parser import Parser
 from checker import Checker
 from splitter import split
@@ -15,7 +15,7 @@ from logic_utils import ExprFormatter
 def get_hover(node: Include | Declaration | DeclarationSupport | Control | Formula | Term | RefFact, context: Context) -> str:
     if isinstance(node, Declaration):
         return f"{node.__class__.__name__}: {node.proofinfo.status}"
-    if isinstance(node, Control):
+    elif isinstance(node, Control):
         formatter = ExprFormatter(context)
         context_vars = ", ".join(formatter.pretty_expr(context_var) for context_var in node.proofinfo.ctrl_ctx.vars)
         context_pred_tmpls = ", ".join(formatter.pretty_expr(context_pred_tmpl) for context_pred_tmpl in node.proofinfo.ctrl_ctx.pred_tmpls)
@@ -36,6 +36,54 @@ local_vars: {local_vars}
 local_premises: {local_premises}
 local_conclusions: {local_conclusions}
 ```"""
+    elif isinstance(node, Term):
+        if isinstance(node, VarTerm):
+            if isinstance(node, RefDefCon):
+                defcon = context.decl.defcons[node.name]
+                return f"{node.__class__.__name__}\n```proof\ndefinition constant {defcon.name} by {defcon.theorem}\n```"
+            else:
+                return node.__class__.__name__
+        elif isinstance(node, PredTerm):
+            if isinstance(node, RefPrimPred):
+                primpred = context.decl.primpreds[node.name]
+                return f"{node.__class__.__name__}\n```proof\nprimitive predicate {primpred.name} arity {primpred.arity}\n```"
+            elif isinstance(node, RefDefPred):
+                defpred = context.decl.defpreds[node.name]
+                return f"{node.__class__.__name__}\n```proof\ndefinition predicate {defpred.name}({", ".join(ExprFormatter(context).pretty_expr(arg) for arg in defpred.args)}) as {ExprFormatter(context).pretty_expr(defpred.formula)}\n```"
+            else:
+                return node.__class__.__name__
+        elif isinstance(node, FunTerm):
+            if isinstance(node, RefDefFun):
+                deffun = context.decl.deffuns[node.name]
+                return f"{node.__class__.__name__}\n```proof\ndefinition function {deffun.name} by {deffun.theorem}\n```"
+            elif isinstance(node, RefDefFunTerm):
+                deffunterm = context.decl.deffunterms[node.name]
+                return f"{node.__class__.__name__}\n```proof\ndefinition function {deffunterm.name}({", ".join(ExprFormatter(context).pretty_expr(arg) for arg in deffunterm.args)}) as {ExprFormatter(context).pretty_expr(deffunterm.varterm)}"
+            else:
+                return node.__class__.__name__
+        else:
+            return f"{node.__class__.__name__}: Unknown"
+    elif isinstance(node, RefFact):
+        if isinstance(node, RefAxiom):
+            axiom = context.decl.axioms[node.name]
+            return f"{node.__class__.__name__}\n```proof\naxiom {axiom.name} {ExprFormatter(context).pretty_expr(axiom.conclusion)}\n```"
+        elif isinstance(node, RefTheorem):
+            theorem = context.decl.theorems[node.name]
+            return f"{node.__class__.__name__}\n```proof\ntheorem {theorem.name} {ExprFormatter(context).pretty_expr(theorem.conclusion)}\n```"
+        elif isinstance(node, RefDefConExist):
+            defconexist = context.decl.defconexists[node.name]
+            return f"{node.__class__.__name__}\n```proof\nexistence {defconexist.name} {ExprFormatter(context).pretty_expr(defconexist.formula)} by {defconexist.con_name}\n```"
+        elif isinstance(node, RefDefConUniq):
+            defconuniq = context.decl.defconuniqs[node.name]
+            return f"{node.__class__.__name__}\n```proof\nuniqueness {defconuniq.name} {ExprFormatter(context).pretty_expr(defconuniq.formula)} by {defconuniq.con_name}\n```"
+        elif isinstance(node, RefDefFunExist):
+            deffunexist = context.decl.deffunexists[node.name]
+            return f"{node.__class__.__name__}\n```proof\nexistence {deffunexist.name} {ExprFormatter(context).pretty_expr(deffunexist.formula)} by {deffunexist.fun_name}"
+        elif isinstance(node, RefDefFunUniq):
+            deffununiq = context.decl.deffununiqs[node.name]
+            return f"{node.__class__.__name__}\n```proof\nuniqueness {deffununiq.name} {ExprFormatter(context).pretty_expr(deffununiq.formula)} by {deffununiq.fun_name}"
+        else:
+            return f"{node.__class__.__name__}: Unknown"
     else:
         return node.__class__.__name__
 
@@ -83,7 +131,6 @@ class ProofLanguageServer(LanguageServer):
                 all_units[i].ast = old_all_units[i].ast
                 all_units[i].context = old_all_units[i].context
                 all_units[i].diagnostics = old_all_units[i].diagnostics
-                all_units[i].hover = old_all_units[i].hover
                 all_units[i].decl_refs = old_all_units[i].decl_refs
                 context = all_units[i].context
                 start_index = i + 1
@@ -282,18 +329,7 @@ class ProofLanguageServer(LanguageServer):
         token = self.find_token_at(unit, params.position)
         if token is None:
             return None
-        name = token.value
         node = unit.token_to_node[token.index]
-        if self.old_workspace is None:
-            return None
-        for unit in self.old_workspace.get_all_units():
-            if isinstance(unit.ast, Declaration) and unit.ast.name == name and isinstance(unit.hover, str):
-                return lsp.Hover(
-                    contents=lsp.MarkupContent(
-                        kind=lsp.MarkupKind.Markdown,
-                        value=f"{node.__class__.__name__}\n{unit.hover}"
-                    )
-                )
         return lsp.Hover(
             contents=lsp.MarkupContent(
                 kind=lsp.MarkupKind.Markdown,

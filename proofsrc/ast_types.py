@@ -565,7 +565,6 @@ class DeclarationUnit:
     token_to_node: dict[int, Include | Declaration | DeclarationSupport | Control | Formula | Term | RefFact] = field(default_factory=dict[int, Include | Declaration | DeclarationSupport | Control | Formula | Term | RefFact])
     context: Context = field(default_factory=Context.init)
     diagnostics: list[lsp.Diagnostic] = field(default_factory=list[lsp.Diagnostic])
-    hover: str | None = None
     decl_refs: dict[str, list[Token]] = field(default_factory=dict[str, list[Token]])
 
 class Workspace:
