@@ -16,7 +16,9 @@ def split(resolved_files: list[str], tokens_cache: dict[str, list[Token]], sourc
             stream.consume(start_token.type)
             tokens = [start_token] + get_tokens_until_next(stream)
             last_token = tokens[-1]
-            tokens.append(Token("EOF", "", last_token.file, last_token.pos + len(last_token.value), last_token.line, last_token.column + len(last_token.value), last_token.line, last_token.column + len(last_token.value), tokens[-1].index + 1))
+            tokens.append(Token("EOF", "", last_token.file, last_token.pos + len(last_token.value), last_token.line, last_token.column + len(last_token.value), last_token.line, last_token.column + len(last_token.value)))
+            for index, token in enumerate(tokens):
+                token.index = index
             start = tokens[0].pos
             end = tokens[-1].pos
             raw_text = source_cache[file][start:end]

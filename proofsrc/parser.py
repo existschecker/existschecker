@@ -37,7 +37,7 @@ class Parser:
         self.unit.diagnostics.append(diag)
 
     def add_node_to_token(self, node: Declaration | DeclarationSupport | Control | Formula | Term | RefFact, start_token: Token, end_token: Token):
-        self.unit.node_to_token[id(node)] = (start_token, end_token)
+        self.unit.node_to_token[id(node)] = (start_token.index, end_token.index)
         self.unit.nodes.append(node)
 
     def add_decl_ref(self, name: str, token: Token) -> None:
@@ -811,7 +811,7 @@ class Parser:
 
     def parse_implies(self, context: Context) -> Formula:
         left = self.parse_and(context.copy_form())
-        start_token = self.unit.node_to_token[id(left)][0]
+        start_token = self.unit.tokens[self.unit.node_to_token[id(left)][0]]
         while self.stream.peek().type in ("IMPLIES", "IFF"):
             tok = self.stream.peek()
             self.stream.consume(tok.type)
@@ -826,7 +826,7 @@ class Parser:
 
     def parse_and(self, context: Context) -> Formula:
         left = self.parse_primary(context.copy_form())
-        start_token = self.unit.node_to_token[id(left)][0]
+        start_token = self.unit.tokens[self.unit.node_to_token[id(left)][0]]
         while self.stream.peek().type in ("AND", "OR"):
             tok = self.stream.peek()
             self.stream.consume(tok.type)
@@ -976,7 +976,7 @@ class Parser:
             return term
         else:
             msg = f"Expected VarTerm, got {type(term)}"
-            raise ParseError(self.unit.node_to_token[id(term)][0], msg)
+            raise ParseError(self.unit.tokens[self.unit.node_to_token[id(term)][0]], msg)
 
     def parse_term(self, context: Context) -> Term:
         tok = self.stream.peek()
@@ -1192,7 +1192,8 @@ class Parser:
                             raise ParseError(tok, msg)
                         else:
                             term = MembershipLambda(subarg)
-                            start_token, end_token = self.unit.node_to_token[id(subarg)]
+                            start_token = self.unit.tokens[self.unit.node_to_token[id(subarg)][0]]
+                            end_token = self.unit.tokens[self.unit.node_to_token[id(subarg)][1]]
                             self.add_node_to_token(term, start_token, end_token)
                             resolved_args.append(term)
                     else:

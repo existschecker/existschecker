@@ -148,7 +148,7 @@ class ProofLanguageServer(LanguageServer):
             return None
         for unit in server.old_workspace.get_all_units():
             if isinstance(unit.ast, PrimPred | Axiom | Theorem | DefPred | DefConExist | DefConUniq | DefCon | DefFunExist | DefFunUniq | DefFun | DefFunTerm) and unit.ast.name == name:
-                token = unit.node_to_token[id(unit.ast.ref)][0]
+                token = unit.tokens[unit.node_to_token[id(unit.ast.ref)][0]]
                 uri = uris.from_fs_path(token.file)
                 if uri is None:
                     return None
@@ -257,7 +257,7 @@ class ProofLanguageServer(LanguageServer):
         token = self.find_token_at(unit, params.position)
         if token is None:
             return None
-        node = unit.token_to_node[token]
+        node = unit.token_to_node[token.index]
         line = self.workspace.get_text_document(params.text_document.uri).lines[params.position.line]
         name = self.get_word_at_position(line, params.position.character)
         if name is None:
