@@ -38,6 +38,7 @@ class Parser:
 
     def add_node_to_token(self, node: Declaration | DeclarationSupport | Control | Formula | Term | RefFact, start_token: Token, end_token: Token):
         self.unit.node_to_token[id(node)] = (start_token, end_token)
+        self.unit.nodes.append(node)
 
     def add_decl_ref(self, name: str, token: Token) -> None:
         if name not in self.unit.decl_refs:

@@ -5,7 +5,7 @@ import os
 import re
 
 from dependency import DependencyResolver
-from lexer import KEYWORDS, STRINGS
+from lexer import KEYWORDS, STRINGS, Token
 from ast_types import Context, DeclarationUnit, Workspace, Declaration, PrimPred, Axiom, Theorem, DefPred, DefConExist, DefConUniq, DefCon, DefFunExist, DefFunUniq, DefFun, DefFunTerm
 from parser import Parser
 from checker import Checker
@@ -70,6 +70,8 @@ class ProofLanguageServer(LanguageServer):
             if Checker(unit).check_unit(working_context):
                 context = working_context
             unit.context = context.copy()
+
+        workspace.build_token_to_node()
 
         self.old_workspace = workspace
 
@@ -208,7 +210,54 @@ class ProofLanguageServer(LanguageServer):
                     )
         return items
 
+    @staticmethod
+    def find_token_at(unit: DeclarationUnit, pos: lsp.Position) -> Token | None:
+        target_line = pos.line + 1
+        target_column = pos.character + 1
+        for token in unit.tokens:
+            if target_line < token.line or target_line > token.end_line:
+                continue
+            if target_line == token.line and target_column < token.column:
+                continue
+            if target_line == token.end_line and target_column > token.end_column:
+                continue
+            return token
+        return None
+
+    @staticmethod
+    def is_in_range(pos: lsp.Position, unit: DeclarationUnit) -> bool:
+        target_line = pos.line + 1
+        target_column = pos.character + 1
+        start_token = unit.tokens[0]
+        end_token = unit.tokens[-1]
+        if target_line < start_token.line or target_line > end_token.line:
+            return False
+        if target_line == start_token.line and target_column < start_token.column:
+            return False
+        if target_line == end_token.end_line and target_column > end_token.end_column:
+            return False
+        return True
+
+    def get_unit_at(self, uri: str, position: lsp.Position) -> DeclarationUnit | None:
+        path = uris.to_fs_path(uri)
+        if path is None:
+            return None
+        if self.old_workspace is None:
+            return None
+        units = self.old_workspace.file_units.get(path, [])
+        for unit in units:
+            if self.is_in_range(position, unit):
+                return unit
+        return None
+
     def hovers(self, params: lsp.HoverParams) -> lsp.Hover | None:
+        unit = self.get_unit_at(params.text_document.uri, params.position)
+        if unit is None:
+            return None
+        token = self.find_token_at(unit, params.position)
+        if token is None:
+            return None
+        node = unit.token_to_node[token]
         line = self.workspace.get_text_document(params.text_document.uri).lines[params.position.line]
         name = self.get_word_at_position(line, params.position.character)
         if name is None:
@@ -220,10 +269,15 @@ class ProofLanguageServer(LanguageServer):
                 return lsp.Hover(
                     contents=lsp.MarkupContent(
                         kind=lsp.MarkupKind.Markdown,
-                        value=unit.hover
+                        value=f"{node.__class__.__name__}\n{unit.hover}"
                     )
                 )
-        return None
+        return lsp.Hover(
+            contents=lsp.MarkupContent(
+                kind=lsp.MarkupKind.Markdown,
+                value=node.__class__.__name__
+            )
+        )
 
 server = ProofLanguageServer()
 

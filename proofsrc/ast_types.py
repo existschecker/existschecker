@@ -561,6 +561,8 @@ class DeclarationUnit:
     hash: str
     ast: Include | Declaration | None = None
     node_to_token: dict[int, tuple[Token, Token]] = field(default_factory=dict[int, tuple[Token, Token]])
+    nodes: list[Include | Declaration | DeclarationSupport | Control | Formula | Term | RefFact] = field(default_factory=list[Include | Declaration | DeclarationSupport | Control | Formula | Term | RefFact])
+    token_to_node: dict[Token, Include | Declaration | DeclarationSupport | Control | Formula | Term | RefFact] = field(default_factory=dict[Token, Include | Declaration | DeclarationSupport | Control | Formula | Term | RefFact])
     context: Context = field(default_factory=Context.init)
     diagnostics: list[lsp.Diagnostic] = field(default_factory=list[lsp.Diagnostic])
     hover: str | None = None
@@ -583,3 +585,17 @@ class Workspace:
             if name in unit.decl_refs:
                 all_decl_refs.extend(unit.decl_refs[name])
         return all_decl_refs
+
+    def build_token_to_node(self):
+        for unit in self.get_all_units():
+            for node in reversed(unit.nodes):
+                coords = unit.node_to_token[id(node)]
+                if not coords:
+                    continue
+                start, end = coords
+                for token in self.get_tokens_between(unit, start, end):
+                    unit.token_to_node[token] = node
+
+    @staticmethod
+    def get_tokens_between(unit: DeclarationUnit, start: Token, end: Token) -> list[Token]:
+        return unit.tokens[start.index - unit.tokens[0].index: end.index + 1 - unit.tokens[0].index]

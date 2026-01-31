@@ -1,7 +1,7 @@
 import re
 from dataclasses import dataclass
 
-@dataclass
+@dataclass(frozen=True)
 class Token:
     type: str
     value: str
@@ -11,6 +11,7 @@ class Token:
     column: int
     end_line: int
     end_column: int
+    index: int
 
     def info(self):
         return f"[{self.file}:{self.line}:{self.column}]"
@@ -52,6 +53,7 @@ def lex(path: str, src: str | None = None) -> tuple[list[Token], str]:
         f = open(path)
         src = f.read()
         f.close()
+    index = 0
     tokens: list[Token] = []
     i = 0
     line = 1
@@ -78,12 +80,14 @@ def lex(path: str, src: str | None = None) -> tuple[list[Token], str]:
                     line_start_pos = i + 1
                 i += 1
             if i >= len(src):
-                tokens.append(Token("UNTERMINATED_COMMENT", src[start_i:], path, start_i, start_line, start_column, line, i - line_start_pos + 1))
+                tokens.append(Token("UNTERMINATED_COMMENT", src[start_i:], path, start_i, start_line, start_column, line, i - line_start_pos + 1, index))
+                index += 1
                 break
             i += 2
             continue
         if c in SYMBOLS:
-            tokens.append(Token(SYMBOLS[c], c, path, i, line, column, line, column + 1))
+            tokens.append(Token(SYMBOLS[c], c, path, i, line, column, line, column + 1, index))
+            index += 1
             i += 1
             continue
         if src[i] == '"':
@@ -94,10 +98,12 @@ def lex(path: str, src: str | None = None) -> tuple[list[Token], str]:
                 i += 1
             content_end_i = i
             if i >= len(src) or src[i] == "\n":
-                tokens.append(Token("UNTERMINATED_STRING", src[content_start_i:content_end_i], path, start_i, line, column, line, column + (i - start_i)))
+                tokens.append(Token("UNTERMINATED_STRING", src[content_start_i:content_end_i], path, start_i, line, column, line, column + (i - start_i), index))
+                index += 1
             else:
                 i += 1
-                tokens.append(Token("STRING", src[content_start_i:content_end_i], path, start_i, line, column, line, column + (i - start_i)))
+                tokens.append(Token("STRING", src[content_start_i:content_end_i], path, start_i, line, column, line, column + (i - start_i), index))
+                index += 1
             continue
         if c == "\\":
             sorted_patterns = sorted(STRINGS.keys(), key=len, reverse=True)
@@ -105,7 +111,8 @@ def lex(path: str, src: str | None = None) -> tuple[list[Token], str]:
             for pattern in sorted_patterns:
                 if src[i:].startswith(pattern):
                     length = len(pattern)
-                    tokens.append(Token(STRINGS[pattern], pattern, path, i, line, column, line, column + length))
+                    tokens.append(Token(STRINGS[pattern], pattern, path, i, line, column, line, column + length, index))
+                    index += 1
                     i += length
                     found = True
                     break
@@ -115,21 +122,25 @@ def lex(path: str, src: str | None = None) -> tuple[list[Token], str]:
         if m:
             text = m.group(0)
             if text in KEYWORDS:
-                tokens.append(Token(text.upper(), text, path, i, line, column, line, column + len(text)))
+                tokens.append(Token(text.upper(), text, path, i, line, column, line, column + len(text), index))
+                index += 1
             else:
-                tokens.append(Token("IDENT", text, path, i, line, column, line, column + len(text)))
+                tokens.append(Token("IDENT", text, path, i, line, column, line, column + len(text), index))
+                index += 1
             i += len(text)
             continue
         m = re.match(r"\d+", src[i:])
         if m:
             text = m.group(0)
-            tokens.append(Token("NUMBER", text, path, i, line, column, line, column + len(text)))
+            tokens.append(Token("NUMBER", text, path, i, line, column, line, column + len(text), index))
+            index += 1
             i += len(text)
             continue
-        tokens.append(Token("INVALID_CHARACTER", src[i], path, i, line, column, line, column + 1))
+        tokens.append(Token("INVALID_CHARACTER", src[i], path, i, line, column, line, column + 1, index))
+        index += 1
         i += 1
     column = len(src) - line_start_pos + 1
-    tokens.append(Token("EOF", "", path, i, line, column, line, column))
+    tokens.append(Token("EOF", "", path, i, line, column, line, column, index))
     return tokens, src
 
 if __name__ == "__main__":
