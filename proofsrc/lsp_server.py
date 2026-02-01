@@ -157,10 +157,7 @@ class ProofLanguageServer(LanguageServer):
         start_index = 0
         for i in range(min(len(all_units), len(old_all_units))):
             if all_units[i].hash == old_all_units[i].hash:
-                all_units[i].ast = old_all_units[i].ast
-                all_units[i].context = old_all_units[i].context
-                all_units[i].diagnostics = old_all_units[i].diagnostics
-                all_units[i].decl_refs = old_all_units[i].decl_refs
+                all_units[i].restore_from(old_all_units[i])
                 context = all_units[i].context
                 start_index = i + 1
             else:

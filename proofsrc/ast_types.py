@@ -569,6 +569,17 @@ class DeclarationUnit:
     ctrl_defs: dict[int, int] = field(default_factory=dict[int, int])
     ctrl_refs: dict[int, list[int]] = field(default_factory=dict[int, list[int]])
 
+    def restore_from(self, old: "DeclarationUnit") -> None:
+        self.ast = old.ast
+        self.node_to_token = old.node_to_token
+        self.nodes = old.nodes
+        self.token_to_node = old.token_to_node
+        self.context = old.context
+        self.diagnostics = old.diagnostics
+        self.decl_refs = old.decl_refs
+        self.ctrl_defs = old.ctrl_defs
+        self.ctrl_refs = old.ctrl_refs
+
     def get_ctrl_def(self, ref_token: Token) -> Token | None:
         ref_node = self.token_to_node[ref_token.index]
         if id(ref_node) not in self.ctrl_defs:
