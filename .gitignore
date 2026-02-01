@@ -5,3 +5,4 @@ logs/
 svg/
 tex/
 node_modules/
+dist/
