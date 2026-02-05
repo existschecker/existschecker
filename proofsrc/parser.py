@@ -36,7 +36,7 @@ class Parser:
         )
         self.unit.diagnostics.append(diag)
 
-    def add_node_to_token(self, node: Declaration | DeclarationSupport | Control | Formula | Term | RefFact, start_token: Token, end_token: Token):
+    def add_node_to_token(self, node: Include | Declaration | DeclarationSupport | Control | Formula | Term | RefFact, start_token: Token, end_token: Token):
         self.unit.node_to_token[id(node)] = (start_token.index, end_token.index)
         self.unit.nodes.append(node)
 
@@ -415,14 +415,18 @@ class Parser:
         logger.debug(f"[membership] {type(membership)}: {membership.membership.name}")
         return membership
 
-    def parse_include(self, context: Context) -> Include | InvalidInclude:
+    def parse_include(self, context: Context) -> Include:
         start_token = self.stream.consume("INCLUDE")
         try:
             file = self.stream.consume("STRING").value
-            return Include(file, start_token)
+            node = Include(file, start_token)
+            self.add_node_to_token(node, start_token, self.stream.last_token)
+            return node
         except (ParseError, TokenStreamError, ContextError) as e:
             self.add_lsp_error(e.token, e.msg, context)
-            return InvalidInclude(file="<invalid>", token=start_token)
+            node = InvalidInclude(file="<invalid>", token=start_token)
+            self.add_node_to_token(node, start_token, self.stream.last_token)
+            return node
 
     def parse_block(self, context: Context) -> list[Control]:
         body: list[Control] = []

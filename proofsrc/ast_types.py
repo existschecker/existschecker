@@ -563,7 +563,7 @@ class DeclarationUnit:
     node_to_token: dict[int, tuple[int, int]] = field(default_factory=dict[int, tuple[int, int]])
     nodes: list[Include | Declaration | DeclarationSupport | Control | Formula | Term | RefFact] = field(default_factory=list[Include | Declaration | DeclarationSupport | Control | Formula | Term | RefFact])
     token_to_node: dict[int, Include | Declaration | DeclarationSupport | Control | Formula | Term | RefFact] = field(default_factory=dict[int, Include | Declaration | DeclarationSupport | Control | Formula | Term | RefFact])
-    token_to_control: dict[int, Declaration | DeclarationSupport | Control] = field(default_factory=dict[int, Declaration | DeclarationSupport | Control])
+    token_to_control: dict[int, Include | Declaration | DeclarationSupport | Control] = field(default_factory=dict[int, Include | Declaration | DeclarationSupport | Control])
     context: Context = field(default_factory=Context.init)
     diagnostics: list[lsp.Diagnostic] = field(default_factory=list[lsp.Diagnostic])
     decl_refs: dict[str, list[Token]] = field(default_factory=dict[str, list[Token]])
@@ -634,7 +634,7 @@ class Workspace:
                 for index in range(start, end + 1):
                     unit.token_to_node[index] = node
             for node in reversed(unit.nodes):
-                if isinstance(node, (Declaration, DeclarationSupport, Control)):
+                if isinstance(node, (Include, Declaration, DeclarationSupport, Control)):
                     start, end = unit.node_to_token[id(node)]
                     for index in range(start, end + 1):
                         unit.token_to_control[index] = node

@@ -115,7 +115,7 @@ local_conclusions: {local_conclusions}
     else:
         return node.__class__.__name__
 
-def render_proofinfo(node: Include | Declaration | DeclarationSupport | Control | Formula | Term | RefFact, context: Context) -> str:
+def render_proofinfo(node: Include | Declaration | DeclarationSupport | Control, context: Context) -> str:
     if isinstance(node, Declaration):
         return f"{node.__class__.__name__}: {node.proofinfo.status}"
     elif isinstance(node, Control):
@@ -186,6 +186,8 @@ class ProofLanguageServer(LanguageServer):
 
         if self.resolver is None:
             self.resolver = DependencyResolver()
+        else:
+            self.resolver.diagnostics = {}
         self.resolver.dependencies.pop(path, None)
         self.resolver.resolve(path, self)
         resolved_files, tokens_cache = self.resolver.get_result()
@@ -398,7 +400,7 @@ class ProofLanguageServer(LanguageServer):
         )
 
     @staticmethod
-    def find_node_by_line(unit: DeclarationUnit, position: lsp.Position) -> Declaration | DeclarationSupport | Control | None:
+    def find_node_by_line(unit: DeclarationUnit, position: lsp.Position) -> Include | Declaration | DeclarationSupport | Control | None:
         target_line = position.line + 1
         for token in unit.tokens:
             if token.line == target_line and token.index in unit.token_to_control:
