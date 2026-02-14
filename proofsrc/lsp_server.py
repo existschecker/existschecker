@@ -7,7 +7,7 @@ import threading
 
 from dependency import DependencyResolver
 from lexer import KEYWORDS, STRINGS, Token
-from ast_types import Context, DeclarationUnit, Workspace, Declaration, Include, DeclarationSupport, Control, Formula, Term, RefFact, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq, VarTerm, RefDefCon, PredTerm, RefPrimPred, RefDefPred, FunTerm, RefDefFun, RefDefFunTerm
+from ast_types import Context, DeclarationUnit, Workspace, Declaration, Include, Control, Formula, Term, RefFact, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq, VarTerm, RefDefCon, PredTerm, RefPrimPred, RefDefPred, FunTerm, RefDefFun, RefDefFunTerm
 from parser import Parser
 from checker import Checker
 from splitter import split
@@ -41,7 +41,7 @@ class GetProofInfoParams:
     uri: str
     position: lsp.Position
 
-def get_hover(node: Include | Declaration | DeclarationSupport | Control | Formula | Term | RefFact, context: Context) -> str:
+def get_hover(node: Include | Declaration | Control | Formula | Term | RefFact, context: Context) -> str:
     if isinstance(node, Declaration):
         return f"{node.__class__.__name__}: {node.proofinfo.status}"
     elif isinstance(node, Control):
@@ -116,7 +116,7 @@ local_conclusions: {local_conclusions}
     else:
         return node.__class__.__name__
 
-def render_proofinfo(node: Include | Declaration | DeclarationSupport | Control, context: Context) -> str:
+def render_proofinfo(node: Include | Declaration | Control, context: Context) -> str:
     if isinstance(node, Declaration):
         return f"{node.__class__.__name__}: {node.proofinfo.status}"
     elif isinstance(node, Control):
@@ -407,7 +407,7 @@ class ProofLanguageServer(LanguageServer):
         )
 
     @staticmethod
-    def find_node_by_line(unit: DeclarationUnit, position: lsp.Position) -> Include | Declaration | DeclarationSupport | Control | None:
+    def find_node_by_line(unit: DeclarationUnit, position: lsp.Position) -> Include | Declaration | Control | None:
         target_line = position.line + 1
         for token in unit.tokens:
             if token.line == target_line and token.index in unit.token_to_control:

@@ -1,6 +1,6 @@
 from datetime import datetime
 from html import escape
-from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, AtomicFormula, Compound, Control, Declaration, Bottom, Formula, Term, DeclarationSupport, Var, Include, Assert, Fold, PredTemplate, RefDefPred, RefDefFunTerm, InvalidDeclaration, InvalidControl, RefFact, RefEquality
+from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, AtomicFormula, Compound, Control, Declaration, Bottom, Formula, Term, Var, Include, Assert, Fold, PredTemplate, RefDefPred, RefDefFunTerm, InvalidDeclaration, InvalidControl, RefFact, RefEquality
 from svg import output_svg
 from typing import Sequence, Mapping, TypeVar
 from logic_utils import ExprFormatter
@@ -673,7 +673,7 @@ class Renderer:
         else:
             raise Exception(f"Unexpected type: {type(node)}")
 
-    def render_proofinfo(self, node: Declaration | DeclarationSupport | Control):
+    def render_proofinfo(self, node: Declaration | Control):
         status = node.proofinfo.status
         status_html = f"<div class='status' hidden>{status}</div>"
         context_vars = self.render_expr_list(node.proofinfo.ctrl_ctx.vars)
@@ -694,7 +694,7 @@ class Renderer:
         local_conclusion_html = f"<div class='local_conclusion' hidden>{local_conclusion}</div>"
         return f"{status_html}{context_vars_html}{context_formulas_html}{context_pred_tmpls_html}{premises_html}{conclusions_html}{local_vars_html}{local_premise_html}{local_conclusion_html}"
 
-    def render_node(self, node: Include | Declaration | DeclarationSupport | Control) -> str:
+    def render_node(self, node: Include | Declaration | Control) -> str:
         if isinstance(node, Include):
             header_parts, header_parts_jp, body_html = self.render_include(node)
             header_syntax_html = f"<div class='syntax-view'>{' '.join(header_parts)}</div>"
