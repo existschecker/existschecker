@@ -1,5 +1,5 @@
 from lexer import Token
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, RefDefCon, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Control, Formula, Declaration, PredTemplate, Term, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, Include, DeclarationSupport, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, FunTemplate, RefPrimPred, RefDefPred, RefDefFun, InvalidDeclaration, InvalidControl, InvalidInclude, DeclarationUnit, RefFact
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, RefDefCon, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Control, Formula, Declaration, PredTemplate, Term, DefConExist, DefConUniq, DefFunExist, DefFunUniq, Include, DeclarationSupport, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, FunTemplate, RefDefPred, RefDefFun, InvalidDeclaration, InvalidControl, InvalidInclude, DeclarationUnit, RefFact, RefEquality
 from logic_utils import Substitutor, DefExpander, ExprFormatter, expr_in_context, strip_forall_vars, strip_exists_vars, make_forall_vars, make_exists_vars, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs, alpha_safe_formula
 from copy import deepcopy
 from lsprotocol import types as lsp
@@ -14,7 +14,7 @@ class CheckError(Exception):
         self.msg = msg
 
 def goal_in_context(goal: Bottom | Formula, context: Context) -> bool:
-    if isinstance(goal, AtomicFormula) and context.decl.equality is not None and isinstance(goal.pred, (RefPrimPred, RefDefPred)) and goal.pred == context.decl.equality.equal and goal.args[0] == goal.args[1]:
+    if isinstance(goal, AtomicFormula) and context.decl.equality is not None and isinstance(goal.pred, RefEquality) and goal.args[0] == goal.args[1]:
         return True
     else:
         return expr_in_context(goal, context)
@@ -181,7 +181,7 @@ class Checker:
         if context.decl.equality is None:
             msg = "equality has not been declared yet"
             raise CheckError(self.unit.tokens[self.unit.node_to_token[id(node)][0]], msg)
-        uniqueness_formula = Forall(var, Implies(body, AtomicFormula(context.decl.equality.equal, (MembershipLambda(var), MembershipLambda(RefDefCon(node.con_name))))))
+        uniqueness_formula = Forall(var, Implies(body, AtomicFormula(RefEquality(context.decl.equality.ref.name), (var, RefDefCon(node.con_name)))))
         if not alpha_equiv_with_defs(node.formula, uniqueness_formula, context):
             msg = f"uniqueness_formula is not matched with theorem: {ExprFormatter(context).pretty_expr(node.formula)}"
             raise CheckError(self.unit.tokens[self.unit.node_to_token[id(node)][0]], msg)
@@ -219,9 +219,9 @@ class Checker:
             raise CheckError(self.unit.tokens[self.unit.node_to_token[id(node)][0]], msg)
         args, body = strip_forall_vars(context.decl.theorems[context.decl.deffuns[node.fun_name].theorem].conclusion)
         if isinstance(body, ExistsUniq):
-            uniqueness_formula = Forall(body.var, Implies(body.body, AtomicFormula(context.decl.equality.equal, (MembershipLambda(Var(body.var.name)), MembershipLambda(Compound(RefDefFun(node.fun_name), tuple(args)))))))
+            uniqueness_formula = Forall(body.var, Implies(body.body, AtomicFormula(RefEquality(context.decl.equality.ref.name), (Var(body.var.name), Compound(RefDefFun(node.fun_name), tuple(args))))))
         elif isinstance(body, Implies) and isinstance(body.right, ExistsUniq):
-            uniqueness_formula = Implies(body.left, Forall(body.right.var, Implies(body.right.body, AtomicFormula(context.decl.equality.equal, (MembershipLambda(Var(body.right.var.name)), MembershipLambda(Compound(RefDefFun(node.fun_name), tuple(args))))))))
+            uniqueness_formula = Implies(body.left, Forall(body.right.var, Implies(body.right.body, AtomicFormula(RefEquality(context.decl.equality.ref.name), (Var(body.right.var.name), Compound(RefDefFun(node.fun_name), tuple(args)))))))
         else:
             msg = f"Unexpected formula: {ExprFormatter(context).pretty_expr(body)}"
             raise CheckError(self.unit.tokens[self.unit.node_to_token[id(node)][0]], msg)
@@ -244,56 +244,9 @@ class Checker:
 
     def check_equality(self, node: Equality, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
-        logger.debug(f"{debug_prefix}name: {node.equal.name}")
-        self.check_equality_reflection(node.reflection, context, indent+1)
-        self.check_equality_replacement(node.replacement, context, indent+1)
+        logger.debug(f"{debug_prefix}name: {node.ref.name}")
         context.add_decl(node)
-        logger.debug(f"{debug_prefix}{node.equal.name} is registered as equality")
-
-    def check_equality_reflection(self, node: EqualityReflection, context: Context, indent: int) -> None:
-        debug_prefix = make_debug_prefix(node, indent)
-        logger.debug(f"{debug_prefix}Checking {node.equal.name} reflection theorem: {ExprFormatter(context).pretty_expr(node.evidence.conclusion)}")
-        reflection = Forall(Var("x"), AtomicFormula(node.equal, (MembershipLambda(Var("x")), MembershipLambda(Var("x")))))
-        if not alpha_equiv_with_defs(node.evidence.conclusion, reflection, context):
-            msg = f"Not matched with expected formula: {ExprFormatter(context).pretty_expr(reflection)}"
-            raise CheckError(self.unit.tokens[self.unit.node_to_token[id(node)][0]], msg)
-        logger.debug(f"{debug_prefix}Matched with expected formula: {ExprFormatter(context).pretty_expr(reflection)}")
-
-    def check_equality_replacement(self, node: EqualityReplacement, context: Context, indent: int):
-        # debug_prefix = make_debug_prefix(node, indent)
-        # error_prefix = make_error_prefix(node, indent)
-        # for predicate in node.evidence:
-        #     logger.debug(f"{debug_prefix}Checking {predicate} replacement theorem: {ExprFormatter(context).pretty_expr(node.evidence[predicate].conclusion)}")
-        #     if predicate == node.equal.name:
-        #         if isinstance(node.equal, PrimPred):
-        #             arity = node.equal.arity
-        #         elif isinstance(node.equal, DefPred):
-        #             arity = len(node.equal.args)
-        #         else:
-        #             raise Exception("node.equal is not PrimPred or DefPred")
-        #     else:
-        #         arity = context.decl.primpreds[predicate].arity
-        #     args_x: list[Var] = []
-        #     args_y: list[Var] = []
-        #     for i in range(arity):
-        #         args_x.append(Var(f"x_{i}"))
-        #         args_y.append(Var(f"y_{i}"))
-        #     premise = Symbol(Pred(node.equal.name), (MembershipLambda(args_x[0]), MembershipLambda(args_y[0])))
-        #     for i in range(1, arity):
-        #         premise = And(premise, Symbol(Pred(node.equal.name), (MembershipLambda(args_x[i]), MembershipLambda(args_y[i]))))
-        #     conclusion = Implies(Symbol(Pred(predicate), tuple(args_x)), Symbol(Pred(predicate), tuple(args_y)))
-        #     replacement = Implies(premise, conclusion)
-        #     for arg in reversed(args_y):
-        #         replacement = Forall(arg, replacement)
-        #     for arg in reversed(args_x):
-        #         replacement = Forall(arg, replacement)
-        #     if not alpha_equiv_with_defs(node.evidence[predicate].conclusion, replacement, context):
-        #         logger.error(f"{error_prefix}Not matched with expected formula: {ExprFormatter(context).pretty_expr(replacement)}")
-        #         node.proofinfo.status = "ERROR"
-        #         return False
-        #     logger.debug(f"{debug_prefix}Matched with expected formula: {ExprFormatter(context).pretty_expr(replacement)}")
-        node.proofinfo.status = "OK"
-        return True
+        logger.debug(f"{debug_prefix}{node.ref.name} is registered as equality")
 
     def check_membership(self, node: Membership, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
@@ -512,7 +465,7 @@ class Checker:
             if context.decl.equality is None:
                 msg = "equality has not been declared yet"
                 raise CheckError(self.unit.tokens[self.unit.node_to_token[id(node)][0]], msg)
-            uniqueness = Forall(var, Implies(body, AtomicFormula(context.decl.equality.equal, (MembershipLambda(var), MembershipLambda(vars[0])))))
+            uniqueness = Forall(var, Implies(body, AtomicFormula(RefEquality(context.decl.equality.ref.name), (var, vars[0]))))
             premises: list[Bottom | Formula] = [existence, uniqueness]
         logger.debug(f"{debug_prefix}Taking {node.items}, premise={ExprFormatter(context).pretty_expr(existence)}")
         local_vars = [item for item in node.items if isinstance(item, Var)]
@@ -690,7 +643,7 @@ class Checker:
         if context.decl.equality is None:
             msg = "equality has not been declared yet"
             raise CheckError(self.unit.tokens[self.unit.node_to_token[id(node)][0]], msg)
-        fact = And(existence, Forall(vardash, Implies(existence_dash, AtomicFormula(context.decl.equality.equal, (MembershipLambda(vardash), MembershipLambda(node.varterm))))))
+        fact = And(existence, Forall(vardash, Implies(existence_dash, AtomicFormula(RefEquality(context.decl.equality.ref.name), (vardash, node.varterm)))))
         if not goal_in_context(fact, context):
             msg = f"Not fact: {ExprFormatter(context).pretty_expr(fact)}"
             raise CheckError(self.unit.tokens[self.unit.node_to_token[id(node)][0]], msg)
@@ -885,7 +838,7 @@ class Checker:
                 raise Exception(f"Unexpected type: {type(k)}")
             if not isinstance(v, VarTerm):
                 raise Exception(f"Unexpected type: {type(v)}")
-            equation = AtomicFormula(context.decl.equality.equal, (MembershipLambda(k), MembershipLambda(v)))
+            equation = AtomicFormula(RefEquality(context.decl.equality.ref.name), (k, v))
             if not goal_in_context(equation, context):
                 msg = f"Not fact: {ExprFormatter(context).pretty_expr(equation)}"
                 raise CheckError(self.unit.tokens[self.unit.node_to_token[id(node)][0]], msg)

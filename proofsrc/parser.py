@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, RefDefCon, Var, DefFunTerm, Equality, Substitute, Characterize, Show, EqualityReflection, EqualityReplacement, Term, Formula, Control, Declaration, PredTemplate, PredLambda, Include, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, InvalidInclude, InvalidDeclaration, InvalidControl, ContextError, DeclarationUnit, RefFact, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq, DeclarationSupport
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, RefDefCon, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Term, Formula, Control, Declaration, PredTemplate, PredLambda, Include, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, InvalidInclude, InvalidDeclaration, InvalidControl, ContextError, DeclarationUnit, RefFact, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq, DeclarationSupport, RefEquality
 from lexer import Token
 from token_stream import TokenStream, TokenStreamError
 from logic_utils import strip_forall_vars
@@ -321,72 +321,19 @@ class Parser:
 
     def parse_equality(self, context: Context) -> Equality:
         start_token = self.stream.consume("EQUALITY")
-        tok = self.stream.consume("IDENT")
-        name = tok.value
-        if name in context.decl.primpreds:
-            self.add_decl_ref(name, tok)
-            equal = RefPrimPred(name)
-            self.add_node_to_token(equal, tok, tok)
-            if context.decl.primpreds[name].arity != 2:
-                msg = f"arity is required to be 2, but arity of {name} is {context.decl.primpreds[name].arity}"
-                raise ParseError(start_token, msg)
-        elif name in context.decl.defpreds:
-            self.add_decl_ref(name, tok)
-            equal = RefDefPred(name)
-            self.add_node_to_token(equal, tok, tok)
-            if len(context.decl.defpreds[name].args) != 2:
-                msg = f"arity is required to be 2, but arity of {name} is {len(context.decl.defpreds[name].args)}"
-                raise ParseError(start_token, msg)
-        else:
-            msg = f"primpred or defpred is required, but {name} is unknown"
+        name_token = self.stream.consume("IDENT")
+        name = name_token.value
+        ref = RefEquality(name)
+        self.add_node_to_token(ref, name_token, name_token)
+        arity = 2
+        tex = self.parse_or_create_tex(name, arity)
+        if len(tex) != arity + 1:
+            msg = f"arity of {name} is {arity}, but length of tex is {len(tex)}"
             raise ParseError(start_token, msg)
-        reflection = self.parse_equality_reflection(equal, context)
-        replacement = self.parse_equality_replacement(equal, context)
-        equality = Equality(name=name, equal=equal, reflection=reflection, replacement=replacement)
+        equality = Equality(name=name, ref=ref, tex=tex)
         self.add_node_to_token(equality, start_token, self.stream.last_token)
-        # context.add_decl(equality)
-        logger.debug(f"[equality] {type(equal)}: {equal.name}")
+        logger.debug(f"[equality] {name}")
         return equality
-
-    def parse_equality_reflection(self, equal: RefPrimPred | RefDefPred, context: Context) -> EqualityReflection:
-        start_token = self.stream.consume("REFLECTION")
-        name = self.stream.consume("IDENT").value
-        if name in context.decl.axioms:
-            reflection_evidence = context.decl.axioms[name]
-        elif name in context.decl.theorems:
-            reflection_evidence = context.decl.theorems[name]
-        else:
-            msg = f"axiom or theorem is required, but {name} is unknown"
-            raise ParseError(start_token, msg)
-        equality_reflection = EqualityReflection(equal=equal, evidence=reflection_evidence)
-        self.add_node_to_token(equality_reflection, start_token, self.stream.last_token)
-        return equality_reflection
-
-    def parse_equality_replacement(self, equal: RefPrimPred | RefDefPred, context: Context) -> EqualityReplacement:
-        start_token = self.stream.consume("REPLACEMENT")
-        replacement_evidence: dict[str, Axiom | Theorem] = {}
-        while True:
-            predicate = self.stream.consume("IDENT").value
-            if not (predicate == equal.name or predicate in context.decl.primpreds):
-                msg = f"{equal.name} or primpred is required, but {predicate} is unknown"
-                raise ParseError(start_token, msg)
-            self.stream.consume("COLON")
-            name = self.stream.consume("IDENT").value
-            if name in context.decl.axioms:
-                formula = context.decl.axioms[name]
-            elif name in context.decl.theorems:
-                formula = context.decl.theorems[name]
-            else:
-                msg = f"axiom or theorem is required, but {name} is unknown"
-                raise ParseError(start_token, msg)
-            replacement_evidence[predicate] = formula
-            if self.stream.peek().type == "COMMA":
-                self.stream.consume("COMMA")
-            else:
-                break
-        equality_replacement = EqualityReplacement(equal=equal, evidence=replacement_evidence)
-        self.add_node_to_token(equality_replacement, start_token, self.stream.last_token)
-        return equality_replacement
 
     def parse_membership(self, context: Context) -> Membership:
         start_token = self.stream.consume("MEMBERSHIP")
@@ -865,6 +812,11 @@ class Parser:
                 self.add_node_to_token(pred, tok, tok)
                 self.add_ctrl_defs_refs(def_pred_tmpl, pred)
                 defargs: list[Var | PredTemplate | FunTemplate] = [Var(f"x_{i}") for i in range(pred.arity)]
+            elif context.decl.equality is not None and name == context.decl.equality.ref.name:
+                self.add_decl_ref(name, tok)
+                pred = RefEquality(name)
+                self.add_node_to_token(pred, tok, tok)
+                defargs: list[Var | PredTemplate | FunTemplate] = [Var(f"x_{i}") for i in range(2)]
             elif name in context.decl.primpreds:
                 self.add_decl_ref(name, tok)
                 pred = RefPrimPred(name)

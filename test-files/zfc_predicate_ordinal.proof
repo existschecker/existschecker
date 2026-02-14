@@ -1,148 +1,208 @@
 include "zfc_predicate_order.proof"
 
-definition predicate cap(predicate \phi[1], predicate \chi[1], predicate \rho[1]) as \forall x (\rho(x) \leftrightarrow \phi(x) \wedge \chi(x))
+definition predicate cap(x, y, z) as \forall w (in(w, z) \leftrightarrow in(w, x) \wedge in(w, y))
 
-theorem cap_is_subset_left \forall^P \phi[1] \forall^P \chi[1] \forall^P \rho[1] (cap(\phi, \chi, \rho) \to subset(\rho, \phi)) {
+definition predicate cap_predicate(predicate \phi[1], predicate \chi[1], predicate \rho[1]) as \forall x (\rho(x) \leftrightarrow \phi(x) \wedge \chi(x))
+
+theorem cap_lambda \forall X \forall Y \forall Z (cap(X, Y, Z) \leftrightarrow cap_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y), \lambda^P z. in(z, Z))) {
+  any X, Y, Z {
+    assume cap(X, Y, Z) {
+      expand cap(X, Y, Z) for cap
+      fold for cap_predicate conclude cap_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y), \lambda^P z. in(z, Z))
+    }
+    assume cap_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y), \lambda^P z. in(z, Z)) {
+      expand cap_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y), \lambda^P z. in(z, Z)) for cap_predicate
+      fold for cap conclude cap(X, Y, Z)
+    }
+    connect cap(X, Y, Z) \leftrightarrow cap_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y), \lambda^P z. in(z, Z))
+  }
+}
+
+theorem cap_is_subset_left_predicate \forall^P \phi[1] \forall^P \chi[1] \forall^P \rho[1] (cap_predicate(\phi, \chi, \rho) \to subset_predicate(\rho, \phi)) {
   any predicate \phi[1], predicate \chi[1], predicate \rho[1] {
-    assume cap(\phi, \chi, \rho) {
+    assume cap_predicate(\phi, \chi, \rho) {
       any x {
         assume \rho(x) {
-          apply invoke rightward cap(\phi, \chi, \rho) for x
+          apply invoke rightward cap_predicate(\phi, \chi, \rho) for x
           split 1 \phi(x) \wedge \chi(x)
         }
       }
-      fold for subset conclude subset(\rho, \phi)
+      fold for subset_predicate conclude subset_predicate(\rho, \phi)
     }
   }
 }
 
-theorem cap_is_subset_right \forall^P \phi[1] \forall^P \chi[1] \forall^P \rho[1] (cap(\phi, \chi, \rho) \to subset(\rho, \chi)) {
+theorem cap_is_subset_left \forall X \forall Y \forall Z (cap(X, Y, Z) \to subset(Z, X)) {
+  any X, Y, Z {
+    assume cap(X, Y, Z) {
+      apply invoke rightward cap_lambda for X, Y, Z
+      apply invoke cap_is_subset_left_predicate for \lambda^P x. in(x, X), \lambda^P y. in(y, Y), \lambda^P z. in(z, Z)
+      apply invoke leftward subset_lambda for Z, X
+    }
+  }
+}
+
+theorem cap_is_subset_right \forall^P \phi[1] \forall^P \chi[1] \forall^P \rho[1] (cap_predicate(\phi, \chi, \rho) \to subset_predicate(\rho, \chi)) {
   any predicate \phi[1], predicate \chi[1], predicate \rho[1] {
-    assume cap(\phi, \chi, \rho) {
+    assume cap_predicate(\phi, \chi, \rho) {
       any x {
         assume \rho(x) {
-          apply invoke rightward cap(\phi, \chi, \rho) for x
+          apply invoke rightward cap_predicate(\phi, \chi, \rho) for x
           split 2 \phi(x) \wedge \chi(x)
         }
       }
-      fold for subset conclude subset(\rho, \chi)
+      fold for subset_predicate conclude subset_predicate(\rho, \chi)
     }
   }
 }
 
-definition predicate setminus(predicate \phi[1], predicate \chi[1], predicate \rho[1]) as \forall x (\rho(x) \leftrightarrow \phi(x) \wedge \neg(\chi(x)))
+definition predicate setminus(x, y, z) as \forall w (in(w, z) \leftrightarrow in(w, x) \wedge notin(w, y))
 
-theorem setminus_is_subset \forall^P \phi[1] \forall^P \chi[1] \forall^P \rho[1] (setminus(\phi, \chi, \rho) \to subset(\rho, \phi)) {
+definition predicate setminus_predicate(predicate \phi[1], predicate \chi[1], predicate \rho[1]) as \forall x (\rho(x) \leftrightarrow \phi(x) \wedge \neg(\chi(x)))
+
+theorem setminus_is_subset \forall^P \phi[1] \forall^P \chi[1] \forall^P \rho[1] (setminus_predicate(\phi, \chi, \rho) \to subset_predicate(\rho, \phi)) {
   any predicate \phi[1], predicate \chi[1], predicate \rho[1] {
-    assume setminus(\phi, \chi, \rho) {
+    assume setminus_predicate(\phi, \chi, \rho) {
       any x {
         assume \rho(x) {
-          apply invoke rightward setminus(\phi, \chi, \rho) for x
+          apply invoke rightward setminus_predicate(\phi, \chi, \rho) for x
           split 1 \phi(x) \wedge \neg(\chi(x))
         }
       }
-      fold for subset conclude subset(\rho, \phi)
+      fold for subset_predicate conclude subset_predicate(\rho, \phi)
     }
   }
 }
 
-definition predicate trans(predicate \phi[1]) as \forall x \forall y (in(y, x) \wedge \phi(x) \to \phi(y))
+definition predicate trans(x) as \forall y \forall z (in(z, y) \wedge in(y, x) \to in(z, x))
 
-theorem trans_cor1 \forall^P \phi[1] (trans(\phi) \leftrightarrow \forall x (\phi(x) \to subset(x, \phi))) {
-  any predicate \phi[1] {
-    assume trans(\phi) {
-      any x {
-        assume \phi(x) {
-          any y {
-            assume in(y, x) {
-              connect in(y, x) \wedge \phi(x)
-              apply invoke trans(\phi) for x, y
+definition predicate trans_predicate(predicate \phi[1]) as \forall x \forall y (in(y, x) \wedge \phi(x) \to \phi(y))
+
+theorem trans_lambda \forall X (trans(X) \leftrightarrow trans_predicate(\lambda^P x. in(x, X))) {
+  any X {
+    assume trans(X) {
+      expand trans(X) for trans
+      fold for trans_predicate conclude trans_predicate(\lambda^P x. in(x, X))
+    }
+    assume trans_predicate(\lambda^P x. in(x, X)) {
+      expand trans_predicate(\lambda^P x. in(x, X)) for trans_predicate
+      fold for trans conclude trans(X)
+    }
+    connect trans(X) \leftrightarrow trans_predicate(\lambda^P x. in(x, X))
+  }
+}
+
+theorem trans_cor1 \forall x (trans(x) \leftrightarrow \forall y (in(y, x) \to subset(y, x))) {
+  any x {
+    assume trans(x) {
+      any y {
+        assume in(y, x) {
+          any z {
+            assume in(z, y) {
+              connect in(z, y) \wedge in(y, x)
+              apply invoke trans(x) for y, z
             }
           }
-          fold for subset conclude subset(x, \phi)
+          fold for subset conclude subset(y, x)
         }
       }
     }
-    assume \forall x (\phi(x) \to subset(x, \phi)) {
-      any x, y {
-        assume in(y, x) \wedge \phi(x) {
-          split in(y, x) \wedge \phi(x)
-          apply invoke \forall x (\phi(x) \to subset(x, \phi)) for x
-          apply invoke subset(x, \phi) for y
+    assume \forall y (in(y, x) \to subset(y, x)) {
+      any y, z {
+        assume in(z, y) \wedge in(y, x) {
+          split in(z, y) \wedge in(y, x)
+          apply invoke \forall y (in(y, x) \to subset(y, x)) for y
+          apply invoke subset(y, x) for z
         }
       }
-      fold for trans conclude trans(\phi)
+      fold for trans conclude trans(x)
     }
-    connect trans(\phi) \leftrightarrow \forall x (\phi(x) \to subset(x, \phi))
+    connect trans(x) \leftrightarrow \forall y (in(y, x) \to subset(y, x))
   }
 }
 
-theorem cap_of_trans_is_trans \forall^P \phi[1] \forall^P \chi[1] \forall^P \rho[1] (trans(\phi) \wedge trans(\chi) \wedge cap(\phi, \chi, \rho) \to trans(\rho)) {
+theorem cap_of_trans_is_trans_predicate \forall^P \phi[1] \forall^P \chi[1] \forall^P \rho[1] (trans_predicate(\phi) \wedge trans_predicate(\chi) \wedge cap_predicate(\phi, \chi, \rho) \to trans_predicate(\rho)) {
   any predicate \phi[1], predicate \chi[1], predicate \rho[1] {
-    assume trans(\phi) \wedge trans(\chi) \wedge cap(\phi, \chi, \rho) {
-      split trans(\phi) \wedge trans(\chi) \wedge cap(\phi, \chi, \rho)
+    assume trans_predicate(\phi) \wedge trans_predicate(\chi) \wedge cap_predicate(\phi, \chi, \rho) {
+      split trans_predicate(\phi) \wedge trans_predicate(\chi) \wedge cap_predicate(\phi, \chi, \rho)
       any x, y {
         assume in(y, x) \wedge \rho(x) {
           split in(y, x) \wedge \rho(x)
-          apply invoke rightward cap(\phi, \chi, \rho) for x
+          apply invoke rightward cap_predicate(\phi, \chi, \rho) for x
           split \phi(x) \wedge \chi(x)
           connect in(y, x) \wedge \phi(x)
-          apply invoke trans(\phi) for x, y
+          apply invoke trans_predicate(\phi) for x, y
           connect in(y, x) \wedge \chi(x)
-          apply invoke trans(\chi) for x, y
+          apply invoke trans_predicate(\chi) for x, y
           connect \phi(y) \wedge \chi(y)
-          apply invoke leftward cap(\phi, \chi, \rho) for y
+          apply invoke leftward cap_predicate(\phi, \chi, \rho) for y
         }
       }
-      fold for trans conclude trans(\rho)
+      fold for trans_predicate conclude trans_predicate(\rho)
     }
   }
 }
 
-definition predicate ordinal(predicate \phi[1]) as trans(\phi) \wedge irrefrelon(\phi, in) \wedge wellorder(\phi, in)
+theorem cap_of_trans_is_trans \forall X \forall Y \forall Z (trans(X) \wedge trans(Y) \wedge cap(X, Y, Z) \to trans(Z)) {
+  any X, Y, Z {
+    assume trans(X) \wedge trans(Y) \wedge cap(X, Y, Z) {
+      split trans(X) \wedge trans(Y) \wedge cap(X, Y, Z)
+      apply invoke rightward trans_lambda for X
+      apply invoke rightward trans_lambda for Y
+      apply invoke rightward cap_lambda for X, Y, Z
+      connect trans_predicate(\lambda^P x. in(x, X)) \wedge trans_predicate(\lambda^P y. in(y, Y)) \wedge cap_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y), \lambda^P z. in(z, Z))
+      apply invoke cap_of_trans_is_trans_predicate for \lambda^P x. in(x, X), \lambda^P y. in(y, Y), \lambda^P z. in(z, Z)
+      apply invoke leftward trans_lambda for Z
+    }
+  }
+}
 
-theorem element_of_ordinal_is_trans \forall^P \phi[1] (ordinal(\phi) \to \forall \alpha (\phi(\alpha) \to trans(\alpha))) {
-  any predicate \phi[1] {
-    assume ordinal(\phi) {
-      any \alpha {
-        assume \phi(\alpha) {
-          any \beta, \gamma {
-            assume in(\gamma, \beta) \wedge in(\beta, \alpha) {
-              split in(\gamma, \beta) \wedge in(\beta, \alpha)
-              split ordinal(\phi)
-              connect in(\beta, \alpha) \wedge \phi(\alpha)
-              apply invoke trans(\phi) for \alpha, \beta
-              connect in(\gamma, \beta) \wedge \phi(\beta)
-              apply invoke trans(\phi) for \beta, \gamma
-              connect \phi(\gamma) \wedge \phi(\beta) \wedge \phi(\alpha) \wedge in(\gamma, \beta)\wedge in(\beta, \alpha)
-              split 1 wellorder(\phi, in)
-              split 1 orderon(\phi, in)
-              apply invoke transrelon(\phi, in) for \gamma, \beta, \alpha
+definition predicate ordinal(x) as trans(x) \wedge irrefrelon(x, in) \wedge wellorder(x, in)
+
+definition predicate ordinal_predicate(predicate \phi[1]) as trans_predicate(\phi) \wedge irrefrelon_predicate(\phi, in) \wedge wellorder_predicate(\phi, in)
+
+theorem element_of_ordinal_is_trans \forall \alpha (ordinal(\alpha) \to \forall \beta (in(\beta, \alpha) \to trans(\beta))) {
+  any \alpha {
+    assume ordinal(\alpha) {
+      any \beta {
+        assume in(\beta, \alpha) {
+          any \gamma, \delta {
+            assume in(\delta, \gamma) \wedge in(\gamma, \beta) {
+              split in(\delta, \gamma) \wedge in(\gamma, \beta)
+              split ordinal(\alpha)
+              connect in(\gamma, \beta) \wedge in(\beta, \alpha)
+              apply invoke trans(\alpha) for \beta, \gamma
+              connect in(\delta, \gamma) \wedge in(\gamma, \alpha)
+              apply invoke trans(\alpha) for \gamma, \delta
+              connect in(\delta, \alpha) \wedge in(\gamma, \alpha) \wedge in(\beta, \alpha) \wedge in(\delta, \gamma)\wedge in(\gamma, \beta)
+              split 1 wellorder(\alpha, in)
+              split 1 orderon(\alpha, in)
+              apply invoke transrelon(\alpha, in) for \delta, \gamma, \beta
             }
           }
-          fold for trans conclude trans(\alpha)
+          fold for trans conclude trans(\beta)
         }
       }
     }
   }
 }
 
-theorem element_of_ordinal_is_ordinal \forall^P \phi[1] (ordinal(\phi) \to \forall \alpha (\phi(\alpha) \to ordinal(\alpha))) {
-  any predicate \phi[1] {
-    assume ordinal(\phi) {
-      any \alpha {
-        assume \phi(\alpha) {
-          apply invoke element_of_ordinal_is_trans for \phi
-          apply invoke \forall \alpha (\phi(\alpha) \to trans(\alpha)) for \alpha
-          split ordinal(\phi)
-          apply invoke rightward trans_cor1 for \phi
-          apply invoke \forall \alpha (\phi(\alpha) \to subset(\alpha, \phi)) for \alpha
-          connect irrefrelon(\phi, in)\wedge subset(\alpha, \phi)
-          apply invoke irrefrelon_subset for \phi, in, \alpha
-          connect wellorder(\phi, in)\wedge subset(\alpha, \phi)
-          apply invoke wellorder_subset for \phi, in, \alpha
-          connect trans(\alpha) \wedge irrefrelon(\alpha, in) \wedge wellorder(\alpha, in)
-          fold for ordinal conclude ordinal(\alpha)
+theorem element_of_ordinal_is_ordinal \forall \alpha (ordinal(\alpha) \to \forall \beta (in(\beta, \alpha) \to ordinal(\beta))) {
+  any \alpha {
+    assume ordinal(\alpha) {
+      any \beta {
+        assume in(\beta, \alpha) {
+          apply invoke element_of_ordinal_is_trans for \alpha
+          apply invoke \forall \beta (in(\beta, \alpha) \to trans(\beta)) for \beta
+          split ordinal(\alpha)
+          apply invoke rightward trans_cor1 for \alpha
+          apply invoke \forall \beta (in(\beta, \alpha) \to subset(\beta, \alpha)) for \beta
+          connect irrefrelon(\alpha, in)\wedge subset(\beta, \alpha)
+          apply invoke irrefrelon_subset for \alpha, in, \beta
+          connect wellorder(\alpha, in)\wedge subset(\beta, \alpha)
+          apply invoke wellorder_subset for \alpha, in, \beta
+          connect trans(\beta) \wedge irrefrelon(\beta, in) \wedge wellorder(\beta, in)
+          fold for ordinal conclude ordinal(\beta)
         }
       }
     }
@@ -232,7 +292,7 @@ theorem ordinal_subsetneq_of_ordinal_is_element \forall\alpha(ordinal(\alpha)\to
               }
               connect in(\delta,\gamma)\leftrightarrow in(\delta,\beta)
             }
-            fold for equal conclude equal(\gamma,\beta)
+            apply invoke axiom_of_extensionality for \gamma, \beta
             substitute in(\gamma,\alpha) for \gamma:\beta
           }
         }
@@ -435,7 +495,7 @@ theorem ordinals_trichotomy_in \forall\alpha\forall\beta(ordinal(\alpha)\wedge o
   }
 }
 
-theorem ordinal_is_trans trans(ordinal) {
+theorem ordinal_is_trans trans_predicate(ordinal) {
   any x, y {
     assume in(y, x) \wedge ordinal(x) {
       split in(y, x) \wedge ordinal(x)
@@ -443,19 +503,19 @@ theorem ordinal_is_trans trans(ordinal) {
       apply invoke \forall y (in(y, x) \to ordinal(y)) for y
     }
   }
-  fold for trans conclude trans(ordinal)
+  fold for trans_predicate conclude trans_predicate(ordinal)
 }
 
-theorem ordinal_is_irrefrelon irrefrelon(ordinal, in) {
+theorem ordinal_is_irrefrelon irrefrelon_predicate(ordinal, in) {
   any \alpha {
     assume ordinal(\alpha) {
       apply invoke ordinal_not_contain_itself for \alpha
     }
   }
-  fold for irrefrelon conclude irrefrelon(ordinal, in)
+  fold for irrefrelon_predicate conclude irrefrelon_predicate(ordinal, in)
 }
 
-theorem ordinal_is_transrelon transrelon(ordinal, in) {
+theorem ordinal_is_transrelon transrelon_predicate(ordinal, in) {
   any \alpha, \beta, \gamma {
     assume ordinal(\alpha) \wedge ordinal(\beta) \wedge ordinal(\gamma) \wedge in(\alpha, \beta) \wedge in(\beta, \gamma) {
       split ordinal(\alpha) \wedge ordinal(\beta) \wedge ordinal(\gamma) \wedge in(\alpha, \beta) \wedge in(\beta, \gamma)
@@ -464,28 +524,28 @@ theorem ordinal_is_transrelon transrelon(ordinal, in) {
       apply invoke trans(\gamma) for \beta, \alpha
     }
   }
-  fold for transrelon conclude transrelon(ordinal, in)
+  fold for transrelon_predicate conclude transrelon_predicate(ordinal, in)
 }
 
-theorem ordinal_is_orderon orderon(ordinal, in) {
+theorem ordinal_is_orderon orderon_predicate(ordinal, in) {
   assert ordinal_is_irrefrelon
   assert ordinal_is_transrelon
-  connect irrefrelon(ordinal, in) \wedge transrelon(ordinal, in)
-  apply invoke irrefrelon_and_transrelon_implies_orderon for ordinal, in
+  connect irrefrelon_predicate(ordinal, in) \wedge transrelon_predicate(ordinal, in)
+  apply invoke irrefrelon_and_transrelon_implies_orderon_predicate for ordinal, in
 }
 
-theorem ordinal_is_linorder linorder(ordinal, in) {
+theorem ordinal_is_linorder linorder_predicate(ordinal, in) {
   assert ordinal_is_orderon
   any \alpha, \beta {
     assume ordinal(\alpha) \wedge ordinal(\beta) {
       apply invoke ordinals_trichotomy_in for \alpha, \beta
     }
   }
-  fold for linorder_core conclude linorder_core(ordinal, in)
-  connect linorder(ordinal, in)
+  fold for linorder_core_predicate conclude linorder_core_predicate(ordinal, in)
+  connect linorder_predicate(ordinal, in)
 }
 
-theorem ordinal_is_wellfounded wellfounded(ordinal, in) {
+theorem ordinal_is_wellfounded wellfounded_predicate(ordinal, in) {
   any predicate \phi[1] {
     assume \exists \alpha (ordinal(\alpha) \wedge \phi(\alpha)) {
       some \alpha such \exists \alpha (ordinal(\alpha) \wedge \phi(\alpha)) {
@@ -526,9 +586,9 @@ theorem ordinal_is_wellfounded wellfounded(ordinal, in) {
                   }
                 }
               }
-              fold for minimal_core conclude minimal_core(ordinal, in, \phi, \beta)
-              connect minimal(ordinal, in, \phi, \beta)
-              lift for \beta conclude \exists \beta (minimal(ordinal, in, \phi, \beta))
+              fold for minimal_core_predicate conclude minimal_core_predicate(ordinal, in, \phi, \beta)
+              connect minimal_predicate(ordinal, in, \phi, \beta)
+              lift for \beta conclude \exists \beta (minimal_predicate(ordinal, in, \phi, \beta))
             }
           }
           case \neg(\exists \beta (in(\beta, \alpha) \wedge \phi(\beta))) {
@@ -543,27 +603,27 @@ theorem ordinal_is_wellfounded wellfounded(ordinal, in) {
                 }
               }
             }
-            fold for minimal_core conclude minimal_core(ordinal, in, \phi, \alpha)
-            connect minimal(ordinal, in, \phi, \alpha)
-            lift for \alpha conclude \exists \alpha (minimal(ordinal, in, \phi, \alpha))
+            fold for minimal_core_predicate conclude minimal_core_predicate(ordinal, in, \phi, \alpha)
+            connect minimal_predicate(ordinal, in, \phi, \alpha)
+            lift for \alpha conclude \exists \alpha (minimal_predicate(ordinal, in, \phi, \alpha))
           }
       }
     }
   }
-  fold for wellfounded conclude wellfounded(ordinal, in)
+  fold for wellfounded_predicate conclude wellfounded_predicate(ordinal, in)
 }
 
-theorem ordinal_is_wellorder wellorder(ordinal, in) {
+theorem ordinal_is_wellorder wellorder_predicate(ordinal, in) {
   assert ordinal_is_linorder
   assert ordinal_is_wellfounded
-  connect linorder(ordinal, in) \wedge wellfounded(ordinal, in)
+  connect linorder_predicate(ordinal, in) \wedge wellfounded_predicate(ordinal, in)
   apply invoke leftward wellorder_equivalent_linorder_and_wellfounded for ordinal, in
 }
 
-theorem ordinal_is_ordinal ordinal(ordinal) {
+theorem ordinal_is_ordinal ordinal_predicate(ordinal) {
   assert ordinal_is_trans
   assert ordinal_is_irrefrelon
   assert ordinal_is_wellorder
-  connect trans(ordinal) \wedge irrefrelon(ordinal, in) \wedge wellorder(ordinal, in)
-  fold for ordinal[1] conclude ordinal(ordinal)
+  connect trans_predicate(ordinal) \wedge irrefrelon_predicate(ordinal, in) \wedge wellorder_predicate(ordinal, in)
+  fold for ordinal_predicate conclude ordinal_predicate(ordinal)
 }

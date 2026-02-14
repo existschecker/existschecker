@@ -1,6 +1,6 @@
 from datetime import datetime
 from html import escape
-from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, EqualityReflection, EqualityReplacement, AtomicFormula, Compound, Control, Declaration, Bottom, Formula, Term, DeclarationSupport, Var, Include, Assert, Fold, PredTemplate, Membership, RefDefPred, RefDefFunTerm, InvalidDeclaration, InvalidControl, RefFact
+from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, AtomicFormula, Compound, Control, Declaration, Bottom, Formula, Term, DeclarationSupport, Var, Include, Assert, Fold, PredTemplate, Membership, RefDefPred, RefDefFunTerm, InvalidDeclaration, InvalidControl, RefFact, RefEquality
 from svg import output_svg
 from typing import Sequence, Mapping, TypeVar
 from logic_utils import ExprFormatter
@@ -294,13 +294,12 @@ class Renderer:
     def render_equality(self, node: Equality):
         header_parts = [self.toggle,
                         self.render_keyword("equality"),
-                        self.render_identifier(node.equal.name)]
+                        self.render_identifier(node.ref.name)]
         header_parts_jp = [self.toggle,
                         self.render_keyword("等号宣言"),
-                        self.render_identifier(node.equal.name),
+                        self.render_identifier(node.ref.name),
                         "は等号である。"]
-        body_html = self.render_node(node.reflection) + self.render_node(node.replacement)
-        return header_parts, header_parts_jp, body_html
+        return header_parts, header_parts_jp, ""
 
     def render_membership(self, node: Membership):
         header_parts = [self.bullet,
@@ -348,33 +347,6 @@ class Renderer:
             return self.render_membership(node)
         elif isinstance(node, InvalidDeclaration):
             return self.render_invalid_declaration(node)
-        else:
-            raise Exception(f"Unexpected type: {type(node)}")
-
-    def render_equality_reflection(self, node: EqualityReflection):
-        header_parts = [self.bullet,
-                        self.render_keyword("reflection"),
-                        self.render_identifier(node.evidence.name)]
-        header_parts_jp = [self.bullet,
-                           "反射律は",
-                           self.render_identifier(node.evidence.name),
-                           "で示された。"]
-        return header_parts, header_parts_jp, ""
-
-    def render_equality_replacement(self, node: EqualityReplacement):
-        header_parts = [self.bullet,
-                        self.render_keyword("replacement"),
-                        ",".join([self.render_identifier(k) + ":" + self.render_identifier(v.name) for k, v in node.evidence.items()])]
-        header_parts_jp = [self.bullet,
-                           "、".join([self.render_identifier(k) + "の置換律は" + self.render_identifier(v.name) + "で" for k, v in node.evidence.items()]),
-                           "示された。"]
-        return header_parts, header_parts_jp, ""
-
-    def render_declaration_support(self, node: DeclarationSupport):
-        if isinstance(node, EqualityReflection):
-            return self.render_equality_reflection(node)
-        elif isinstance(node, EqualityReplacement):
-            return self.render_equality_replacement(node)
         else:
             raise Exception(f"Unexpected type: {type(node)}")
 
@@ -637,7 +609,7 @@ class Renderer:
         header_parts_jp = [self.bullet,
                         self.render_expr(node.fact),
                         "に",
-                        ",".join([self.render_expr(AtomicFormula(self.context.decl.equality.equal, (k, v))) for k, v in node.env.items()]),
+                        ",".join([self.render_expr(AtomicFormula(RefEquality(self.context.decl.equality.ref.name), (k, v))) for k, v in node.env.items()]),
                         "を代入する。"]
         return header_parts, header_parts_jp, ""
 
@@ -743,8 +715,6 @@ class Renderer:
             return f"  <div class='block'>{header_html}</div>"
         if isinstance(node, Declaration):
             header_parts, header_parts_jp, body_html = self.render_declaration(node)
-        elif isinstance(node, DeclarationSupport):
-            header_parts, header_parts_jp, body_html = self.render_declaration_support(node)
         elif isinstance(node, Control):
             header_parts, header_parts_jp, body_html = self.render_control(node)
         else:

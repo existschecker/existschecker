@@ -1,4 +1,4 @@
-from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, AtomicFormula, Context, Compound, RefDefCon, Var, Bottom, Term, Formula, PredTemplate, PredLambda, MembershipLambda, VarTerm, PredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, RefFact
+from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, AtomicFormula, Context, Compound, RefDefCon, Var, Bottom, Term, Formula, PredTemplate, PredLambda, MembershipLambda, VarTerm, PredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, RefFact, RefEquality
 from itertools import permutations
 from copy import deepcopy
 from typing import Mapping, Literal
@@ -80,6 +80,8 @@ class AlphaEquiv:
         self.begin_log(depth, e1, e2, env)
         if isinstance(e1, PredTemplate) and isinstance(e2, PredTemplate):
             result =  self.alpha_equiv_var(e1, e2, env, depth)
+        elif isinstance(e1, RefEquality) and isinstance(e2, RefEquality):
+            result = True
         elif isinstance(e1, RefPrimPred) and isinstance(e2, RefPrimPred):
             result = self.alpha_equiv_con(e1, e2, depth)
         elif isinstance(e1, RefDefPred) and isinstance(e2, RefDefPred):
@@ -124,7 +126,7 @@ class AlphaEquiv:
             return False
         if len(e1.args) != len(e2.args):
             return False
-        if self.context.decl.equality is not None and isinstance(e1.pred, (RefPrimPred, RefDefPred)) and e1.pred == self.context.decl.equality.equal:
+        if self.context.decl.equality is not None and isinstance(e1.pred, RefEquality):
             a1, b1 = e1.args
             a2, b2 = e2.args
             return (self.alpha_equiv_term(a1, a2, env, depth+1) and self.alpha_equiv_term(b1, b2, env, depth+1)) or (self.alpha_equiv_term(a1, b2, env, depth+1) and self.alpha_equiv_term(b1, a2, env, depth+1))
@@ -273,7 +275,7 @@ def collect_vars(expr: Formula | Term, used_bv: set[Var] | None = None, used_bpt
             return set(), set(), set(), set(), set(), set()
         else:
             return set(), set(), set(), set(), {expr}, set()
-    elif isinstance(expr, (RefDefCon, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm)):
+    elif isinstance(expr, (RefDefCon, RefEquality, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm)):
         return set(), set(), set(), set(), set(), set()
     elif isinstance(expr, (AtomicFormula, Compound)):
         if isinstance(expr, AtomicFormula):
@@ -502,7 +504,7 @@ class Substitutor:
         substituted = self._apply_substitute(expr, self.mapping[1])
         if substituted is not None:
             return substituted
-        if isinstance(expr, (PredTemplate, RefPrimPred, RefDefPred)):
+        if isinstance(expr, (PredTemplate, RefEquality, RefPrimPred, RefDefPred)):
             return expr
         elif isinstance(expr, PredLambda):
             return PredLambda(expr.args, self.substitute_formula(expr.body))
@@ -535,7 +537,7 @@ class Substitutor:
     def substitute_formula(self, expr: Formula) -> Formula:
         if isinstance(expr, AtomicFormula):
             new_pred = self.substitute_pred_term(expr.pred)
-            if isinstance(new_pred, (PredTemplate, RefPrimPred)):
+            if isinstance(new_pred, (PredTemplate, RefEquality, RefPrimPred)):
                 return AtomicFormula(new_pred, tuple(self.substitute_term(arg) for arg in expr.args))
             elif isinstance(new_pred, RefDefPred):
                 defpred = self.context.decl.defpreds[new_pred.name]
@@ -633,7 +635,7 @@ class AlphaRename:
     def alpha_rename_pred_term(self, expr: PredTerm) -> PredTerm:
         if isinstance(expr, PredTemplate):
             return self.alpha_rename_pred_tmpl(expr)
-        elif isinstance(expr, (RefPrimPred, RefDefPred)):
+        elif isinstance(expr, (RefEquality, RefPrimPred, RefDefPred)):
             return expr
         elif isinstance(expr, PredLambda):
             return PredLambda(tuple(self.alpha_rename_var(a) for a in expr.args), self.alpha_rename_formula(expr.body))
@@ -781,9 +783,11 @@ class ExprFormatter:
 
     def get_tex_fragments(self, expr: AtomicFormula | Compound) -> list[str]:
         if isinstance(expr, AtomicFormula):
-            if isinstance(expr.pred, RefPrimPred):
-                if expr.pred.name == "ordinal":
-                    print(expr.pred)
+            if isinstance(expr.pred, RefEquality):
+                if self.context.decl.equality is None:
+                    raise Exception(f"equality has not been declared yet")
+                tex = self.context.decl.equality.tex
+            elif isinstance(expr.pred, RefPrimPred):
                 tex = self.context.decl.primpreds[expr.pred.name].tex
             elif isinstance(expr.pred, RefDefPred):
                 tex = self.context.decl.defpreds[expr.pred.name].tex
@@ -861,7 +865,7 @@ class ExprFormatter:
 
     def pretty_formula(self, expr: Formula, parent_prec: int = FORMULA_PRECEDENCE["Lowest"]) -> str:
         if isinstance(expr, AtomicFormula):
-            if isinstance(expr.pred, (RefPrimPred, RefDefPred)):
+            if isinstance(expr.pred, (RefEquality, RefPrimPred, RefDefPred)):
                 if self.mode == "source":
                     fragments = [f"{expr.pred.name}("]
                     for i in range(len(expr.args) - 1):

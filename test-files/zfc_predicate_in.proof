@@ -2,63 +2,33 @@ include "logic.proof"
 
 primitive predicate in arity 2 tex "","\in",""
 
-membership in
+equality equal tex "", "=", ""
 
-definition predicate equal(predicate \phi[1], predicate \chi[1]) as \forall x (\phi(x) \leftrightarrow \chi(x)) tex "","=",""
+axiom axiom_of_extensionality \forall x \forall y (\forall z (in(z, x) \leftrightarrow in(z, y)) \to equal(x, y))
 
-theorem equal_reflection \forall x(equal(x,x)) {
-  any x {
-    any y {
-      assume in(y,x) {}
-      connect in(y,x)\leftrightarrow in(y,x)
-    }
-    fold for equal conclude equal(x,x)
-  }
-}
+definition predicate equal_predicate(predicate \phi[1], predicate \chi[1]) as \forall x (\phi(x) \leftrightarrow \chi(x)) tex "","=",""
 
-theorem equal_replacement \forall x\forall y\forall u\forall v(equal(x,y)\wedge equal(u,v)\to(equal(x,u)\to equal(y,v))) {
-  any x,y,u,v {
-    assume equal(x,y)\wedge equal(u,v) {
-      assume equal(x,u) {
-        any p {
-          assume in(p,y) {
-            split equal(x,y)\wedge equal(u,v)
-            apply invoke leftward equal(x,y) for p
-            apply invoke rightward equal(x,u) for p
-            apply invoke rightward equal(u,v) for p
-          }
-          assume in(p,v) {
-            split equal(x,y)\wedge equal(u,v)
-            apply invoke leftward equal(u,v) for p
-            apply invoke leftward equal(x,u) for p
-            apply invoke rightward equal(x,y) for p
-          }
-          connect in(p,y)\leftrightarrow in(p,v)
+theorem equal_lambda \forall X \forall Y (equal(X, Y) \leftrightarrow equal_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y))) {
+  any X, Y {
+    assume equal(X, Y) {
+      any x {
+        assume in(x, X) {
+          substitute in(x, X) for X: Y
         }
-        fold for equal conclude equal(y,v)
+        assume in(x, Y) {
+          substitute in(x, Y) for Y: X
+        }
+        connect in(x, X) \leftrightarrow in(x, Y)
       }
+      fold for equal_predicate conclude equal_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y))
     }
+    assume equal_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y)) {
+      expand equal_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y)) for equal_predicate
+      apply invoke axiom_of_extensionality for X, Y
+    }
+    connect equal(X, Y) \leftrightarrow equal_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y))
   }
 }
-
-axiom axiom_of_equal \forall x\forall y(equal(x,y)\to\forall z(in(x,z)\to in(y,z)))
-
-theorem in_replacement \forall x\forall y\forall u\forall v(equal(x,y)\wedge equal(u,v)\to(in(x,u)\to in(y,v))) {
-  any x,y,u,v {
-    assume equal(x,y)\wedge equal(u,v) {
-      assume in(x,u) {
-        split equal(x,y)\wedge equal(u,v)
-        apply invoke axiom_of_equal for x,y
-        apply invoke \forall z(in(x,z)\to in(y,z)) for u
-        apply invoke rightward equal(u,v) for y
-      }
-    }
-  }
-}
-
-equality equal
-  reflection equal_reflection
-  replacement equal: equal_replacement, in: in_replacement
 
 theorem set_is_unique \forall x \exists! y (equal(y, x)) {
   any x {
@@ -85,19 +55,39 @@ theorem set_is_unique_for_each_predicate \forall^P\phi[1]\forall x\forall x'(\fo
         }
         connect in(y,x)\leftrightarrow in(y,x')
       }
-      fold for equal conclude equal(x,x')
+      apply invoke axiom_of_extensionality for x, x'
     }
   }
 }
 
 definition predicate autoexpand notin(x,y) as \neg(in(x,y)) tex "","\notin",""
 
-definition predicate autoexpand neq(predicate \phi[1], predicate \chi[1]) as \neg(equal(\phi, \chi)) tex "", "\neq", ""
+definition predicate autoexpand neq(x, y) as \neg(equal(x, y)) tex "", "\neq", ""
 
-theorem neq_cor1 \forall^P \phi[1] \forall^P \chi[1] (neq(\phi, \chi) \leftrightarrow \exists x ((\phi(x) \wedge \neg(\chi(x))) \vee (\neg(\phi(x)) \wedge \chi(x)))) {
+definition predicate autoexpand neq_predicate(predicate \phi[1], predicate \chi[1]) as \neg(equal_predicate(\phi, \chi)) tex "", "\neq", ""
+
+theorem neq_lambda \forall X \forall Y (neq(X, Y) \leftrightarrow neq_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y))) {
+  any X, Y {
+    assume neq(X, Y) {
+      deny equal_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y)) {
+        apply invoke leftward equal_lambda for X, Y
+        contradict equal(X, Y)
+      }
+    }
+    assume neq_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y)) {
+      deny equal(X, Y) {
+        apply invoke rightward equal_lambda for X, Y
+        contradict equal_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y))
+      }
+    }
+    connect neq(X, Y) \leftrightarrow neq_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y))
+  }
+}
+
+theorem neq_cor1_predicate \forall^P \phi[1] \forall^P \chi[1] (neq_predicate(\phi, \chi) \leftrightarrow \exists x ((\phi(x) \wedge \neg(\chi(x))) \vee (\neg(\phi(x)) \wedge \chi(x)))) {
   any predicate \phi[1], predicate \chi[1] {
-    assume neq(\phi, \chi) {
-      expand neq(\phi, \chi) for neq, equal
+    assume neq_predicate(\phi, \chi) {
+      expand neq_predicate(\phi, \chi) for neq_predicate, equal_predicate
       apply invoke leftward exist_neg_leftrightarrow_neg_forall for \lambda^P x. \phi(x) \leftrightarrow \chi(x)
       some x such \exists x (\neg(\phi(x) \leftrightarrow \chi(x))) {
         apply invoke rightward neg_iff_iff for \lambda^P. \phi(x), \lambda^P. \chi(x)
@@ -110,159 +100,146 @@ theorem neq_cor1 \forall^P \phi[1] \forall^P \chi[1] (neq(\phi, \chi) \leftright
         lift for x conclude \exists x (\neg(\phi(x) \leftrightarrow \chi(x)))
       }
       apply invoke rightward exist_neg_leftrightarrow_neg_forall for \lambda^P x. \phi(x) \leftrightarrow \chi(x)
-      fold for neq, equal conclude neq(\phi, \chi)
+      fold for neq_predicate, equal_predicate conclude neq_predicate(\phi, \chi)
     }
-    connect neq(\phi, \chi) \leftrightarrow \exists x ((\phi(x) \wedge \neg(\chi(x))) \vee (\neg(\phi(x)) \wedge \chi(x)))
+    connect neq_predicate(\phi, \chi) \leftrightarrow \exists x ((\phi(x) \wedge \neg(\chi(x))) \vee (\neg(\phi(x)) \wedge \chi(x)))
   }
 }
 
-theorem neq_cor1_set \forall x\forall y(neq(x,y)\leftrightarrow\exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y)))) {
-  any x, y {
-    assume neq(x,y) {
-      deny \forall z(in(z,x)\leftrightarrow in(z,y)) {
-        fold for equal conclude equal(x,y)
-        contradict equal(x,y)
-      }
-      deny \neg(\exists z(\neg(in(z,x)\leftrightarrow in(z,y)))) {
-        any z {
-          deny \neg(in(z,x)\leftrightarrow in(z,y)) {
-            lift for z conclude \exists z(\neg(in(z,x)\leftrightarrow in(z,y)))
-            contradict \exists z(\neg(in(z,x)\leftrightarrow in(z,y)))
-          }
-        }
-        contradict \forall z(in(z,x)\leftrightarrow in(z,y))
-      }
-      some z such \exists z(\neg(in(z,x)\leftrightarrow in(z,y))) {
-        deny (in(z,x)\to in(z,y))\wedge(in(z,y)\to in(z,x)) {
-          split (in(z,x)\to in(z,y))\wedge(in(z,y)\to in(z,x))
-          connect in(z,x)\leftrightarrow in(z,y)
-          contradict in(z,x)\leftrightarrow in(z,y)
-        }
-        deny \neg(\neg(in(z,x)\to in(z,y))\vee\neg(in(z,y)\to in(z,x))) {
-          deny \neg(in(z,x)\to in(z,y)) {
-            pad \neg(in(z,x)\to in(z,y)) conclude \neg(in(z,x)\to in(z,y))\vee\neg(in(z,y)\to in(z,x))
-            contradict \neg(in(z,x)\to in(z,y))\vee\neg(in(z,y)\to in(z,x))
-          }
-          deny \neg(in(z,y)\to in(z,x)) {
-            pad \neg(in(z,y)\to in(z,x)) conclude \neg(in(z,x)\to in(z,y))\vee\neg(in(z,y)\to in(z,x))
-            contradict \neg(in(z,x)\to in(z,y))\vee\neg(in(z,y)\to in(z,x))
-          }
-          connect (in(z,x)\to in(z,y))\wedge(in(z,y)\to in(z,x))
-          contradict (in(z,x)\to in(z,y))\wedge(in(z,y)\to in(z,x))
-        }
-        divide \neg(in(z,x)\to in(z,y))\vee\neg(in(z,y)\to in(z,x))
-          case \neg(in(z,x)\to in(z,y)) {
-            deny \neg(in(z,x)\wedge notin(z,y)) {
-              assume in(z,x) {
-                deny notin(z,y) {
-                  connect in(z,x)\wedge notin(z,y)
-                  contradict in(z,x)\wedge notin(z,y)
-                }
-              }
-              contradict in(z,x)\to in(z,y)
-            }
-            pad in(z,x)\wedge notin(z,y) conclude (in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))
-          }
-          case \neg(in(z,y)\to in(z,x)) {
-            deny \neg(notin(z,x)\wedge in(z,y)) {
-              assume in(z,y) {
-                deny notin(z,x) {
-                  connect notin(z,x)\wedge in(z,y)
-                  contradict notin(z,x)\wedge in(z,y)
-                }
-              }
-              contradict in(z,y)\to in(z,x)
-            }
-            pad notin(z,x)\wedge in(z,y) conclude (in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))
-          }
-        lift for z conclude \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y)))
-      }
+theorem neq_cor1 \forall X \forall Y (neq(X, Y) \leftrightarrow \exists z ((in(z, X) \wedge notin(z, Y)) \vee (notin(z, X) \wedge in(z, Y)))) {
+  any X, Y {
+    assume neq(X, Y) {
+      apply invoke rightward neq_lambda for X, Y
+      apply invoke rightward neq_cor1_predicate for \lambda^P x. in(x, X), \lambda^P y. in(y, Y)
     }
-    assume \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))) {
-      some z such \exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))) {
-        deny equal(x,y) {
-          divide (in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y))
-            case in(z,x)\wedge notin(z,y) {
-              split in(z,x)\wedge notin(z,y)
-              apply invoke rightward equal(x,y) for z
-              contradict in(z,y)
-            }
-            case notin(z,x)\wedge in(z,y) {
-              split notin(z,x)\wedge in(z,y)
-              apply invoke leftward equal(x,y) for z
-              contradict in(z,x)
-            }
-        }
-      }
+    assume \exists z ((in(z, X) \wedge notin(z, Y)) \vee (notin(z, X) \wedge in(z, Y))) {
+      apply invoke leftward neq_cor1_predicate for \lambda^P x. in(x, X), \lambda^P y. in(y, Y)
+      apply invoke leftward neq_lambda for X, Y
     }
-    connect neq(x,y)\leftrightarrow\exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y)))
+    connect neq(X, Y) \leftrightarrow \exists z ((in(z, X) \wedge notin(z, Y)) \vee (notin(z, X) \wedge in(z, Y)))
   }
 }
 
-definition predicate subset(predicate \phi[1], predicate \chi[1]) as \forall x (\phi(x) \to \chi(x)) tex "", "\subset", ""
+definition predicate subset(x, y) as \forall z (in(z, x) \to in(z, y)) tex "", "\subset", ""
 
-theorem subset_reflection \forall^P \phi[1] (subset(\phi, \phi)) {
+definition predicate subset_predicate(predicate \phi[1], predicate \chi[1]) as \forall x (\phi(x) \to \chi(x)) tex "", "\subset", ""
+
+theorem subset_lambda \forall X \forall Y (subset(X, Y) \leftrightarrow subset_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y))) {
+  any X, Y {
+    assume subset(X, Y) {
+      expand subset(X, Y) for subset
+      fold for subset_predicate conclude subset_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y))
+    }
+    assume subset_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y)) {
+      expand subset_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y)) for subset_predicate
+      fold for subset conclude subset(X, Y)
+    }
+    connect subset(X, Y) \leftrightarrow subset_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y))
+  }
+}
+
+theorem subset_reflection_predicate \forall^P \phi[1] (subset_predicate(\phi, \phi)) {
   any predicate \phi[1] {
     any x {
       assume \phi(x) {}
     }
-    fold for subset conclude subset(\phi, \phi)
+    fold for subset_predicate conclude subset_predicate(\phi, \phi)
   }
 }
 
-theorem subset_antisymmetry \forall^P \phi[1] \forall^P \chi[1] (subset(\phi, \chi) \wedge subset(\chi, \phi) \leftrightarrow equal(\phi, \chi)) {
+theorem subset_reflection \forall X (subset(X, X)) {
+  any X {
+    apply subset_reflection_predicate for \lambda^P x. in(x, X)
+    apply invoke leftward subset_lambda for X, X
+  }
+}
+
+theorem subset_antisymmetry_predicate \forall^P \phi[1] \forall^P \chi[1] (subset_predicate(\phi, \chi) \wedge subset_predicate(\chi, \phi) \leftrightarrow equal_predicate(\phi, \chi)) {
   any predicate \phi[1], predicate \chi[1] {
-    assume subset(\phi, \chi)\wedge subset(\chi, \phi) {
-      split subset(\phi, \chi)\wedge subset(\chi, \phi)
+    assume subset_predicate(\phi, \chi)\wedge subset_predicate(\chi, \phi) {
+      split subset_predicate(\phi, \chi)\wedge subset_predicate(\chi, \phi)
       any x {
         assume \phi(x) {
-          apply invoke subset(\phi, \chi) for x
+          apply invoke subset_predicate(\phi, \chi) for x
         }
         assume \chi(x) {
-          apply invoke subset(\chi, \phi) for x
+          apply invoke subset_predicate(\chi, \phi) for x
         }
         connect \phi(x) \leftrightarrow \chi(x)
       }
-      fold for equal conclude equal(\phi, \chi)
+      fold for equal_predicate conclude equal_predicate(\phi, \chi)
     }
-    assume equal(\phi, \chi) {
+    assume equal_predicate(\phi, \chi) {
       any x {
         assume \phi(x) {
-          apply invoke rightward equal(\phi, \chi) for x
+          apply invoke rightward equal_predicate(\phi, \chi) for x
         }
       }
-      fold for subset conclude subset(\phi, \chi)
+      fold for subset_predicate conclude subset_predicate(\phi, \chi)
       any x {
         assume \chi(x) {
-          apply invoke leftward equal(\phi, \chi) for x
+          apply invoke leftward equal_predicate(\phi, \chi) for x
         }
       }
-      fold for subset conclude subset(\chi, \phi)
-      connect subset(\phi, \chi) \wedge subset(\chi, \phi)
+      fold for subset_predicate conclude subset_predicate(\chi, \phi)
+      connect subset_predicate(\phi, \chi) \wedge subset_predicate(\chi, \phi)
     }
-    connect subset(\phi, \chi) \wedge subset(\chi, \phi) \leftrightarrow equal(\phi, \chi)
+    connect subset_predicate(\phi, \chi) \wedge subset_predicate(\chi, \phi) \leftrightarrow equal_predicate(\phi, \chi)
   }
 }
 
-theorem subset_trans \forall^P \phi[1] \forall^P \chi[1] \forall^P \rho[1] (subset(\phi, \chi) \wedge subset(\chi, \rho) \to subset(\phi, \rho)) {
+theorem subset_antisymmetry \forall X \forall Y (subset(X, Y) \wedge subset(Y, X) \leftrightarrow equal(X, Y)) {
+  any X, Y {
+    assume subset(X, Y) \wedge subset(Y, X) {
+      split subset(X, Y) \wedge subset(Y, X)
+      apply invoke rightward subset_lambda for X, Y
+      apply invoke rightward subset_lambda for Y, X
+      connect subset_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y)) \wedge subset_predicate(\lambda^P y. in(y, Y), \lambda^P x. in(x, X))
+      apply invoke rightward subset_antisymmetry_predicate for \lambda^P x. in(x, X), \lambda^P y. in(y, Y)
+      apply invoke leftward equal_lambda for X, Y
+    }
+    assume equal(X, Y) {
+      apply subset_reflection for X
+      substitute subset(X, X) for X[2]: Y
+      substitute subset(X, X) for X[1]: Y
+      connect subset(X, Y) \wedge subset(Y, X)
+    }
+    connect subset(X, Y) \wedge subset(Y, X) \leftrightarrow equal(X, Y)
+  }
+}
+
+theorem subset_trans_predicate \forall^P \phi[1] \forall^P \chi[1] \forall^P \rho[1] (subset_predicate(\phi, \chi) \wedge subset_predicate(\chi, \rho) \to subset_predicate(\phi, \rho)) {
   any predicate \phi[1], predicate \chi[1], predicate \rho[1] {
-    assume subset(\phi, \chi) \wedge subset(\chi, \rho) {
-      split subset(\phi, \chi) \wedge subset(\chi, \rho)
+    assume subset_predicate(\phi, \chi) \wedge subset_predicate(\chi, \rho) {
+      split subset_predicate(\phi, \chi) \wedge subset_predicate(\chi, \rho)
       any x {
         assume \phi(x) {
-          apply invoke subset(\phi, \chi) for x
-          apply invoke subset(\chi, \rho) for x
+          apply invoke subset_predicate(\phi, \chi) for x
+          apply invoke subset_predicate(\chi, \rho) for x
         }
       }
-      fold for subset conclude subset(\phi, \rho)
+      fold for subset_predicate conclude subset_predicate(\phi, \rho)
     }
   }
 }
 
-theorem neg_subset \forall^P \phi[1] \forall^P \chi[1] (\neg(subset(\phi, \chi)) \leftrightarrow \exists x (\phi(x) \wedge \neg(\chi(x)))) {
+theorem subset_trans \forall X \forall Y \forall Z (subset(X, Y) \wedge subset(Y, Z) \to subset(X, Z)) {
+  any X, Y, Z {
+    assume subset(X, Y) \wedge subset(Y, Z) {
+      split subset(X, Y) \wedge subset(Y, Z)
+      apply invoke rightward subset_lambda for X, Y
+      apply invoke rightward subset_lambda for Y, Z
+      connect subset_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y)) \wedge subset_predicate(\lambda^P y. in(y, Y), \lambda^P z. in(z, Z))
+      apply invoke subset_trans_predicate for \lambda^P x. in(x, X), \lambda^P y. in(y, Y), \lambda^P z. in(z, Z)
+      apply invoke leftward subset_lambda for X, Z
+    }
+  }
+}
+
+theorem neg_subset_predicate \forall^P \phi[1] \forall^P \chi[1] (\neg(subset_predicate(\phi, \chi)) \leftrightarrow \exists x (\phi(x) \wedge \neg(\chi(x)))) {
   any predicate \phi[1], predicate \chi[1] {
-    assume \neg(subset(\phi, \chi)) {
-      expand \neg(subset(\phi, \chi)) for subset
+    assume \neg(subset_predicate(\phi, \chi)) {
+      expand \neg(subset_predicate(\phi, \chi)) for subset_predicate
       apply invoke leftward exist_neg_leftrightarrow_neg_forall for \lambda^P x. \phi(x) \to \chi(x)
       some x such \exists x (\neg(\phi(x) \to \chi(x))) {
         apply invoke rightward neg_implication for \lambda^P. \phi(x), \lambda^P. \chi(x)
@@ -275,40 +252,80 @@ theorem neg_subset \forall^P \phi[1] \forall^P \chi[1] (\neg(subset(\phi, \chi))
         lift for x conclude \exists x (\neg(\phi(x) \to \chi(x)))
       }
       apply invoke rightward exist_neg_leftrightarrow_neg_forall for \lambda^P x. \phi(x) \to \chi(x)
-      fold for subset conclude \neg(subset(\phi, \chi))
+      fold for subset_predicate conclude \neg(subset_predicate(\phi, \chi))
     }
-    connect \neg(subset(\phi, \chi)) \leftrightarrow \exists x (\phi(x) \wedge \neg(\chi(x)))
+    connect \neg(subset_predicate(\phi, \chi)) \leftrightarrow \exists x (\phi(x) \wedge \neg(\chi(x)))
   }
 }
 
-theorem neq_iff_subset \forall^P \phi[1] \forall^P \chi[1] (neq(\phi, \chi) \leftrightarrow \neg(subset(\phi, \chi)) \vee \neg(subset(\chi, \phi))) {
-  any predicate \phi[1], predicate \chi[1] {
-    apply subset_antisymmetry for \phi, \chi
-    apply invoke neg_iff for \lambda^P. subset(\phi, \chi) \wedge subset(\chi, \phi), \lambda^P.equal(\phi, \chi)
-    assume neq(\phi, \chi) {
-      invoke leftward \neg(subset(\phi, \chi) \wedge subset(\chi, \phi)) \leftrightarrow neq(\phi, \chi)
-      apply invoke rightward neg_and for \lambda^P. subset(\phi, \chi), \lambda^P. subset(\chi, \phi)
+theorem neg_subset \forall X \forall Y (\neg(subset(X, Y)) \leftrightarrow \exists z (in(z, X) \wedge notin(z, Y))) {
+  any X, Y {
+    assume \neg(subset(X, Y)) {
+      deny subset_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y)) {
+        apply invoke leftward subset_lambda for X, Y
+        contradict subset(X, Y)
+      }
+      apply invoke rightward neg_subset_predicate for \lambda^P x. in(x, X), \lambda^P y. in(y, Y)
     }
-    assume \neg(subset(\phi, \chi)) \vee \neg(subset(\chi, \phi)) {
-      apply invoke leftward neg_and for \lambda^P. subset(\phi, \chi), \lambda^P. subset(\chi, \phi)
-      invoke rightward \neg(subset(\phi, \chi) \wedge subset(\chi, \phi)) \leftrightarrow neq(\phi, \chi)
+    assume \exists z (in(z, X) \wedge notin(z, Y)) {
+      apply invoke leftward neg_subset_predicate for \lambda^P x. in(x, X), \lambda^P y. in(y, Y)
+      deny subset(X, Y) {
+        apply invoke rightward subset_lambda for X, Y
+        contradict subset_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y))
+      }
     }
-    connect neq(\phi, \chi) \leftrightarrow \neg(subset(\phi, \chi)) \vee \neg(subset(\chi, \phi))
+    connect \neg(subset(X, Y)) \leftrightarrow \exists z (in(z, X) \wedge notin(z, Y))
   }
 }
 
-definition predicate subsetneq(predicate \phi[1], predicate \chi[1]) as subset(\phi, \chi) \wedge neq(\phi, \chi) tex "", "\subsetneq", ""
-
-theorem subsetneq_implies_exist \forall^P \phi[1] \forall^P \chi[1] (subsetneq(\phi, \chi) \to \exists x(\neg(\phi(x)) \wedge \chi(x))) {
+theorem neq_iff_subset_predicate \forall^P \phi[1] \forall^P \chi[1] (neq_predicate(\phi, \chi) \leftrightarrow \neg(subset_predicate(\phi, \chi)) \vee \neg(subset_predicate(\chi, \phi))) {
   any predicate \phi[1], predicate \chi[1] {
-    assume subsetneq(\phi, \chi) {
-      split subsetneq(\phi, \chi)
-      apply invoke rightward neq_cor1 for \phi, \chi
+    apply subset_antisymmetry_predicate for \phi, \chi
+    apply invoke neg_iff for \lambda^P. subset_predicate(\phi, \chi) \wedge subset_predicate(\chi, \phi), \lambda^P.equal_predicate(\phi, \chi)
+    assume neq_predicate(\phi, \chi) {
+      invoke leftward \neg(subset_predicate(\phi, \chi) \wedge subset_predicate(\chi, \phi)) \leftrightarrow neq_predicate(\phi, \chi)
+      apply invoke rightward neg_and for \lambda^P. subset_predicate(\phi, \chi), \lambda^P. subset_predicate(\chi, \phi)
+    }
+    assume \neg(subset_predicate(\phi, \chi)) \vee \neg(subset_predicate(\chi, \phi)) {
+      apply invoke leftward neg_and for \lambda^P. subset_predicate(\phi, \chi), \lambda^P. subset_predicate(\chi, \phi)
+      invoke rightward \neg(subset_predicate(\phi, \chi) \wedge subset_predicate(\chi, \phi)) \leftrightarrow neq_predicate(\phi, \chi)
+    }
+    connect neq_predicate(\phi, \chi) \leftrightarrow \neg(subset_predicate(\phi, \chi)) \vee \neg(subset_predicate(\chi, \phi))
+  }
+}
+
+definition predicate subsetneq(x, y) as subset(x, y) \wedge neq(x, y) tex "", "\subsetneq", ""
+
+definition predicate subsetneq_predicate(predicate \phi[1], predicate \chi[1]) as subset_predicate(\phi, \chi) \wedge neq_predicate(\phi, \chi) tex "", "\subsetneq", ""
+
+theorem subsetneq_lambda \forall X \forall Y (subsetneq(X, Y) \leftrightarrow subsetneq_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y))) {
+  any X, Y {
+    assume subsetneq(X, Y) {
+      split subsetneq(X, Y)
+      apply invoke rightward subset_lambda for X, Y
+      apply invoke rightward neq_lambda for X, Y
+      connect subsetneq_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y))
+    }
+    assume subsetneq_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y)) {
+      split subsetneq_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y))
+      apply invoke leftward subset_lambda for X, Y
+      apply invoke leftward neq_lambda for X, Y
+      connect subsetneq(X, Y)
+    }
+    connect subsetneq(X, Y) \leftrightarrow subsetneq_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y))
+  }
+}
+
+theorem subsetneq_implies_exist_predicate \forall^P \phi[1] \forall^P \chi[1] (subsetneq_predicate(\phi, \chi) \to \exists x(\neg(\phi(x)) \wedge \chi(x))) {
+  any predicate \phi[1], predicate \chi[1] {
+    assume subsetneq_predicate(\phi, \chi) {
+      split subsetneq_predicate(\phi, \chi)
+      apply invoke rightward neq_cor1_predicate for \phi, \chi
       some x such \exists x ((\phi(x) \wedge \neg(\chi(x))) \vee (\neg(\phi(x)) \wedge \chi(x))) {
         divide (\phi(x) \wedge \neg(\chi(x))) \vee (\neg(\phi(x)) \wedge \chi(x))
           case \phi(x) \wedge \neg(\chi(x)) {
             split \phi(x) \wedge \neg(\chi(x))
-            apply invoke subset(\phi, \chi) for x
+            apply invoke subset_predicate(\phi, \chi) for x
             contradict \chi(x)
             explode \neg(\phi(x)) \wedge \chi(x)
           }
@@ -319,30 +336,71 @@ theorem subsetneq_implies_exist \forall^P \phi[1] \forall^P \chi[1] (subsetneq(\
   }
 }
 
-theorem subset_subsetneq \forall^P \phi[1] \forall^P \chi[1] (subset(\phi, \chi)\leftrightarrow subsetneq(\phi, \chi)\vee equal(\phi, \chi)) {
+theorem subsetneq_implies_exist \forall X \forall Y (subsetneq(X, Y) \to \exists z (notin(z, X) \wedge in(z, Y))) {
+  any X, Y {
+    assume subsetneq(X, Y) {
+      apply invoke rightward subsetneq_lambda for X, Y
+      apply invoke subsetneq_implies_exist_predicate for \lambda^P x. in(x, X), \lambda^P y. in(y, Y)
+    }
+  }
+}
+
+theorem subset_subsetneq_predicate \forall^P \phi[1] \forall^P \chi[1] (subset_predicate(\phi, \chi) \leftrightarrow subsetneq_predicate(\phi, \chi) \vee equal_predicate(\phi, \chi)) {
   any predicate \phi[1], predicate \chi[1] {
-    assume subset(\phi, \chi) {
-      apply law_of_excluded_middle for \lambda^P. equal(\phi, \chi)
-      divide equal(\phi, \chi) \vee neq(\phi, \chi)
-        case equal(\phi, \chi) {
-          pad equal(\phi, \chi) conclude subsetneq(\phi, \chi) \vee equal(\phi, \chi)
+    assume subset_predicate(\phi, \chi) {
+      apply law_of_excluded_middle for \lambda^P. equal_predicate(\phi, \chi)
+      divide equal_predicate(\phi, \chi) \vee neq_predicate(\phi, \chi)
+        case equal_predicate(\phi, \chi) {
+          pad equal_predicate(\phi, \chi) conclude subsetneq_predicate(\phi, \chi) \vee equal_predicate(\phi, \chi)
         }
-        case neq(\phi, \chi) {
-          connect subset(\phi, \chi) \wedge neq(\phi, \chi)
-          fold for subsetneq conclude subsetneq(\phi, \chi)
-          pad subsetneq(\phi, \chi) conclude subsetneq(\phi, \chi) \vee equal(\phi, \chi)
-        }
-    }
-    assume subsetneq(\phi, \chi) \vee equal(\phi, \chi) {
-      divide subsetneq(\phi, \chi) \vee equal(\phi, \chi)
-        case subsetneq(\phi, \chi) {
-          split 1 subsetneq(\phi, \chi)
-        }
-        case equal(\phi, \chi) {
-          apply invoke leftward subset_antisymmetry for \phi, \chi
-          split 1 subset(\phi, \chi) \wedge subset(\chi, \phi)
+        case neq_predicate(\phi, \chi) {
+          connect subset_predicate(\phi, \chi) \wedge neq_predicate(\phi, \chi)
+          fold for subsetneq_predicate conclude subsetneq_predicate(\phi, \chi)
+          pad subsetneq_predicate(\phi, \chi) conclude subsetneq_predicate(\phi, \chi) \vee equal_predicate(\phi, \chi)
         }
     }
-    connect subset(\phi, \chi)\leftrightarrow subsetneq(\phi, \chi)\vee equal(\phi, \chi)
+    assume subsetneq_predicate(\phi, \chi) \vee equal_predicate(\phi, \chi) {
+      divide subsetneq_predicate(\phi, \chi) \vee equal_predicate(\phi, \chi)
+        case subsetneq_predicate(\phi, \chi) {
+          split 1 subsetneq_predicate(\phi, \chi)
+        }
+        case equal_predicate(\phi, \chi) {
+          apply invoke leftward subset_antisymmetry_predicate for \phi, \chi
+          split 1 subset_predicate(\phi, \chi) \wedge subset_predicate(\chi, \phi)
+        }
+    }
+    connect subset_predicate(\phi, \chi)\leftrightarrow subsetneq_predicate(\phi, \chi)\vee equal_predicate(\phi, \chi)
+  }
+}
+
+theorem subset_subsetneq \forall X \forall Y (subset(X, Y) \leftrightarrow subsetneq(X, Y) \vee equal(X, Y)) {
+  any X, Y {
+    assume subset(X, Y) {
+      apply invoke rightward subset_lambda for X, Y
+      apply invoke rightward subset_subsetneq_predicate for \lambda^P x. in(x, X), \lambda^P y. in(y, Y)
+      divide subsetneq_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y)) \vee equal_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y))
+        case subsetneq_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y)) {
+          apply invoke leftward subsetneq_lambda for X, Y
+          pad subsetneq(X, Y) conclude subsetneq(X, Y) \vee equal(X, Y)
+        }
+        case equal_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y)) {
+          apply invoke leftward equal_lambda for X, Y
+          pad equal(X, Y) conclude subsetneq(X, Y) \vee equal(X, Y)
+        }
+    }
+    assume subsetneq(X, Y) \vee equal(X, Y) {
+      divide subsetneq(X, Y) \vee equal(X, Y)
+        case subsetneq(X, Y) {
+          apply invoke rightward subsetneq_lambda for X, Y
+          pad subsetneq_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y)) conclude subsetneq_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y)) \vee equal_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y))
+        }
+        case equal(X, Y) {
+          apply invoke rightward equal_lambda for X, Y
+          pad equal_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y)) conclude subsetneq_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y)) \vee equal_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y))
+        }
+      apply invoke leftward subset_subsetneq_predicate for \lambda^P x. in(x, X), \lambda^P y. in(y, Y)
+      apply invoke leftward subset_lambda for X, Y
+    }
+    connect subset(X, Y) \leftrightarrow subsetneq(X, Y) \vee equal(X, Y)
   }
 }

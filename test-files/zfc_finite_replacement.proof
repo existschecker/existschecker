@@ -150,7 +150,7 @@ theorem finite_replacement_exists_uniquely \forall X \forall^P \psi[2] (finite(X
     assume size(X, n) \wedge \forall x \forall y \forall y' (\psi(x, y) \wedge \psi(x, y') \to equal(y, y')) {
       split 1 size(X, n) \wedge \forall x \forall y \forall y' (\psi(x, y) \wedge \psi(x, y') \to equal(y, y'))
       split 1 size(X, n)
-      apply invoke subset(natural, \lambda^P n. \forall X \forall^P \psi[2] (size(X, n) \wedge \forall x \forall y \forall y' (\psi(x, y) \wedge \psi(x, y') \to equal(y, y')) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y)))))) for n
+      apply invoke subset_predicate(natural, \lambda^P n. \forall X \forall^P \psi[2] (size(X, n) \wedge \forall x \forall y \forall y' (\psi(x, y) \wedge \psi(x, y') \to equal(y, y')) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y)))))) for n
       apply invoke \forall X \forall^P \psi[2] (size(X, n) \wedge \forall x \forall y \forall y' (\psi(x, y) \wedge \psi(x, y') \to equal(y, y')) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))))) for X, \psi
     }
   }

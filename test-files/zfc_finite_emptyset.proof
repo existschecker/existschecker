@@ -19,7 +19,7 @@ theorem emptyset_exists_uniquely \exists! x \forall y (notin(y, x)) {
           }
           connect in(y, x') \leftrightarrow in(y, x)
         }
-        fold for equal conclude equal(x', x)
+        apply invoke axiom_of_extensionality for x', x
       }
     }
     connect \forall y (notin(y, x)) \wedge \forall x' (\forall y (notin(y, x')) \to equal(x', x))

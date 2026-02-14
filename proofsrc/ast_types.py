@@ -63,6 +63,10 @@ class PredTerm(Term):
     pass
 
 @dataclass(frozen=True)
+class RefEquality(PredTerm):
+    name: str
+
+@dataclass(frozen=True)
 class RefPrimPred(PredTerm):
     name: str
 
@@ -410,20 +414,9 @@ class DefFunTerm(Declaration):
     tex: list[str]
 
 @dataclass
-class EqualityReflection(DeclarationSupport):
-    equal: RefPrimPred | RefDefPred
-    evidence: Axiom | Theorem
-
-@dataclass
-class EqualityReplacement(DeclarationSupport):
-    equal: RefPrimPred | RefDefPred
-    evidence: dict[str, Axiom | Theorem]
-
-@dataclass
 class Equality(Declaration):
-    equal: RefPrimPred | RefDefPred
-    reflection: EqualityReflection
-    replacement: EqualityReplacement
+    ref: RefEquality
+    tex: list[str]
 
 @dataclass
 class Membership(Declaration):
@@ -616,7 +609,7 @@ class Workspace:
 
     def get_decl_def(self, name: str) -> Token | None:
         for unit in self.get_all_units():
-            if isinstance(unit.ast, (PrimPred, Axiom, Theorem, DefPred, DefConExist, DefConUniq, DefCon, DefFunExist, DefFunUniq, DefFun, DefFunTerm)) and name == unit.ast.name:
+            if isinstance(unit.ast, (Equality, PrimPred, Axiom, Theorem, DefPred, DefConExist, DefConUniq, DefCon, DefFunExist, DefFunUniq, DefFun, DefFunTerm)) and name == unit.ast.name:
                 return unit.tokens[unit.node_to_token[id(unit.ast.ref)][0]]
         return None
 

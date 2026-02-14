@@ -107,7 +107,7 @@ theorem finite_cup_exists_uniquely \forall X \forall Y (finite(X) \wedge finite(
       split finite(X) \wedge finite(Y)
       some n such finite(Y) {
         split 1 size(Y, n)
-        apply invoke subset(natural, \lambda^P n. \forall X \forall Y (finite(X) \wedge size(Y, n) \to \exists Z (finite(Z) \wedge \forall z (in(z, Z) \leftrightarrow in(z, X) \vee in(z, Y))))) for n
+        apply invoke subset_predicate(natural, \lambda^P n. \forall X \forall Y (finite(X) \wedge size(Y, n) \to \exists Z (finite(Z) \wedge \forall z (in(z, Z) \leftrightarrow in(z, X) \vee in(z, Y))))) for n
         connect finite(X) \wedge size(Y, n)
         apply invoke \forall X \forall Y (finite(X) \wedge size(Y, n) \to \exists Z (finite(Z) \wedge \forall z (in(z, Z) \leftrightarrow in(z, X) \vee in(z, Y)))) for X, Y
         some Z such \exists Z (finite(Z) \wedge \forall z (in(z, Z) \leftrightarrow in(z, X) \vee in(z, Y))) {
@@ -247,7 +247,7 @@ theorem finite_bigcup_exists_uniquely \forall X (finite(X) \wedge \forall x (in(
       split finite(X) \wedge \forall x (in(x, X) \to finite(x))
       some n such finite(X) {
         split 1 size(X, n)
-        apply invoke subset(natural, \lambda^P n. \forall X (size(X, n) \wedge \forall x (in(x, X) \to finite(x)) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(y, x) \wedge in(x, X)))))) for n
+        apply invoke subset_predicate(natural, \lambda^P n. \forall X (size(X, n) \wedge \forall x (in(x, X) \to finite(x)) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(y, x) \wedge in(x, X)))))) for n
         connect size(X, n) \wedge \forall x (in(x, X) \to finite(x))
         apply invoke \forall X (size(X, n) \wedge \forall x (in(x, X) \to finite(x)) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(y, x) \wedge in(x, X))))) for X
         some Y such \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(y, x) \wedge in(x, X)))) {

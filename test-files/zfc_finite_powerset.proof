@@ -108,7 +108,7 @@ theorem finite_powerset_exists_uniquely \forall X (finite(X) \to \exists! Y (fin
     assume finite(X) {
       some n such finite(X) {
         split 1 size(X, n)
-        apply invoke subset(natural, \lambda^P n. \forall X (size(X, n) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow subset(y, X))))) for n
+        apply invoke subset_predicate(natural, \lambda^P n. \forall X (size(X, n) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow subset(y, X))))) for n
         apply invoke \forall X (size(X, n) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow subset(y, X)))) for X
         some Y such \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow subset(y, X))) {
           split finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow subset(y, X))

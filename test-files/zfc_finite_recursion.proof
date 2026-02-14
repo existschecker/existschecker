@@ -216,7 +216,7 @@ theorem recursion_is_unique \forall c \forall^F g[1] \forall n (natural(n) \to \
     apply invoke natural_induction for \lambda^P n. \exists! x (recursion(\lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p)), n, x))
     any n {
       assume natural(n) {
-        apply invoke subset(natural, \lambda^P n. \exists! x (recursion(\lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p)), n, x))) for n
+        apply invoke subset_predicate(natural, \lambda^P n. \exists! x (recursion(\lambda^P a. equal(c, a), \lambda^P p, q. equal(q, f(p)), n, x))) for n
       }
     }
   }

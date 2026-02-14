@@ -192,7 +192,7 @@ theorem size_is_unique \forall X \forall n \forall m (size(X, n) \wedge size(X, 
                                 }
                                 connect in(j, adj(rem(rem(m, l), k), l)) \leftrightarrow in(j, rem(m, k))
                               }
-                              fold for equal conclude equal(adj(rem(rem(m, l), k), l), rem(m, k))
+                              apply invoke axiom_of_extensionality for adj(rem(rem(m, l), k), l), rem(m, k)
                               substitute equal(adj(rem(rem(m, l), k), l), rem(m, k)) for m[2]: suc(k)
                               substitute equal(adj(rem(rem(m, l), k), l), rem(suc(k), k)) for rem(suc(k), k): k
                               any z {
@@ -234,7 +234,7 @@ theorem size_is_unique \forall X \forall n \forall m (size(X, n) \wedge size(X, 
                                 }
                                 connect in(z, adj(rem(rem(X, x), y), y)) \leftrightarrow in(z, rem(X, x))
                               }
-                              fold for equal conclude equal(adj(rem(rem(X, x), y), y), rem(X, x))
+                              apply invoke axiom_of_extensionality for adj(rem(rem(X, x), y), y), rem(X, x)
                               substitute bij(adj(rem(rem(g, op(l, x)), op(k, y)), op(l, y)), adj(rem(rem(m, l), k), l), adj(rem(rem(X, x), y), y)) for adj(rem(rem(m, l), k), l): k, adj(rem(rem(X, x), y), y): rem(X, x)
                               lift for rem(f, op(n, x)) conclude \exists f' (bij(f', n, rem(X, x)))
                               fold for equipotent conclude equipotent(n, rem(X, x))
@@ -263,7 +263,7 @@ theorem size_is_unique \forall X \forall n \forall m (size(X, n) \wedge size(X, 
     assume size(X, n) \wedge size(X, m) {
       split size(X, n) \wedge size(X, m)
       split 1 size(X, n)
-      apply invoke subset(natural, \lambda^P n. \forall X \forall m (size(X, n) \wedge size(X, m) \to equal(m, n))) for n
+      apply invoke subset_predicate(natural, \lambda^P n. \forall X \forall m (size(X, n) \wedge size(X, m) \to equal(m, n))) for n
       apply invoke \forall X \forall m (size(X, n) \wedge size(X, m) \to equal(m, n)) for X, m
     }
   }
@@ -306,7 +306,7 @@ theorem finite_adj \forall Y \forall y (finite(Y) \to finite(adj(Y, y))) {
             }
             connect in(z, adj(Y, y)) \leftrightarrow in(z, Y)
           }
-          fold for equal conclude equal(adj(Y, y), Y)
+          apply invoke axiom_of_extensionality for adj(Y, y), Y
           substitute finite(Y) for Y: adj(Y, y)
         }
         case notin(y, Y) {

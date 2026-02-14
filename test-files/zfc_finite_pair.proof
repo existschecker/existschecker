@@ -73,7 +73,7 @@ theorem suc_emptyset_is_singleton_emptyset equal(suc(emptyset), singleton(emptys
     }
     connect in(x, suc(emptyset)) \leftrightarrow in(x, singleton(emptyset))
   }
-  fold for equal conclude equal(suc(emptyset), singleton(emptyset))
+  apply invoke axiom_of_extensionality for suc(emptyset), singleton(emptyset)
 }
 
 definition function pair(x, y) as adj(singleton(x), y) tex "\{", ",", "\}"
@@ -134,7 +134,7 @@ theorem pair_commutativity \forall x \forall y (equal(pair(x,y), pair(y,x))) {
       }
       connect in(z, pair(x, y)) \leftrightarrow in(z, pair(y, x))
     }
-    fold for equal conclude equal(pair(x, y), pair(y, x))
+    apply invoke axiom_of_extensionality for pair(x, y), pair(y, x)
   }
 }
 

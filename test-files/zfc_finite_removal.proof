@@ -51,7 +51,7 @@ theorem equal_adj_rem \forall X \forall x (in(x, X) \to equal(adj(rem(X, x), x),
         }
         connect in(y, adj(rem(X, x), x)) \leftrightarrow in(y, X)
       }
-      fold for equal conclude equal(adj(rem(X, x), x), X)
+      apply invoke axiom_of_extensionality for adj(rem(X, x), x), X
     }
   }
 }
@@ -82,7 +82,7 @@ theorem equal_rem_adj \forall x \forall y (notin(y, x) \to equal(rem(adj(x, y), 
         }
         connect in(z, rem(adj(x, y), y)) \leftrightarrow in(z, x)
       }
-      fold for equal conclude equal(rem(adj(x, y), y), x)
+      apply invoke axiom_of_extensionality for rem(adj(x, y), y), x
     }
   }
 }
@@ -131,7 +131,7 @@ theorem rem_suc \forall x (notin(x, x) \to equal(rem(suc(x), x), x)) {
         }
         connect in(y, rem(suc(x), x)) \leftrightarrow in(y, x)
       }
-      fold for equal conclude equal(rem(suc(x), x), x)
+      apply invoke axiom_of_extensionality for rem(suc(x), x), x
     }
   }
 }
