@@ -84,10 +84,6 @@ class PredLambda(PredTerm):
     args: tuple[Var, ...]
     body: Formula
 
-@dataclass(frozen=True)
-class MembershipLambda(PredTerm):
-    varterm: VarTerm
-
 @dataclass
 class FormulaContext:
     vars: list[Var]

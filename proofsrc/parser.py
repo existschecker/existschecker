@@ -1,4 +1,4 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, RefDefCon, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Term, Formula, Control, Declaration, PredTemplate, PredLambda, Include, Assert, Fold, Membership, MembershipLambda, VarTerm, PredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, InvalidInclude, InvalidDeclaration, InvalidControl, ContextError, DeclarationUnit, RefFact, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq, DeclarationSupport, RefEquality
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, RefDefCon, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Term, Formula, Control, Declaration, PredTemplate, PredLambda, Include, Assert, Fold, Membership, VarTerm, PredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, InvalidInclude, InvalidDeclaration, InvalidControl, ContextError, DeclarationUnit, RefFact, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq, DeclarationSupport, RefEquality
 from lexer import Token
 from token_stream import TokenStream, TokenStreamError
 from logic_utils import strip_forall_vars
@@ -1178,22 +1178,8 @@ class Parser:
             elif isinstance(defarg, PredTemplate):
                 if isinstance(subarg, PredTerm):
                     resolved_args.append(subarg)
-                elif isinstance(subarg, VarTerm):
-                    if defarg.arity == 1:
-                        if context.decl.membership is None:
-                            msg = "VarTerm is substituted into PredTerm with arity 1, but membership has not been declared"
-                            raise ParseError(tok, msg)
-                        else:
-                            term = MembershipLambda(subarg)
-                            start_token = self.unit.tokens[self.unit.node_to_token[id(subarg)][0]]
-                            end_token = self.unit.tokens[self.unit.node_to_token[id(subarg)][1]]
-                            self.add_node_to_token(term, start_token, end_token)
-                            resolved_args.append(term)
-                    else:
-                        msg = f"VarTerm cannot be substituted into PredTerm with arity {defarg.arity}"
-                        raise ParseError(tok, msg)
                 else:
-                    msg = f"Unexpected type: {type(subarg)}"
+                    msg = f"PredTerm must be substituted into {defarg.name}, but {type(subarg)} is substituted"
                     raise ParseError(tok, msg)
             else:
                 if isinstance(subarg, FunTerm):
