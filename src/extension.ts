@@ -45,17 +45,10 @@ export function activate(context: vscode.ExtensionContext) {
                 );
                 panel.onDidDispose(() => { panel = undefined; }, null, context.subscriptions);
             }
-            updateWebView(vscode.window.activeTextEditor.document);
         }
     });
 
     context.subscriptions.push(previewCommand);
-
-    vscode.workspace.onDidSaveTextDocument(document => {
-        if (panel && document === vscode.window.activeTextEditor?.document) {
-            updateWebView(document);
-        }
-    });
 
     vscode.window.onDidChangeTextEditorSelection(async (e) => {
         if (panel) {
@@ -70,19 +63,4 @@ export function activate(context: vscode.ExtensionContext) {
 export function deactivate(): Thenable<void> | undefined {
     if (!client) { return undefined; }
     return client.stop();
-}
-
-async function updateWebView(document: vscode.TextDocument) {
-    if (!panel) { return; }
-
-    const response = await client.sendRequest<PreviewResponse>("proof/getPreviewHtml", {
-        uri: document.uri.toString()
-    });
-
-    const scriptUri = panel.webview.asWebviewUri(vscode.Uri.joinPath(mediaPath, "script.js"));
-    const cssUri = panel.webview.asWebviewUri(vscode.Uri.joinPath(mediaPath, "style_mathjax.css"));
-    let html = response.html;
-    html = html.replace("script.js", scriptUri.toString());
-    html = html.replace("style_mathjax.css", cssUri.toString());
-    panel.webview.html = html;
 }

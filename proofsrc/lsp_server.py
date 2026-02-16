@@ -29,14 +29,6 @@ HTML_TEMPLATE = """<!doctype html>
 """
 
 @dataclass
-class GetPreviewParams:
-    uri: str
-
-@dataclass
-class GetPreviewResponse:
-    html: str
-
-@dataclass
 class GetProofInfoParams:
     uri: str
     position: lsp.Position
@@ -458,21 +450,6 @@ def hovers(ls: ProofLanguageServer, params: lsp.HoverParams) -> lsp.Hover | None
 @server.feature(lsp.TEXT_DOCUMENT_REFERENCES)
 def lsp_references(ls: ProofLanguageServer, params: lsp.ReferenceParams) -> list[lsp.Location]:
     return ls.get_references(params)
-
-@server.feature("proof/getPreviewHtml")
-def get_preview_html(ls: ProofLanguageServer, params: GetPreviewParams) -> GetPreviewResponse:
-    path = uris.to_fs_path(params.uri)
-    if path is None:
-        return GetPreviewResponse("path is not found in Python language server")
-    ls.analyze(path)
-    if ls.old_workspace is None:
-        return GetPreviewResponse("workspace is not found in Python language server")
-    units = ls.old_workspace.file_units[path]
-    asts = [unit.ast for unit in units if unit.ast is not None]
-    last_context = Context.init() if len(units) == 0 else units[-1].context
-    title = os.path.splitext(os.path.basename(path))[0]
-    checker_html, _ = to_html(asts, last_context, title, "mathjax")
-    return GetPreviewResponse(html=checker_html)
 
 @server.feature("proof/getProofInfo")
 def get_proofinfo(ls: ProofLanguageServer, params: GetProofInfoParams):
