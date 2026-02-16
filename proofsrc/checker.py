@@ -104,12 +104,12 @@ class Checker:
             else:
                 msg = f"Unsupported node {node}"
                 raise CheckError(self.unit.tokens[self.unit.node_to_token[id(node)][0]], msg)
-            node.proofinfo.status = "OK"
+            node.proofinfo.status = "✅OK"
             return True
         except CheckError as e:
             self.add_lsp_error(e.token, e.msg, context)
             logger.error(f"{self.make_error_prefix(node, indent)}{e.msg}")
-            node.proofinfo.status = "ERROR"
+            node.proofinfo.status = "❌ERROR"
             return False
 
     def check_primpred(self, node: PrimPred, context: Context, indent: int) -> None:
@@ -297,10 +297,10 @@ class Checker:
             else:
                 msg = f"Unsupported node {node}"
                 raise CheckError(self.unit.tokens[self.unit.node_to_token[id(node)][0]], msg)
-            node.proofinfo.status = "OK"
+            node.proofinfo.status = "✅OK"
         except CheckError as e:
             logger.error(f"{self.make_error_prefix(node, indent)}{e.msg}")
-            node.proofinfo.status = "ERROR"
+            node.proofinfo.status = "❌ERROR"
             raise
 
     def check_any(self, node: Any, context: Context, indent: int) -> None:
