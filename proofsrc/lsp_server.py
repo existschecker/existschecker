@@ -396,10 +396,15 @@ class ProofLanguageServer(LanguageServer):
     @staticmethod
     def find_node_by_line(unit: DeclarationUnit, position: lsp.Position) -> Include | Declaration | Control | None:
         target_line = position.line + 1
+        last_node = None
         for token in unit.tokens:
-            if token.line == target_line and token.index in unit.token_to_control:
+            if token.line < target_line:
+                last_node = unit.token_to_control[token.index]
+            elif token.line == target_line:
                 return unit.token_to_control[token.index]
-        return None
+            else:
+                break
+        return last_node
 
     def get_proofinfo(self) -> str:
         if self.current_cursor is None:
