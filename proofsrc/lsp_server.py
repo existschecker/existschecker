@@ -24,7 +24,8 @@ HTML_TEMPLATE = """<!doctype html>
 </head>
 <body>
 {current_cursor}<br>
-{proofinfo}
+{decl_info}<br>
+{ctrl_info}
 </body>
 </html>
 """
@@ -399,7 +400,7 @@ class ProofLanguageServer(LanguageServer):
         )
 
     @staticmethod
-    def find_node_by_line(unit: DeclarationUnit, position: lsp.Position) -> Include | Declaration | Control | None:
+    def find_node_by_line(unit: DeclarationUnit, position: lsp.Position) -> Control | None:
         target_line = position.line + 1
         last_node = None
         for token in unit.tokens:
@@ -407,8 +408,6 @@ class ProofLanguageServer(LanguageServer):
                 last_node = unit.token_to_control[token.index]
             elif token.line == target_line and token.index in unit.token_to_control:
                 return unit.token_to_control[token.index]
-            else:
-                break
         return last_node
 
     def get_proofinfo(self) -> str:
@@ -417,14 +416,16 @@ class ProofLanguageServer(LanguageServer):
         unit = self.get_unit_at(self.current_cursor.uri, self.current_cursor.position)
         if unit is None:
             return "unit is not found"
+        if unit.ast is None:
+            return "ast is not found"
         node = self.find_node_by_line(unit, self.current_cursor.position)
-        if node is None:
-            return "node is not found"
         path = uris.from_fs_path(self.current_cursor.uri)
         if path is None:
             return "path is not found"
         current_cursor = f"{os.path.basename(path)}, line {self.current_cursor.position.line + 1}, column {self.current_cursor.position.character + 1}"
-        return HTML_TEMPLATE.format(current_cursor=current_cursor, proofinfo=render_proofinfo(node, unit.context))
+        decl_info = render_proofinfo(unit.ast, unit.context)
+        ctrl_info = "" if node is None else render_proofinfo(node, unit.context)
+        return HTML_TEMPLATE.format(current_cursor=current_cursor, decl_info=decl_info, ctrl_info=ctrl_info)
 
     def update_panel(self) -> None:
         self.protocol.notify("proof/updatePanel", self.get_proofinfo())
