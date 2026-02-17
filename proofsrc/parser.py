@@ -413,7 +413,7 @@ class Parser:
         start_token = self.stream.consume("ANY")
         items, local_vars, local_pred_tmpls, local_fun_tmpls = self.parse_vars_or_pred_tmpls_or_fun_tmpls()
         self.stream.consume("LBRACE")
-        body = self.parse_block(context.add_ctrl(local_vars, [], local_pred_tmpls, local_fun_tmpls))
+        body = self.parse_block(context.add_ctrl(local_vars, [], local_pred_tmpls, local_fun_tmpls, items))
         self.stream.consume("RBRACE")
         node = Any(items=items, body=body)
         self.add_node_to_token(node, start_token, self.stream.last_token)
@@ -468,7 +468,8 @@ class Parser:
         fact = self.parse_reference_or_formula(context)
         self.stream.consume("LBRACE")
         local_vars = [item for item in items if isinstance(item, Var)]
-        body = self.parse_block(context.add_ctrl(local_vars, [], [], []))
+        local_symbols: list[Var | PredTemplate | FunTemplate] = list(local_vars)
+        body = self.parse_block(context.add_ctrl(local_vars, [], [], [], local_symbols))
         self.stream.consume("RBRACE")
         node = Some(items=items, fact=fact, body=body)
         self.add_node_to_token(node, start_token, self.stream.last_token)

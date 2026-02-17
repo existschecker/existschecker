@@ -161,23 +161,24 @@ class ControlContext:
     formulas: list[Bottom | Formula]
     pred_tmpls: list[PredTemplate]
     fun_tmpls: list[FunTemplate]
+    symbols: list[Var | PredTemplate | FunTemplate]
     used_names: set[str]
 
     @staticmethod
     def init() -> "ControlContext":
-        return ControlContext(vars=[], formulas=[], pred_tmpls=[], fun_tmpls=[], used_names=set())
+        return ControlContext(vars=[], formulas=[], pred_tmpls=[], fun_tmpls=[], symbols=[], used_names=set())
 
     def copy(self) -> "ControlContext":
-        return ControlContext(list(self.vars), list(self.formulas), list(self.pred_tmpls), list(self.fun_tmpls), self.used_names.copy())
+        return ControlContext(list(self.vars), list(self.formulas), list(self.pred_tmpls), list(self.fun_tmpls), list(self.symbols), self.used_names.copy())
 
-    def add(self, new_vars: list[Var], new_formulas: list[Bottom | Formula], new_pred_tmpls: list[PredTemplate], new_fun_tmpls: list[FunTemplate]) -> "ControlContext":
+    def add(self, new_vars: list[Var], new_formulas: list[Bottom | Formula], new_pred_tmpls: list[PredTemplate], new_fun_tmpls: list[FunTemplate], new_symbols: list[Var | PredTemplate | FunTemplate]) -> "ControlContext":
         new_used_names = self.used_names.copy()
         for item in new_vars + new_pred_tmpls + new_fun_tmpls:
             if item.name in new_used_names:
                 msg = f"{item.name} is already used"
                 raise Exception(msg)
             new_used_names.add(item.name)
-        return ControlContext(list(self.vars + new_vars), list(self.formulas + new_formulas), list(self.pred_tmpls + new_pred_tmpls), list(self.fun_tmpls + new_fun_tmpls), new_used_names)
+        return ControlContext(list(self.vars + new_vars), list(self.formulas + new_formulas), list(self.pred_tmpls + new_pred_tmpls), list(self.fun_tmpls + new_fun_tmpls), list(self.symbols + new_symbols), new_used_names)
 
 @dataclass(frozen=True)
 class RefFact:
@@ -507,8 +508,8 @@ class Context:
     def copy_ctrl(self):
         return Context(self.decl, self.ctrl.copy(), self.form)
 
-    def add_ctrl(self, new_vars: list[Var], new_formulas: list[Bottom | Formula], new_pred_tmpls: list[PredTemplate], new_fun_tmpls: list[FunTemplate]):
-        return Context(self.decl, self.ctrl.add(new_vars, new_formulas, new_pred_tmpls, new_fun_tmpls), self.form)
+    def add_ctrl(self, new_vars: list[Var], new_formulas: list[Bottom | Formula], new_pred_tmpls: list[PredTemplate], new_fun_tmpls: list[FunTemplate], new_symbols: list[Var | PredTemplate | FunTemplate]):
+        return Context(self.decl, self.ctrl.add(new_vars, new_formulas, new_pred_tmpls, new_fun_tmpls, new_symbols), self.form)
 
     def copy_form(self):
         return Context(self.decl, self.ctrl, self.form.copy())

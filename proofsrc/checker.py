@@ -313,7 +313,7 @@ class Checker:
         local_vars = [item for item in node.items if isinstance(item, Var)]
         local_pred_tmpls = [item for item in node.items if isinstance(item, PredTemplate)]
         local_fun_tmpls = [item for item in node.items if isinstance(item, FunTemplate)]
-        local_ctx = context.add_ctrl(local_vars, [], local_pred_tmpls, local_fun_tmpls)
+        local_ctx = context.add_ctrl(local_vars, [], local_pred_tmpls, local_fun_tmpls, node.items)
         for stmt in node.body:
             self.check_control(stmt, local_ctx, indent+1)
         if not (len(context.ctrl.formulas) < len(local_ctx.ctrl.formulas) and context.ctrl.formulas == local_ctx.ctrl.formulas[:len(context.ctrl.formulas)]):
@@ -338,7 +338,7 @@ class Checker:
     def check_assume(self, node: Assume, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}premise={ExprFormatter(context).pretty_expr(node.premise)}")
-        local_ctx = context.add_ctrl([], [node.premise], [], [])
+        local_ctx = context.add_ctrl([], [node.premise], [], [], [])
         for stmt in node.body:
             self.check_control(stmt, local_ctx, indent+1)
         if not (len(context.ctrl.formulas) < len(local_ctx.ctrl.formulas) and context.ctrl.formulas == local_ctx.ctrl.formulas[:len(context.ctrl.formulas)]):
@@ -401,7 +401,7 @@ class Checker:
     def check_case(self, node: Case, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}premise={ExprFormatter(context).pretty_expr(node.premise)}")
-        local_ctx = context.add_ctrl([], [node.premise], [], [])
+        local_ctx = context.add_ctrl([], [node.premise], [], [], [])
         for stmt in node.body:
             self.check_control(stmt, local_ctx, indent+1)
         if not (len(context.ctrl.formulas) < len(local_ctx.ctrl.formulas) and context.ctrl.formulas == local_ctx.ctrl.formulas[:len(context.ctrl.formulas)]):
@@ -461,7 +461,8 @@ class Checker:
             premises: list[Bottom | Formula] = [existence, uniqueness]
         logger.debug(f"{debug_prefix}Taking {node.items}, premise={ExprFormatter(context).pretty_expr(existence)}")
         local_vars = [item for item in node.items if isinstance(item, Var)]
-        local_ctx = context.add_ctrl(local_vars, premises, [], [])
+        local_symbols: list[Var | PredTemplate | FunTemplate] = list(local_vars)
+        local_ctx = context.add_ctrl(local_vars, premises, [], [], local_symbols)
         for stmt in node.body:
             self.check_control(stmt, local_ctx, indent+1)
         if not (len(context.ctrl.formulas) < len(local_ctx.ctrl.formulas) and context.ctrl.formulas == local_ctx.ctrl.formulas[:len(context.ctrl.formulas)]):
@@ -486,7 +487,7 @@ class Checker:
     def check_deny(self, node: Deny, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}premise={ExprFormatter(context).pretty_expr(node.premise)}")
-        local_ctx = context.add_ctrl([], [node.premise], [], [])
+        local_ctx = context.add_ctrl([], [node.premise], [], [], [])
         for stmt in node.body:
             self.check_control(stmt, local_ctx, indent+1)
         if not (len(context.ctrl.formulas) < len(local_ctx.ctrl.formulas) and context.ctrl.formulas == local_ctx.ctrl.formulas[:len(context.ctrl.formulas)]):
