@@ -32,12 +32,25 @@
         "path": "./syntaxes/proof.tmLanguage.json"
       }
     ],
-    "commands": [
-      {
-        "command": "dsl-proof.showPreview",
-        "title": "Proof: Show Preview"
-      }
-    ]
+    "viewsContainers": {
+      "panel": [
+        {
+          "id": "proof-assistant-explorer",
+          "title": "Proof Status",
+          "icon": "$(verified)"
+        }
+      ]
+    },
+    "views": {
+      "proof-assistant-explorer": [
+        {
+          "type": "webview",
+          "id": "proof-view",
+          "name": "Current Proof",
+          "icon": "$(verified)"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",

@@ -7,8 +7,28 @@ interface PreviewResponse {
 }
 
 let client: LanguageClient;
-let mediaPath: vscode.Uri;
-let panel: vscode.WebviewPanel | undefined;
+
+class ProofViewProvider implements vscode.WebviewViewProvider {
+    public static readonly viewType = 'proof-view';
+    private _view?: vscode.WebviewView;
+
+    constructor(private readonly _extensionUri: vscode.Uri) {}
+
+    public resolveWebviewView(webviewView: vscode.WebviewView) {
+        this._view = webviewView;
+
+        webviewView.webview.options = {
+            enableScripts: true,
+            localResourceRoots: [this._extensionUri]
+        };
+    }
+
+    public updateHtml(html: string) {
+        if (this._view) {
+            this._view.webview.html = html;
+        }
+    }
+}
 
 export function activate(context: vscode.ExtensionContext) {
     const pythonPath = context.asAbsolutePath(path.join(".venv", "Scripts", "python.exe"));
@@ -29,27 +49,6 @@ export function activate(context: vscode.ExtensionContext) {
     console.log("Proof LSP Client starting...");
     client.start();
 
-    mediaPath = vscode.Uri.joinPath(context.extensionUri, "html");
-
-    const previewCommand = vscode.commands.registerCommand("dsl-proof.showPreview", () => {
-        if (vscode.window.activeTextEditor) {
-            if (!panel) {
-                panel = vscode.window.createWebviewPanel(
-                    "proofPreview",
-                    "Proof Preview",
-                    vscode.ViewColumn.Two,
-                    {
-                        enableScripts: true,
-                        localResourceRoots: [mediaPath]
-                    }
-                );
-                panel.onDidDispose(() => { panel = undefined; }, null, context.subscriptions);
-            }
-        }
-    });
-
-    context.subscriptions.push(previewCommand);
-
     vscode.window.onDidChangeTextEditorSelection((e) => {
         client.sendNotification("proof/moveCursor", {
             uri: e.textEditor.document.uri.toString(),
@@ -57,10 +56,14 @@ export function activate(context: vscode.ExtensionContext) {
         });
     });
 
+    const provider = new ProofViewProvider(context.extensionUri);
+
+    context.subscriptions.push(
+        vscode.window.registerWebviewViewProvider(ProofViewProvider.viewType, provider)
+    );
+
     client.onNotification("proof/updatePanel", (html: string) => {
-        if (panel) {
-            panel.webview.html = html;
-        }
+        provider.updateHtml(html);
     });
 }
 
