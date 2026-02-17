@@ -210,7 +210,7 @@ class RefDefFunUniq(RefFact):
 
 @dataclass
 class ProofInfo:
-    status: Literal["⚠️UNCHECKED", "✅OK", "❌ERROR"] = field(init=False, default="⚠️UNCHECKED")
+    status: Literal["⚠️Unchecked", "✅Passed", "❌Failed"] = field(init=False, default="⚠️Unchecked")
     ctrl_ctx: ControlContext = field(init=False, default_factory=ControlContext.init)
     premises: Sequence[RefFact | Bottom | Formula] = field(init=False, default_factory=list[RefFact | Bottom | Formula])
     conclusions: Sequence[Bottom | Formula] = field(init=False, default_factory=list[Bottom | Formula])

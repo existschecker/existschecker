@@ -20,10 +20,19 @@ HTML_TEMPLATE = """<!doctype html>
 <meta charset="utf-8" />
 <script id="MathJax-script" async
   src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<link rel="stylesheet" href="style_mathjax.css">
+<style>
+    .statement {{ min-height: 1.5em; }}
+    .status-icon {{ display: inline-block; min-width: 100px; background: rgba(128, 128, 128, 0.5); border-radius: 12px; text-align: center; }}
+    table {{ width: 100%; }}
+    td {{ border: 1px solid var(--vscode-panel-border); height: 1.5em; }}
+    .current {{ background-color: rgba(255, 255, 0, 0.1); }}
+    .block {{ background-color: rgba(0, 122, 204, 0.1); }}
+    .context {{ background-color: rgba(128, 128, 128, 0.1); }}
+    td:first-child {{ color: var(--vscode-descriptionForeground); width: 200px; }}
+</style>
 </head>
 <body>
-{decl_info}<br>
+{decl_info}
 {ctrl_info}
 </body>
 </html>
@@ -121,7 +130,11 @@ def render_statement(node: Declaration | Control, context: Context) -> str:
 def render_proofinfo(node: Include | Declaration | Control, context: Context) -> str:
     if isinstance(node, Declaration):
         statement = render_statement(node, context)
-        return f"{node.proofinfo.status} {statement}"
+        return f"""<div class="statement">
+    <span class="status-icon">{node.proofinfo.status}</span>
+    {statement}
+</div>
+"""
     elif isinstance(node, Control):
         statement = render_statement(node, context)
         renderer = Renderer(context, "mathjax")
@@ -132,16 +145,10 @@ def render_proofinfo(node: Include | Declaration | Control, context: Context) ->
         local_vars = renderer.render_expr_list(node.proofinfo.local_vars)
         local_premises = renderer.render_expr_list(node.proofinfo.local_premise)
         local_conclusions = renderer.render_expr_list(node.proofinfo.local_conclusion)
-        return f"""<style>
-    .statement {{ min-height: 1.5em; }}
-    table {{ width: 100%; }}
-    td {{ border: 1px solid var(--vscode-panel-border); height: 1.5em; }}
-    .current {{ background-color: rgba(255, 255, 0, 0.1); }}
-    .block {{ background-color: rgba(0, 122, 204, 0.1); }}
-    .context {{ background-color: rgba(128, 128, 128, 0.1); }}
-    td:first-child {{ color: var(--vscode-descriptionForeground); width: 200px; }}
-</style>
-<div class="statement">{node.proofinfo.status} {statement}</div>
+        return f"""<div class="statement">
+    <span class="status-icon">{node.proofinfo.status}</span>
+    {statement}
+</div>
 <table>
     <tr class="current"><td>Premises of this statement</td><td>{premises}</td></tr>
     <tr class="current"><td>Conclusions of this statement</td><td>{conclusions}</td></tr>
