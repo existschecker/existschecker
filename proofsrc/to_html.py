@@ -84,7 +84,7 @@ class Renderer:
             return escape(f"\\({ExprFormatter(self.context, "tex").pretty_expr(node)}\\)")
 
     def render_expr_list_mathjax(self, expr_list: Sequence[RefFact | Bottom | Formula | Term]) -> str:
-        return ",".join(self.render_expr_mathjax(expr) for expr in expr_list)
+        return ", ".join(self.render_expr_mathjax(expr) for expr in expr_list)
 
     T_Key = TypeVar("T_Key", RefFact, Var)
 
