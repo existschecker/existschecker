@@ -55,6 +55,10 @@
 					"name": "comment.block.proof",
 					"begin": "/\\*",
 					"end": "\\*/"
+				},
+				{
+					"name": "comment.line.double-slash.proof",
+					"match": "//.*"
 				}
 			]
 		}

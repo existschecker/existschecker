@@ -68,6 +68,11 @@ def lex(path: str, src: str | None = None) -> tuple[list[Token], str]:
         if c.isspace():
             i += 1
             continue
+        if src[i:i+2] == "//":
+            i += 2
+            while i < len(src) and src[i] != "\n":
+                i += 1
+            continue
         if src[i:i+2] == "/*":
             start_i = i
             start_line = line
