@@ -50,7 +50,26 @@
           "icon": "$(verified)"
         }
       ]
-    }
+    },
+    "semanticTokenTypes": [
+      {
+        "id": "function",
+        "description": "global names"
+      },
+      {
+        "id": "variable",
+        "description": "local variables"
+      }
+    ],
+    "semanticTokenScopes": [
+      {
+        "language": "proof",
+        "scopes": {
+          "function": ["entity.name.function.proof"],
+          "variable": ["variable.proof"]
+        }
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run package",

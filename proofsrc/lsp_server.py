@@ -4,10 +4,12 @@ from lsprotocol import types as lsp
 import os
 from dataclasses import dataclass
 import threading
+import sys
+from enum import IntEnum
 
 from dependency import DependencyResolver
 from lexer import KEYWORDS, STRINGS, Token
-from ast_types import Context, DeclarationUnit, Workspace, Declaration, Include, Control, Formula, Term, RefFact, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq, VarTerm, RefDefCon, PredTerm, RefPrimPred, RefDefPred, FunTerm, RefDefFun, RefDefFunTerm
+from ast_types import Context, DeclarationUnit, Workspace, Declaration, Include, Control, Formula, Term, RefFact, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq, VarTerm, RefDefCon, PredTerm, RefPrimPred, RefDefPred, FunTerm, RefDefFun, RefDefFunTerm, RefEquality
 from parser import Parser
 from checker import Checker
 from splitter import split
@@ -453,6 +455,44 @@ class ProofLanguageServer(LanguageServer):
     def update_panel(self) -> None:
         self.protocol.notify("proof/updatePanel", self.get_proofinfo())
 
+    def semantic_tokens_full(self, params: lsp.SemanticTokensParams) -> lsp.SemanticTokens:
+        print("[semantic_tokens_full] called", file=sys.stderr)
+        path = uris.to_fs_path(params.text_document.uri)
+        if path is None:
+            print("[semantic_tokens_full] path is None", file=sys.stderr)
+            return lsp.SemanticTokens(data=[])
+        if self.old_workspace is None:
+            print("[semantic_tokens_full] workspace is None", file=sys.stderr)
+            return lsp.SemanticTokens(data=[])
+        raw_tokens: list[tuple[int, int, int, int]] = []
+        if path not in self.old_workspace.file_units:
+            print(f"[semantic_tokens_full] {path} is not in workspace", file=sys.stderr)
+            return lsp.SemanticTokens(data=[])
+        for unit in self.old_workspace.file_units[path]:
+            for index, node in unit.token_to_node.items():
+                token = unit.tokens[index]
+                if isinstance(node, (RefFact, RefEquality, RefPrimPred, RefDefPred, RefDefCon, RefDefFun, RefDefFunTerm)):
+                    t_type = TokenType.FUNCTION
+                elif isinstance(node, Term):
+                    t_type = TokenType.VARIABLE
+                else:
+                    t_type = None
+                if t_type is not None:
+                    raw_tokens.append((token.line - 1, token.column - 1, len(token.value), t_type))
+        data: list[int] = []
+        last_line = 0
+        last_column = 0
+        for line, column, length, t_type in raw_tokens:
+            delta_line = line - last_line
+            delta_start = column if delta_line > 0 else column - last_column
+            data.extend([delta_line, delta_start, length, t_type, 0])
+            last_line = line
+            last_column = column
+        print(f"[semantic_tokens_full] len(data)={len(data)}", file=sys.stderr)
+        for i in range(min(5, len(data) // 5)):
+            print(f"[semantic_tokens_full] {data[5*i : 5*(i+1)]}", file=sys.stderr)
+        return lsp.SemanticTokens(data=data)
+
 server = ProofLanguageServer()
 
 @server.feature(lsp.INITIALIZE)
@@ -504,6 +544,25 @@ def move_cursor(ls: ProofLanguageServer, params: CursorState) -> None:
     if ls.analysis_timer is not None:
         return
     ls.update_panel()
+
+class TokenType(IntEnum):
+    FUNCTION = 0
+    VARIABLE = 1
+
+SEMANTIC_LEGEND = lsp.SemanticTokensLegend(
+    token_types=[t.name.lower() for t in TokenType],
+    token_modifiers=[]
+)
+
+@server.feature(
+    lsp.TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL,
+    lsp.SemanticTokensRegistrationOptions(
+        legend=SEMANTIC_LEGEND,
+        full=True
+    )
+)
+def semantic_tokens_full(ls: ProofLanguageServer, params: lsp.SemanticTokensParams) -> lsp.SemanticTokens:
+    return ls.semantic_tokens_full(params)
 
 if __name__ == "__main__":
     server.start_io()
