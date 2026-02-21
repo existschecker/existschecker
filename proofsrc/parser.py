@@ -281,11 +281,14 @@ class Parser:
         existence_name = existence_name_token.value
         existence_formula = self.parse_formula(context)
         self.stream.consume("BY")
-        name = self.stream.consume("IDENT").value
+        name_token = self.stream.consume("IDENT")
+        name = name_token.value
         if name in context.decl.defcons:
             ref = RefDefConExist(existence_name)
+            ref_con = RefDefCon(name)
             self.add_node_to_token(ref, existence_name_token, existence_name_token)
-            defconexist = DefConExist(name=existence_name, ref=ref, formula=existence_formula, con_name=name)
+            self.add_node_to_token(ref_con, name_token, name_token)
+            defconexist = DefConExist(name=existence_name, ref=ref, formula=existence_formula, ref_con=ref_con)
             self.add_node_to_token(defconexist, start_token, self.stream.last_token)
             # context.add_decl(defconexist)
             return defconexist
@@ -306,11 +309,14 @@ class Parser:
         uniqueness_name = uniqueness_name_token.value
         uniqueness_formula = self.parse_formula(context)
         self.stream.consume("BY")
-        name = self.stream.consume("IDENT").value
+        name_token = self.stream.consume("IDENT")
+        name = name_token.value
         if name in context.decl.defcons:
             ref = RefDefConUniq(uniqueness_name)
+            ref_con = RefDefCon(name)
             self.add_node_to_token(ref, uniqueness_name_token, uniqueness_name_token)
-            defconuniq = DefConUniq(name=uniqueness_name, ref=ref, formula=uniqueness_formula, con_name=name)
+            self.add_node_to_token(ref_con, name_token, name_token)
+            defconuniq = DefConUniq(name=uniqueness_name, ref=ref, formula=uniqueness_formula, ref_con=ref_con)
             self.add_node_to_token(defconuniq, start_token, self.stream.last_token)
             # context.add_decl(defconuniq)
             return defconuniq

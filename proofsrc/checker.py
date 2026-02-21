@@ -152,13 +152,13 @@ class Checker:
 
     def check_defconexist(self, node: DefConExist, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
-        logger.debug(f"{debug_prefix}name: {node.name}, con_name: {node.con_name}")
-        existsuniq = context.decl.theorems[context.decl.defcons[node.con_name].ref_theorem.name].conclusion
+        logger.debug(f"{debug_prefix}name: {node.name}, con_name: {node.ref_con.name}")
+        existsuniq = context.decl.theorems[context.decl.defcons[node.ref_con.name].ref_theorem.name].conclusion
         if not isinstance(existsuniq, ExistsUniq):
             msg = f"Not ExistsUniq object: {ExprFormatter(context).pretty_expr(existsuniq)}"
             raise CheckError(self.unit.tokens[self.unit.node_to_token[id(node)][0]], msg)
         logger.debug(f"{debug_prefix}ExistsUniq object: {ExprFormatter(context).pretty_expr(existsuniq)}")
-        existence_formula = Substitutor(({existsuniq.var: RefDefCon(node.con_name)}, {}, {}), context).substitute_formula(existsuniq.body)
+        existence_formula = Substitutor(({existsuniq.var: RefDefCon(node.ref_con.name)}, {}, {}), context).substitute_formula(existsuniq.body)
         if not alpha_equiv_with_defs(node.formula, existence_formula, context):
             msg = f"existence_formula is not matched with theorem: {ExprFormatter(context).pretty_expr(node.formula)}"
             raise CheckError(self.unit.tokens[self.unit.node_to_token[id(node)][0]], msg)
@@ -167,8 +167,8 @@ class Checker:
 
     def check_defconuniq(self, node: DefConUniq, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
-        logger.debug(f"{debug_prefix}name: {node.name}, con_name: {node.con_name}")
-        existsuniq = context.decl.theorems[context.decl.defcons[node.con_name].ref_theorem.name].conclusion
+        logger.debug(f"{debug_prefix}name: {node.name}, con_name: {node.ref_con.name}")
+        existsuniq = context.decl.theorems[context.decl.defcons[node.ref_con.name].ref_theorem.name].conclusion
         if not isinstance(existsuniq, ExistsUniq):
             msg = f"Not ExistsUniq object: {ExprFormatter(context).pretty_expr(existsuniq)}"
             raise CheckError(self.unit.tokens[self.unit.node_to_token[id(node)][0]], msg)
@@ -179,7 +179,7 @@ class Checker:
         if context.decl.equality is None:
             msg = "equality has not been declared yet"
             raise CheckError(self.unit.tokens[self.unit.node_to_token[id(node)][0]], msg)
-        uniqueness_formula = Forall(var, Implies(body, AtomicFormula(RefEquality(context.decl.equality.ref.name), (var, RefDefCon(node.con_name)))))
+        uniqueness_formula = Forall(var, Implies(body, AtomicFormula(RefEquality(context.decl.equality.ref.name), (var, RefDefCon(node.ref_con.name)))))
         if not alpha_equiv_with_defs(node.formula, uniqueness_formula, context):
             msg = f"uniqueness_formula is not matched with theorem: {ExprFormatter(context).pretty_expr(node.formula)}"
             raise CheckError(self.unit.tokens[self.unit.node_to_token[id(node)][0]], msg)

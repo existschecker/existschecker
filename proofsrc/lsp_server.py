@@ -105,10 +105,10 @@ local_conclusions: {local_conclusions}
             return f"{node.__class__.__name__}\n```proof\ntheorem {theorem.name} {ExprFormatter(context).pretty_expr(theorem.conclusion)}\n```"
         elif isinstance(node, RefDefConExist):
             defconexist = context.decl.defconexists[node.name]
-            return f"{node.__class__.__name__}\n```proof\nexistence {defconexist.name} {ExprFormatter(context).pretty_expr(defconexist.formula)} by {defconexist.con_name}\n```"
+            return f"{node.__class__.__name__}\n```proof\nexistence {defconexist.name} {ExprFormatter(context).pretty_expr(defconexist.formula)} by {defconexist.ref_con.name}\n```"
         elif isinstance(node, RefDefConUniq):
             defconuniq = context.decl.defconuniqs[node.name]
-            return f"{node.__class__.__name__}\n```proof\nuniqueness {defconuniq.name} {ExprFormatter(context).pretty_expr(defconuniq.formula)} by {defconuniq.con_name}\n```"
+            return f"{node.__class__.__name__}\n```proof\nuniqueness {defconuniq.name} {ExprFormatter(context).pretty_expr(defconuniq.formula)} by {defconuniq.ref_con.name}\n```"
         elif isinstance(node, RefDefFunExist):
             deffunexist = context.decl.deffunexists[node.name]
             return f"{node.__class__.__name__}\n```proof\nexistence {deffunexist.name} {ExprFormatter(context).pretty_expr(deffunexist.formula)} by {deffunexist.fun_name}"

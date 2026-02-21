@@ -365,13 +365,13 @@ class DefPred(Declaration):
 class DefConExist(Declaration):
     ref: RefDefConExist
     formula: Formula
-    con_name: str
+    ref_con: RefDefCon
 
 @dataclass
 class DefConUniq(Declaration):
     ref: RefDefConUniq
     formula: Formula
-    con_name: str
+    ref_con: RefDefCon
 
 @dataclass
 class DefCon(Declaration):
