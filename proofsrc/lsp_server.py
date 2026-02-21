@@ -9,7 +9,7 @@ from enum import IntEnum
 
 from dependency import DependencyResolver
 from lexer import KEYWORDS, STRINGS, Token
-from ast_types import Context, DeclarationUnit, Workspace, Declaration, Include, Control, Formula, Term, RefFact, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq, VarTerm, RefDefCon, PredTerm, RefPrimPred, RefDefPred, FunTerm, RefDefFun, RefDefFunTerm, RefEquality
+from ast_types import Context, DeclarationUnit, Workspace, Declaration, Include, Control, Formula, Term, RefFact, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq, VarTerm, RefDefCon, PredTerm, RefPrimPred, RefDefPred, FunTerm, RefDefFun, RefDefFunTerm, RefEquality, PredLambda, FunLambda
 from parser import Parser
 from checker import Checker
 from splitter import split
@@ -483,7 +483,7 @@ class ProofLanguageServer(LanguageServer):
                     t_type = TokenType.FUNCTION
                 elif isinstance(node, (RefEquality, RefPrimPred, RefDefPred, RefDefCon, RefDefFun, RefDefFunTerm)):
                     t_type = TokenType.CONSTANT
-                elif isinstance(node, Term):
+                elif isinstance(node, Term) and not isinstance(node, PredLambda) and not isinstance(node, FunLambda):
                     t_type = TokenType.VARIABLE
                 else:
                     t_type = None
