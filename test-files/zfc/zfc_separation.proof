@@ -117,7 +117,7 @@ theorem bigcap_cor3 \forall x\forall y(in(y,x)\to subset(bigcap(x),y)) {
   }
 }
 
-definition function cap(x,y) as bigcap(pair(x,y)) tex "","\cap",""
+definition function cap(x,y) as bigcap(pair(x,y)) tex infix "\cap"
 
 theorem cap_characterization \forall x\forall y\forall z(in(z,cap(x,y))\leftrightarrow in(z,x)\wedge in(z,y)) {
   any x, y, z {
@@ -262,7 +262,7 @@ theorem cap_subsetneq_iff_neg_subset \forall x\forall y(subsetneq(cap(x,y),x)\le
   }
 }
 
-definition function setminus(x,y) as sep(x,\lambda^P z.notin(z,y)) tex "","\setminus",""
+definition function setminus(x,y) as sep(x,\lambda^P z.notin(z,y)) tex infix "\setminus"
 
 theorem setminus_characterization \forall x\forall y\forall z(in(z,setminus(x,y))\leftrightarrow in(z,x)\wedge notin(z,y)) {
   any x,y,z {

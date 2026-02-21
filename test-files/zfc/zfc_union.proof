@@ -61,7 +61,7 @@ theorem bigcup_cor2 equal(bigcup(emptyset),emptyset) {
   apply invoke emptyset_uniqueness for bigcup(emptyset)
 }
 
-definition function cup(x,y) as bigcup(pair(x,y)) tex "","\cup",""
+definition function cup(x,y) as bigcup(pair(x,y)) tex infix "\cup"
 
 theorem cup_characterization \forall x\forall y\forall z(in(z,cup(x,y))\leftrightarrow in(z,x)\vee in(z,y)) {
   any x,y,z {

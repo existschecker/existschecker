@@ -1,6 +1,6 @@
 include "zfc_finite_recursion.proof"
 
-definition function add(m, n) as iterate(m, suc, n) tex "", "+", ""
+definition function add(m, n) as iterate(m, suc, n) tex infix "+"
 
 theorem add_characterization \forall m (equal(add(m, emptyset), m) \wedge \forall n (natural(n) \to equal(add(m, suc(n)), suc(add(m, n))))) {
   any m {
@@ -9,7 +9,7 @@ theorem add_characterization \forall m (equal(add(m, emptyset), m) \wedge \foral
   }
 }
 
-definition function mul(m, n) as iterate(emptyset, \lambda^F l. add(l, m), n) tex "", "\cdot", ""
+definition function mul(m, n) as iterate(emptyset, \lambda^F l. add(l, m), n) tex infix "\cdot"
 
 theorem mul_characterization \forall m (equal(mul(m, emptyset), emptyset) \wedge \forall n (natural(n) \to equal(mul(m, suc(n)), add(mul(m, n), m)))) {
   any m {

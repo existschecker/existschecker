@@ -999,20 +999,27 @@ class Parser:
 
     def parse_or_create_tex(self, name: str, arity: int) -> list[str]:
         if self.stream.peek().type == "TEX":
-            return self.parse_tex()
+            return self.parse_tex(arity)
         else:
             return self.create_tex(name, arity)
 
-    def parse_tex(self) -> list[str]:
+    def parse_tex(self, arity: int) -> list[str]:
         self.stream.consume("TEX")
-        tex: list[str] = []
-        while True:
-            tex.append(self.stream.consume("STRING").value)
-            if self.stream.peek().type == "COMMA":
-                self.stream.consume("COMMA")
-            else:
-                break
-        return tex
+        if self.stream.peek().type == "INFIX":
+            infix_token = self.stream.consume("INFIX")
+            if arity != 2:
+                msg = f"infix cannot be used with arity {arity}"
+                raise ParseError(infix_token, msg)
+            return ["", self.stream.consume("STRING").value, ""]
+        else:
+            tex: list[str] = []
+            while True:
+                tex.append(self.stream.consume("STRING").value)
+                if self.stream.peek().type == "COMMA":
+                    self.stream.consume("COMMA")
+                else:
+                    break
+            return tex
 
     def create_tex(self, name: str, arity: int):
         if arity == 0:

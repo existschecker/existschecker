@@ -1,8 +1,8 @@
 include "..\logic\logic.proof"
 
-primitive predicate in arity 2 tex "","\in",""
+primitive predicate in arity 2 tex infix "\in"
 
-equality equal
+equality equal tex infix "="
 
 axiom axiom_of_extensionality \forall x \forall y (\forall z (in(z, x) \leftrightarrow in(z, y)) \to equal(x, y))
 
@@ -26,9 +26,9 @@ theorem set_is_unique_for_each_predicate \forall^P\phi[1]\forall x\forall x'(\fo
   }
 }
 
-definition predicate autoexpand notin(x,y) as \neg(in(x,y)) tex "","\notin",""
+definition predicate autoexpand notin(x,y) as \neg(in(x,y)) tex infix "\notin"
 
-definition predicate autoexpand neq(x,y) as \neg(equal(x,y)) tex "","\neq",""
+definition predicate autoexpand neq(x,y) as \neg(equal(x,y)) tex infix "\neq"
 
 theorem neq_cor1 \forall x\forall y(neq(x,y)\leftrightarrow\exists z((in(z,x)\wedge notin(z,y))\vee(notin(z,x)\wedge in(z,y)))) {
   any x, y {
@@ -113,7 +113,7 @@ theorem neq_cor1 \forall x\forall y(neq(x,y)\leftrightarrow\exists z((in(z,x)\we
   }
 }
 
-definition predicate subset(x,y) as \forall z(in(z,x)\to in(z,y)) tex "","\subset",""
+definition predicate subset(x,y) as \forall z(in(z,x)\to in(z,y)) tex infix "\subset"
 
 theorem subset_reflection \forall x(subset(x,x)) {
   any x {
@@ -216,7 +216,7 @@ theorem neq_iff_subset \forall x\forall y(neq(x,y)\leftrightarrow\neg(subset(x,y
   }
 }
 
-definition predicate subsetneq(x,y) as subset(x,y)\wedge neq(x,y) tex "","\subsetneq",""
+definition predicate subsetneq(x,y) as subset(x,y)\wedge neq(x,y) tex infix "\subsetneq"
 
 theorem subsetneq_implies_exist \forall x\forall y(subsetneq(x,y)\to\exists z(in(z,y)\wedge notin(z,x))) {
   any x,y {

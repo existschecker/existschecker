@@ -1,12 +1,12 @@
 include "..\logic\logic.proof"
 
-primitive predicate in arity 2 tex "","\in",""
+primitive predicate in arity 2 tex infix "\in"
 
-equality equal tex "", "=", ""
+equality equal tex infix "="
 
 axiom axiom_of_extensionality \forall x \forall y (\forall z (in(z, x) \leftrightarrow in(z, y)) \to equal(x, y))
 
-definition predicate equal_predicate(predicate \phi[1], predicate \chi[1]) as \forall x (\phi(x) \leftrightarrow \chi(x)) tex "","=",""
+definition predicate equal_predicate(predicate \phi[1], predicate \chi[1]) as \forall x (\phi(x) \leftrightarrow \chi(x)) tex infix "="
 
 theorem equal_lambda \forall X \forall Y (equal(X, Y) \leftrightarrow equal_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y))) {
   any X, Y {
@@ -60,11 +60,11 @@ theorem set_is_unique_for_each_predicate \forall^P\phi[1]\forall x\forall x'(\fo
   }
 }
 
-definition predicate autoexpand notin(x,y) as \neg(in(x,y)) tex "","\notin",""
+definition predicate autoexpand notin(x,y) as \neg(in(x,y)) tex infix "\notin"
 
-definition predicate autoexpand neq(x, y) as \neg(equal(x, y)) tex "", "\neq", ""
+definition predicate autoexpand neq(x, y) as \neg(equal(x, y)) tex infix "\neq"
 
-definition predicate autoexpand neq_predicate(predicate \phi[1], predicate \chi[1]) as \neg(equal_predicate(\phi, \chi)) tex "", "\neq", ""
+definition predicate autoexpand neq_predicate(predicate \phi[1], predicate \chi[1]) as \neg(equal_predicate(\phi, \chi)) tex infix "\neq"
 
 theorem neq_lambda \forall X \forall Y (neq(X, Y) \leftrightarrow neq_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y))) {
   any X, Y {
@@ -120,9 +120,9 @@ theorem neq_cor1 \forall X \forall Y (neq(X, Y) \leftrightarrow \exists z ((in(z
   }
 }
 
-definition predicate subset(x, y) as \forall z (in(z, x) \to in(z, y)) tex "", "\subset", ""
+definition predicate subset(x, y) as \forall z (in(z, x) \to in(z, y)) tex infix "\subset"
 
-definition predicate subset_predicate(predicate \phi[1], predicate \chi[1]) as \forall x (\phi(x) \to \chi(x)) tex "", "\subset", ""
+definition predicate subset_predicate(predicate \phi[1], predicate \chi[1]) as \forall x (\phi(x) \to \chi(x)) tex infix "\subset"
 
 theorem subset_lambda \forall X \forall Y (subset(X, Y) \leftrightarrow subset_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y))) {
   any X, Y {
@@ -294,9 +294,9 @@ theorem neq_iff_subset_predicate \forall^P \phi[1] \forall^P \chi[1] (neq_predic
   }
 }
 
-definition predicate subsetneq(x, y) as subset(x, y) \wedge neq(x, y) tex "", "\subsetneq", ""
+definition predicate subsetneq(x, y) as subset(x, y) \wedge neq(x, y) tex infix "\subsetneq"
 
-definition predicate subsetneq_predicate(predicate \phi[1], predicate \chi[1]) as subset_predicate(\phi, \chi) \wedge neq_predicate(\phi, \chi) tex "", "\subsetneq", ""
+definition predicate subsetneq_predicate(predicate \phi[1], predicate \chi[1]) as subset_predicate(\phi, \chi) \wedge neq_predicate(\phi, \chi) tex infix "\subsetneq"
 
 theorem subsetneq_lambda \forall X \forall Y (subsetneq(X, Y) \leftrightarrow subsetneq_predicate(\lambda^P x. in(x, X), \lambda^P y. in(y, Y))) {
   any X, Y {

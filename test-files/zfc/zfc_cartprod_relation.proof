@@ -657,7 +657,7 @@ theorem ran_of_invrel_is_dom \forall R(equal(ran(invrel(R)),dom(R))) {
   }
 }
 
-definition function comprel(R,S) as sep(cartprod(dom(R),ran(S)),\lambda^P z.\exists x\exists y(equal(z,op(x,y))\wedge\exists w(in(op(x,w),R)\wedge in(op(w,y),S)))) tex "","\circ",""
+definition function comprel(R,S) as sep(cartprod(dom(R),ran(S)),\lambda^P z.\exists x\exists y(equal(z,op(x,y))\wedge\exists w(in(op(x,w),R)\wedge in(op(w,y),S)))) tex infix "\circ"
 
 theorem comprel_lem1 \forall R\forall S\forall z(\exists x\exists y(equal(z,op(x,y))\wedge\exists w(in(op(x,w),R)\wedge in(op(w,y),S)))\to in(z,cartprod(dom(R),ran(S)))) {
   any R,S,z {

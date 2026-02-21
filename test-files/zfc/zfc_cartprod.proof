@@ -1,7 +1,7 @@
 include "zfc_separation.proof"
 include "zfc_powerset.proof"
 
-definition function cartprod(X,Y) as sep(powerset(powerset(cup(X,Y))), \lambda^P z. \exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y)))) tex "","\times",""
+definition function cartprod(X,Y) as sep(powerset(powerset(cup(X,Y))), \lambda^P z. \exists x\exists y(in(x,X)\wedge in(y,Y)\wedge equal(z,op(x,y)))) tex infix "\times"
 
 theorem cartprod_lem1 \forall X\forall Y\forall x\forall y(in(x,X)\wedge in(y,Y)\to in(op(x,y),powerset(powerset(cup(X,Y))))) {
   any X,Y,x,y {

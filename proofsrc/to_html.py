@@ -294,11 +294,12 @@ class Renderer:
     def render_equality(self, node: Equality):
         header_parts = [self.toggle,
                         self.render_keyword("equality"),
-                        self.render_identifier(node.ref.name)]
+                        self.render_identifier(node.ref.name),
+                        self.render_tex(node.tex)]
         header_parts_jp = [self.toggle,
                         self.render_keyword("等号宣言"),
                         self.render_identifier(node.ref.name),
-                        "は等号である。"]
+                        self.render_tex(node.tex)]
         return header_parts, header_parts_jp, ""
 
     def render_invalid_declaration(self, node: InvalidDeclaration):

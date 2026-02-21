@@ -28,7 +28,7 @@
 		},
 		"controls": {
 			"name": "keyword.control.proof",
-			"match": "\\b(any|assume|conclude|divide|case|some|such|deny|contradict|explode|apply|for|with|lift|predicate|arity|invoke|expand|constant|by|pad|split|connect|autoexpand|function|reflection|replacement|substitute|characterize|show|tex|as|leftward|rightward|include|assert|fold)\\b"
+			"match": "\\b(any|assume|conclude|divide|case|some|such|deny|contradict|explode|apply|for|with|lift|predicate|arity|invoke|expand|constant|by|pad|split|connect|autoexpand|function|reflection|replacement|substitute|characterize|show|tex|as|leftward|rightward|include|assert|fold|infix)\\b"
 		},
 		"formulas": {
 			"name": "entity.name.type.proof",

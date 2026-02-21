@@ -1,4 +1,4 @@
-primitive predicate in arity 2 tex "","\in",""
+primitive predicate in arity 2 tex infix "\in"
 
 theorem test01 \forall x\forall y(in(x,y)\to in(x,y)) {
   any x, y {
