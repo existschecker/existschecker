@@ -142,8 +142,8 @@ class Checker:
 
     def check_defcon(self, node: DefCon, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
-        logger.debug(f"{debug_prefix}name: {node.name}, theorem: {node.theorem}")
-        existsuniq = context.decl.theorems[node.theorem].conclusion
+        logger.debug(f"{debug_prefix}name: {node.name}, theorem: {node.ref_theorem.name}")
+        existsuniq = context.decl.theorems[node.ref_theorem.name].conclusion
         if not isinstance(existsuniq, ExistsUniq):
             msg = f"Not ExistsUniq object: {ExprFormatter(context).pretty_expr(existsuniq)}"
             raise CheckError(self.unit.tokens[self.unit.node_to_token[id(node)][0]], msg)
@@ -153,7 +153,7 @@ class Checker:
     def check_defconexist(self, node: DefConExist, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}, con_name: {node.con_name}")
-        existsuniq = context.decl.theorems[context.decl.defcons[node.con_name].theorem].conclusion
+        existsuniq = context.decl.theorems[context.decl.defcons[node.con_name].ref_theorem.name].conclusion
         if not isinstance(existsuniq, ExistsUniq):
             msg = f"Not ExistsUniq object: {ExprFormatter(context).pretty_expr(existsuniq)}"
             raise CheckError(self.unit.tokens[self.unit.node_to_token[id(node)][0]], msg)
@@ -168,7 +168,7 @@ class Checker:
     def check_defconuniq(self, node: DefConUniq, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}, con_name: {node.con_name}")
-        existsuniq = context.decl.theorems[context.decl.defcons[node.con_name].theorem].conclusion
+        existsuniq = context.decl.theorems[context.decl.defcons[node.con_name].ref_theorem.name].conclusion
         if not isinstance(existsuniq, ExistsUniq):
             msg = f"Not ExistsUniq object: {ExprFormatter(context).pretty_expr(existsuniq)}"
             raise CheckError(self.unit.tokens[self.unit.node_to_token[id(node)][0]], msg)

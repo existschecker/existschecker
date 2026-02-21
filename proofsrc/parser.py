@@ -203,12 +203,18 @@ class Parser:
         ref = RefDefCon(name)
         self.add_node_to_token(ref, name_token, name_token)
         self.stream.consume("BY")
-        theorem = self.stream.consume("IDENT").value
+        theorem_token = self.stream.consume("IDENT")
+        theorem_name = theorem_token.value
+        if theorem_name not in context.decl.theorems:
+            msg = f"{theorem_name} is not in context.decl.theorems"
+            raise ParseError(theorem_token, msg)
+        ref_theorem = RefTheorem(theorem_name)
+        self.add_node_to_token(ref_theorem, theorem_token, theorem_token)
         tex = self.parse_or_create_tex(name, 0)
         if len(tex) != 1:
             msg = f"{name} is constant, but length of tex is {len(tex)}"
             raise ParseError(start_token, msg)
-        defcon = DefCon(name=name, ref=ref, theorem=theorem, tex=tex)
+        defcon = DefCon(name=name, ref=ref, ref_theorem=ref_theorem, tex=tex)
         self.add_node_to_token(defcon, start_token, self.stream.last_token)
         # context.add_decl(defcon)
         logger.debug(f"[defcon] {name}")

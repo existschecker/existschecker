@@ -73,7 +73,7 @@ local_conclusions: {local_conclusions}
         if isinstance(node, VarTerm):
             if isinstance(node, RefDefCon):
                 defcon = context.decl.defcons[node.name]
-                return f"{node.__class__.__name__}\n```proof\ndefinition constant {defcon.name} by {defcon.theorem}\n```"
+                return f"{node.__class__.__name__}\n```proof\ndefinition constant {defcon.name} by {defcon.ref_theorem.name}\n```"
             else:
                 return node.__class__.__name__
         elif isinstance(node, PredTerm):

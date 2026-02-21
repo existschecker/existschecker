@@ -189,13 +189,13 @@ class Renderer:
                         self.render_identifier(node.name),
                         self.render_tex(node.tex),
                         self.render_keyword("by"),
-                        self.render_identifier(node.theorem)]
+                        self.render_identifier(node.ref_theorem.name)]
         header_parts_jp = [self.bullet,
                            self.render_keyword("定数記号定義"),
                            self.render_identifier(node.name),
                            self.render_tex(node.tex),
                            "存在と一意性は",
-                           self.render_identifier(node.theorem),
+                           self.render_identifier(node.ref_theorem.name),
                            "により示された。"]
         return header_parts, header_parts_jp, ""
 

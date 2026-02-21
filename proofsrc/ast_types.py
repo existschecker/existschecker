@@ -376,7 +376,7 @@ class DefConUniq(Declaration):
 @dataclass
 class DefCon(Declaration):
     ref: RefDefCon
-    theorem: str
+    ref_theorem: RefTheorem
     tex: list[str]
 
 @dataclass
