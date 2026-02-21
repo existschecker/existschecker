@@ -1082,7 +1082,7 @@ class Parser:
         arity = int(self.stream.consume("NUMBER").value)
         self.stream.consume("RBRACKET")
         pred = PredTemplate(pred_tmpl_name, arity)
-        self.add_node_to_token(pred, tok, self.stream.last_token)
+        self.add_node_to_token(pred, tok, tok)
         self.add_ctrl_defs_refs(pred, pred)
         return pred
 
@@ -1093,7 +1093,7 @@ class Parser:
         arity = int(self.stream.consume("NUMBER").value)
         self.stream.consume("RBRACKET")
         fun = FunTemplate(fun_tmpl_name, arity)
-        self.add_node_to_token(fun, tok, self.stream.last_token)
+        self.add_node_to_token(fun, tok, tok)
         self.add_ctrl_defs_refs(fun, fun)
         return fun
 
