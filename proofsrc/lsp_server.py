@@ -1,7 +1,6 @@
 from pygls.lsp.server import LanguageServer
 from pygls import uris
 from lsprotocol import types as lsp
-import os
 from dataclasses import dataclass
 import threading
 import sys
@@ -13,7 +12,7 @@ from ast_types import Context, DeclarationUnit, Workspace, Declaration, Include,
 from parser import Parser
 from checker import Checker
 from splitter import split
-from to_html import Renderer, to_html
+from to_html import Renderer
 from logic_utils import ExprFormatter
 
 HTML_TEMPLATE = """<!doctype html>
@@ -192,13 +191,12 @@ class ProofLanguageServer(LanguageServer):
     def __init__(self):
         super().__init__("proof-server", "v0.1") # type: ignore[reportUnknownMemberType]
         self.old_workspace: Workspace | None = None
-        self.updated_files: set[str] = set()
         self.resolver: DependencyResolver | None = None
         self.analysis_timer: threading.Timer | None = None
         self.cancel_analysis = threading.Event()
         self.current_cursor: CursorState | None = None
 
-    def run_analysis(self, uri: str, save_html: bool):
+    def run_analysis(self, uri: str):
         path = uris.to_fs_path(uri)
         if path is None:
             return
@@ -206,8 +204,6 @@ class ProofLanguageServer(LanguageServer):
         self.analysis_timer = None
         self.protocol.send_request("workspace/semanticTokens/refresh")
         self.update_panel()
-        if save_html:
-            self.to_html()
 
     def analyze(self, path: str) -> None:
         self.cancel_analysis.clear()
@@ -267,46 +263,22 @@ class ProofLanguageServer(LanguageServer):
                 continue
             final_diagnostics[uri].extend(diags)
 
-        updated_files: set[str] = set()
-        for i in range(start_index, len(all_units)):
-            updated_files.add(all_units[i].file)
-        for i in range(start_index, len(old_all_units)):
-            updated_files.add(old_all_units[i].file)
-        self.updated_files.update(updated_files)
-
         for uri, diags in final_diagnostics.items():
             self.text_document_publish_diagnostics(
                 lsp.PublishDiagnosticsParams(uri=uri, diagnostics=diags)
             )
 
-    def to_html(self) -> None:
-        if self.old_workspace is None:
-            return
-        for file in self.old_workspace.resolved_files:
-            if file not in self.updated_files:
-                continue
-            units = self.old_workspace.file_units[file]
-            asts = [unit.ast for unit in units if unit.ast is not None]
-            last_context = Context.init() if len(units) == 0 else units[-1].context
-            title = os.path.splitext(os.path.basename(file))[0]
-            checker_html, _ = to_html(asts, last_context, title, "mathjax")
-            f = open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "html", f"{title}.html"), 'w', encoding='utf-8')
-            f.write(checker_html)
-            f.close()
-
-        self.updated_files.clear()
-
     def did_open(self, params: lsp.DidOpenTextDocumentParams) -> None:
-        self.run_analysis(params.text_document.uri, False)
+        self.run_analysis(params.text_document.uri)
 
     def did_save(self, params: lsp.DidSaveTextDocumentParams) -> None:
-        self.run_analysis(params.text_document.uri, False)
+        self.run_analysis(params.text_document.uri)
 
     def did_change(self, params: lsp.DidChangeTextDocumentParams) -> None:
         if self.analysis_timer is not None:
             self.analysis_timer.cancel()
         self.cancel_analysis.set()
-        self.analysis_timer = threading.Timer(0.5, self.run_analysis, args=[params.text_document.uri, False])
+        self.analysis_timer = threading.Timer(0.5, self.run_analysis, args=[params.text_document.uri])
         self.analysis_timer.start()
 
     def get_definition(self, params: lsp.DefinitionParams) -> lsp.Location | None:
