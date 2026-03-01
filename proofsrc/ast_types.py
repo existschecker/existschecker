@@ -492,6 +492,26 @@ class DeclarationContext:
     def copy(self) -> "DeclarationContext":
         return DeclarationContext(self.primpreds.copy(), self.axioms.copy(), self.theorems.copy(), self.defpreds.copy(), self.defcons.copy(), self.defconexists.copy(), self.defconuniqs.copy(), self.deffuns.copy(), self.deffunexists.copy(), self.deffununiqs.copy(), self.deffunterms.copy(), self.equality, set(self.used_names))
 
+    def merge(self, decl: "DeclarationContext") -> None:
+        if self.used_names & decl.used_names:
+            raise Exception("conflict of used_names in merge of Context")
+        if self.equality is not None and decl.equality is not None:
+            raise Exception("conflict of equality in merge of Context")
+        self.primpreds |= decl.primpreds
+        self.axioms |= decl.axioms
+        self.theorems |= decl.theorems
+        self.defpreds |= decl.defpreds
+        self.defcons |= decl.defcons
+        self.defconexists |= decl.defconexists
+        self.defconuniqs |= decl.defconuniqs
+        self.deffuns |= decl.deffuns
+        self.deffunexists |= decl.deffunexists
+        self.deffununiqs |= decl.deffununiqs
+        self.deffunterms |= decl.deffunterms
+        if self.equality is None and decl.equality is not None:
+            self.equality = decl.equality
+        self.used_names |= decl.used_names
+
 @dataclass
 class Context:
     decl: DeclarationContext
@@ -519,6 +539,9 @@ class Context:
 
     def copy(self):
         return Context(self.decl.copy(), self.ctrl.copy(), self.form.copy())
+
+    def merge(self, context: "Context") -> None:
+        self.decl.merge(context.decl)
 
 @dataclass
 class Include:
@@ -613,3 +636,10 @@ class Workspace:
                     start, end = unit.node_to_token[id(node)]
                     for index in range(start, end + 1):
                         unit.token_to_control[index] = node
+
+    def merge(self, new: "Workspace") -> None:
+        for file in new.resolved_files:
+            if file not in self.resolved_files:
+                self.resolved_files.append(file)
+        for file, units in new.file_units.items():
+            self.file_units[file] = units

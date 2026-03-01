@@ -228,6 +228,18 @@ class ProofLanguageServer(LanguageServer):
             unit.context = context.copy()
         return context
 
+    def prepare_context(self, file: str, resolver: DependencyResolver, file_final_contexts: dict[str, Context], newly_analyzed: set[str]) -> tuple[Context, bool]:
+        context = Context.init()
+        processed_files: set[str] = set() # avoid diamond dependency
+        dependency_changed = False
+        for dep in resolver.dependencies[file]:
+            if dep not in processed_files:
+                context.merge(file_final_contexts[dep])
+                processed_files.add(dep)
+                if dep in newly_analyzed:
+                    dependency_changed = True
+        return context, dependency_changed
+
     def analyze(self, path: str) -> None:
         self.cancel_analysis.clear()
 
@@ -240,24 +252,26 @@ class ProofLanguageServer(LanguageServer):
         resolved_files, tokens_cache = self.resolver.get_result(path)
         workspace = split(resolved_files, tokens_cache, self.resolver.source_cache)
 
-        all_units: list[DeclarationUnit] = []
+        file_final_contexts: dict[str, Context] = {}
+        newly_analyzed: set[str] = set()
         for file in workspace.resolved_files:
-            all_units.extend(workspace.file_units[file])
-
-        old_all_units: list[DeclarationUnit] = []
-        if self.old_workspace is not None:
-            for file in self.old_workspace.resolved_files:
-                old_all_units.extend(self.old_workspace.file_units[file])
-
-        context = Context.init()
-        context, start_index = self.restore_cache(all_units, old_all_units, context)
-        context = self.analyze_diff(all_units, start_index, context)
-        if context is None:
-            return None
+            context, dependency_changed = self.prepare_context(file, self.resolver, file_final_contexts, newly_analyzed)
+            all_units = workspace.file_units[file]
+            old_all_units = [] if self.old_workspace is None or dependency_changed else self.old_workspace.file_units.get(file, [])
+            context, start_index = self.restore_cache(all_units, old_all_units, context)
+            if start_index < len(all_units):
+                newly_analyzed.add(file)
+            context = self.analyze_diff(all_units, start_index, context)
+            if context is None:
+                return None
+            file_final_contexts[file] = context.copy()
 
         workspace.build_token_to_node()
 
-        self.old_workspace = workspace
+        if self.old_workspace is None:
+            self.old_workspace = workspace
+        else:
+            self.old_workspace.merge(workspace)
 
         final_diagnostics: dict[str, list[lsp.Diagnostic]] = {}
         for file in workspace.resolved_files:
