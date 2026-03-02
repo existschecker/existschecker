@@ -22,7 +22,11 @@
         "extensions": [
           ".proof"
         ],
-        "configuration": "./language-configuration.json"
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./assets/icon.svg",
+          "dark": "./assets/icon.svg"
+        }
       }
     ],
     "grammars": [
@@ -37,7 +41,7 @@
         {
           "id": "proof-assistant-explorer",
           "title": "Proof Status",
-          "icon": "$(verified)"
+          "icon": "./assets/icon.svg"
         }
       ]
     },
@@ -47,7 +51,7 @@
           "type": "webview",
           "id": "proof-view",
           "name": "Current Proof",
-          "icon": "$(verified)"
+          "icon": "./assets/icon.svg"
         }
       ]
     },
