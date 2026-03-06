@@ -761,7 +761,7 @@ if __name__ == "__main__":
     from dependency import DependencyResolver
     resolver = DependencyResolver()
     resolver.resolve(path)
-    resolved_files, tokens_cache = resolver.get_result()
+    resolved_files, tokens_cache = resolver.get_result(path)
     from splitter import split
     workspace = split(resolved_files, tokens_cache, resolver.source_cache)
     context = Context.init()
