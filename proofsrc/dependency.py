@@ -74,12 +74,12 @@ class DependencyResolver:
                 if token.type == "STRING":
                     token = stream.consume("STRING")
                     new_path = os.path.abspath(os.path.join(os.path.dirname(path), token.value))
-                    dependency.append(new_path)
                     if not os.path.exists(new_path):
                         self.add_lsp_error(token, f"File not found: {new_path}")
                     elif new_path in self.visiting_files:
                         self.add_lsp_error(token, f"Cyclic dependency: {new_path}")
                     else:
+                        dependency.append(new_path)
                         self.resolve(new_path)
             elif token.type == "EOF":
                 break
