@@ -618,12 +618,6 @@ class Workspace:
         self.resolved_files: list[str] = resolved_files
         self.file_units: dict[str, list[DeclarationUnit]] = file_units
 
-    def get_all_units(self) -> list[DeclarationUnit]:
-        all_units: list[DeclarationUnit] = []
-        for file in self.resolved_files:
-            all_units.extend(self.file_units[file])
-        return all_units
-
     def get_decl_def(self, name: str, order: list[str]) -> Token | None:
         for path in order:
             for unit in self.file_units[path]:
