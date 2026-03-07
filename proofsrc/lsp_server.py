@@ -343,7 +343,10 @@ class ProofLanguageServer(LanguageServer):
         ref_name = ref_token.value
         if self.old_workspace is None:
             return []
-        decl_ref_tokens = self.old_workspace.get_all_decl_refs(ref_name)
+        if self.resolver is None:
+            return []
+        affected_files = self.resolver.get_affected_files(unit.file)
+        decl_ref_tokens = self.old_workspace.get_all_decl_refs(ref_name, affected_files)
         return tokens_to_locations(decl_ref_tokens)
 
     def get_completion(self) -> list[lsp.CompletionItem]:

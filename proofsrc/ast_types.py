@@ -619,11 +619,12 @@ class Workspace:
                     return unit.tokens[unit.node_to_token[id(unit.ast.ref)][0]]
         return None
 
-    def get_all_decl_refs(self, name: str) -> list[Token]:
+    def get_all_decl_refs(self, name: str, affected_files: set[str]) -> list[Token]:
         all_decl_refs: list[Token] = []
-        for unit in self.get_all_units():
-            if name in unit.decl_refs:
-                all_decl_refs.extend(unit.decl_refs[name])
+        for path in affected_files:
+            for unit in self.file_units[path]:
+                if name in unit.decl_refs:
+                    all_decl_refs.extend(unit.decl_refs[name])
         return all_decl_refs
 
     def build_token_to_node(self):
