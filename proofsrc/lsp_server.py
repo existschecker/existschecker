@@ -48,7 +48,7 @@ class CursorState:
     uri: str
     position: lsp.Position
 
-def get_hover(node: Include | Declaration | Control | Formula | Term | RefFact, context: Context) -> str:
+def get_hover(node: Include | Declaration | Control | Formula | Term | RefFact, context: Context) -> str | None:
     if isinstance(node, Declaration):
         return f"{node.__class__.__name__}: {node.proofinfo.status}"
     elif isinstance(node, Control):
@@ -75,24 +75,38 @@ local_conclusions: {local_conclusions}
     elif isinstance(node, Term):
         if isinstance(node, VarTerm):
             if isinstance(node, RefDefCon):
+                if node.name not in context.decl.defcons:
+                    return None
                 defcon = context.decl.defcons[node.name]
                 return f"{node.__class__.__name__}\n```proof\ndefinition constant {defcon.name} by {defcon.ref_theorem.name}\n```"
             else:
                 return node.__class__.__name__
         elif isinstance(node, PredTerm):
-            if isinstance(node, RefPrimPred):
+            if isinstance(node, RefEquality):
+                if context.decl.equality is None:
+                    return None
+                return f"{node.__class__.__name__}\n```proof\nequality {context.decl.equality.name}\n```"
+            elif isinstance(node, RefPrimPred):
+                if node.name not in context.decl.primpreds:
+                    return None
                 primpred = context.decl.primpreds[node.name]
                 return f"{node.__class__.__name__}\n```proof\nprimitive predicate {primpred.name} arity {primpred.arity}\n```"
             elif isinstance(node, RefDefPred):
+                if node.name not in context.decl.defpreds:
+                    return None
                 defpred = context.decl.defpreds[node.name]
                 return f"{node.__class__.__name__}\n```proof\ndefinition predicate {defpred.name}({", ".join(ExprFormatter(context).pretty_expr(arg) for arg in defpred.args)}) as {ExprFormatter(context).pretty_expr(defpred.formula)}\n```"
             else:
                 return node.__class__.__name__
         elif isinstance(node, FunTerm):
             if isinstance(node, RefDefFun):
+                if node.name not in context.decl.deffuns:
+                    return None
                 deffun = context.decl.deffuns[node.name]
                 return f"{node.__class__.__name__}\n```proof\ndefinition function {deffun.name} by {deffun.ref_theorem.name}\n```"
             elif isinstance(node, RefDefFunTerm):
+                if node.name not in context.decl.deffunterms:
+                    return None
                 deffunterm = context.decl.deffunterms[node.name]
                 return f"{node.__class__.__name__}\n```proof\ndefinition function {deffunterm.name}({", ".join(ExprFormatter(context).pretty_expr(arg) for arg in deffunterm.args)}) as {ExprFormatter(context).pretty_expr(deffunterm.varterm)}"
             else:
@@ -101,21 +115,33 @@ local_conclusions: {local_conclusions}
             return f"{node.__class__.__name__}: Unknown"
     elif isinstance(node, RefFact):
         if isinstance(node, RefAxiom):
+            if node.name not in context.decl.axioms:
+                return None
             axiom = context.decl.axioms[node.name]
             return f"{node.__class__.__name__}\n```proof\naxiom {axiom.name} {ExprFormatter(context).pretty_expr(axiom.conclusion)}\n```"
         elif isinstance(node, RefTheorem):
+            if node.name not in context.decl.theorems:
+                return None
             theorem = context.decl.theorems[node.name]
             return f"{node.__class__.__name__}\n```proof\ntheorem {theorem.name} {ExprFormatter(context).pretty_expr(theorem.conclusion)}\n```"
         elif isinstance(node, RefDefConExist):
+            if node.name not in context.decl.defconexists:
+                return None
             defconexist = context.decl.defconexists[node.name]
             return f"{node.__class__.__name__}\n```proof\nexistence {defconexist.name} {ExprFormatter(context).pretty_expr(defconexist.formula)} by {defconexist.ref_con.name}\n```"
         elif isinstance(node, RefDefConUniq):
+            if node.name not in context.decl.defconuniqs:
+                return None
             defconuniq = context.decl.defconuniqs[node.name]
             return f"{node.__class__.__name__}\n```proof\nuniqueness {defconuniq.name} {ExprFormatter(context).pretty_expr(defconuniq.formula)} by {defconuniq.ref_con.name}\n```"
         elif isinstance(node, RefDefFunExist):
+            if node.name not in context.decl.deffunexists:
+                return None
             deffunexist = context.decl.deffunexists[node.name]
             return f"{node.__class__.__name__}\n```proof\nexistence {deffunexist.name} {ExprFormatter(context).pretty_expr(deffunexist.formula)} by {deffunexist.ref_fun.name}"
         elif isinstance(node, RefDefFunUniq):
+            if node.name not in context.decl.deffununiqs:
+                return None
             deffununiq = context.decl.deffununiqs[node.name]
             return f"{node.__class__.__name__}\n```proof\nuniqueness {deffununiq.name} {ExprFormatter(context).pretty_expr(deffununiq.formula)} by {deffununiq.ref_fun.name}"
         else:
@@ -437,11 +463,16 @@ class ProofLanguageServer(LanguageServer):
         token = self.find_token_at(unit, params.position)
         if token is None:
             return None
+        if token.index not in unit.token_to_node:
+            return None
         node = unit.token_to_node[token.index]
+        value = get_hover(node, unit.context)
+        if value is None:
+            return None
         return lsp.Hover(
             contents=lsp.MarkupContent(
                 kind=lsp.MarkupKind.Markdown,
-                value=get_hover(node, unit.context)
+                value=value
             )
         )
 
