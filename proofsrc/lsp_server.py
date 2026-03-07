@@ -322,7 +322,10 @@ class ProofLanguageServer(LanguageServer):
         ref_name = ref_token.value
         if self.old_workspace is None:
             return None
-        decl_def_token = self.old_workspace.get_decl_def(ref_name)
+        if self.resolver is None:
+            return None
+        order, _ = self.resolver.get_result(unit.file)
+        decl_def_token = self.old_workspace.get_decl_def(ref_name, order)
         if decl_def_token is None:
             return None
         return token_to_location(decl_def_token)

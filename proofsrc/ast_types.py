@@ -612,10 +612,11 @@ class Workspace:
             all_units.extend(self.file_units[file])
         return all_units
 
-    def get_decl_def(self, name: str) -> Token | None:
-        for unit in self.get_all_units():
-            if isinstance(unit.ast, (Equality, PrimPred, Axiom, Theorem, DefPred, DefConExist, DefConUniq, DefCon, DefFunExist, DefFunUniq, DefFun, DefFunTerm)) and name == unit.ast.name:
-                return unit.tokens[unit.node_to_token[id(unit.ast.ref)][0]]
+    def get_decl_def(self, name: str, order: list[str]) -> Token | None:
+        for path in order:
+            for unit in self.file_units[path]:
+                if isinstance(unit.ast, (Equality, PrimPred, Axiom, Theorem, DefPred, DefConExist, DefConUniq, DefCon, DefFunExist, DefFunUniq, DefFun, DefFunTerm)) and name == unit.ast.name:
+                    return unit.tokens[unit.node_to_token[id(unit.ast.ref)][0]]
         return None
 
     def get_all_decl_refs(self, name: str) -> list[Token]:
