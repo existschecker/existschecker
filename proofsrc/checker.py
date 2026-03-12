@@ -376,9 +376,9 @@ class Checker:
             msg = f"not matched: fact={ExprFormatter(context).pretty_expr(fact)}, conected_premise={ExprFormatter(context).pretty_expr(connected_premise)}"
             raise CheckError(self.unit.tokens[self.unit.node_to_token[id(node)][0]], msg)
         logger.debug(f"{debug_prefix}fact={ExprFormatter(context).pretty_expr(fact)}")
-        local_ctx = context.copy_ctrl()
         goals: list[Bottom | Formula] = []
         for stmt in node.cases:
+            local_ctx = context.copy_ctrl()
             self.check_control(stmt, local_ctx, indent+1)
             if not (len(context.ctrl.formulas) < len(local_ctx.ctrl.formulas) and context.ctrl.formulas == local_ctx.ctrl.formulas[:len(context.ctrl.formulas)]):
                 msg = "Local context must extend the parent context"
