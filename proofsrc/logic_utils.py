@@ -542,6 +542,11 @@ class Substitutor:
                             resolved_args.append(subarg)
                         else:
                             raise Exception(f"PredTerm must be substituted into {defarg.name}, but {type(subarg)} is substituted")
+                    elif isinstance(defarg, FunTerm):
+                        if isinstance(subarg, FunTerm):
+                            resolved_args.append(subarg)
+                        else:
+                            raise Exception(f"FunTerm must be substituted into {defarg.name}, but {type(subarg)} is substituted")
                     else:
                         raise Exception(f"Unexpected type: {type(defarg)}")
                 return AtomicFormula(new_pred, tuple(self.substitute_term(arg) for arg in resolved_args))
