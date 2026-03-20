@@ -777,7 +777,8 @@ class Checker:
         debug_prefix = make_debug_prefix(node, indent)
         if isinstance(node.conclusion, AtomicFormula):
             if not isinstance(node.conclusion.pred, RefDefPred):
-                raise Exception(f"Unexpected type: {type(node.conclusion.pred)}")
+                msg = f"Expected RefDefPred, got {type(node.conclusion.pred)}"
+                raise CheckError(node, msg)
             conclusion = DefExpander([node.conclusion.pred]).expand_defs_formula(node.conclusion, context)
         else:
             conclusion = node.conclusion
@@ -824,9 +825,11 @@ class Checker:
         premises_equal: list[AtomicFormula] = []
         for k, v in node.env.items():
             if not isinstance(k, VarTerm):
-                raise Exception(f"Unexpected type: {type(k)}")
+                msg = f"Expected VarTerm, got {type(k)}"
+                raise CheckError(node, msg)
             if not isinstance(v, VarTerm):
-                raise Exception(f"Unexpected type: {type(v)}")
+                msg = f"Expected VarTerm, got {type(v)}"
+                raise CheckError(node, msg)
             equation = AtomicFormula(RefEquality(context.decl.equality.ref.name), (k, v))
             if not goal_in_context(equation, context):
                 msg = f"Not fact: {ExprFormatter(context).pretty_expr(equation)}"
