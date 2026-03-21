@@ -6,9 +6,9 @@ from typing import Sequence, Literal
 import logging
 logger = logging.getLogger("proof")
 
-class ContextError(Exception):
-    def __init__(self, token: Token, msg: str) -> None:
-        self.token = token
+class CheckError(Exception):
+    def __init__(self, node: "Declaration | Control", msg: str) -> None:
+        self.node = node
         self.msg = msg
 
 @dataclass(frozen=True)
@@ -472,7 +472,7 @@ class DeclarationContext:
     def has_reference(self, name: str) -> bool:
         return name in self.axioms or name in self.theorems or name in self.defconexists or name in self.defconuniqs or name in self.deffunexists or name in self.deffununiqs
 
-    def get_reference(self, ref: RefFact, token: Token) -> Formula:
+    def get_reference(self, ref: RefFact, node: Declaration | Control) -> Formula:
         if isinstance(ref, RefAxiom):
             return self.axioms[ref.name].conclusion
         elif isinstance(ref, RefTheorem):
@@ -487,7 +487,7 @@ class DeclarationContext:
             return self.deffununiqs[ref.name].formula
         else:
             msg = f"Unexpected name: {ref}"
-            raise ContextError(token, msg)
+            raise CheckError(node, msg)
 
     def copy(self) -> "DeclarationContext":
         return DeclarationContext(self.primpreds.copy(), self.axioms.copy(), self.theorems.copy(), self.defpreds.copy(), self.defcons.copy(), self.defconexists.copy(), self.defconuniqs.copy(), self.deffuns.copy(), self.deffunexists.copy(), self.deffununiqs.copy(), self.deffunterms.copy(), self.equality, set(self.used_names))
