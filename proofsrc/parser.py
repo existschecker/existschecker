@@ -602,9 +602,6 @@ class Parser:
         fact = self.parse_formula(context)
         self.stream.consume("CONCLUDE")
         conclusion = self.parse_formula(context)
-        if not isinstance(conclusion, Or):
-            msg = "Or object is required"
-            raise ParseError(start_token, msg)
         node = Pad(fact=fact, conclusion=conclusion)
         self.add_node_to_token(node, start_token, self.stream.last_token)
         return node

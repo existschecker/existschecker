@@ -24,6 +24,15 @@ def get_fact(fact: RefFact | Formula, context: Context, node: Declaration | Cont
         fact = DefExpander([fact.pred], {fact.pred: [1]}).expand_defs_formula(fact, context)
     return fact
 
+def expand_if_atomic(formula: Formula, context: Context, node: Declaration | Control) -> Formula:
+    if isinstance(formula, AtomicFormula):
+        if not isinstance(formula.pred, RefDefPred):
+            msg = f"Expected RefDefPred, got {type(formula.pred)}"
+            raise CheckError(node, msg)
+        return DefExpander([formula.pred]).expand_defs_formula(formula, context)
+    else:
+        return formula
+
 def add_conclusion(context: Context, conclusion: Bottom | Formula) -> None:
     context.ctrl.formulas.append(conclusion)
 
@@ -721,7 +730,11 @@ class Checker:
             logger.debug(f"{debug_prefix}Derivable: {ExprFormatter(context).pretty_expr(node.fact)}")
         fact = get_fact(node.fact, context, node)
         fact_parts = flatten_op(fact, Or)
-        conclusion_parts = flatten_op(node.conclusion, Or)
+        conclusion = expand_if_atomic(node.conclusion, context, node)
+        if not isinstance(conclusion, Or):
+            msg = f"Expected Or, got {type(conclusion)}"
+            raise CheckError(node, msg)
+        conclusion_parts = flatten_op(conclusion, Or)
         if not all(any(alpha_equiv_with_defs(c, f, context) for c in conclusion_parts) for f in fact_parts):
             msg = f"neither left or right not derivable: {ExprFormatter(context).pretty_expr(node.conclusion)}"
             raise CheckError(node, msg)
@@ -771,13 +784,7 @@ class Checker:
 
     def check_connect(self, node: Connect, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
-        if isinstance(node.conclusion, AtomicFormula):
-            if not isinstance(node.conclusion.pred, RefDefPred):
-                msg = f"Expected RefDefPred, got {type(node.conclusion.pred)}"
-                raise CheckError(node, msg)
-            conclusion = DefExpander([node.conclusion.pred]).expand_defs_formula(node.conclusion, context)
-        else:
-            conclusion = node.conclusion
+        conclusion = expand_if_atomic(node.conclusion, context, node)
         if isinstance(conclusion, And):
             logger.debug(f"{debug_prefix}And object: {ExprFormatter(context).pretty_expr(conclusion)}")
             conclusion_parts = flatten_op(conclusion, And)

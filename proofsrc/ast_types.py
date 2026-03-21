@@ -301,7 +301,7 @@ class Fold(Control):
 @dataclass
 class Pad(Control):
     fact: RefFact | Formula
-    conclusion: Or
+    conclusion: Formula
 
 @dataclass
 class Split(Control):
