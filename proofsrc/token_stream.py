@@ -1,9 +1,5 @@
+from ast_types import TokenStreamError
 from lexer import Token
-
-class TokenStreamError(Exception):
-    def __init__(self, token: Token, msg: str) -> None:
-        self.token = token
-        self.msg = msg
 
 class TokenStream:
     def __init__(self, tokens: list[Token]):

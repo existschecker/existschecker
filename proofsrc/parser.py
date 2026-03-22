@@ -1,6 +1,6 @@
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, RefDefCon, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Term, Formula, Control, Declaration, PredTemplate, PredLambda, Include, Assert, Fold, VarTerm, PredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, InvalidInclude, InvalidDeclaration, InvalidControl, DeclarationUnit, RefFact, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq, RefEquality, ContextError
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, PrimPred, DefPred, Iff, Axiom, Invoke, Expand, ExistsUniq, DefCon, Pad, Split, Connect, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, Compound, RefDefCon, Var, DefFunTerm, Equality, Substitute, Characterize, Show, Term, Formula, Control, Declaration, PredTemplate, PredLambda, Include, Assert, Fold, VarTerm, PredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, InvalidInclude, InvalidDeclaration, InvalidControl, DeclarationUnit, RefFact, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq, RefEquality, ContextError, TokenStreamError, ParseError
 from lexer import Token
-from token_stream import TokenStream, TokenStreamError
+from token_stream import TokenStream
 from logic_utils import strip_forall_vars
 
 from lsprotocol import types as lsp
@@ -9,11 +9,6 @@ from typing import Sequence
 
 import logging
 logger = logging.getLogger("proof")
-
-class ParseError(Exception):
-    def __init__(self, token: Token, msg: str):
-        self.token = token
-        self.msg = msg
 
 class Parser:
     def __init__(self, unit: DeclarationUnit):

@@ -18,6 +18,16 @@ class FormatError(Exception):
     def __init__(self, msg: str) -> None:
         self.msg = msg
 
+class TokenStreamError(Exception):
+    def __init__(self, token: Token, msg: str) -> None:
+        self.token = token
+        self.msg = msg
+
+class ParseError(Exception):
+    def __init__(self, token: Token, msg: str):
+        self.token = token
+        self.msg = msg
+
 class CheckError(Exception):
     def __init__(self, node: "Declaration | Control", msg: str) -> None:
         self.node = node
