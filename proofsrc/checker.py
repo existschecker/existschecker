@@ -1,5 +1,5 @@
 from lexer import Token
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, RefDefCon, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Control, Formula, Declaration, PredTemplate, Term, DefConExist, DefConUniq, DefFunExist, DefFunUniq, Include, Assert, Fold, VarTerm, FunTemplate, RefDefPred, RefDefFun, InvalidDeclaration, InvalidControl, InvalidInclude, DeclarationUnit, RefFact, RefEquality, CheckError, ContextError, LogicError
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, RefDefCon, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Control, Formula, Declaration, PredTemplate, Term, DefConExist, DefConUniq, DefFunExist, DefFunUniq, Include, Assert, Fold, VarTerm, FunTemplate, RefDefPred, RefDefFun, InvalidDeclaration, InvalidControl, InvalidInclude, DeclarationUnit, RefFact, RefEquality, CheckError, ContextError, LogicError, FormatError
 from logic_utils import Substitutor, DefExpander, expr_in_context, strip_forall_vars, strip_exists_vars, make_forall_vars, make_exists_vars, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs, alpha_safe_formula
 from formatter import ExprFormatter
 from copy import deepcopy
@@ -116,9 +116,10 @@ class Checker:
             logger.error(f"{self.make_error_prefix(node, indent)}{e.msg}")
             node.proofinfo.status = "❌Failed"
             return False
-        except (ContextError, LogicError) as e:
-            self.add_lsp_error(self.unit.get_node_token(node), e.msg, context)
-            logger.error(f"{self.make_error_prefix(node, indent)}{e.msg}")
+        except (ContextError, LogicError, FormatError) as e:
+            msg = f"{e.__class__.__name__}: {e.msg}"
+            self.add_lsp_error(self.unit.get_node_token(node), msg, context)
+            logger.error(f"{self.make_error_prefix(node, indent)}{msg}")
             node.proofinfo.status = "❌Failed"
             return False
 
@@ -312,10 +313,11 @@ class Checker:
             logger.error(f"{self.make_error_prefix(node, indent)}{e.msg}")
             node.proofinfo.status = "❌Failed"
             raise
-        except (ContextError, LogicError) as e:
-            logger.error(f"{self.make_error_prefix(node, indent)}{e.msg}")
+        except (ContextError, LogicError, FormatError) as e:
+            msg = f"{e.__class__.__name__}: {e.msg}"
+            logger.error(f"{self.make_error_prefix(node, indent)}{msg}")
             node.proofinfo.status = "❌Failed"
-            raise CheckError(node, e.msg)
+            raise CheckError(node, msg)
 
     def check_any(self, node: Any, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)

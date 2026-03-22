@@ -1,6 +1,6 @@
 from typing import Literal
 
-from ast_types import Term, Formula, Var, RefDefCon, RefDefFun, RefDefFunTerm, FunTemplate, FunLambda, Compound, RefEquality, RefPrimPred, RefDefPred, PredTemplate, PredLambda, AtomicFormula, Not, And, Or, Implies, Iff, Forall, Exists, ExistsUniq, Bottom, RefFact, Context
+from ast_types import Term, Formula, Var, RefDefCon, RefDefFun, RefDefFunTerm, FunTemplate, FunLambda, Compound, RefEquality, RefPrimPred, RefDefPred, PredTemplate, PredLambda, AtomicFormula, Not, And, Or, Implies, Iff, Forall, Exists, ExistsUniq, Bottom, RefFact, Context, FormatError
 from logic_utils import flatten_op
 
 class ExprFormatter:
@@ -29,14 +29,14 @@ class ExprFormatter:
         if isinstance(expr, AtomicFormula):
             if isinstance(expr.pred, RefEquality):
                 if self.context.decl.equality is None:
-                    raise Exception(f"equality has not been declared yet")
+                    raise FormatError(f"equality has not been declared yet")
                 tex = self.context.decl.equality.tex
             elif isinstance(expr.pred, RefPrimPred):
                 tex = self.context.decl.primpreds[expr.pred.name].tex
             elif isinstance(expr.pred, RefDefPred):
                 tex = self.context.decl.defpreds[expr.pred.name].tex
             else:
-                raise Exception(f"Unexpected type: {type(expr.pred)}")
+                raise FormatError(f"Unexpected type: {type(expr.pred)}")
             return tex
         elif isinstance(expr, Compound):
             if isinstance(expr.fun, RefDefFun):
@@ -44,10 +44,10 @@ class ExprFormatter:
             elif isinstance(expr.fun, RefDefFunTerm):
                 tex = self.context.decl.deffunterms[expr.fun.name].tex
             else:
-                raise Exception(f"Unexpected type: {type(expr.fun)}")
+                raise FormatError(f"Unexpected type: {type(expr.fun)}")
             return tex
         else:
-            raise TypeError(f"Unsupported node type: {type(expr)}")
+            raise FormatError(f"Unsupported node type: {type(expr)}")
 
     def pretty_term(self, expr: Term, parent_prec: int = TERM_PRECEDENCE["Lowest"]) -> str:
         if isinstance(expr, Var):
@@ -62,7 +62,7 @@ class ExprFormatter:
         elif isinstance(expr, RefDefCon):
             fragments = self.context.decl.defcons[expr.name].tex
             if len(fragments) != 1:
-                raise Exception("arity is different")
+                raise FormatError("arity is different")
             return fragments[0]
         elif isinstance(expr, Compound):
             if isinstance(expr.fun, (RefDefFun, RefDefFunTerm)):
@@ -74,7 +74,7 @@ class ExprFormatter:
                 else:
                     fragments = self.get_tex_fragments(expr)
                     if len(fragments) != len(expr.args) + 1:
-                        raise Exception("arity is different")
+                        raise FormatError("arity is different")
                 prec = self.__class__.TERM_PRECEDENCE["CompoundInfix"] if fragments[0] == "" or fragments[-1] == "" else self.__class__.TERM_PRECEDENCE["CompoundFunction"]
                 text = ""
                 for i in range(len(expr.args)):
@@ -97,13 +97,13 @@ class ExprFormatter:
                     text = f"{self.pretty_term(expr.fun)}({",".join([self.pretty_term(arg) for arg in expr.args])})"
                 return text if self.__class__.TERM_PRECEDENCE["CompoundFunction"] > parent_prec else f"({text})"
             else:
-                raise Exception(f"Unexpected type: {type(expr.fun)}")
+                raise FormatError(f"Unexpected type: {type(expr.fun)}")
         elif isinstance(expr, PredLambda):
             return f"\\lambda^P {",".join([var.name for var in expr.args])}. {self.pretty_formula(expr.body)}"
         elif isinstance(expr, FunLambda):
             return f"\\lambda^F {",".join([var.name for var in expr.args])}. {self.pretty_term(expr.body)}"
         else:
-            raise TypeError(f"Unsupported node type: {type(expr)}")
+            raise FormatError(f"Unsupported node type: {type(expr)}")
 
     def pretty_formula(self, expr: Formula, parent_prec: int = FORMULA_PRECEDENCE["Lowest"]) -> str:
         if isinstance(expr, AtomicFormula):
@@ -116,7 +116,7 @@ class ExprFormatter:
                 else:
                     fragments = self.get_tex_fragments(expr)
                     if len(fragments) != len(expr.args) + 1:
-                        raise Exception("arity is different")
+                        raise FormatError("arity is different")
                 text = ""
                 for i in range(len(expr.args)):
                     text += fragments[i]
@@ -132,7 +132,7 @@ class ExprFormatter:
                     text = f"{expr.pred.name}({",".join([self.pretty_term(arg) for arg in expr.args])})"
                 return text if self.__class__.FORMULA_PRECEDENCE["Symbol"] > parent_prec else f"({text})"
             else:
-                raise Exception(f"Unexpected type: {type(expr.pred)}")
+                raise FormatError(f"Unexpected type: {type(expr.pred)}")
         elif isinstance(expr, Not):
             text = f"\\neg {self.pretty_formula(expr.body, self.__class__.FORMULA_PRECEDENCE["Not"])}"
             return text if self.__class__.FORMULA_PRECEDENCE["Not"] > parent_prec else f"({text})"
@@ -169,12 +169,12 @@ class ExprFormatter:
                 elif isinstance(body.var, FunTemplate):
                     qvars_text += f"^F {self.pretty_term(body.var)}"
                 else:
-                    raise Exception(f"Unexpected type: {type(body.var)}")
+                    raise FormatError(f"Unexpected type: {type(body.var)}")
                 body = body.body
             text = f"{qvars_text} {self.pretty_formula(body, self.__class__.FORMULA_PRECEDENCE["Quantifier"])}"
             return text if self.__class__.FORMULA_PRECEDENCE["Quantifier"] > parent_prec else f"({text})"
         else:
-            raise TypeError(f"Unsupported node type: {type(expr)}")
+            raise FormatError(f"Unsupported node type: {type(expr)}")
 
     def pretty_expr(self, expr: RefFact | Bottom | Formula | Term) -> str:
         if isinstance(expr, RefFact):
@@ -186,4 +186,4 @@ class ExprFormatter:
         elif isinstance(expr, Term):
             return self.pretty_term(expr)
         else:
-            raise TypeError(f"Unsupported node type: {type(expr)}")
+            raise FormatError(f"Unsupported node type: {type(expr)}")
