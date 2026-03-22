@@ -208,7 +208,7 @@ class Parser:
         self.stream.consume("BY")
         theorem_token = self.stream.consume("IDENT")
         theorem_name = theorem_token.value
-        if theorem_name not in context.decl.theorems:
+        if not context.decl.has_theorem(theorem_name):
             msg = f"{theorem_name} is not in context.decl.theorems"
             raise ParseError(theorem_token, msg)
         ref_theorem = RefTheorem(theorem_name)
@@ -237,12 +237,12 @@ class Parser:
         self.stream.consume("BY")
         theorem_token = self.stream.consume("IDENT")
         theorem_name = theorem_token.value
-        if theorem_name not in context.decl.theorems:
+        if not context.decl.has_theorem(theorem_name):
             msg = f"{theorem_name} is not in context.decl.theorems"
             raise ParseError(start_token, msg)
         ref_theorem = RefTheorem(theorem_name)
         self.add_node_to_token(ref_theorem, theorem_token, theorem_token)
-        vars_, body = strip_forall_vars(context.decl.theorems[theorem_name].conclusion)
+        vars_, body = strip_forall_vars(context.decl.get_theorem(theorem_name).conclusion)
         if isinstance(body, ExistsUniq):
             existsuniq = body
         elif isinstance(body, Implies) and isinstance(body.right, ExistsUniq):
@@ -287,7 +287,7 @@ class Parser:
         self.stream.consume("BY")
         name_token = self.stream.consume("IDENT")
         name = name_token.value
-        if name in context.decl.defcons:
+        if context.decl.has_defcon(name):
             ref = RefDefConExist(existence_name)
             ref_con = RefDefCon(name)
             self.add_node_to_token(ref, existence_name_token, existence_name_token)
@@ -295,7 +295,7 @@ class Parser:
             defconexist = DefConExist(name=existence_name, ref=ref, formula=existence_formula, ref_con=ref_con)
             self.add_node_to_token(defconexist, start_token, self.stream.last_token)
             return defconexist
-        elif name in context.decl.deffuns:
+        elif context.decl.has_deffun(name):
             ref = RefDefFunExist(existence_name)
             ref_fun = RefDefFun(name)
             self.add_node_to_token(ref, existence_name_token, existence_name_token)
@@ -315,7 +315,7 @@ class Parser:
         self.stream.consume("BY")
         name_token = self.stream.consume("IDENT")
         name = name_token.value
-        if name in context.decl.defcons:
+        if context.decl.has_defcon(name):
             ref = RefDefConUniq(uniqueness_name)
             ref_con = RefDefCon(name)
             self.add_node_to_token(ref, uniqueness_name_token, uniqueness_name_token)
@@ -323,7 +323,7 @@ class Parser:
             defconuniq = DefConUniq(name=uniqueness_name, ref=ref, formula=uniqueness_formula, ref_con=ref_con)
             self.add_node_to_token(defconuniq, start_token, self.stream.last_token)
             return defconuniq
-        elif name in context.decl.deffuns:
+        elif context.decl.has_deffun(name):
             ref = RefDefFunUniq(uniqueness_name)
             ref_fun = RefDefFun(name)
             self.add_node_to_token(ref, uniqueness_name_token, uniqueness_name_token)
@@ -696,17 +696,17 @@ class Parser:
         if token.type == "IDENT":
             name = token.value
             ref = None
-            if name in context.decl.axioms:
+            if context.decl.has_axiom(name):
                 ref = RefAxiom
-            elif name in context.decl.theorems:
+            elif context.decl.has_theorem(name):
                 ref = RefTheorem
-            elif name in context.decl.defconexists:
+            elif context.decl.has_defconexist(name):
                 ref = RefDefConExist
-            elif name in context.decl.defconuniqs:
+            elif context.decl.has_defconuniq(name):
                 ref = RefDefConUniq
-            elif name in context.decl.deffunexists:
+            elif context.decl.has_deffunexist(name):
                 ref = RefDefFunExist
-            elif name in context.decl.deffununiqs:
+            elif context.decl.has_deffununiq(name):
                 ref = RefDefFunUniq
             if ref is not None:
                 self.stream.consume(token.type)
@@ -759,6 +759,7 @@ class Parser:
         tok = self.stream.peek()
         if tok.type == "IDENT":
             name = self.stream.consume("IDENT").value
+            equality = context.decl.get_equality()
             if any(pred_tmpl.name == name for pred_tmpl in context.form.pred_tmpls):
                 def_pred_tmpl = next(pred_tmpl for pred_tmpl in context.form.pred_tmpls if pred_tmpl.name == name)
                 pred = PredTemplate(name, def_pred_tmpl.arity)
@@ -771,18 +772,18 @@ class Parser:
                 self.add_node_to_token(pred, tok, tok)
                 self.add_ctrl_defs_refs(def_pred_tmpl, pred)
                 defargs: list[Var | PredTemplate | FunTemplate] = [Var(f"x_{i}") for i in range(pred.arity)]
-            elif context.decl.equality is not None and name == context.decl.equality.ref.name:
+            elif equality is not None and name == equality.ref.name:
                 pred = RefEquality(name)
                 self.add_node_to_token(pred, tok, tok)
                 defargs: list[Var | PredTemplate | FunTemplate] = [Var(f"x_{i}") for i in range(2)]
-            elif name in context.decl.primpreds:
+            elif context.decl.has_primpred(name):
                 pred = RefPrimPred(name)
                 self.add_node_to_token(pred, tok, tok)
-                defargs: list[Var | PredTemplate | FunTemplate] = [Var(f"x_{i}") for i in range(context.decl.primpreds[name].arity)]
-            elif name in context.decl.defpreds:
+                defargs: list[Var | PredTemplate | FunTemplate] = [Var(f"x_{i}") for i in range(context.decl.get_primpred(name).arity)]
+            elif context.decl.has_defpred(name):
                 pred = RefDefPred(name)
                 self.add_node_to_token(pred, tok, tok)
-                defargs = context.decl.defpreds[name].args
+                defargs = context.decl.get_defpred(name).args
             else:
                 msg = f"Unexpected name: {name}"
                 raise ParseError(tok, msg)
@@ -931,19 +932,19 @@ class Parser:
                 self.add_node_to_token(ref_pred_tmpl, tok, tok)
                 self.add_ctrl_defs_refs(def_pred_tmpl, ref_pred_tmpl)
                 return ref_pred_tmpl
-            elif name in context.decl.defcons:
+            elif context.decl.has_defcon(name):
                 ref = RefDefCon(name)
                 self.add_node_to_token(ref, tok, tok)
                 return ref
-            elif name in context.decl.deffuns or name in context.decl.deffunterms or any(fun_tmpl.name == name for fun_tmpl in context.form.fun_tmpls) or any(fun_tmpl.name == name for fun_tmpl in context.ctrl.fun_tmpls):
-                if name in context.decl.deffuns:
+            elif context.decl.has_deffun(name) or context.decl.has_deffunterm(name) or any(fun_tmpl.name == name for fun_tmpl in context.form.fun_tmpls) or any(fun_tmpl.name == name for fun_tmpl in context.ctrl.fun_tmpls):
+                if context.decl.has_deffun(name):
                     fun = RefDefFun(name)
                     self.add_node_to_token(fun, tok, tok)
-                    defargs = context.decl.deffuns[name].args
-                elif name in context.decl.deffunterms:
+                    defargs = context.decl.get_deffun(name).args
+                elif context.decl.has_deffunterm(name):
                     fun = RefDefFunTerm(name)
                     self.add_node_to_token(fun, tok, tok)
-                    defargs = context.decl.deffunterms[name].args
+                    defargs = context.decl.get_deffunterm(name).args
                 elif any(fun_tmpl.name == name for fun_tmpl in context.form.fun_tmpls):
                     def_fun_tmpl = next(fun_tmpl for fun_tmpl in context.form.fun_tmpls if fun_tmpl.name == name)
                     fun = FunTemplate(name, def_fun_tmpl.arity)
@@ -966,11 +967,11 @@ class Parser:
                     return term
                 else:
                     return fun
-            elif name in context.decl.primpreds:
+            elif context.decl.has_primpred(name):
                 ref = RefPrimPred(name)
                 self.add_node_to_token(ref, tok, tok)
                 return ref
-            elif name in context.decl.defpreds:
+            elif context.decl.has_defpred(name):
                 ref = RefDefPred(name)
                 self.add_node_to_token(ref, tok, tok)
                 return ref
@@ -1130,9 +1131,9 @@ class Parser:
         while True:
             ref_token = self.stream.consume("IDENT")
             ref_name = ref_token.value
-            if ref_name in context.decl.deffunterms:
+            if context.decl.has_deffunterm(ref_name):
                 ref = RefDefFunTerm(ref_name)
-            elif ref_name in context.decl.defpreds:
+            elif context.decl.has_defpred(ref_name):
                 ref = RefDefPred(ref_name)
             else:
                 msg = f"{ref_name} is not in deffunterms or defpreds"

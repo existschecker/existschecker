@@ -10,14 +10,14 @@ import logging
 logger = logging.getLogger("proof")
 
 def goal_in_context(goal: Bottom | Formula, context: Context) -> bool:
-    if isinstance(goal, AtomicFormula) and context.decl.equality is not None and isinstance(goal.pred, RefEquality) and goal.args[0] == goal.args[1]:
+    if isinstance(goal, AtomicFormula) and context.decl.get_equality() is not None and isinstance(goal.pred, RefEquality) and goal.args[0] == goal.args[1]:
         return True
     else:
         return expr_in_context(goal, context)
 
 def get_fact(fact: RefFact | Formula, context: Context, node: Declaration | Control, expand_symbol: bool = False) -> Formula:
     if isinstance(fact, RefFact):
-        fact = context.decl.get_reference(fact)
+        fact = context.decl.get_fact(fact)
     elif not isinstance(fact, Formula):
         msg = f"Expected Formula, got {type(fact)}"
         raise CheckError(node, msg)
@@ -126,12 +126,12 @@ class Checker:
     def check_primpred(self, node: PrimPred, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}, arity: {node.arity}")
-        context.add_decl(node)
+        context.add_decl(self.unit.file, node)
 
     def check_axiom(self, node: Axiom, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}, conclusion: {ExprFormatter(context).pretty_expr(node.conclusion)}")
-        context.add_decl(node)
+        context.add_decl(self.unit.file, node)
 
     def check_theorem(self, node: Theorem, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
@@ -141,7 +141,7 @@ class Checker:
             self.check_control(stmt, local_ctx, indent+1)
         if goal_in_context(node.conclusion, local_ctx):
             logger.debug(f"{debug_prefix}{node.name} proved: {ExprFormatter(context).pretty_expr(node.conclusion)}")
-            context.add_decl(node)
+            context.add_decl(self.unit.file, node)
         else:
             msg = f"{node.name} not proved: {ExprFormatter(context).pretty_expr(node.conclusion)}"
             raise CheckError(node, msg)
@@ -149,22 +149,22 @@ class Checker:
     def check_defpred(self, node: DefPred, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}, args: {node.args}, formula: {ExprFormatter(context).pretty_expr(node.formula)}")
-        context.add_decl(node)
+        context.add_decl(self.unit.file, node)
 
     def check_defcon(self, node: DefCon, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}, theorem: {node.ref_theorem.name}")
-        existsuniq = context.decl.theorems[node.ref_theorem.name].conclusion
+        existsuniq = context.decl.get_theorem(node.ref_theorem).conclusion
         if not isinstance(existsuniq, ExistsUniq):
             msg = f"Not ExistsUniq object: {ExprFormatter(context).pretty_expr(existsuniq)}"
             raise CheckError(node, msg)
         logger.debug(f"{debug_prefix}ExistsUniq object: {ExprFormatter(context).pretty_expr(existsuniq)}")
-        context.add_decl(node)
+        context.add_decl(self.unit.file, node)
 
     def check_defconexist(self, node: DefConExist, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}, con_name: {node.ref_con.name}")
-        existsuniq = context.decl.theorems[context.decl.defcons[node.ref_con.name].ref_theorem.name].conclusion
+        existsuniq = context.decl.get_theorem(context.decl.get_defcon(node.ref_con).ref_theorem).conclusion
         if not isinstance(existsuniq, ExistsUniq):
             msg = f"Not ExistsUniq object: {ExprFormatter(context).pretty_expr(existsuniq)}"
             raise CheckError(node, msg)
@@ -174,12 +174,12 @@ class Checker:
             msg = f"existence_formula is not matched with theorem: {ExprFormatter(context).pretty_expr(node.formula)}"
             raise CheckError(node, msg)
         logger.debug(f"{debug_prefix}existence_formula is matched with theorem: {ExprFormatter(context).pretty_expr(node.formula)}")
-        context.add_decl(node)
+        context.add_decl(self.unit.file, node)
 
     def check_defconuniq(self, node: DefConUniq, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}, con_name: {node.ref_con.name}")
-        existsuniq = context.decl.theorems[context.decl.defcons[node.ref_con.name].ref_theorem.name].conclusion
+        existsuniq = context.decl.get_theorem(context.decl.get_defcon(node.ref_con).ref_theorem).conclusion
         if not isinstance(existsuniq, ExistsUniq):
             msg = f"Not ExistsUniq object: {ExprFormatter(context).pretty_expr(existsuniq)}"
             raise CheckError(node, msg)
@@ -187,25 +187,26 @@ class Checker:
         fv, bv, fpt, bpt, fft, bft = collect_vars(existsuniq.body)
         var = fresh_var(existsuniq.var, fv | bv | fpt | bpt | fft | bft, context)
         body = Substitutor(({existsuniq.var: var}, {}, {}), context).substitute_formula(existsuniq.body)
-        if context.decl.equality is None:
+        equality = context.decl.get_equality()
+        if equality is None:
             msg = "equality has not been declared yet"
             raise CheckError(node, msg)
-        uniqueness_formula = Forall(var, Implies(body, AtomicFormula(RefEquality(context.decl.equality.ref.name), (var, RefDefCon(node.ref_con.name)))))
+        uniqueness_formula = Forall(var, Implies(body, AtomicFormula(RefEquality(equality.ref.name), (var, RefDefCon(node.ref_con.name)))))
         if not alpha_equiv_with_defs(node.formula, uniqueness_formula, context):
             msg = f"uniqueness_formula is not matched with theorem: {ExprFormatter(context).pretty_expr(node.formula)}"
             raise CheckError(node, msg)
         logger.debug(f"{debug_prefix}uniqueness_formula is matched with theorem: {ExprFormatter(context).pretty_expr(node.formula)}")
-        context.add_decl(node)
+        context.add_decl(self.unit.file, node)
 
     def check_deffun(self, node: DefFun, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}, theorem: {node.ref_theorem.name}")
-        context.add_decl(node)
+        context.add_decl(self.unit.file, node)
 
     def check_deffunexist(self, node: DefFunExist, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}, fun_name: {node.ref_fun.name}")
-        args, body = strip_forall_vars(context.decl.theorems[context.decl.deffuns[node.ref_fun.name].ref_theorem.name].conclusion)
+        args, body = strip_forall_vars(context.decl.get_theorem(context.decl.get_deffun(node.ref_fun).ref_theorem).conclusion)
         if isinstance(body, ExistsUniq):
             existence_formula = Substitutor(({body.var: Compound(RefDefFun(node.ref_fun.name), tuple(args))}, {}, {}), context).substitute_formula(body.body)
         elif isinstance(body, Implies) and isinstance(body.right, ExistsUniq):
@@ -218,19 +219,20 @@ class Checker:
             msg = f"existence_formula is not matched with theorem: {ExprFormatter(context).pretty_expr(node.formula)}"
             raise CheckError(node, msg)
         logger.debug(f"{debug_prefix}existence_formula is matched with theorem: {ExprFormatter(context).pretty_expr(node.formula)}")
-        context.add_decl(node)
+        context.add_decl(self.unit.file, node)
 
     def check_deffununiq(self, node: DefFunUniq, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}, fun_name: {node.ref_fun.name}")
-        if context.decl.equality is None:
+        equality = context.decl.get_equality()
+        if equality is None:
             msg = "equality has not been declared yet"
             raise CheckError(node, msg)
-        args, body = strip_forall_vars(context.decl.theorems[context.decl.deffuns[node.ref_fun.name].ref_theorem.name].conclusion)
+        args, body = strip_forall_vars(context.decl.get_theorem(context.decl.get_deffun(node.ref_fun).ref_theorem).conclusion)
         if isinstance(body, ExistsUniq):
-            uniqueness_formula = Forall(body.var, Implies(body.body, AtomicFormula(RefEquality(context.decl.equality.ref.name), (Var(body.var.name), Compound(RefDefFun(node.ref_fun.name), tuple(args))))))
+            uniqueness_formula = Forall(body.var, Implies(body.body, AtomicFormula(RefEquality(equality.ref.name), (Var(body.var.name), Compound(RefDefFun(node.ref_fun.name), tuple(args))))))
         elif isinstance(body, Implies) and isinstance(body.right, ExistsUniq):
-            uniqueness_formula = Implies(body.left, Forall(body.right.var, Implies(body.right.body, AtomicFormula(RefEquality(context.decl.equality.ref.name), (Var(body.right.var.name), Compound(RefDefFun(node.ref_fun.name), tuple(args)))))))
+            uniqueness_formula = Implies(body.left, Forall(body.right.var, Implies(body.right.body, AtomicFormula(RefEquality(equality.ref.name), (Var(body.right.var.name), Compound(RefDefFun(node.ref_fun.name), tuple(args)))))))
         else:
             msg = f"Unexpected formula: {ExprFormatter(context).pretty_expr(body)}"
             raise CheckError(node, msg)
@@ -239,7 +241,7 @@ class Checker:
             msg = f"uniqueness_formula is not matched with theorem: {ExprFormatter(context).pretty_expr(node.formula)}"
             raise CheckError(node, msg)
         logger.debug(f"{debug_prefix}uniqueness_formula is matched with theorem: {ExprFormatter(context).pretty_expr(node.formula)}")
-        context.add_decl(node)
+        context.add_decl(self.unit.file, node)
 
     def check_deffunterm(self, node: DefFunTerm, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
@@ -249,12 +251,12 @@ class Checker:
             msg = f"args are not matched with free vars: {set(fv) | set(fpt) | set(fft)}"
             raise CheckError(node, msg)
         logger.debug(f"{debug_prefix}args are mathced with free vars of term: {set(fv) | set(fpt) | set(fft)}")
-        context.add_decl(node)
+        context.add_decl(self.unit.file, node)
 
     def check_equality(self, node: Equality, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.ref.name}")
-        context.add_decl(node)
+        context.add_decl(self.unit.file, node)
         logger.debug(f"{debug_prefix}{node.ref.name} is registered as equality")
 
     def check_control(self, node: Control, context: Context, indent: int) -> None:
@@ -322,7 +324,7 @@ class Checker:
     def check_any(self, node: Any, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         for item in node.items:
-            if item.name in context.ctrl.used_names or item.name in context.decl.used_names:
+            if item.name in context.ctrl.used_names or item.name in context.decl.get_used_names():
                 msg = f"{ExprFormatter(context).pretty_expr(item)} is already used"
                 raise CheckError(node, msg)
         logger.debug(f"{debug_prefix}Taking {node.items}")
@@ -458,7 +460,7 @@ class Checker:
         for item in node.items:
             if item is None:
                 continue
-            if item.name in context.ctrl.used_names or item.name in context.decl.used_names:
+            if item.name in context.ctrl.used_names or item.name in context.decl.get_used_names():
                 msg = f"{ExprFormatter(context).pretty_expr(item)} is already used"
                 raise CheckError(node, msg)
         mapping: dict[Term, Term] = {bound: free for bound, free in zip(vars, node.items) if free is not None}
@@ -470,10 +472,11 @@ class Checker:
             fv, bv, fpt, bpt, fft, bft = collect_vars(existence)
             var = fresh_var(vars[0], fv | bv | fpt | bpt | fft | bft, context)
             body = Substitutor(({vars[0]: var}, {}, {}), context).substitute_formula(existence)
-            if context.decl.equality is None:
+            equality = context.decl.get_equality()
+            if equality is None:
                 msg = "equality has not been declared yet"
                 raise CheckError(node, msg)
-            uniqueness = Forall(var, Implies(body, AtomicFormula(RefEquality(context.decl.equality.ref.name), (var, vars[0]))))
+            uniqueness = Forall(var, Implies(body, AtomicFormula(RefEquality(equality.ref.name), (var, vars[0]))))
             premises: list[Bottom | Formula] = [existence, uniqueness]
         logger.debug(f"{debug_prefix}Taking {node.items}, premise={ExprFormatter(context).pretty_expr(existence)}")
         local_vars = [item for item in node.items if isinstance(item, Var)]
@@ -650,10 +653,11 @@ class Checker:
             raise CheckError(node, msg)
         existence = Substitutor(({renamed_conclusion.var: node.varterm}, {}, {}), context).substitute_formula(renamed_conclusion.body)
         existence_dash = Substitutor(({renamed_conclusion.var: vardash}, {}, {}), context).substitute_formula(renamed_conclusion.body)
-        if context.decl.equality is None:
+        equality = context.decl.get_equality()
+        if equality is None:
             msg = "equality has not been declared yet"
             raise CheckError(node, msg)
-        fact = And(existence, Forall(vardash, Implies(existence_dash, AtomicFormula(RefEquality(context.decl.equality.ref.name), (vardash, node.varterm)))))
+        fact = And(existence, Forall(vardash, Implies(existence_dash, AtomicFormula(RefEquality(equality.ref.name), (vardash, node.varterm)))))
         if not goal_in_context(fact, context):
             msg = f"Not fact: {ExprFormatter(context).pretty_expr(fact)}"
             raise CheckError(node, msg)
@@ -838,7 +842,8 @@ class Checker:
                 raise CheckError(node, msg)
             logger.debug(f"{debug_prefix}Fact: {ExprFormatter(context).pretty_expr(node.fact)}")
         fact = get_fact(node.fact, context, node)
-        if context.decl.equality is None:
+        equality = context.decl.get_equality()
+        if equality is None:
             msg = "equality has not been declared yet"
             raise CheckError(node, msg)
         premises_equal: list[AtomicFormula] = []
@@ -849,7 +854,7 @@ class Checker:
             if not isinstance(v, VarTerm):
                 msg = f"Expected VarTerm, got {type(v)}"
                 raise CheckError(node, msg)
-            equation = AtomicFormula(RefEquality(context.decl.equality.ref.name), (k, v))
+            equation = AtomicFormula(RefEquality(equality.ref.name), (k, v))
             if not goal_in_context(equation, context):
                 msg = f"Not fact: {ExprFormatter(context).pretty_expr(equation)}"
                 raise CheckError(node, msg)

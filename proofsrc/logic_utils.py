@@ -121,7 +121,7 @@ class AlphaEquiv:
             return False
         if len(e1.args) != len(e2.args):
             return False
-        if self.context.decl.equality is not None and isinstance(e1.pred, RefEquality):
+        if self.context.decl.get_equality() is not None and isinstance(e1.pred, RefEquality):
             a1, b1 = e1.args
             a2, b2 = e2.args
             return (self.alpha_equiv_term(a1, a2, env, depth+1) and self.alpha_equiv_term(b1, b2, env, depth+1)) or (self.alpha_equiv_term(a1, b2, env, depth+1) and self.alpha_equiv_term(b1, a2, env, depth+1))
@@ -335,7 +335,7 @@ class DefExpander:
             return expr
         elif isinstance(expr, Compound):
             if isinstance(expr.fun, RefDefFunTerm):
-                deffunterm = context.decl.deffunterms[expr.fun.name]
+                deffunterm = context.decl.get_deffunterm(expr.fun)
                 should_expand = False
                 if expr.fun in self.refs:
                     target_indexes = self.indexes.get(expr.fun, [])
@@ -385,7 +385,7 @@ class DefExpander:
     def expand_defs_formula(self, expr: Formula, context: Context) -> Formula:
         if isinstance(expr, AtomicFormula):
             if isinstance(expr.pred, RefDefPred):
-                defpred = context.decl.defpreds[expr.pred.name]
+                defpred = context.decl.get_defpred(expr.pred)
                 should_expand = False
                 if len(self.refs) == 0 and defpred.autoexpand:
                     should_expand = True
@@ -436,7 +436,7 @@ def normalize_neg(expr: Formula) -> Formula:
         raise LogicError(f"Unexpected type: {type(expr)}")
 
 def fresh_name(item: Var | PredTemplate | FunTemplate, used_items: set[Var | PredTemplate | FunTemplate], context: Context) -> str:
-    used_names = {item.name for item in used_items} | context.ctrl.used_names | context.decl.used_names
+    used_names = {item.name for item in used_items} | context.ctrl.used_names | context.decl.get_used_names()
     if item.name not in used_names:
         return item.name
     match = re.match(r"^(.*)_(\d+)$", item.name)
@@ -528,7 +528,7 @@ class Substitutor:
             if isinstance(new_pred, (PredTemplate, RefEquality, RefPrimPred)):
                 return AtomicFormula(new_pred, tuple(self.substitute_term(arg) for arg in expr.args))
             elif isinstance(new_pred, RefDefPred):
-                defpred = self.context.decl.defpreds[new_pred.name]
+                defpred = self.context.decl.get_defpred(new_pred)
                 resolved_args: list[Term] = []
                 for defarg, subarg in zip(defpred.args, expr.args):
                     if isinstance(defarg, VarTerm):

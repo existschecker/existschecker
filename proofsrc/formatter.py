@@ -28,21 +28,22 @@ class ExprFormatter:
     def get_tex_fragments(self, expr: AtomicFormula | Compound) -> list[str]:
         if isinstance(expr, AtomicFormula):
             if isinstance(expr.pred, RefEquality):
-                if self.context.decl.equality is None:
+                equality = self.context.decl.get_equality()
+                if equality is None:
                     raise FormatError(f"equality has not been declared yet")
-                tex = self.context.decl.equality.tex
+                tex = equality.tex
             elif isinstance(expr.pred, RefPrimPred):
-                tex = self.context.decl.primpreds[expr.pred.name].tex
+                tex = self.context.decl.get_primpred(expr.pred).tex
             elif isinstance(expr.pred, RefDefPred):
-                tex = self.context.decl.defpreds[expr.pred.name].tex
+                tex = self.context.decl.get_defpred(expr.pred).tex
             else:
                 raise FormatError(f"Unexpected type: {type(expr.pred)}")
             return tex
         elif isinstance(expr, Compound):
             if isinstance(expr.fun, RefDefFun):
-                tex = self.context.decl.deffuns[expr.fun.name].tex
+                tex = self.context.decl.get_deffun(expr.fun).tex
             elif isinstance(expr.fun, RefDefFunTerm):
-                tex = self.context.decl.deffunterms[expr.fun.name].tex
+                tex = self.context.decl.get_deffunterm(expr.fun).tex
             else:
                 raise FormatError(f"Unexpected type: {type(expr.fun)}")
             return tex
@@ -60,7 +61,7 @@ class ExprFormatter:
         elif isinstance(expr, (PredTemplate, FunTemplate)):
             return expr.name
         elif isinstance(expr, RefDefCon):
-            fragments = self.context.decl.defcons[expr.name].tex
+            fragments = self.context.decl.get_defcon(expr).tex
             if len(fragments) != 1:
                 raise FormatError("arity is different")
             return fragments[0]

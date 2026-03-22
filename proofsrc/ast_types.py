@@ -494,61 +494,287 @@ class DeclarationContext:
             raise ContextError(msg)
         self.used_names.add(declaration.name)
 
-    def has_reference(self, name: str) -> bool:
-        return name in self.axioms or name in self.theorems or name in self.defconexists or name in self.defconuniqs or name in self.deffunexists or name in self.deffununiqs
-
-    def get_reference(self, ref: RefFact) -> Formula:
-        if isinstance(ref, RefAxiom):
-            return self.axioms[ref.name].conclusion
-        elif isinstance(ref, RefTheorem):
-            return self.theorems[ref.name].conclusion
-        elif isinstance(ref, RefDefConExist):
-            return self.defconexists[ref.name].formula
-        elif isinstance(ref, RefDefConUniq):
-            return self.defconuniqs[ref.name].formula
-        elif isinstance(ref, RefDefFunExist):
-            return self.deffunexists[ref.name].formula
-        elif isinstance(ref, RefDefFunUniq):
-            return self.deffununiqs[ref.name].formula
-        else:
-            msg = f"Unexpected name: {ref}"
-            raise ContextError(msg)
-
     def copy(self) -> "DeclarationContext":
         return DeclarationContext(self.primpreds.copy(), self.axioms.copy(), self.theorems.copy(), self.defpreds.copy(), self.defcons.copy(), self.defconexists.copy(), self.defconuniqs.copy(), self.deffuns.copy(), self.deffunexists.copy(), self.deffununiqs.copy(), self.deffunterms.copy(), self.equality, set(self.used_names))
 
-    def merge(self, decl: "DeclarationContext") -> None:
-        if self.used_names & decl.used_names:
-            raise Exception("conflict of used_names in merge of Context")
-        if self.equality is not None and decl.equality is not None:
-            raise Exception("conflict of equality in merge of Context")
-        self.primpreds |= decl.primpreds
-        self.axioms |= decl.axioms
-        self.theorems |= decl.theorems
-        self.defpreds |= decl.defpreds
-        self.defcons |= decl.defcons
-        self.defconexists |= decl.defconexists
-        self.defconuniqs |= decl.defconuniqs
-        self.deffuns |= decl.deffuns
-        self.deffunexists |= decl.deffunexists
-        self.deffununiqs |= decl.deffununiqs
-        self.deffunterms |= decl.deffunterms
-        if self.equality is None and decl.equality is not None:
-            self.equality = decl.equality
-        self.used_names |= decl.used_names
+@dataclass
+class DeclarationContextNameSpace:
+    namespace: dict[str, DeclarationContext]
+
+    @staticmethod
+    def init() -> "DeclarationContextNameSpace":
+        return DeclarationContextNameSpace(namespace={})
+
+    def add(self, path: str, declaration: Declaration) -> None:
+        if path not in self.namespace:
+            self.namespace[path] = DeclarationContext.init()
+        self.namespace[path].add(declaration)
+
+    def copy(self) -> "DeclarationContextNameSpace":
+        return DeclarationContextNameSpace(namespace={path: file_decl.copy() for path, file_decl in self.namespace.items()})
+
+    def merge(self, other: "DeclarationContextNameSpace") -> None:
+        for path, file_decl in other.namespace.items():
+            if path not in self.namespace:
+                self.namespace[path] = file_decl
+
+    def has_defcon(self, ref: str | RefDefCon) -> bool:
+        name = ref if isinstance(ref, str) else ref.name
+        for file_decl in self.namespace.values():
+            if name in file_decl.defcons:
+                return True
+        return False
+
+    def get_defcon(self, ref: str | RefDefCon) -> DefCon:
+        name = ref if isinstance(ref, str) else ref.name
+        candidates: list[DefCon] = []
+        for file_decl in self.namespace.values():
+            if name in file_decl.defcons:
+                candidates.append(file_decl.defcons[name])
+        if len(candidates) == 1:
+            return candidates[0]
+        else:
+            msg = f"{len(candidates)} candidates found for {name}"
+            raise ContextError(msg)
+
+    def has_primpred(self, ref: str | RefPrimPred) -> bool:
+        name = ref if isinstance(ref, str) else ref.name
+        for file_decl in self.namespace.values():
+            if name in file_decl.primpreds:
+                return True
+        return False
+
+    def get_primpred(self, ref: str | RefPrimPred) -> PrimPred:
+        name = ref if isinstance(ref, str) else ref.name
+        candidates: list[PrimPred] = []
+        for file_decl in self.namespace.values():
+            if name in file_decl.primpreds:
+                candidates.append(file_decl.primpreds[name])
+        if len(candidates) == 1:
+            return candidates[0]
+        else:
+            msg = f"{len(candidates)} candidates found for {name}"
+            raise ContextError(msg)
+
+    def has_defpred(self, ref: str | RefDefPred) -> bool:
+        name = ref if isinstance(ref, str) else ref.name
+        for file_decl in self.namespace.values():
+            if name in file_decl.defpreds:
+                return True
+        return False
+
+    def get_defpred(self, ref: str | RefDefPred) -> DefPred:
+        name = ref if isinstance(ref, str) else ref.name
+        candidates: list[DefPred] = []
+        for file_decl in self.namespace.values():
+            if name in file_decl.defpreds:
+                candidates.append(file_decl.defpreds[name])
+        if len(candidates) == 1:
+            return candidates[0]
+        else:
+            msg = f"{len(candidates)} candidates found for {name}"
+            raise ContextError(msg)
+
+    def has_deffun(self, ref: str | RefDefFun) -> bool:
+        name = ref if isinstance(ref, str) else ref.name
+        for file_decl in self.namespace.values():
+            if name in file_decl.deffuns:
+                return True
+        return False
+
+    def get_deffun(self, ref: str | RefDefFun) -> DefFun:
+        name = ref if isinstance(ref, str) else ref.name
+        candidates: list[DefFun] = []
+        for file_decl in self.namespace.values():
+            if name in file_decl.deffuns:
+                candidates.append(file_decl.deffuns[name])
+        if len(candidates) == 1:
+            return candidates[0]
+        else:
+            msg = f"{len(candidates)} candidates found for {name}"
+            raise ContextError(msg)
+
+    def has_deffunterm(self, ref: str | RefDefFunTerm) -> bool:
+        name = ref if isinstance(ref, str) else ref.name
+        for file_decl in self.namespace.values():
+            if name in file_decl.deffunterms:
+                return True
+        return False
+
+    def get_deffunterm(self, ref: str | RefDefFunTerm) -> DefFunTerm:
+        name = ref if isinstance(ref, str) else ref.name
+        candidates: list[DefFunTerm] = []
+        for file_decl in self.namespace.values():
+            if name in file_decl.deffunterms:
+                candidates.append(file_decl.deffunterms[name])
+        if len(candidates) == 1:
+            return candidates[0]
+        else:
+            msg = f"{len(candidates)} candidates found for {name}"
+            raise ContextError(msg)
+
+    def has_axiom(self, ref: str | RefAxiom) -> bool:
+        name = ref if isinstance(ref, str) else ref.name
+        for file_decl in self.namespace.values():
+            if name in file_decl.axioms:
+                return True
+        return False
+
+    def get_axiom(self, ref: str | RefAxiom) -> Axiom:
+        name = ref if isinstance(ref, str) else ref.name
+        candidates: list[Axiom] = []
+        for file_decl in self.namespace.values():
+            if name in file_decl.axioms:
+                candidates.append(file_decl.axioms[name])
+        if len(candidates) == 1:
+            return candidates[0]
+        else:
+            msg = f"{len(candidates)} candidates found for {name}"
+            raise ContextError(msg)
+
+    def has_theorem(self, ref: str | RefTheorem) -> bool:
+        name = ref if isinstance(ref, str) else ref.name
+        for file_decl in self.namespace.values():
+            if name in file_decl.theorems:
+                return True
+        return False
+
+    def get_theorem(self, ref: str | RefTheorem) -> Theorem:
+        name = ref if isinstance(ref, str) else ref.name
+        candidates: list[Theorem] = []
+        for file_decl in self.namespace.values():
+            if name in file_decl.theorems:
+                candidates.append(file_decl.theorems[name])
+        if len(candidates) == 1:
+            return candidates[0]
+        else:
+            msg = f"{len(candidates)} candidates found for {name}"
+            raise ContextError(msg)
+
+    def has_defconexist(self, ref: str | RefDefConExist) -> bool:
+        name = ref if isinstance(ref, str) else ref.name
+        for file_decl in self.namespace.values():
+            if name in file_decl.defconexists:
+                return True
+        return False
+
+    def get_defconexist(self, ref: str | RefDefConExist) -> DefConExist:
+        name = ref if isinstance(ref, str) else ref.name
+        candidates: list[DefConExist] = []
+        for file_decl in self.namespace.values():
+            if name in file_decl.defconexists:
+                candidates.append(file_decl.defconexists[name])
+        if len(candidates) == 1:
+            return candidates[0]
+        else:
+            msg = f"{len(candidates)} candidates found for {name}"
+            raise ContextError(msg)
+
+    def has_defconuniq(self, ref: str | RefDefConUniq) -> bool:
+        name = ref if isinstance(ref, str) else ref.name
+        for file_decl in self.namespace.values():
+            if name in file_decl.defconuniqs:
+                return True
+        return False
+
+    def get_defconuniq(self, ref: str | RefDefConUniq) -> DefConUniq:
+        name = ref if isinstance(ref, str) else ref.name
+        candidates: list[DefConUniq] = []
+        for file_decl in self.namespace.values():
+            if name in file_decl.defconuniqs:
+                candidates.append(file_decl.defconuniqs[name])
+        if len(candidates) == 1:
+            return candidates[0]
+        else:
+            msg = f"{len(candidates)} candidates found for {name}"
+            raise ContextError(msg)
+
+    def has_deffunexist(self, ref: str | RefDefFunExist) -> bool:
+        name = ref if isinstance(ref, str) else ref.name
+        for file_decl in self.namespace.values():
+            if name in file_decl.deffunexists:
+                return True
+        return False
+
+    def get_deffunexist(self, ref: str | RefDefFunExist) -> DefFunExist:
+        name = ref if isinstance(ref, str) else ref.name
+        candidates: list[DefFunExist] = []
+        for file_decl in self.namespace.values():
+            if name in file_decl.deffunexists:
+                candidates.append(file_decl.deffunexists[name])
+        if len(candidates) == 1:
+            return candidates[0]
+        else:
+            msg = f"{len(candidates)} candidates found for {name}"
+            raise ContextError(msg)
+
+    def has_deffununiq(self, ref: str | RefDefFunUniq) -> bool:
+        name = ref if isinstance(ref, str) else ref.name
+        for file_decl in self.namespace.values():
+            if name in file_decl.deffununiqs:
+                return True
+        return False
+
+    def get_deffununiq(self, ref: str | RefDefFunUniq) -> DefFunUniq:
+        name = ref if isinstance(ref, str) else ref.name
+        candidates: list[DefFunUniq] = []
+        for file_decl in self.namespace.values():
+            if name in file_decl.deffununiqs:
+                candidates.append(file_decl.deffununiqs[name])
+        if len(candidates) == 1:
+            return candidates[0]
+        else:
+            msg = f"{len(candidates)} candidates found for {name}"
+            raise ContextError(msg)
+
+    def get_equality(self) -> Equality | None:
+        candidates: list[Equality] = []
+        for file_decl in self.namespace.values():
+            if file_decl.equality is not None:
+                candidates.append(file_decl.equality)
+        if len(candidates) == 0:
+            return None
+        elif len(candidates) == 1:
+            return candidates[0]
+        else:
+            msg = f"{len(candidates)} candidates found for equality"
+            raise ContextError(msg)
+
+    def get_used_names(self) -> set[str]:
+        names: set[str] = set()
+        for ctx in self.namespace.values():
+            names.update(ctx.used_names)
+        return names
+
+    def get_fact(self, ref: RefFact) -> Formula:
+        if isinstance(ref, RefAxiom):
+            return self.get_axiom(ref).conclusion
+        elif isinstance(ref, RefTheorem):
+            return self.get_theorem(ref).conclusion
+        elif isinstance(ref, RefDefConExist):
+            return self.get_defconexist(ref).formula
+        elif isinstance(ref, RefDefConUniq):
+            return self.get_defconuniq(ref).formula
+        elif isinstance(ref, RefDefFunExist):
+            return self.get_deffunexist(ref).formula
+        elif isinstance(ref, RefDefFunUniq):
+            return self.get_deffununiq(ref).formula
+        else:
+            msg = f"Unexpected type {type(ref)}"
+            raise ContextError(msg)
 
 @dataclass
 class Context:
-    decl: DeclarationContext
+    decl: DeclarationContextNameSpace
     ctrl: ControlContext
     form: FormulaContext
 
     @staticmethod
     def init() -> "Context":
-        return Context(DeclarationContext.init(), ControlContext.init(), FormulaContext.init())
+        return Context(DeclarationContextNameSpace.init(), ControlContext.init(), FormulaContext.init())
 
-    def add_decl(self, declaration: Declaration):
-        self.decl.add(declaration)
+    def add_decl(self, path: str, declaration: Declaration):
+        self.decl.add(path, declaration)
 
     def copy_ctrl(self):
         return Context(self.decl, self.ctrl.copy(), self.form)

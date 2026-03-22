@@ -604,12 +604,13 @@ class Renderer:
                         self.render_expr(node.fact),
                         self.render_keyword("for"),
                         env_parts]
-        if self.context.decl.equality is None:
+        equality = self.context.decl.get_equality()
+        if equality is None:
             raise RenderError("context.equality is None")
         header_parts_jp = [self.bullet,
                         self.render_expr(node.fact),
                         "に",
-                        ",".join([self.render_expr(AtomicFormula(RefEquality(self.context.decl.equality.ref.name), (k, v))) for k, v in node.env.items()]),
+                        ",".join([self.render_expr(AtomicFormula(RefEquality(equality.ref.name), (k, v))) for k, v in node.env.items()]),
                         "を代入する。"]
         return header_parts, header_parts_jp, ""
 
