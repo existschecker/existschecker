@@ -13,7 +13,7 @@ from parser import Parser
 from checker import Checker
 from splitter import split
 from to_html import Renderer
-from logic_utils import ExprFormatter
+from formatter import ExprFormatter
 
 HTML_TEMPLATE = """<!doctype html>
 <html lang="en">

@@ -3,7 +3,7 @@ from html import escape
 from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, AtomicFormula, Compound, Control, Declaration, Bottom, Formula, Term, Var, Include, Assert, Fold, PredTemplate, RefDefPred, RefDefFunTerm, InvalidDeclaration, InvalidControl, RefFact, RefEquality, RefPrimPred, RefDefCon, RefDefFun, DeclarationUnit
 from svg import output_svg
 from typing import Sequence, Mapping, TypeVar
-from logic_utils import ExprFormatter
+from formatter import ExprFormatter
 from lexer import DECLARATIONS, CONTROLS
 
 HTML_TEMPLATE = """<!doctype html>
