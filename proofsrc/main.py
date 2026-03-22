@@ -20,7 +20,7 @@ file_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 logger.addHandler(file_handler)
 
-from dependency import DependencyResolver
+from dependency import DependencyResolver, prepare_context
 resolver = DependencyResolver()
 resolver.resolve(path)
 order = resolver.get_dependent_order(path)
@@ -30,14 +30,17 @@ context = Context.init()
 from parser import Parser
 from checker import Checker
 file_units: dict[str, list[DeclarationUnit]] = {}
+file_final_contexts: dict[str, Context] = {}
 for file in order:
     all_units = split(file, resolver.tokens_cache[file], resolver.source_cache[file])
     file_units[file] = all_units
+    context = prepare_context(file, resolver, file_final_contexts)
     for unit in all_units:
         working_context = context.copy()
         Parser(unit).parse_unit(working_context)
         if Checker(unit).check_unit(working_context):
             context = working_context
         unit.context = context.copy()
+    file_final_contexts[file] = context.copy()
 total_errors = sum(len(unit.diagnostics) for file in file_units.values() for unit in file)
-print(f"tota_errors: {total_errors}")
+print(f"total_errors: {total_errors}")

@@ -3,6 +3,7 @@ from token_stream import TokenStream
 import os
 from lsprotocol import types as lsp
 from pygls import uris
+from ast_types import Context
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -138,6 +139,15 @@ class DependencyResolver:
         for child in self.dependencies[path]:
             self.walk(child, visited, order)
         order.append(path)
+
+def prepare_context(file: str, resolver: DependencyResolver, file_final_contexts: dict[str, Context]) -> Context:
+    context = Context.init()
+    processed_files: set[str] = set() # avoid diamond dependency
+    for dep in resolver.dependencies[file]:
+        if dep not in processed_files:
+            context.merge(file_final_contexts[dep])
+            processed_files.add(dep)
+    return context
 
 if __name__ == "__main__":
     import sys

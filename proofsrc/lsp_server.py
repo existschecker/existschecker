@@ -7,7 +7,7 @@ import sys
 from enum import IntEnum
 from typing import Sequence
 
-from dependency import DependencyResolver
+from dependency import DependencyResolver, prepare_context
 from lexer import KEYWORDS, STRINGS, Token
 from ast_types import Context, DeclarationUnit, Workspace, Declaration, Include, Control, Formula, Term, RefFact, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq, VarTerm, RefDefCon, PredTerm, RefPrimPred, RefDefPred, FunTerm, RefDefFun, RefDefFunTerm, RefEquality, PredLambda, FunLambda, FormatError, RenderError, Bottom, ContextError
 from parser import Parser
@@ -244,15 +244,6 @@ class ProofLanguageServer(LanguageServer):
             unit.build_token_to_node()
         return context
 
-    def prepare_context(self, file: str, resolver: DependencyResolver, file_final_contexts: dict[str, Context]) -> Context:
-        context = Context.init()
-        processed_files: set[str] = set() # avoid diamond dependency
-        for dep in resolver.dependencies[file]:
-            if dep not in processed_files:
-                context.merge(file_final_contexts[dep])
-                processed_files.add(dep)
-        return context
-
     def analyze(self, path: str) -> None:
         self.cancel_analysis.clear()
 
@@ -278,7 +269,7 @@ class ProofLanguageServer(LanguageServer):
                     continue
             all_units = split(file, self.resolver.tokens_cache[file], self.resolver.source_cache[file])
             file_units[file] = all_units
-            context = self.prepare_context(file, self.resolver, file_final_contexts)
+            context = prepare_context(file, self.resolver, file_final_contexts)
             old_all_units = [] if self.old_workspace is None or dependency_changed else self.old_workspace.file_units.get(file, [])
             context, start_index = self.restore_cache(all_units, old_all_units, context)
             if start_index < len(all_units):

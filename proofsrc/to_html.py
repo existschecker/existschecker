@@ -753,7 +753,7 @@ if __name__ == "__main__":
         mode = sys.argv[2]
     else:
         mode = "mathjax"
-    from dependency import DependencyResolver
+    from dependency import DependencyResolver, prepare_context
     resolver = DependencyResolver()
     resolver.resolve(path)
     order = resolver.get_dependent_order(path)
@@ -762,10 +762,12 @@ if __name__ == "__main__":
     from parser import Parser
     from checker import Checker
     file_units: dict[str, list[DeclarationUnit]] = {}
+    file_final_contexts: dict[str, Context] = {}
     for file in order:
         print(file)
         all_units = split(file, resolver.tokens_cache[file], resolver.source_cache[file])
         file_units[file] = all_units
+        context = prepare_context(file, resolver, file_final_contexts)
         import os
         name = os.path.splitext(os.path.basename(file))[0]
         for unit in all_units:
@@ -774,6 +776,7 @@ if __name__ == "__main__":
             if Checker(unit).check_unit(working_context):
                 context = working_context
             unit.context = context.copy()
+        file_final_contexts[file] = context.copy()
         title = f"{name}_checker_{mode}"
         checker_html, error_found = to_html([unit.ast for unit in all_units if unit.ast is not None], context, title, mode == "svg")
         f = open(os.path.join("html", f"{title}.html"), 'w', encoding='utf-8')
@@ -782,4 +785,4 @@ if __name__ == "__main__":
         if error_found:
             break
     total_errors = sum(len(unit.diagnostics) for file in file_units.values() for unit in file)
-    print(f"tota_errors: {total_errors}")
+    print(f"total_errors: {total_errors}")
