@@ -18,6 +18,10 @@ class FormatError(Exception):
     def __init__(self, msg: str) -> None:
         self.msg = msg
 
+class RenderError(Exception):
+    def __init__(self, msg: str) -> None:
+        self.msg = msg
+
 class TokenStreamError(Exception):
     def __init__(self, token: Token, msg: str) -> None:
         self.token = token

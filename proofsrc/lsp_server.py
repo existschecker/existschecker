@@ -5,10 +5,11 @@ from dataclasses import dataclass
 import threading
 import sys
 from enum import IntEnum
+from typing import Sequence
 
 from dependency import DependencyResolver
 from lexer import KEYWORDS, STRINGS, Token
-from ast_types import Context, DeclarationUnit, Workspace, Declaration, Include, Control, Formula, Term, RefFact, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq, VarTerm, RefDefCon, PredTerm, RefPrimPred, RefDefPred, FunTerm, RefDefFun, RefDefFunTerm, RefEquality, PredLambda, FunLambda
+from ast_types import Context, DeclarationUnit, Workspace, Declaration, Include, Control, Formula, Term, RefFact, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq, VarTerm, RefDefCon, PredTerm, RefPrimPred, RefDefPred, FunTerm, RefDefFun, RefDefFunTerm, RefEquality, PredLambda, FunLambda, FormatError, RenderError, Bottom
 from parser import Parser
 from checker import Checker
 from splitter import split
@@ -156,7 +157,16 @@ def render_statement(node: Declaration | Control, context: Context) -> str:
     if renderer_method is None:
         return f"[{node.__class__.__name__}]"
     else:
-        return " ".join(renderer_method(node)[0][1:])
+        try:
+            return " ".join(renderer_method(node)[0][1:])
+        except (FormatError, RenderError) as e:
+            return f"{e.__class__.__name__}: {e.msg}"
+
+def render_expr_list(renderer: Renderer, formulas: Sequence[RefFact | Bottom | Formula | Term]) -> str:
+    try:
+        return renderer.render_expr_list(formulas)
+    except (FormatError, RenderError) as e:
+        return f"{e.__class__.__name__}: {e.msg}"
 
 def render_proofinfo(node: Include | Declaration | Control, context: Context) -> str:
     if isinstance(node, Declaration):
@@ -169,13 +179,13 @@ def render_proofinfo(node: Include | Declaration | Control, context: Context) ->
     elif isinstance(node, Control):
         statement = render_statement(node, context)
         renderer = Renderer(context)
-        context_symbols = renderer.render_expr_list(node.proofinfo.ctrl_ctx.symbols)
-        context_formulas = renderer.render_expr_list(node.proofinfo.ctrl_ctx.formulas)
-        premises = renderer.render_expr_list(node.proofinfo.premises)
-        conclusions = renderer.render_expr_list(node.proofinfo.conclusions)
-        local_vars = renderer.render_expr_list(node.proofinfo.local_vars)
-        local_premises = renderer.render_expr_list(node.proofinfo.local_premise)
-        local_conclusions = renderer.render_expr_list(node.proofinfo.local_conclusion)
+        context_symbols = render_expr_list(renderer, node.proofinfo.ctrl_ctx.symbols)
+        context_formulas = render_expr_list(renderer, node.proofinfo.ctrl_ctx.formulas)
+        premises = render_expr_list(renderer, node.proofinfo.premises)
+        conclusions = render_expr_list(renderer, node.proofinfo.conclusions)
+        local_vars = render_expr_list(renderer, node.proofinfo.local_vars)
+        local_premises = render_expr_list(renderer, node.proofinfo.local_premise)
+        local_conclusions = render_expr_list(renderer, node.proofinfo.local_conclusion)
         return f"""<div class="statement">
     <span class="status-icon">{node.proofinfo.status}</span>
     {statement}

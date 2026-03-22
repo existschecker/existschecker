@@ -1,6 +1,6 @@
 from datetime import datetime
 from html import escape
-from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, AtomicFormula, Compound, Control, Declaration, Bottom, Formula, Term, Var, Include, Assert, Fold, PredTemplate, RefDefPred, RefDefFunTerm, InvalidDeclaration, InvalidControl, RefFact, RefEquality, RefPrimPred, RefDefCon, RefDefFun, DeclarationUnit
+from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, AtomicFormula, Compound, Control, Declaration, Bottom, Formula, Term, Var, Include, Assert, Fold, PredTemplate, RefDefPred, RefDefFunTerm, InvalidDeclaration, InvalidControl, RefFact, RefEquality, RefPrimPred, RefDefCon, RefDefFun, DeclarationUnit, RenderError
 from svg import output_svg
 from typing import Sequence, Mapping, TypeVar
 from formatter import ExprFormatter
@@ -348,7 +348,7 @@ class Renderer:
         elif isinstance(node, InvalidDeclaration):
             return self.render_invalid_declaration(node)
         else:
-            raise Exception(f"Unexpected type: {type(node)}")
+            raise RenderError(f"Unexpected type: {type(node)}")
 
     def render_any(self, node: Any):
         header_parts = [self.toggle,
@@ -433,7 +433,7 @@ class Renderer:
             invoke = [self.render_keyword("invoke"), self.render_keyword("leftward")]
             invoke_jp = "に適用し、右側が成り立つので左側を得る。"
         else:
-            raise Exception(f"Unexpected invoke option {node.invoke}")
+            raise RenderError(f"Unexpected invoke option {node.invoke}")
         terms_str: list[str] = []
         for term in node.terms:
             if isinstance(term, Term):
@@ -441,7 +441,7 @@ class Renderer:
             elif term is None:
                 terms_str.append("_")
             else:
-                raise Exception(f"Unexpected term: {term}")
+                raise RenderError(f"Unexpected term: {term}")
         header_parts = [self.bullet,
                         self.render_keyword("apply")]
         header_parts.extend(invoke)
@@ -490,7 +490,7 @@ class Renderer:
             elif item is None:
                 items_str.append("_")
             else:
-                raise Exception(f"Unexpected item: {item}")
+                raise RenderError(f"Unexpected item: {item}")
         header_parts = [self.toggle,
                         self.render_keyword("some"),
                         ",".join(items_str),
@@ -521,7 +521,7 @@ class Renderer:
             elif term is None:
                 terms_str.append("_")
             else:
-                raise Exception(f"Unexpected term: {term}")
+                raise RenderError(f"Unexpected term: {term}")
         header_parts = [self.bullet,
                         self.render_keyword("lift"),
                         self.render_keyword("for"),
@@ -605,7 +605,7 @@ class Renderer:
                         self.render_keyword("for"),
                         env_parts]
         if self.context.decl.equality is None:
-            raise Exception("context.equality is None")
+            raise RenderError("context.equality is None")
         header_parts_jp = [self.bullet,
                         self.render_expr(node.fact),
                         "に",
@@ -683,7 +683,7 @@ class Renderer:
         elif isinstance(node, InvalidControl):
             return self.render_invalid_control(node)
         else:
-            raise Exception(f"Unexpected type: {type(node)}")
+            raise RenderError(f"Unexpected type: {type(node)}")
 
     def render_proofinfo(self, node: Declaration | Control):
         status = node.proofinfo.status
@@ -718,7 +718,7 @@ class Renderer:
         elif isinstance(node, Control):
             header_parts, header_parts_jp, body_html = self.render_control(node)
         else:
-            raise Exception(f"Unexpected type: {type(node)}")
+            raise RenderError(f"Unexpected type: {type(node)}")
 
         header_syntax_html = f"<div class='syntax-view'>{' '.join(header_parts)}</div>"
         header_jp_html = f"<div class='jp-view'>{' '.join(header_parts_jp)}</div>"
