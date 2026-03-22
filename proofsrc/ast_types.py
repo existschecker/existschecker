@@ -10,6 +10,10 @@ class ContextError(Exception):
     def __init__(self, msg: str) -> None:
         self.msg = msg
 
+class LogicError(Exception):
+    def __init__(self, msg: str) -> None:
+        self.msg = msg
+
 class CheckError(Exception):
     def __init__(self, node: "Declaration | Control", msg: str) -> None:
         self.node = node

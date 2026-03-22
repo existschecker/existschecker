@@ -1,4 +1,4 @@
-from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, AtomicFormula, Context, Compound, RefDefCon, Var, Bottom, Term, Formula, PredTemplate, PredLambda, VarTerm, PredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, RefEquality
+from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, AtomicFormula, Context, Compound, RefDefCon, Var, Bottom, Term, Formula, PredTemplate, PredLambda, VarTerm, PredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, RefEquality, LogicError
 from itertools import permutations
 from copy import deepcopy
 from typing import Mapping
@@ -303,13 +303,13 @@ def collect_vars(expr: Formula | Term, used_bv: set[Var] | None = None, used_bpt
             found_fv, found_bv, found_fpt, found_bpt, found_fft, found_bft = collect_vars(expr.body, used_bv, used_bpt, used_bft | {expr.var})
             found_bft.add(expr.var)
         else:
-            raise Exception(f"Unexpected type: {type(expr.var)}")
+            raise LogicError(f"Unexpected type: {type(expr.var)}")
         return found_fv, found_bv, found_fpt, found_bpt, found_fft, found_bft
     elif isinstance(expr, (PredLambda, FunLambda)):
         found_fv, found_bv, found_fpt, found_bpt, found_fft, found_bft = collect_vars(expr.body, used_bv | set(expr.args), used_bpt, used_bft)
         return found_fv, found_bv | set(expr.args), found_fpt, found_bpt, found_fft, found_bft
     else:
-        raise Exception(f"Unexpected type {type(expr)}")
+        raise LogicError(f"Unexpected type {type(expr)}")
 
 def expr_in_context(expr: Bottom | Formula, context: Context) -> bool:
     return any(alpha_equiv_with_defs(expr, f, context) for f in context.ctrl.formulas)
@@ -354,7 +354,7 @@ class DefExpander:
                 return self.expand_defs_var_term(beta_reduced, context.copy_form())
             return Compound(expr.fun, tuple(self.expand_defs_term(arg, context.copy_form()) for arg in expr.args))
         else:
-            raise Exception(f"Unexpected type: {type(expr)}")
+            raise LogicError(f"Unexpected type: {type(expr)}")
 
     def expand_defs_pred_term(self, expr: PredTerm, context: Context) -> PredTerm:
         if isinstance(expr, (PredTemplate, RefPrimPred, RefDefPred)):
@@ -362,7 +362,7 @@ class DefExpander:
         elif isinstance(expr, PredLambda):
             return PredLambda(expr.args, self.expand_defs_formula(expr.body, context.copy_form()))
         else:
-            raise Exception(f"Unexpected type: {type(expr)}")
+            raise LogicError(f"Unexpected type: {type(expr)}")
 
     def expand_defs_fun_term(self, expr: FunTerm, context: Context) -> FunTerm:
         if isinstance(expr, (FunTemplate, RefDefFun, RefDefFunTerm)):
@@ -370,7 +370,7 @@ class DefExpander:
         elif isinstance(expr, FunLambda):
             return FunLambda(expr.args, self.expand_defs_var_term(expr.body, context.copy_form()))
         else:
-            raise Exception(f"Unexpected type: {type(expr)}")
+            raise LogicError(f"Unexpected type: {type(expr)}")
 
     def expand_defs_term(self, expr: Term, context: Context) -> Term:
         if isinstance(expr, VarTerm):
@@ -380,7 +380,7 @@ class DefExpander:
         elif isinstance(expr, FunTerm):
             return self.expand_defs_fun_term(expr, context)
         else:
-            raise Exception(f"Unexpected type: {type(expr)}")
+            raise LogicError(f"Unexpected type: {type(expr)}")
 
     def expand_defs_formula(self, expr: Formula, context: Context) -> Formula:
         if isinstance(expr, AtomicFormula):
@@ -416,7 +416,7 @@ class DefExpander:
         elif isinstance(expr, (Exists, ExistsUniq)):
             return type(expr)(expr.var, self.expand_defs_formula(expr.body, context.copy_form()))
         else:
-            raise Exception(f"Unexpected type: {type(expr)}")
+            raise LogicError(f"Unexpected type: {type(expr)}")
 
 def normalize_neg(expr: Formula) -> Formula:
     if isinstance(expr, AtomicFormula):
@@ -433,7 +433,7 @@ def normalize_neg(expr: Formula) -> Formula:
     elif isinstance(expr, (Exists, ExistsUniq)):
         return type(expr)(expr.var, normalize_neg(expr.body))
     else:
-        raise Exception(f"Unexpected type: {type(expr)}")
+        raise LogicError(f"Unexpected type: {type(expr)}")
 
 def fresh_name(item: Var | PredTemplate | FunTemplate, used_items: set[Var | PredTemplate | FunTemplate], context: Context) -> str:
     used_names = {item.name for item in used_items} | context.ctrl.used_names | context.decl.used_names
@@ -488,7 +488,7 @@ class Substitutor:
         elif isinstance(expr, Compound):
             return Compound(self.substitute_fun_term(expr.fun), tuple(self.substitute_term(arg) for arg in expr.args))
         else:
-            raise Exception(f"Unexpected type: {type(expr)}")
+            raise LogicError(f"Unexpected type: {type(expr)}")
 
     def substitute_pred_term(self, expr: PredTerm) -> PredTerm:
         substituted = self._apply_substitute(expr, self.mapping[1])
@@ -499,7 +499,7 @@ class Substitutor:
         elif isinstance(expr, PredLambda):
             return PredLambda(expr.args, self.substitute_formula(expr.body))
         else:
-            raise Exception(f"Unexpected type: {type(expr)}")
+            raise LogicError(f"Unexpected type: {type(expr)}")
 
     def substitute_fun_term(self, expr: FunTerm) -> FunTerm:
         substituted = self._apply_substitute(expr, self.mapping[2])
@@ -510,7 +510,7 @@ class Substitutor:
         elif isinstance(expr, FunLambda):
             return FunLambda(expr.args, self.substitute_var_term(expr.body))
         else:
-            raise Exception(f"Unexpected type: {type(expr)}")
+            raise LogicError(f"Unexpected type: {type(expr)}")
 
     def substitute_term(self, expr: Term) -> Term:
         if isinstance(expr, VarTerm):
@@ -520,7 +520,7 @@ class Substitutor:
         elif isinstance(expr, FunTerm):
             return self.substitute_fun_term(expr)
         else:
-            raise Exception(f"Unexpected type: {type(expr)}")
+            raise LogicError(f"Unexpected type: {type(expr)}")
 
     def substitute_formula(self, expr: Formula) -> Formula:
         if isinstance(expr, AtomicFormula):
@@ -535,31 +535,31 @@ class Substitutor:
                         if isinstance(subarg, VarTerm):
                             resolved_args.append(subarg)
                         else:
-                            raise Exception(f"VarTerm must be substituted into {defarg.name}, but {type(subarg)} is substituted")
+                            raise LogicError(f"VarTerm must be substituted into {defarg.name}, but {type(subarg)} is substituted")
                     elif isinstance(defarg, PredTerm):
                         if isinstance(subarg, PredTerm):
                             resolved_args.append(subarg)
                         else:
-                            raise Exception(f"PredTerm must be substituted into {defarg.name}, but {type(subarg)} is substituted")
+                            raise LogicError(f"PredTerm must be substituted into {defarg.name}, but {type(subarg)} is substituted")
                     elif isinstance(defarg, FunTerm):
                         if isinstance(subarg, FunTerm):
                             resolved_args.append(subarg)
                         else:
-                            raise Exception(f"FunTerm must be substituted into {defarg.name}, but {type(subarg)} is substituted")
+                            raise LogicError(f"FunTerm must be substituted into {defarg.name}, but {type(subarg)} is substituted")
                     else:
-                        raise Exception(f"Unexpected type: {type(defarg)}")
+                        raise LogicError(f"Unexpected type: {type(defarg)}")
                 return AtomicFormula(new_pred, tuple(self.substitute_term(arg) for arg in resolved_args))
             elif isinstance(new_pred, PredLambda):
                 lambda_mapping: dict[VarTerm, VarTerm] = {}
                 for a, b in zip(new_pred.args, expr.args):
                     if not isinstance(b, VarTerm):
-                        raise Exception(f"Unexpected type: {type(b)}")
+                        raise LogicError(f"Unexpected type: {type(b)}")
                     lambda_mapping[a] = b
                 subst = Substitutor((lambda_mapping, {}, {}), self.context)
                 lambda_mapped = subst.substitute_formula(new_pred.body)
                 return self.substitute_formula(lambda_mapped)
             else:
-                raise Exception(f"Unexpected type: {type(new_pred)}")
+                raise LogicError(f"Unexpected type: {type(new_pred)}")
 
         elif isinstance(expr, Not):
             return Not(self.substitute_formula(expr.body))
@@ -574,7 +574,7 @@ class Substitutor:
             return type(expr)(expr.var, self.substitute_formula(expr.body))
 
         else:
-            raise Exception(f"Unexpected type: {type(expr)}")
+            raise LogicError(f"Unexpected type: {type(expr)}")
 
 class AlphaRename:
     def __init__(self, rename_map_var: dict[Var, Var], rename_map_pred_tmpl: dict[PredTemplate, PredTemplate], rename_map_fun_tmpl: dict[FunTemplate, FunTemplate]) -> None:
@@ -599,7 +599,7 @@ class AlphaRename:
         elif isinstance(expr, FunTemplate):
             return self.alpha_rename_fun_tmpl(expr)
         else:
-            raise Exception(f"Unexpected type: {type(expr)}")
+            raise LogicError(f"Unexpected type: {type(expr)}")
 
     def alpha_rename_var_term(self, expr: VarTerm) -> VarTerm:
         if isinstance(expr, Var):
@@ -609,7 +609,7 @@ class AlphaRename:
         elif isinstance(expr, Compound):
             return Compound(self.alpha_rename_fun_term(expr.fun), tuple(self.alpha_rename_term(a) for a in expr.args))
         else:
-            raise Exception(f"Unexpected type: {type(expr)}")
+            raise LogicError(f"Unexpected type: {type(expr)}")
 
     def alpha_rename_pred_term(self, expr: PredTerm) -> PredTerm:
         if isinstance(expr, PredTemplate):
@@ -619,7 +619,7 @@ class AlphaRename:
         elif isinstance(expr, PredLambda):
             return PredLambda(tuple(self.alpha_rename_var(a) for a in expr.args), self.alpha_rename_formula(expr.body))
         else:
-            raise Exception(f"Unexpected type: {type(expr)}")
+            raise LogicError(f"Unexpected type: {type(expr)}")
 
     def alpha_rename_fun_term(self, expr: FunTerm) -> FunTerm:
         if isinstance(expr, FunTemplate):
@@ -629,7 +629,7 @@ class AlphaRename:
         elif isinstance(expr, FunLambda):
             return FunLambda(tuple(self.alpha_rename_var(a) for a in expr.args), self.alpha_rename_var_term(expr.body))
         else:
-            raise Exception(f"Unexpected type: {type(expr)}")
+            raise LogicError(f"Unexpected type: {type(expr)}")
 
     def alpha_rename_term(self, expr: Term) -> Term:
         if isinstance(expr, VarTerm):
@@ -639,7 +639,7 @@ class AlphaRename:
         elif isinstance(expr, FunTerm):
             return self.alpha_rename_fun_term(expr)
         else:
-            raise Exception(f"Unexpected type: {type(expr)}")
+            raise LogicError(f"Unexpected type: {type(expr)}")
 
     def alpha_rename_formula(self, expr: Formula) -> Formula:
         if isinstance(expr, AtomicFormula):
@@ -653,7 +653,7 @@ class AlphaRename:
         elif isinstance(expr, (Exists, ExistsUniq)):
             return type(expr)(self.alpha_rename_var(expr.var), self.alpha_rename_formula(expr.body))
         else:
-            raise Exception(f"Unexpected type: {type(expr)}")
+            raise LogicError(f"Unexpected type: {type(expr)}")
 
 def alpha_safe(expr: Formula | Term, mapping: dict[Term, Term], context: Context, skip_key: bool = False) -> tuple[AlphaRename, tuple[dict[VarTerm, VarTerm], dict[PredTerm, PredTerm], dict[FunTerm, FunTerm]]]:
     items_to_substitute: set[Var | PredTemplate | FunTemplate] = set()
@@ -682,7 +682,7 @@ def alpha_safe(expr: Formula | Term, mapping: dict[Term, Term], context: Context
                 rename_map_fun_tmpl[target] = new_ft
             items_to_substitute.add(new_ft)
         else:
-            raise Exception(f"Unexpected type: {type(target)}")
+            raise LogicError(f"Unexpected type: {type(target)}")
     renamer = AlphaRename(rename_map_var, rename_map_pred_tmpl, rename_map_fun_tmpl)
     new_mapping_var: dict[VarTerm, VarTerm] = {}
     new_mapping_pred: dict[PredTerm, PredTerm] = {}
@@ -691,37 +691,37 @@ def alpha_safe(expr: Formula | Term, mapping: dict[Term, Term], context: Context
         for k, v in mapping.items():
             if isinstance(k, VarTerm):
                 if not isinstance(v, VarTerm):
-                    raise Exception(f"Unexpected type: {type(v)}")
+                    raise LogicError(f"Unexpected type: {type(v)}")
                 new_mapping_var[k] = v
             elif isinstance(k, PredTerm):
                 if not isinstance(v, PredTerm):
-                    raise Exception(f"Unexpected type: {type(v)}")
+                    raise LogicError(f"Unexpected type: {type(v)}")
                 new_mapping_pred[k] = v
             elif isinstance(k, FunTerm):
                 if not isinstance(v, FunTerm):
-                    raise Exception(f"Unexpected type: {type(v)}")
+                    raise LogicError(f"Unexpected type: {type(v)}")
                 new_mapping_fun[k] = v
             else:
-                raise Exception(f"Unexpected type: {type(k)}")
+                raise LogicError(f"Unexpected type: {type(k)}")
     else:
         for k, v in mapping.items():
             if isinstance(k, Var):
                 if not isinstance(v, VarTerm):
-                    raise Exception(f"Unexpected type: {type(v)}")
+                    raise LogicError(f"Unexpected type: {type(v)}")
                 new_k = rename_map_var.get(k, k)
                 new_mapping_var[new_k] = v
             elif isinstance(k, PredTemplate):
                 if not isinstance(v, PredTerm):
-                    raise Exception(f"Unexpected type: {type(v)}")
+                    raise LogicError(f"Unexpected type: {type(v)}")
                 new_k = rename_map_pred_tmpl.get(k, k)
                 new_mapping_pred[new_k] = v
             elif isinstance(k, FunTemplate):
                 if not isinstance(v, FunTerm):
-                    raise Exception(f"Unexpected type: {type(v)}")
+                    raise LogicError(f"Unexpected type: {type(v)}")
                 new_k = rename_map_fun_tmpl.get(k, k)
                 new_mapping_fun[new_k] = v
             else:
-                raise Exception(f"Unexpected type: {type(k)}")
+                raise LogicError(f"Unexpected type: {type(k)}")
     return renamer, (new_mapping_var, new_mapping_pred, new_mapping_fun)
 
 def alpha_safe_var_term(expr: VarTerm, mapping: dict[Term, Term], context: Context, skip_key: bool = False) -> tuple[VarTerm, tuple[dict[VarTerm, VarTerm], dict[PredTerm, PredTerm], dict[FunTerm, FunTerm]]]:

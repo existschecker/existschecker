@@ -1,5 +1,5 @@
 from lexer import Token
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, RefDefCon, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Control, Formula, Declaration, PredTemplate, Term, DefConExist, DefConUniq, DefFunExist, DefFunUniq, Include, Assert, Fold, VarTerm, FunTemplate, RefDefPred, RefDefFun, InvalidDeclaration, InvalidControl, InvalidInclude, DeclarationUnit, RefFact, RefEquality, CheckError, ContextError
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, RefDefCon, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Control, Formula, Declaration, PredTemplate, Term, DefConExist, DefConUniq, DefFunExist, DefFunUniq, Include, Assert, Fold, VarTerm, FunTemplate, RefDefPred, RefDefFun, InvalidDeclaration, InvalidControl, InvalidInclude, DeclarationUnit, RefFact, RefEquality, CheckError, ContextError, LogicError
 from logic_utils import Substitutor, DefExpander, expr_in_context, strip_forall_vars, strip_exists_vars, make_forall_vars, make_exists_vars, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs, alpha_safe_formula
 from formatter import ExprFormatter
 from copy import deepcopy
@@ -116,22 +116,21 @@ class Checker:
             logger.error(f"{self.make_error_prefix(node, indent)}{e.msg}")
             node.proofinfo.status = "❌Failed"
             return False
+        except (ContextError, LogicError) as e:
+            self.add_lsp_error(self.unit.get_node_token(node), e.msg, context)
+            logger.error(f"{self.make_error_prefix(node, indent)}{e.msg}")
+            node.proofinfo.status = "❌Failed"
+            return False
 
     def check_primpred(self, node: PrimPred, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}, arity: {node.arity}")
-        try:
-            context.add_decl(node)
-        except ContextError as e:
-            raise CheckError(node, e.msg)
+        context.add_decl(node)
 
     def check_axiom(self, node: Axiom, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}, conclusion: {ExprFormatter(context).pretty_expr(node.conclusion)}")
-        try:
-            context.add_decl(node)
-        except ContextError as e:
-            raise CheckError(node, e.msg)
+        context.add_decl(node)
 
     def check_theorem(self, node: Theorem, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
@@ -141,10 +140,7 @@ class Checker:
             self.check_control(stmt, local_ctx, indent+1)
         if goal_in_context(node.conclusion, local_ctx):
             logger.debug(f"{debug_prefix}{node.name} proved: {ExprFormatter(context).pretty_expr(node.conclusion)}")
-            try:
-                context.add_decl(node)
-            except ContextError as e:
-                raise CheckError(node, e.msg)
+            context.add_decl(node)
         else:
             msg = f"{node.name} not proved: {ExprFormatter(context).pretty_expr(node.conclusion)}"
             raise CheckError(node, msg)
@@ -152,10 +148,7 @@ class Checker:
     def check_defpred(self, node: DefPred, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}, args: {node.args}, formula: {ExprFormatter(context).pretty_expr(node.formula)}")
-        try:
-            context.add_decl(node)
-        except ContextError as e:
-            raise CheckError(node, e.msg)
+        context.add_decl(node)
 
     def check_defcon(self, node: DefCon, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
@@ -165,10 +158,7 @@ class Checker:
             msg = f"Not ExistsUniq object: {ExprFormatter(context).pretty_expr(existsuniq)}"
             raise CheckError(node, msg)
         logger.debug(f"{debug_prefix}ExistsUniq object: {ExprFormatter(context).pretty_expr(existsuniq)}")
-        try:
-            context.add_decl(node)
-        except ContextError as e:
-            raise CheckError(node, e.msg)
+        context.add_decl(node)
 
     def check_defconexist(self, node: DefConExist, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
@@ -183,10 +173,7 @@ class Checker:
             msg = f"existence_formula is not matched with theorem: {ExprFormatter(context).pretty_expr(node.formula)}"
             raise CheckError(node, msg)
         logger.debug(f"{debug_prefix}existence_formula is matched with theorem: {ExprFormatter(context).pretty_expr(node.formula)}")
-        try:
-            context.add_decl(node)
-        except ContextError as e:
-            raise CheckError(node, e.msg)
+        context.add_decl(node)
 
     def check_defconuniq(self, node: DefConUniq, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
@@ -207,18 +194,12 @@ class Checker:
             msg = f"uniqueness_formula is not matched with theorem: {ExprFormatter(context).pretty_expr(node.formula)}"
             raise CheckError(node, msg)
         logger.debug(f"{debug_prefix}uniqueness_formula is matched with theorem: {ExprFormatter(context).pretty_expr(node.formula)}")
-        try:
-            context.add_decl(node)
-        except ContextError as e:
-            raise CheckError(node, e.msg)
+        context.add_decl(node)
 
     def check_deffun(self, node: DefFun, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}, theorem: {node.ref_theorem.name}")
-        try:
-            context.add_decl(node)
-        except ContextError as e:
-            raise CheckError(node, e.msg)
+        context.add_decl(node)
 
     def check_deffunexist(self, node: DefFunExist, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
@@ -236,10 +217,7 @@ class Checker:
             msg = f"existence_formula is not matched with theorem: {ExprFormatter(context).pretty_expr(node.formula)}"
             raise CheckError(node, msg)
         logger.debug(f"{debug_prefix}existence_formula is matched with theorem: {ExprFormatter(context).pretty_expr(node.formula)}")
-        try:
-            context.add_decl(node)
-        except ContextError as e:
-            raise CheckError(node, e.msg)
+        context.add_decl(node)
 
     def check_deffununiq(self, node: DefFunUniq, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
@@ -260,10 +238,7 @@ class Checker:
             msg = f"uniqueness_formula is not matched with theorem: {ExprFormatter(context).pretty_expr(node.formula)}"
             raise CheckError(node, msg)
         logger.debug(f"{debug_prefix}uniqueness_formula is matched with theorem: {ExprFormatter(context).pretty_expr(node.formula)}")
-        try:
-            context.add_decl(node)
-        except ContextError as e:
-            raise CheckError(node, e.msg)
+        context.add_decl(node)
 
     def check_deffunterm(self, node: DefFunTerm, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
@@ -273,18 +248,12 @@ class Checker:
             msg = f"args are not matched with free vars: {set(fv) | set(fpt) | set(fft)}"
             raise CheckError(node, msg)
         logger.debug(f"{debug_prefix}args are mathced with free vars of term: {set(fv) | set(fpt) | set(fft)}")
-        try:
-            context.add_decl(node)
-        except ContextError as e:
-            raise CheckError(node, e.msg)
+        context.add_decl(node)
 
     def check_equality(self, node: Equality, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.ref.name}")
-        try:
-            context.add_decl(node)
-        except ContextError as e:
-            raise CheckError(node, e.msg)
+        context.add_decl(node)
         logger.debug(f"{debug_prefix}{node.ref.name} is registered as equality")
 
     def check_control(self, node: Control, context: Context, indent: int) -> None:
@@ -343,6 +312,10 @@ class Checker:
             logger.error(f"{self.make_error_prefix(node, indent)}{e.msg}")
             node.proofinfo.status = "❌Failed"
             raise
+        except (ContextError, LogicError) as e:
+            logger.error(f"{self.make_error_prefix(node, indent)}{e.msg}")
+            node.proofinfo.status = "❌Failed"
+            raise CheckError(node, e.msg)
 
     def check_any(self, node: Any, context: Context, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
@@ -354,10 +327,7 @@ class Checker:
         local_vars = [item for item in node.items if isinstance(item, Var)]
         local_pred_tmpls = [item for item in node.items if isinstance(item, PredTemplate)]
         local_fun_tmpls = [item for item in node.items if isinstance(item, FunTemplate)]
-        try:
-            local_ctx = context.add_ctrl(local_vars, [], local_pred_tmpls, local_fun_tmpls, node.items)
-        except ContextError as e:
-            raise CheckError(node, e.msg)
+        local_ctx = context.add_ctrl(local_vars, [], local_pred_tmpls, local_fun_tmpls, node.items)
         for stmt in node.body:
             self.check_control(stmt, local_ctx, indent+1)
         if not (len(context.ctrl.formulas) < len(local_ctx.ctrl.formulas) and context.ctrl.formulas == local_ctx.ctrl.formulas[:len(context.ctrl.formulas)]):
@@ -506,10 +476,7 @@ class Checker:
         logger.debug(f"{debug_prefix}Taking {node.items}, premise={ExprFormatter(context).pretty_expr(existence)}")
         local_vars = [item for item in node.items if isinstance(item, Var)]
         local_symbols: list[Var | PredTemplate | FunTemplate] = list(local_vars)
-        try:
-            local_ctx = context.add_ctrl(local_vars, premises, [], [], local_symbols)
-        except ContextError as e:
-            raise CheckError(node, e.msg)
+        local_ctx = context.add_ctrl(local_vars, premises, [], [], local_symbols)
         for stmt in node.body:
             self.check_control(stmt, local_ctx, indent+1)
         if not (len(context.ctrl.formulas) < len(local_ctx.ctrl.formulas) and context.ctrl.formulas == local_ctx.ctrl.formulas[:len(context.ctrl.formulas)]):
