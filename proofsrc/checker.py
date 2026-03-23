@@ -758,7 +758,7 @@ class Checker:
         if not all(any(alpha_equiv_with_defs(c, f, context) for c in conclusion_parts) for f in fact_parts):
             msg = f"neither left or right not derivable: {ExprFormatter(context).pretty_expr(node.conclusion)}"
             raise CheckError(node, msg)
-        node.proofinfo.premises = [fact]
+        node.proofinfo.premises = [node.fact]
         node.proofinfo.conclusions = [node.conclusion]
         add_conclusion(context, node.conclusion)
         logger.debug(f"{debug_prefix}Derivable, added {ExprFormatter(context).pretty_expr(node.conclusion)}")

@@ -619,7 +619,7 @@ class Parser:
 
     def parse_pad(self, context: Context) -> Pad:
         start_token = self.stream.consume("PAD")
-        fact = self.parse_formula(context)
+        fact = self.parse_reference_or_formula(context)
         self.stream.consume("CONCLUDE")
         conclusion = self.parse_formula(context)
         node = Pad(fact=fact, conclusion=conclusion)
