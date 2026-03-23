@@ -864,7 +864,7 @@ class Checker:
         conclusion = Substitutor(mapping, context, node.indexes).substitute_formula(renamed_fact)
         logger.debug(f"{debug_prefix}conclusion: {ExprFormatter(context).pretty_expr(conclusion)}")
         logger.debug(f"{debug_prefix}Matched")
-        node.proofinfo.premises = [fact] + premises_equal
+        node.proofinfo.premises = [node.fact] + premises_equal
         node.proofinfo.conclusions = [conclusion]
         add_conclusion(context, conclusion)
         logger.debug(f"{debug_prefix}Added {ExprFormatter(context).pretty_expr(conclusion)}")
