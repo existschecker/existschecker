@@ -3,7 +3,7 @@ from token_stream import TokenStream
 import os
 from lsprotocol import types as lsp
 from pygls import uris
-from ast_types import Context
+from ast_types import Context, DeclarationUnit
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -148,6 +148,17 @@ def prepare_context(file: str, resolver: DependencyResolver, file_final_contexts
             context.merge(file_final_contexts[dep])
             processed_files.add(dep)
     return context
+
+def restore_cache(all_units: list[DeclarationUnit], old_all_units: list[DeclarationUnit], context: Context) -> tuple[Context, int]:
+    start_index = 0
+    for i in range(min(len(all_units), len(old_all_units))):
+        if all_units[i].hash == old_all_units[i].hash:
+            all_units[i].restore_from(old_all_units[i])
+            context = all_units[i].context
+            start_index = i + 1
+        else:
+            break
+    return context, start_index
 
 if __name__ == "__main__":
     import sys

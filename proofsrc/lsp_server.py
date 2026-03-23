@@ -7,7 +7,7 @@ import sys
 from enum import IntEnum
 from typing import Sequence
 
-from dependency import DependencyResolver, prepare_context
+from dependency import DependencyResolver, prepare_context, restore_cache
 from lexer import KEYWORDS, STRINGS, Token
 from ast_types import Context, DeclarationUnit, Workspace, Declaration, Include, Control, Formula, Term, RefFact, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq, VarTerm, RefDefCon, PredTerm, RefPrimPred, RefDefPred, FunTerm, RefDefFun, RefDefFunTerm, RefEquality, PredLambda, FunLambda, FormatError, RenderError, Bottom, ContextError
 from parser import Parser
@@ -220,17 +220,6 @@ class ProofLanguageServer(LanguageServer):
         self.protocol.send_request("workspace/semanticTokens/refresh")
         self.update_panel()
 
-    def restore_cache(self, all_units: list[DeclarationUnit], old_all_units: list[DeclarationUnit], context: Context) -> tuple[Context, int]:
-        start_index = 0
-        for i in range(min(len(all_units), len(old_all_units))):
-            if all_units[i].hash == old_all_units[i].hash:
-                all_units[i].restore_from(old_all_units[i])
-                context = all_units[i].context
-                start_index = i + 1
-            else:
-                break
-        return context, start_index
-
     def analyze_diff(self, all_units: list[DeclarationUnit], start_index: int, context: Context) -> Context | None:
         for i in range(start_index, len(all_units)):
             if self.cancel_analysis.is_set():
@@ -271,7 +260,7 @@ class ProofLanguageServer(LanguageServer):
             file_units[file] = all_units
             context = prepare_context(file, self.resolver, file_final_contexts)
             old_all_units = [] if self.old_workspace is None or dependency_changed else self.old_workspace.file_units.get(file, [])
-            context, start_index = self.restore_cache(all_units, old_all_units, context)
+            context, start_index = restore_cache(all_units, old_all_units, context)
             if start_index < len(all_units):
                 newly_analyzed.add(file)
             context = self.analyze_diff(all_units, start_index, context)
