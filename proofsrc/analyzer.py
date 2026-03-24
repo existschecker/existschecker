@@ -5,6 +5,8 @@ import threading
 import sys
 from enum import IntEnum
 from typing import Sequence
+import readline
+import glob
 
 from dependency import DependencyResolver, prepare_context, restore_cache, analyze_diff
 from lexer import KEYWORDS, STRINGS, Token
@@ -471,6 +473,14 @@ class Analyzer:
         for i in range(min(5, len(data) // 5)):
             print(f"[semantic_tokens_full] {data[5*i : 5*(i+1)]}", file=sys.stderr)
         return lsp.SemanticTokens(data=data)
+
+def complete(text: str, state: int) -> str | None:
+    matches = glob.glob(text + "*")
+    return matches[state] if state < len(matches) else None
+
+readline.set_completer_delims(" \t\n;") # type: ignore
+readline.parse_and_bind("tab: complete") # type: ignore
+readline.set_completer(complete) # type: ignore
 
 def run_debug_shell():
     analyzer = Analyzer()
