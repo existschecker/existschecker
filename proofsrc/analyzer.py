@@ -209,7 +209,7 @@ class Analyzer:
         self.old_workspace: Workspace | None = None
         self.resolver: DependencyResolver | None = None
 
-    def analyze(self, path: str, editor_files: dict[str, str], cancel_analysis: threading.Event) -> dict[str, list[lsp.Diagnostic]]:
+    def analyze(self, path: str, editor_files: dict[str, str] | None = None, cancel_analysis: threading.Event | None = None) -> dict[str, list[lsp.Diagnostic]]:
         if self.resolver is None:
             self.resolver = DependencyResolver()
         else:
@@ -481,7 +481,7 @@ def run_debug_shell():
                 break
             if path == "":
                 continue
-            diagnostics = analyzer.analyze(path, {}, threading.Event())
+            diagnostics = analyzer.analyze(path)
             print("\n-----Diagnostics-----")
             total_errors = 0
             for uri, diags in diagnostics.items():
