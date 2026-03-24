@@ -200,42 +200,18 @@ def tokens_to_locations(tokens: list[Token]) -> list[lsp.Location]:
             locations.append(location)
     return locations
 
-class ProofLanguageServer(LanguageServer):
+class Analyzer:
     def __init__(self):
-        super().__init__("proof-server", "v0.1") # type: ignore[reportUnknownMemberType]
         self.old_workspace: Workspace | None = None
         self.resolver: DependencyResolver | None = None
-        self.analysis_timer: threading.Timer | None = None
-        self.cancel_analysis = threading.Event()
-        self.current_cursor: CursorState | None = None
 
-    def run_analysis(self, uri: str):
-        path = uris.to_fs_path(uri)
-        if path is None:
-            return
-        self.analyze(path)
-        self.analysis_timer = None
-        self.protocol.send_request("workspace/semanticTokens/refresh")
-        self.update_panel()
-
-    def get_editor_files(self) -> dict[str, str]:
-        editor_files: dict[str, str] = {}
-        for uri, doc in self.workspace.text_documents.items():
-            path = uris.to_fs_path(uri)
-            if path is None:
-                continue
-            editor_files[path] = doc.source
-        return editor_files
-
-    def analyze(self, path: str) -> None:
-        self.cancel_analysis.clear()
-
+    def analyze(self, path: str, editor_files: dict[str, str], cancel_analysis: threading.Event) -> dict[str, list[lsp.Diagnostic]]:
         if self.resolver is None:
             self.resolver = DependencyResolver()
         else:
             self.resolver.diagnostics = {}
         self.resolver.dependencies.pop(path, None)
-        self.resolver.resolve(path, self.get_editor_files())
+        self.resolver.resolve(path, editor_files)
         affected_files = self.resolver.get_affected_files(path)
         order = self.resolver.get_full_order()
 
@@ -257,9 +233,9 @@ class ProofLanguageServer(LanguageServer):
             context, start_index = restore_cache(all_units, old_all_units, context)
             if start_index < len(all_units):
                 newly_analyzed.add(file)
-            context = analyze_diff(all_units, start_index, context, self.cancel_analysis)
+            context = analyze_diff(all_units, start_index, context, cancel_analysis)
             if context is None:
-                return None
+                return {}
             file_final_contexts[file] = context.copy()
 
         workspace = Workspace(order, file_units)
@@ -282,23 +258,7 @@ class ProofLanguageServer(LanguageServer):
                 continue
             final_diagnostics[uri].extend(diags)
 
-        for uri, diags in final_diagnostics.items():
-            self.text_document_publish_diagnostics(
-                lsp.PublishDiagnosticsParams(uri=uri, diagnostics=diags)
-            )
-
-    def did_open(self, params: lsp.DidOpenTextDocumentParams) -> None:
-        self.run_analysis(params.text_document.uri)
-
-    def did_save(self, params: lsp.DidSaveTextDocumentParams) -> None:
-        self.run_analysis(params.text_document.uri)
-
-    def did_change(self, params: lsp.DidChangeTextDocumentParams) -> None:
-        if self.analysis_timer is not None:
-            self.analysis_timer.cancel()
-        self.cancel_analysis.set()
-        self.analysis_timer = threading.Timer(0.5, self.run_analysis, args=[params.text_document.uri])
-        self.analysis_timer.start()
+        return final_diagnostics
 
     def get_definition(self, params: lsp.DefinitionParams) -> lsp.Location | None:
         unit = self.get_unit_at(params.text_document.uri, params.position)
@@ -453,24 +413,21 @@ class ProofLanguageServer(LanguageServer):
                 return unit.token_to_control[token.index]
         return last_node
 
-    def get_proofinfo(self) -> str:
-        if self.current_cursor is None:
+    def get_proofinfo(self, current_cursor: CursorState | None) -> str:
+        if current_cursor is None:
             return "current_cursor is not found"
-        unit = self.get_unit_at(self.current_cursor.uri, self.current_cursor.position)
+        unit = self.get_unit_at(current_cursor.uri, current_cursor.position)
         if unit is None:
             return "unit is not found"
         if unit.ast is None:
             return "ast is not found"
-        node = self.find_node_by_line(unit, self.current_cursor.position)
-        path = uris.from_fs_path(self.current_cursor.uri)
+        node = self.find_node_by_line(unit, current_cursor.position)
+        path = uris.from_fs_path(current_cursor.uri)
         if path is None:
             return "path is not found"
         decl_info = render_proofinfo(unit.ast, unit.context)
         ctrl_info = "" if node is None else render_proofinfo(node, unit.context)
         return HTML_TEMPLATE.format(decl_info=decl_info, ctrl_info=ctrl_info)
-
-    def update_panel(self) -> None:
-        self.protocol.notify("proof/updatePanel", self.get_proofinfo())
 
     def semantic_tokens_full(self, params: lsp.SemanticTokensParams) -> lsp.SemanticTokens:
         print("[semantic_tokens_full] called", file=sys.stderr)
@@ -512,6 +469,47 @@ class ProofLanguageServer(LanguageServer):
             print(f"[semantic_tokens_full] {data[5*i : 5*(i+1)]}", file=sys.stderr)
         return lsp.SemanticTokens(data=data)
 
+class ProofLanguageServer(LanguageServer):
+    def __init__(self):
+        super().__init__("proof-server", "v0.1") # type: ignore[reportUnknownMemberType]
+        self.analyzer = Analyzer()
+        self.analysis_timer: threading.Timer | None = None
+        self.cancel_analysis = threading.Event()
+        self.current_cursor: CursorState | None = None
+
+    def run_analysis(self, uri: str):
+        path = uris.to_fs_path(uri)
+        if path is None:
+            return
+        self.cancel_analysis.clear()
+        final_diagnostics = self.analyzer.analyze(path, self.get_editor_files(), self.cancel_analysis)
+        for uri, diags in final_diagnostics.items():
+            self.text_document_publish_diagnostics(
+                lsp.PublishDiagnosticsParams(uri=uri, diagnostics=diags)
+            )
+        self.analysis_timer = None
+        self.protocol.send_request("workspace/semanticTokens/refresh")
+        self.update_panel()
+
+    def get_editor_files(self) -> dict[str, str]:
+        editor_files: dict[str, str] = {}
+        for uri, doc in self.workspace.text_documents.items():
+            path = uris.to_fs_path(uri)
+            if path is None:
+                continue
+            editor_files[path] = doc.source
+        return editor_files
+
+    def did_change(self, params: lsp.DidChangeTextDocumentParams) -> None:
+        if self.analysis_timer is not None:
+            self.analysis_timer.cancel()
+        self.cancel_analysis.set()
+        self.analysis_timer = threading.Timer(0.5, self.run_analysis, args=[params.text_document.uri])
+        self.analysis_timer.start()
+
+    def update_panel(self) -> None:
+        self.protocol.notify("proof/updatePanel", self.analyzer.get_proofinfo(self.current_cursor))
+
 server = ProofLanguageServer()
 
 @server.feature(lsp.INITIALIZE)
@@ -525,19 +523,19 @@ def lsp_initialize(ls: ProofLanguageServer, params: lsp.InitializeParams) -> Non
 
 @server.feature(lsp.TEXT_DOCUMENT_DID_OPEN)
 def did_open(ls: ProofLanguageServer, params: lsp.DidOpenTextDocumentParams) -> None:
-    ls.did_open(params)
+    ls.run_analysis(params.text_document.uri)
 
 @server.feature(lsp.TEXT_DOCUMENT_DID_SAVE)
 def did_save(ls: ProofLanguageServer, params: lsp.DidSaveTextDocumentParams) -> None:
-    ls.did_save(params)
+    ls.run_analysis(params.text_document.uri)
 
 @server.feature(lsp.TEXT_DOCUMENT_DEFINITION)
 def lsp_definition(ls: ProofLanguageServer, params: lsp.DefinitionParams) -> lsp.Location | None:
-    return ls.get_definition(params)
+    return ls.analyzer.get_definition(params)
 
 @server.feature(lsp.TEXT_DOCUMENT_COMPLETION)
 def lsp_completion(ls: ProofLanguageServer, params: lsp.CompletionParams):
-    items = ls.get_completion(params)
+    items = ls.analyzer.get_completion(params)
     return lsp.CompletionList(is_incomplete=False, items=items)
 
 @server.feature(lsp.TEXT_DOCUMENT_DID_CHANGE)
@@ -546,11 +544,11 @@ def did_change(ls: ProofLanguageServer, params: lsp.DidChangeTextDocumentParams)
 
 @server.feature(lsp.TEXT_DOCUMENT_HOVER)
 def hovers(ls: ProofLanguageServer, params: lsp.HoverParams) -> lsp.Hover | None:
-    return ls.hovers(params)
+    return ls.analyzer.hovers(params)
 
 @server.feature(lsp.TEXT_DOCUMENT_REFERENCES)
 def lsp_references(ls: ProofLanguageServer, params: lsp.ReferenceParams) -> list[lsp.Location]:
-    return ls.get_references(params)
+    return ls.analyzer.get_references(params)
 
 @server.feature("proof/moveCursor")
 def move_cursor(ls: ProofLanguageServer, params: CursorState) -> None:
@@ -577,7 +575,7 @@ SEMANTIC_LEGEND = lsp.SemanticTokensLegend(
     )
 )
 def semantic_tokens_full(ls: ProofLanguageServer, params: lsp.SemanticTokensParams) -> lsp.SemanticTokens:
-    return ls.semantic_tokens_full(params)
+    return ls.analyzer.semantic_tokens_full(params)
 
 if __name__ == "__main__":
     server.start_io()
