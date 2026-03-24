@@ -218,6 +218,15 @@ class ProofLanguageServer(LanguageServer):
         self.protocol.send_request("workspace/semanticTokens/refresh")
         self.update_panel()
 
+    def get_editor_files(self) -> dict[str, str]:
+        editor_files: dict[str, str] = {}
+        for uri, doc in self.workspace.text_documents.items():
+            path = uris.to_fs_path(uri)
+            if path is None:
+                continue
+            editor_files[path] = doc.source
+        return editor_files
+
     def analyze(self, path: str) -> None:
         self.cancel_analysis.clear()
 
@@ -226,7 +235,7 @@ class ProofLanguageServer(LanguageServer):
         else:
             self.resolver.diagnostics = {}
         self.resolver.dependencies.pop(path, None)
-        self.resolver.resolve(path, self)
+        self.resolver.resolve(path, self.get_editor_files())
         affected_files = self.resolver.get_affected_files(path)
         order = self.resolver.get_full_order()
 

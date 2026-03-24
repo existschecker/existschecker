@@ -5,10 +5,6 @@ from lsprotocol import types as lsp
 from pygls import uris
 from ast_types import Context, DeclarationUnit
 
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from lsp_server import ProofLanguageServer
-
 import sys
 import threading
 
@@ -40,16 +36,12 @@ class DependencyResolver:
             self.diagnostics[uri] = []
         self.diagnostics[uri].append(diag)
 
-    def get_content(self, target_path: str, ls: "ProofLanguageServer | None" = None) -> tuple[str, list[Token]]:
-        if ls is not None:
-            for uri, doc in ls.workspace.text_documents.items():
-                path = uris.to_fs_path(uri)
-                if path is None:
-                    continue
-                if path == target_path:
-                    tokens, _ = lex(path, doc.source)
-                    print(f"editor memory: {os.path.basename(target_path)}", file=sys.stderr)
-                    return doc.source, tokens
+    def get_content(self, target_path: str, editor_files: dict[str, str] | None = None) -> tuple[str, list[Token]]:
+        if editor_files is not None and target_path in editor_files:
+            src = editor_files[target_path]
+            tokens, _ = lex(target_path, src)
+            print(f"editor memory: {os.path.basename(target_path)}", file=sys.stderr)
+            return src, tokens
         if target_path in self.source_cache:
             print(f"resolver cache: {os.path.basename(target_path)}", file=sys.stderr)
             return self.source_cache[target_path], self.tokens_cache[target_path]
@@ -60,11 +52,11 @@ class DependencyResolver:
         print(f"file content: {os.path.basename(target_path)}", file=sys.stderr)
         return src, tokens
 
-    def resolve(self, path: str, ls: "ProofLanguageServer | None" = None):
+    def resolve(self, path: str, editor_files: dict[str, str] | None = None):
         if path in self.dependencies:
             return
         self.visiting_files.add(path)
-        src, tokens = self.get_content(path, ls)
+        src, tokens = self.get_content(path, editor_files)
         self.tokens_cache[path] = tokens
         self.source_cache[path] = src
         dependency: list[str] = []
@@ -83,7 +75,7 @@ class DependencyResolver:
                         self.add_lsp_error(token, f"Cyclic dependency: {new_path}")
                     else:
                         dependency.append(new_path)
-                        self.resolve(new_path)
+                        self.resolve(new_path, editor_files)
             elif token.type == "EOF":
                 break
             else:
