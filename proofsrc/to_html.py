@@ -1,6 +1,6 @@
 from datetime import datetime
 from html import escape
-from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, AtomicFormula, Compound, Control, Declaration, Bottom, Formula, Term, Var, Include, Assert, Fold, PredTemplate, RefDefPred, RefDefFunTerm, InvalidDeclaration, InvalidControl, RefFact, RefEquality, RefPrimPred, RefDefCon, RefDefFun, DeclarationUnit, RenderError
+from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, AtomicFormula, Compound, Control, Declaration, Bottom, Formula, Term, Var, Include, Assert, Fold, PredTemplate, RefDefPred, RefDefFunTerm, InvalidDeclaration, InvalidControl, RefFact, RefEquality, RefPrimPred, RefDefCon, RefDefFun, RenderError
 from svg import output_svg
 from typing import Sequence, Mapping, TypeVar
 from formatter import ExprFormatter
@@ -753,36 +753,23 @@ if __name__ == "__main__":
         mode = sys.argv[2]
     else:
         mode = "mathjax"
-    from dependency import DependencyResolver, prepare_context
-    resolver = DependencyResolver()
-    resolver.resolve(path)
-    order = resolver.get_dependent_order(path)
-    from splitter import split
-    context = Context.init()
-    from parser import Parser
-    from checker import Checker
-    file_units: dict[str, list[DeclarationUnit]] = {}
-    file_final_contexts: dict[str, Context] = {}
-    for file in order:
-        print(file)
-        all_units = split(file, resolver.tokens_cache[file], resolver.source_cache[file])
-        file_units[file] = all_units
-        context = prepare_context(file, resolver, file_final_contexts)
-        import os
-        name = os.path.splitext(os.path.basename(file))[0]
-        for unit in all_units:
-            working_context = context.copy()
-            Parser(unit).parse_unit(working_context)
-            if Checker(unit).check_unit(working_context):
-                context = working_context
-            unit.context = context.copy()
-        file_final_contexts[file] = context.copy()
-        title = f"{name}_checker_{mode}"
-        checker_html, error_found = to_html([unit.ast for unit in all_units if unit.ast is not None], context, title, mode == "svg")
-        f = open(os.path.join("html", f"{title}.html"), 'w', encoding='utf-8')
-        f.write(checker_html)
-        f.close()
-        if error_found:
-            break
-    total_errors = sum(len(unit.diagnostics) for file in file_units.values() for unit in file)
-    print(f"total_errors: {total_errors}")
+
+    from analyzer import Analyzer, print_diags
+    analyzer = Analyzer()
+    diagnostics = analyzer.analyze(path)
+    print_diags(diagnostics)
+
+    import os
+
+    if analyzer.old_workspace is not None:
+        for file, all_units in analyzer.old_workspace.file_units.items():
+            if not len(all_units) > 0:
+                continue
+            name = os.path.splitext(os.path.basename(file))[0]
+            title = f"{name}_checker_{mode}"
+            checker_html, error_found = to_html([unit.ast for unit in all_units if unit.ast is not None], all_units[-1].context, title, mode == "svg")
+            f = open(os.path.join("html", f"{title}.html"), 'w', encoding='utf-8')
+            f.write(checker_html)
+            f.close()
+            if error_found:
+                break
