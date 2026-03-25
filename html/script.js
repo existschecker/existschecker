@@ -22,14 +22,14 @@ function highlightBlock(blockElement) {
 // 選択状態を更新する関数
 function selectHeader(index) {
   const header = allHeaders[index];
-  if (!header) return;
+  if (!header) { return; }
   // 選択クラスを更新
   allHeaders.forEach(h => h.classList.remove('selected'));
   header.classList.add('selected');
   selectedIndex = index;
   // ブロック全体をハイライト
   const block = header.closest('.block');  // 選択行が属するブロックを取得
-  if (block) highlightBlock(block);
+  if (block) { highlightBlock(block); }
   return header;
 }
 
@@ -110,7 +110,7 @@ function scrollToHeader(header, ctrl) {
 let isScrolling = false;
 
 function scrollIfNeeded(element, container, ctrl) {
-  if (isScrolling) return;
+  if (isScrolling) { return; }
 
   const elRect = element.getBoundingClientRect();
   const contRect = container.getBoundingClientRect();
@@ -136,9 +136,9 @@ document.addEventListener('click', (e) => {
   if (e.target.matches('.toggle')) {
     const btn = e.target;
     const header = btn.closest('.block-header');
-    if (!header) return;
+    if (!header) { return; }
     const content = header.nextElementSibling;
-    if (!content || !content.classList.contains('block-content')) return;
+    if (!content || !content.classList.contains('block-content')) { return; }
     content.classList.toggle('collapsed');
     btn.textContent = content.classList.contains('collapsed') ? '▶' : '▼';
   }
@@ -157,14 +157,14 @@ document.addEventListener('keydown', (e) => {
     return;
   }
 
-  if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+  if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') { return; }
   e.preventDefault(); // スクロールを止める
 
-  if (keyLocked) return;
+  if (keyLocked) { return; }
   keyLocked = true;
   setTimeout(() => keyLocked = false, 50); // 50ms後に再度処理可能に
 
-  if (allHeaders.length === 0) return;
+  if (allHeaders.length === 0) { return; }
 
   let targetIndex = selectedIndex;
 
@@ -212,7 +212,7 @@ document.addEventListener('keydown', (e) => {
     }
   }
 
-  if (targetIndex === selectedIndex) return; // 移動先が同じなら何もしない
+  if (targetIndex === selectedIndex) { return; } // 移動先が同じなら何もしない
 
   const h = selectHeader(targetIndex);
   scrollToHeader(h, e.ctrlKey);
