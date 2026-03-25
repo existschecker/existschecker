@@ -145,11 +145,8 @@ class DependencyResolver:
 
 def prepare_context(file: str, resolver: DependencyResolver, file_final_contexts: dict[str, Context]) -> Context:
     context = Context.init()
-    processed_files: set[str] = set() # avoid diamond dependency
     for dep in resolver.dependencies[file]:
-        if dep not in processed_files:
-            context.merge(file_final_contexts[dep])
-            processed_files.add(dep)
+        context.merge(file_final_contexts[dep])
     return context
 
 def restore_cache(all_units: list[DeclarationUnit], old_all_units: list[DeclarationUnit], context: Context) -> tuple[Context, int]:
