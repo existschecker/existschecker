@@ -42,16 +42,13 @@ class DependencyResolver:
         if editor_files is not None and target_path in editor_files:
             src = editor_files[target_path]
             tokens = lex(target_path, src)
-            print(f"editor memory: {os.path.basename(target_path)}", file=sys.stderr)
             return src, tokens
         if target_path in self.source_cache:
-            print(f"resolver cache: {os.path.basename(target_path)}", file=sys.stderr)
             return self.source_cache[target_path], self.tokens_cache[target_path]
         f = open(target_path, encoding="utf-8")
         src = f.read()
         f.close()
         tokens = lex(target_path, src)
-        print(f"file content: {os.path.basename(target_path)}", file=sys.stderr)
         return src, tokens
 
     def resolve(self, path: str, editor_files: dict[str, str] | None = None):

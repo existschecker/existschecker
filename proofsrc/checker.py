@@ -113,13 +113,13 @@ class Checker:
             return True
         except CheckError as e:
             self.add_lsp_error(self.unit.get_node_token(e.node), e.msg, context)
-            logger.error(f"{self.make_error_prefix(node, indent)}{e.msg}")
+            logger.debug(f"{self.make_error_prefix(node, indent)}{e.msg}")
             node.proofinfo.status = "❌Failed"
             return False
         except (ContextError, LogicError, FormatError) as e:
             msg = f"{e.__class__.__name__}: {e.msg}"
             self.add_lsp_error(self.unit.get_node_token(node), msg, context)
-            logger.error(f"{self.make_error_prefix(node, indent)}{msg}")
+            logger.debug(f"{self.make_error_prefix(node, indent)}{msg}")
             node.proofinfo.status = "❌Failed"
             return False
 

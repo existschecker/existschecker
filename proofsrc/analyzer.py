@@ -377,17 +377,13 @@ class Analyzer:
         return HTML_TEMPLATE.format(decl_info=decl_info, ctrl_info=ctrl_info)
 
     def semantic_tokens_full(self, params: lsp.SemanticTokensParams) -> lsp.SemanticTokens:
-        print("[semantic_tokens_full] called", file=sys.stderr)
         path = uris.to_fs_path(params.text_document.uri)
         if path is None:
-            print("[semantic_tokens_full] path is None", file=sys.stderr)
             return lsp.SemanticTokens(data=[])
         if self.old_workspace is None:
-            print("[semantic_tokens_full] workspace is None", file=sys.stderr)
             return lsp.SemanticTokens(data=[])
         raw_tokens: list[tuple[int, int, int, int]] = []
         if path not in self.old_workspace.file_units:
-            print(f"[semantic_tokens_full] {path} is not in workspace", file=sys.stderr)
             return lsp.SemanticTokens(data=[])
         for unit in self.old_workspace.file_units[path]:
             for index, node in unit.token_to_node.items():
@@ -411,9 +407,6 @@ class Analyzer:
             data.extend([delta_line, delta_start, length, t_type, 0])
             last_line = line
             last_column = column
-        print(f"[semantic_tokens_full] len(data)={len(data)}", file=sys.stderr)
-        for i in range(min(5, len(data) // 5)):
-            print(f"[semantic_tokens_full] {data[5*i : 5*(i+1)]}", file=sys.stderr)
         return lsp.SemanticTokens(data=data)
 
 def print_diags(diagnostics: dict[str, list[lsp.Diagnostic]]) -> None:
