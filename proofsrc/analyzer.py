@@ -261,21 +261,11 @@ class Analyzer:
         return tokens_to_locations(decl_ref_tokens)
 
     def get_completion(self, params: lsp.CompletionParams) -> list[lsp.CompletionItem]:
-        items: list[lsp.CompletionItem] = []
+        candidates: list[tuple[str, lsp.CompletionItemKind]] = []
         for keyword in KEYWORDS:
-            items.append(
-                lsp.CompletionItem(
-                    label=keyword,
-                    kind=lsp.CompletionItemKind.Keyword
-                )
-            )
+            candidates.append((keyword, lsp.CompletionItemKind.Keyword))
         for operator in STRINGS.keys():
-            items.append(
-                lsp.CompletionItem(
-                    label=operator,
-                    kind=lsp.CompletionItemKind.Operator
-                )
-            )
+            candidates.append((operator, lsp.CompletionItemKind.Operator))
         if self.old_workspace is not None and self.resolver is not None:
             current_unit = self.get_unit_at(params.text_document.uri, params.position)
             if current_unit is not None:
@@ -283,12 +273,15 @@ class Analyzer:
                 for path in order:
                     for unit in self.old_workspace.file_units[path]:
                         if isinstance(unit.ast, Declaration):
-                            items.append(
-                                lsp.CompletionItem(
-                                    label=unit.ast.name,
-                                    kind=lsp.CompletionItemKind.Function
-                                )
-                            )
+                            candidates.append((unit.ast.name, lsp.CompletionItemKind.Function))
+        items: list[lsp.CompletionItem] = []
+        for name, kind in candidates:
+            items.append(
+                lsp.CompletionItem(
+                    label=name,
+                    kind=kind
+                )
+            )
         return items
 
     @staticmethod
