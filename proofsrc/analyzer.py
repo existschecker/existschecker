@@ -2,7 +2,7 @@ from pygls import uris
 from lsprotocol import types as lsp
 from dataclasses import dataclass
 import threading
-import sys
+import re
 from enum import IntEnum
 from typing import Sequence
 
@@ -260,7 +260,9 @@ class Analyzer:
         decl_ref_tokens = self.old_workspace.get_all_decl_refs(ref_name, affected_files)
         return tokens_to_locations(decl_ref_tokens)
 
-    def get_completion(self, params: lsp.CompletionParams) -> list[lsp.CompletionItem]:
+    def get_completion(self, params: lsp.CompletionParams, source: str) -> list[lsp.CompletionItem]:
+        match = re.search(r"\\(\w+)?$", source.splitlines()[params.position.line][:params.position.character])
+        typing_backslash = match is not None
         candidates: list[tuple[str, lsp.CompletionItemKind]] = []
         for keyword in KEYWORDS:
             candidates.append((keyword, lsp.CompletionItemKind.Keyword))
@@ -276,9 +278,16 @@ class Analyzer:
                             candidates.append((unit.ast.name, lsp.CompletionItemKind.Function))
         items: list[lsp.CompletionItem] = []
         for name, kind in candidates:
+            if typing_backslash and name.startswith("\\"):
+                insert_text = name[1:]
+            elif (not typing_backslash) and (not name.startswith("\\")):
+                insert_text = name
+            else:
+                continue
             items.append(
                 lsp.CompletionItem(
                     label=name,
+                    insert_text=insert_text,
                     kind=kind
                 )
             )

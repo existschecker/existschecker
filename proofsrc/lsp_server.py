@@ -43,6 +43,9 @@ class ProofLanguageServer(LanguageServer):
         self.analysis_timer = threading.Timer(0.5, self.run_analysis, args=[params.text_document.uri])
         self.analysis_timer.start()
 
+    def get_completion(self, params: lsp.CompletionParams) -> list[lsp.CompletionItem]:
+        return self.analyzer.get_completion(params, self.workspace.get_text_document(params.text_document.uri).source)
+
     def update_panel(self) -> None:
         self.protocol.notify("proof/updatePanel", self.analyzer.get_proofinfo(self.current_cursor))
 
@@ -71,7 +74,7 @@ def lsp_definition(ls: ProofLanguageServer, params: lsp.DefinitionParams) -> lsp
 
 @server.feature(lsp.TEXT_DOCUMENT_COMPLETION)
 def lsp_completion(ls: ProofLanguageServer, params: lsp.CompletionParams):
-    items = ls.analyzer.get_completion(params)
+    items = ls.get_completion(params)
     return lsp.CompletionList(is_incomplete=False, items=items)
 
 @server.feature(lsp.TEXT_DOCUMENT_DID_CHANGE)
