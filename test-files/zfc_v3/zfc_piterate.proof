@@ -1,0 +1,79 @@
+include "zfc_function.proof"
+
+definition predicate trace(predicate \phi[2], n, g) as fun(g) \wedge dom(g, suc(n)) \wedge \forall k (in(k, n) \to \exists p \exists q (in(op(k, p), g) \wedge in(op(suc(k), q), g) \wedge \phi(p, q)))
+
+definition predicate piterate(predicate \phi[2], n, x, y) as \exists g (trace(\phi, n, g) \wedge in(op(emptyset, x), g) \wedge in(op(n, y), g))
+
+theorem piterate_base_step \forall^P \phi[2] \forall c (piterate(\phi, emptyset, c, c)) {
+  any predicate \phi[2], c {
+    apply singleton_op_is_fun for emptyset, c
+    apply singleton_op_dom for emptyset, c
+    assert suc_emptyset_is_singleton_emptyset
+    substitute dom(singleton(op(emptyset, c)), singleton(emptyset)) for singleton(emptyset): suc(emptyset)
+    any k {
+      assume in(k, emptyset) {
+        apply emptyset_existence for k
+        contradict in(k, emptyset)
+        explode \exists p \exists q (in(op(k, p), singleton(op(emptyset, c))) \wedge in(op(suc(k), q), singleton(op(emptyset, c))) \wedge \phi(p, q))
+      }
+    }
+    connect trace(\phi, emptyset, singleton(op(emptyset, c)))
+    apply singleton_cor1 for op(emptyset, c)
+    connect trace(\phi, emptyset, singleton(op(emptyset, c))) \wedge in(op(emptyset, c), singleton(op(emptyset, c))) \wedge in(op(emptyset, c), singleton(op(emptyset, c)))
+    lift for singleton(op(emptyset, c)) conclude piterate(\phi, emptyset, c, c)
+  }
+}
+
+theorem piterate_induction_step \forall^P \phi[2] \forall n \forall c \forall x \forall y (natural(n) \wedge piterate(\phi, n, c, x) \wedge \phi(x, y) \to piterate(\phi, suc(n), c, y)) {
+  any predicate \phi[2], n, c, x, y {
+    assume natural(n) \wedge piterate(\phi, n, c, x) \wedge \phi(x, y) {
+      split natural(n) \wedge piterate(\phi, n, c, x) \wedge \phi(x, y)
+      apply invoke suc_of_natural_is_natural for n
+      apply invoke natural_is_ordinal for suc(n)
+      split ordinal(suc(n))
+      some g such piterate(\phi, n, c, x) {
+        split trace(\phi, n, g) \wedge in(op(emptyset, c), g) \wedge in(op(n, x), g)
+        split trace(\phi, n, g)
+        deny \exists q (in(op(suc(n), q), g)) {
+          some q such \exists q (in(op(suc(n), q), g)) {
+            apply invoke leftward dom(g, suc(n)) for suc(n)
+            apply invoke irrefrel_not_contain_itself for suc(n)
+            contradict in(suc(n), suc(n))
+          }
+        }
+        connect fun(g) \wedge \neg(\exists q (in(op(suc(n), q), g)))
+        apply invoke adding_op_fun for g, suc(n), y
+        apply invoke adding_op_dom for g, suc(n), suc(n), y
+        fold for suc[2] conclude dom(adj(g, op(suc(n), y)), suc(suc(n)))
+        apply invoke adj_cor1 for g, op(suc(n), y), op(emptyset, c)
+        apply adj_cor3 for g, op(suc(n), y)
+        any k {
+          assume in(k, suc(n)) {
+            apply invoke rightward suc_characterization for n, k
+            divide in(k, n) \vee equal(k, n)
+              case in(k, n) {
+                apply invoke \forall k (in(k, n) \to \exists p \exists q (in(op(k, p), g) \wedge in(op(suc(k), q), g) \wedge \phi(p, q))) for k
+                some p, q such \exists p \exists q (in(op(k, p), g) \wedge in(op(suc(k), q), g) \wedge \phi(p, q)) {
+                  split in(op(k, p), g) \wedge in(op(suc(k), q), g) \wedge \phi(p, q)
+                  apply invoke adj_cor1 for g, op(suc(n), y), op(k, p)
+                  apply invoke adj_cor1 for g, op(suc(n), y), op(suc(k), q)
+                  connect in(op(k, p), adj(g, op(suc(n), y))) \wedge in(op(suc(k), q), adj(g, op(suc(n), y))) \wedge \phi(p, q)
+                  lift for p, q conclude \exists p \exists q (in(op(k, p), adj(g, op(suc(n), y))) \wedge in(op(suc(k), q), adj(g, op(suc(n), y))) \wedge \phi(p, q))
+                }
+              }
+              case equal(k, n) {
+                apply invoke adj_cor1 for g, op(suc(n), y), op(n, x)
+                substitute in(op(n, x), adj(g, op(suc(n), y))) for n[1]: k
+                substitute in(op(suc(n), y), adj(g, op(suc(n), y))) for n[1]: k
+                connect in(op(k, x), adj(g, op(suc(n), y))) \wedge in(op(suc(k), y), adj(g, op(suc(n), y))) \wedge \phi(x, y)
+                lift for x, y conclude \exists p \exists q (in(op(k, p), adj(g, op(suc(n), y))) \wedge in(op(suc(k), q), adj(g, op(suc(n), y))) \wedge \phi(p, q))
+              }
+          }
+        }
+        connect trace(\phi, suc(n), adj(g, op(suc(n), y)))
+        connect trace(\phi, suc(n), adj(g, op(suc(n), y))) \wedge in(op(emptyset, c), adj(g, op(suc(n), y))) \wedge in(op(suc(n), y), adj(g, op(suc(n), y)))
+        lift for adj(g, op(suc(n), y)) conclude piterate(\phi, suc(n), c, y)
+      }
+    }
+  }
+}

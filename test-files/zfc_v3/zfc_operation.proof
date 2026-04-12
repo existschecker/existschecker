@@ -1,28 +1,28 @@
-include "zfc_recursion.proof"
+include "zfc_fiterate.proof"
 
-definition function add(m, n) as iterate(m, suc, n) tex infix "+"
+definition function add(m, n) as iterate(suc, n, m) tex infix "+"
 
 theorem add_characterization \forall m (equal(add(m, emptyset), m) \wedge \forall n (natural(n) \to equal(add(m, suc(n)), suc(add(m, n))))) {
   any m {
-    apply iterate_characterization for m, suc
+    apply iterate_characterization for suc, m
     fold for add conclude equal(add(m, emptyset), m) \wedge \forall n (natural(n) \to equal(add(m, suc(n)), suc(add(m, n))))
   }
 }
 
-definition function mul(m, n) as iterate(emptyset, \lambda^F l. add(l, m), n) tex infix "\cdot"
+definition function mul(m, n) as iterate(\lambda^F l. add(l, m), n, emptyset) tex infix "\cdot"
 
 theorem mul_characterization \forall m (equal(mul(m, emptyset), emptyset) \wedge \forall n (natural(n) \to equal(mul(m, suc(n)), add(mul(m, n), m)))) {
   any m {
-    apply iterate_characterization for emptyset, \lambda^F l. add(l, m)
+    apply iterate_characterization for \lambda^F l. add(l, m), emptyset
     fold for mul conclude equal(mul(m, emptyset), emptyset) \wedge \forall n (natural(n) \to equal(mul(m, suc(n)), add(mul(m, n), m)))
   }
 }
 
-definition function pow(m, n) as iterate(suc(emptyset), \lambda^F l. mul(l, m), n) tex "", "^{", "}"
+definition function pow(m, n) as iterate(\lambda^F l. mul(l, m), n, suc(emptyset)) tex "", "^{", "}"
 
 theorem pow_characterization \forall m (equal(pow(m, emptyset), suc(emptyset)) \wedge \forall n (natural(n) \to equal(pow(m, suc(n)), mul(pow(m, n), m)))) {
   any m {
-    apply iterate_characterization for suc(emptyset), \lambda^F l. mul(l, m)
+    apply iterate_characterization for \lambda^F l. mul(l, m), suc(emptyset)
     fold for pow conclude equal(pow(m, emptyset), suc(emptyset)) \wedge \forall n (natural(n) \to equal(pow(m, suc(n)), mul(pow(m, n), m)))
   }
 }
