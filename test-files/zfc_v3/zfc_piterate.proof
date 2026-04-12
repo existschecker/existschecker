@@ -4,6 +4,10 @@ definition predicate trace(predicate \phi[2], n, g) as fun(g) \wedge dom(g, suc(
 
 definition predicate piterate(predicate \phi[2], n, x, y) as \exists g (trace(\phi, n, g) \wedge in(op(emptyset, x), g) \wedge in(op(n, y), g))
 
+definition predicate functional(predicate \phi[2]) as \forall x \forall y \forall y' (\phi(x, y) \wedge \phi(x, y') \to equal(y, y'))
+
+definition predicate total(predicate \phi[2], predicate \chi[1]) as \forall x (\chi(x) \to \exists y (\chi(y) \wedge \phi(x, y)))
+
 theorem piterate_base_step \forall^P \phi[2] \forall c (piterate(\phi, emptyset, c, c)) {
   any predicate \phi[2], c {
     apply singleton_op_is_fun for emptyset, c
@@ -74,6 +78,165 @@ theorem piterate_induction_step \forall^P \phi[2] \forall n \forall c \forall x 
         connect trace(\phi, suc(n), adj(g, op(suc(n), y))) \wedge in(op(emptyset, c), adj(g, op(suc(n), y))) \wedge in(op(suc(n), y), adj(g, op(suc(n), y)))
         lift for adj(g, op(suc(n), y)) conclude piterate(\phi, suc(n), c, y)
       }
+    }
+  }
+}
+
+theorem piterate_is_unique_base_step \forall^P \phi[2] \forall c \forall x (piterate(\phi, emptyset, c, x) \to equal(x, c)) {
+  any predicate \phi[2], c, x {
+    assume piterate(\phi, emptyset, c, x) {
+      some g such piterate(\phi, emptyset, c, x) {
+        split trace(\phi, emptyset, g) \wedge in(op(emptyset, c), g) \wedge in(op(emptyset, x), g)
+        split trace(\phi, emptyset, g)
+        connect in(op(emptyset, x), g) \wedge in(op(emptyset, c), g)
+        split fun(g)
+        apply invoke \forall x \forall y \forall y' (in(op(x, y), g) \wedge in(op(x, y'), g) \to equal(y, y')) for emptyset, x, c
+      }
+    }
+  }
+}
+
+theorem piterate_is_unique_induction_step \forall^P \phi[2] \forall n \forall c \forall x (functional(\phi) \wedge natural(n) \wedge \forall x' (piterate(\phi, n, c, x') \to equal(x', x)) \to \forall y (piterate(\phi, suc(n), c, y) \to \forall y' (\phi(x, y') \to equal(y', y)))) {
+  any predicate \phi[2], n, c, x {
+    assume functional(\phi) \wedge natural(n) \wedge \forall x' (piterate(\phi, n, c, x') \to equal(x', x)) {
+      split functional(\phi) \wedge natural(n) \wedge \forall x' (piterate(\phi, n, c, x') \to equal(x', x))
+      any y {
+        assume piterate(\phi, suc(n), c, y) {
+          apply invoke natural_is_ordinal for n
+          split ordinal(n)
+          apply invoke suc_of_natural_is_natural for n
+          apply invoke natural_is_ordinal for suc(n)
+          split ordinal(suc(n))
+          some h' such piterate(\phi, suc(n), c, y) {
+            split trace(\phi, suc(n), h') \wedge in(op(emptyset, c), h') \wedge in(op(suc(n), y), h')
+            split trace(\phi, suc(n), h')
+            apply in_suc for n
+            apply invoke \forall k (in(k, suc(n)) \to \exists p \exists q (in(op(k, p), h') \wedge in(op(suc(k), q), h') \wedge \phi(p, q))) for n
+            some p, q such \exists p \exists q (in(op(n, p), h') \wedge in(op(suc(n), q), h') \wedge \phi(p, q)) {
+              split in(op(n, p), h') \wedge in(op(suc(n), q), h') \wedge \phi(p, q)
+              connect in(op(suc(n), q), h') \wedge in(op(suc(n), y), h')
+              split 2 fun(h')
+              apply invoke \forall x \forall y \forall y' (in(op(x, y), h') \wedge in(op(x, y'), h') \to equal(y, y')) for suc(n), q, y
+              apply invoke removing_op_fun for h', suc(n), y
+              connect fun(h') \wedge dom(h', suc(suc(n))) \wedge in(op(suc(n), y), h')
+              apply invoke removing_op_dom for h', suc(suc(n)), suc(n), y
+              apply invoke irrefrel_not_contain_itself for suc(n)
+              apply invoke rem_suc for suc(n)
+              substitute dom(rem(h', op(suc(n), y)), rem(suc(suc(n)), suc(n))) for rem(suc(suc(n)), suc(n)): suc(n)
+              apply suc_is_not_emptyset for n
+              connect in(op(emptyset, c), h') \wedge neq(suc(n), emptyset)
+              apply invoke removing_op_lem1 for h', emptyset, c, suc(n), y
+              any k {
+                assume in(k, n) {
+                  pad in(k, n) conclude in(k, n) \vee equal(k, n)
+                  apply invoke leftward suc_characterization for n, k
+                  apply invoke \forall k (in(k, suc(n)) \to \exists p \exists q (in(op(k, p), h') \wedge in(op(suc(k), q), h') \wedge \phi(p, q))) for k
+                  some p', q' such \exists p \exists q (in(op(k, p), h') \wedge in(op(suc(k), q), h') \wedge \phi(p, q)) {
+                    split in(op(k, p'), h') \wedge in(op(suc(k), q'), h') \wedge \phi(p', q')
+                    deny equal(k, suc(n)) {
+                      substitute in(k, suc(n)) for k: suc(n)
+                      apply invoke irrefrel_not_contain_itself for suc(n)
+                      contradict in(suc(n), suc(n))
+                    }
+                    connect in(op(k, p'), h') \wedge neq(k, suc(n))
+                    apply invoke removing_op_lem1 for h', k, p', suc(n), y
+                    deny equal(k, n) {
+                      substitute in(k, n) for k: n
+                      apply invoke irrefrel_not_contain_itself for n
+                      contradict in(n, n)
+                    }
+                    connect natural(n) \wedge neq(k, n)
+                    apply invoke natural_implies_suc_is_injection_contrapositive for n, k
+                    connect in(op(suc(k), q'), h') \wedge neq(suc(k), suc(n))
+                    apply invoke removing_op_lem1 for h', suc(k), q', suc(n), y
+                    connect in(op(k, p'), rem(h', op(suc(n), y))) \wedge in(op(suc(k), q'), rem(h', op(suc(n), y))) \wedge \phi(p', q')
+                    lift for p', q' conclude \exists p' \exists q' (in(op(k, p'), rem(h', op(suc(n), y))) \wedge in(op(suc(k), q'), rem(h', op(suc(n), y))) \wedge \phi(p', q'))
+                  }
+                }
+              }
+              connect trace(\phi, n, rem(h', op(suc(n), y)))
+              deny equal(n, suc(n)) {
+                substitute in(n, suc(n)) for suc(n): n
+                apply invoke irrefrel_not_contain_itself for n
+                contradict in(n, n)
+              }
+              connect in(op(n, p), h') \wedge neq(n, suc(n))
+              apply invoke removing_op_lem1 for h', n, p, suc(n), y
+              connect trace(\phi, n, rem(h', op(suc(n), y))) \wedge in(op(emptyset, c), rem(h', op(suc(n), y))) \wedge in(op(n, p), rem(h', op(suc(n), y)))
+              lift for rem(h', op(suc(n), y)) conclude piterate(\phi, n, c, p)
+              apply invoke \forall x' (piterate(\phi, n, c, x') \to equal(x', x)) for p
+              substitute \phi(p, q) for p: x, q: y
+              any y' {
+                assume \phi(x, y') {
+                  connect \phi(x, y) \wedge \phi(x, y')
+                  apply invoke functional(\phi) for x, y, y'
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+theorem piterate_exists_uniquely_base_step \forall^P \phi[2] \forall^P \chi[1] \forall c (\chi(c) \to \exists x (\chi(x) \wedge piterate(\phi, emptyset, c, x) \wedge \forall x' (piterate(\phi, emptyset, c, x') \to equal(x', x)))) {
+  any predicate \phi[2], predicate \chi[1], c {
+    assume \chi(c) {
+      apply piterate_base_step for \phi, c
+      any x {
+        apply piterate_is_unique_base_step for \phi, c, x
+      }
+      connect \chi(c) \wedge piterate(\phi, emptyset, c, c) \wedge \forall x (piterate(\phi, emptyset, c, x) \to equal(x, c))
+      lift for c conclude \exists x (\chi(x) \wedge piterate(\phi, emptyset, c, x) \wedge \forall x' (piterate(\phi, emptyset, c, x') \to equal(x', x)))
+    }
+  }
+}
+
+theorem piterate_exists_uniquely_induction_step \forall^P \phi[2] \forall^P \chi[1] \forall n \forall c (functional(\phi) \wedge total(\phi, \chi) \wedge natural(n) \wedge \exists x (\chi(x) \wedge piterate(\phi, n, c, x) \wedge \forall x' (piterate(\phi, n, c, x') \to equal(x', x))) \to \exists x (\chi(x) \wedge piterate(\phi, suc(n), c, x) \wedge \forall x' (piterate(\phi, suc(n), c, x') \to equal(x', x)))) {
+  any predicate \phi[2], predicate \chi[1], n, c {
+    assume functional(\phi) \wedge total(\phi, \chi) \wedge natural(n) \wedge \exists x (\chi(x) \wedge piterate(\phi, n, c, x) \wedge \forall x' (piterate(\phi, n, c, x') \to equal(x', x))) {
+      split functional(\phi) \wedge total(\phi, \chi) \wedge natural(n) \wedge \exists x (\chi(x) \wedge piterate(\phi, n, c, x) \wedge \forall x' (piterate(\phi, n, c, x') \to equal(x', x)))
+      apply invoke natural_is_ordinal for n
+      split ordinal(n)
+      some x such \exists x (\chi(x) \wedge piterate(\phi, n, c, x) \wedge \forall x' (piterate(\phi, n, c, x') \to equal(x', x))) {
+        split \chi(x) \wedge piterate(\phi, n, c, x) \wedge \forall x' (piterate(\phi, n, c, x') \to equal(x', x))
+        apply invoke total(\phi, \chi) for x
+        some y such \exists y (\chi(y) \wedge \phi(x, y)) {
+          split \chi(y) \wedge \phi(x, y)
+          connect natural(n) \wedge piterate(\phi, n, c, x) \wedge \phi(x, y)
+          apply invoke piterate_induction_step for \phi, n, c, x, y
+          any y' {
+            assume piterate(\phi, suc(n), c, y') {
+              connect functional(\phi) \wedge natural(n) \wedge \forall x' (piterate(\phi, n, c, x') \to equal(x', x))
+              apply invoke piterate_is_unique_induction_step for \phi, n, c, x
+              apply invoke \forall y' (piterate(\phi, suc(n), c, y') \to \forall y (\phi(x, y) \to equal(y, y'))) for y'
+              apply invoke \forall y (\phi(x, y) \to equal(y, y')) for y
+            }
+          }
+          connect \chi(y) \wedge piterate(\phi, suc(n), c, y) \wedge \forall y' (piterate(\phi, suc(n), c, y') \to equal(y', y))
+          lift for y conclude \exists y (\chi(y) \wedge piterate(\phi, suc(n), c, y) \wedge \forall y' (piterate(\phi, suc(n), c, y') \to equal(y', y)))
+        }
+      }
+    }
+  }
+}
+
+theorem piterate_exists_uniquely \forall^P \phi[2] \forall^P \chi[1] \forall c (functional(\phi) \wedge total(\phi, \chi) \wedge \chi(c) \to \forall n (natural(n) \to \exists x (\chi(x) \wedge piterate(\phi, n, c, x) \wedge \forall x' (piterate(\phi, n, c, x') \to equal(x', x))))) {
+  any predicate \phi[2], predicate \chi[1], c {
+    assume functional(\phi) \wedge total(\phi, \chi) \wedge \chi(c) {
+      split functional(\phi) \wedge total(\phi, \chi) \wedge \chi(c)
+      apply invoke piterate_exists_uniquely_base_step for \phi, \chi, c
+      any n {
+        assume natural(n) {
+          assume \exists x (\chi(x) \wedge piterate(\phi, n, c, x) \wedge \forall x' (piterate(\phi, n, c, x') \to equal(x', x))) {
+            connect functional(\phi) \wedge total(\phi, \chi) \wedge natural(n) \wedge \exists x (\chi(x) \wedge piterate(\phi, n, c, x) \wedge \forall x' (piterate(\phi, n, c, x') \to equal(x', x)))
+            apply invoke piterate_exists_uniquely_induction_step for \phi, \chi, n, c
+          }
+        }
+      }
+      connect \exists x (\chi(x) \wedge piterate(\phi, emptyset, c, x) \wedge \forall x' (piterate(\phi, emptyset, c, x') \to equal(x', x))) \wedge \forall n (natural(n) \to (\exists x (\chi(x) \wedge piterate(\phi, n, c, x) \wedge \forall x' (piterate(\phi, n, c, x') \to equal(x', x))) \to \exists x (\chi(x) \wedge piterate(\phi, suc(n), c, x) \wedge \forall x' (piterate(\phi, suc(n), c, x') \to equal(x', x)))))
+      apply invoke natural_induction for \lambda^P n. \exists x (\chi(x) \wedge piterate(\phi, n, c, x) \wedge \forall x' (piterate(\phi, n, c, x') \to equal(x', x)))
     }
   }
 }
