@@ -127,7 +127,7 @@ theorem fiterate_exists_uniquely_base_step \forall^F f[1] \forall c \exists! x (
   }
 }
 
-theorem recursion_exists_uniquely_induction_step \forall^F f[1] \forall n \forall c (natural(n) \wedge \exists! x (fiterate(f, n, c, x)) \to \exists! x (fiterate(f, suc(n), c, x))) {
+theorem fiterate_exists_uniquely_induction_step \forall^F f[1] \forall n \forall c (natural(n) \wedge \exists! x (fiterate(f, n, c, x)) \to \exists! x (fiterate(f, suc(n), c, x))) {
   any function f[1], n, c {
     assume natural(n) \wedge \exists! x (fiterate(f, n, c, x)) {
       split natural(n) \wedge \exists! x (fiterate(f, n, c, x))
@@ -145,14 +145,14 @@ theorem recursion_exists_uniquely_induction_step \forall^F f[1] \forall n \foral
   }
 }
 
-theorem recursion_exists_uniquely \forall^F f[1] \forall n \forall c (natural(n) \to \exists! x (fiterate(f, n, c, x))) {
+theorem fiterate_exists_uniquely \forall^F f[1] \forall n \forall c (natural(n) \to \exists! x (fiterate(f, n, c, x))) {
   any function f[1], c {
     apply fiterate_exists_uniquely_base_step for f, c
     any n {
       assume natural(n) {
         assume \exists! x (fiterate(f, n, c, x)) {
           connect natural(n) \wedge \exists! x (fiterate(f, n, c, x))
-          apply invoke recursion_exists_uniquely_induction_step for f, n, c
+          apply invoke fiterate_exists_uniquely_induction_step for f, n, c
         }
       }
     }
@@ -161,7 +161,7 @@ theorem recursion_exists_uniquely \forall^F f[1] \forall n \forall c (natural(n)
   }
 }
 
-definition function iterate by recursion_exists_uniquely
+definition function iterate by fiterate_exists_uniquely
 existence iterate_existence \forall^F f[1] \forall n \forall c (natural(n) \to fiterate(f, n, c, iterate(f, n, c))) by iterate
 uniqueness iterate_uniqueness \forall^F f[1] \forall n \forall c (natural(n) \to \forall x (fiterate(f, n, c, x) \to equal(x, iterate(f, n, c)))) by iterate
 
