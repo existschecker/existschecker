@@ -1,0 +1,198 @@
+include "zfc_function.proof"
+
+definition predicate equipotent(X, Y) as \exists f (bij(f, X, Y))
+
+definition predicate size(X, n) as natural(n) \wedge equipotent(n, X)
+
+definition predicate finite(X) as \exists n (size(X, n))
+
+theorem size_emptyset_implies_set_emptyset \forall X (size(X, emptyset) \to equal(X, emptyset)) {
+  any X {
+    assume size(X, emptyset) {
+      split size(X, emptyset)
+      some f such equipotent(emptyset, X) {
+        split bij(f, emptyset, X)
+        apply invoke surj_with_dom_emptyset_implies_ran_emptyset for f, X
+      }
+    }
+  }
+}
+
+theorem emptyset_is_equipotent_to_emptyset equipotent(emptyset, emptyset) {
+  assert emptyset_is_bij_from_emptyset_to_emptyset
+  lift for emptyset conclude \exists f (bij(f, emptyset, emptyset))
+  fold for equipotent conclude equipotent(emptyset, emptyset)
+}
+
+theorem size_of_emptyset_is_emptyset size(emptyset, emptyset) {
+  assert emptyset_is_natural
+  assert emptyset_is_equipotent_to_emptyset
+  connect size(emptyset, emptyset)
+}
+
+theorem emptyset_is_finite finite(emptyset) {
+  assert size_of_emptyset_is_emptyset
+  lift for emptyset conclude \exists n (size(emptyset, n))
+  fold for finite conclude finite(emptyset)
+}
+
+theorem size_suc_decomposition \forall X \forall n (size(X, suc(n)) \to \exists X' \exists x (size(X', n) \wedge notin(x, X') \wedge equal(X, adj(X', x)))) {
+  any X, n {
+    assume size(X, suc(n)) {
+      split size(X, suc(n))
+      apply in_suc for n
+      connect in(n, suc(n)) \wedge natural(suc(n))
+      apply invoke element_of_natural_is_natural for suc(n), n
+      apply invoke natural_is_ordinal for n
+      split ordinal(n)
+      some f such equipotent(suc(n), X) {
+        split bij(f, suc(n), X)
+        split surj(f, suc(n), X)
+        apply invoke rightward dom(f, suc(n)) for n
+        some x such \exists x (in(op(n, x), f)) {
+          connect bij(f, suc(n), X) \wedge in(op(n, x), f)
+          apply invoke removing_op_bij for f, suc(n), X, n, x
+          apply invoke irrefrel_not_contain_itself for n
+          apply invoke rem_suc for n
+          substitute bij(rem(f, op(n, x)), rem(suc(n), n), rem(X, x)) for rem(suc(n), n): n
+          lift for rem(f, op(n, x)) conclude \exists f' (bij(f', n, rem(X, x)))
+          fold for equipotent conclude equipotent(n, rem(X, x))
+          connect size(rem(X, x), n)
+          lift for n conclude \exists n (in(op(n, x), f))
+          apply invoke leftward ran(f, X) for x
+          apply invoke equal_adj_rem for X, x
+          deny in(x, rem(X, x)) {
+            apply invoke rightward rem_existence for X, x, x
+            split 2 in(x, X) \wedge neq(x, x)
+            contradict equal(x, x)
+          }
+          connect size(rem(X, x), n) \wedge notin(x, rem(X, x)) \wedge equal(X, adj(rem(X, x), x))
+          lift for rem(X, x), x conclude \exists X' \exists x (size(X', n) \wedge notin(x, X') \wedge equal(X, adj(X', x)))
+        }
+      }
+    }
+  }
+}
+
+theorem finite_adj \forall Y \forall y (finite(Y) \to finite(adj(Y, y))) {
+  any Y, y {
+    assume finite(Y) {
+      apply law_of_excluded_middle for \lambda^P. in(y, Y)
+      divide in(y, Y) \vee notin(y, Y)
+        case in(y, Y) {
+          any z {
+            assume in(z, adj(Y, y)) {
+              apply invoke rightward adj_existence for Y, y, z
+              divide in(z, Y) \vee equal(z, y)
+                case in(z, Y) {}
+                case equal(z, y) {
+                  substitute in(y, Y) for y: z
+                }
+            }
+            assume in(z, Y) {
+              apply invoke adj_cor1 for Y, y, z
+            }
+            connect in(z, adj(Y, y)) \leftrightarrow in(z, Y)
+          }
+          apply invoke axiom_of_extensionality for adj(Y, y), Y
+          substitute finite(Y) for Y: adj(Y, y)
+        }
+        case notin(y, Y) {
+          some n such finite(Y) {
+            split size(Y, n)
+            apply invoke natural_is_ordinal for n
+            split ordinal(n)
+            some f such equipotent(n, Y) {
+              split bij(f, n, Y)
+              split surj(f, n, Y)
+              deny \exists q (in(op(n, q), f)) {
+                apply invoke leftward dom(f, n) for n
+                apply invoke irrefrel_not_contain_itself for n
+                contradict in(n, n)
+              }
+              deny \exists p (in(op(p, y), f)) {
+                apply invoke leftward ran(f, Y) for y
+                contradict in(y, Y)
+              }
+              connect bij(f, n, Y) \wedge \neg(\exists q (in(op(n, q), f))) \wedge \neg(\exists p (in(op(p, y), f)))
+              apply invoke adding_op_bij for f, n, Y, n, y
+              fold for suc conclude bij(adj(f, op(n, y)), suc(n), adj(Y, y))
+              lift for adj(f, op(n, y)) conclude \exists f' (bij(f', suc(n), adj(Y, y)))
+              fold for equipotent conclude equipotent(suc(n), adj(Y, y))
+              apply invoke suc_of_natural_is_natural for n
+              connect size(adj(Y, y), suc(n))
+              lift for suc(n) conclude \exists n' (size(adj(Y, y), n'))
+              fold for finite conclude finite(adj(Y, y))
+            }
+          }
+        }
+    }
+  }
+}
+
+theorem subset_of_finite_is_finite \forall x \forall y (finite(x) \wedge subset(y, x) \to finite(y)) {
+  any x {
+    assume size(x, emptyset) {
+      apply invoke size_emptyset_implies_set_emptyset for x
+      any y {
+        assume subset(y, x) {
+          substitute subset(y, x) for x: emptyset
+          apply invoke subset_of_emptyset_is_emptyset for y
+          assert emptyset_is_finite
+          substitute finite(emptyset) for emptyset: y
+        }
+      }
+    }
+  }
+  any n {
+    assume natural(n) {
+      assume \forall x (size(x, n) \to \forall y (subset(y, x) \to finite(y))) {
+        any x {
+          assume size(x, suc(n)) {
+            apply invoke size_suc_decomposition for x, n
+            some x', z such \exists x' \exists z (size(x', n) \wedge notin(z, x') \wedge equal(x, adj(x', z))) {
+              split size(x', n) \wedge notin(z, x') \wedge equal(x, adj(x', z))
+              any y {
+                assume subset(y, x) {
+                  substitute subset(y, x) for x: adj(x', z)
+                  apply law_of_excluded_middle for \lambda^P. in(z, y)
+                  divide in(z, y) \vee notin(z, y)
+                    case in(z, y) {
+                      apply invoke \forall x (size(x, n) \to \forall y (subset(y, x) \to finite(y))) for x'
+                      connect in(z, y) \wedge subset(y, adj(x', z))
+                      apply invoke subset_adj_in for x', z, y
+                      assert subset(rem(y, z), x')
+                      apply invoke \forall y (subset(y, x') \to finite(y)) for rem(y, z)
+                      apply invoke finite_adj for rem(y, z), z
+                      apply invoke equal_adj_rem for y, z
+                      substitute finite(adj(rem(y, z), z)) for adj(rem(y, z), z): y
+                    }
+                    case notin(z, y) {
+                      connect notin(z, y) \wedge subset(y, adj(x', z))
+                      apply invoke subset_adj_notin for x', z, y
+                      assert subset(y, x')
+                      apply invoke \forall x (size(x, n) \to \forall y (subset(y, x) \to finite(y))) for x'
+                      apply invoke \forall y (subset(y, x') \to finite(y)) for y
+                    }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  connect \forall x (size(x, emptyset) \to \forall y (subset(y, x) \to finite(y))) \wedge \forall n (natural(n) \to (\forall x (size(x, n) \to \forall y (subset(y, x) \to finite(y))) \to \forall x (size(x, suc(n) ) \to \forall y (subset(y, x) \to finite(y)))))
+  apply invoke natural_induction for \lambda^P n. \forall x (size(x, n) \to \forall y (subset(y, x) \to finite(y)))
+  any x, y {
+    assume finite(x) \wedge subset(y, x) {
+      split finite(x) \wedge subset(y, x)
+      some n such finite(x) {
+        split 1 size(x, n)
+        apply invoke \forall n (natural(n) \to \forall x (size(x, n) \to \forall y (subset(y, x) \to finite(y)))) for n
+        apply invoke \forall x (size(x, n) \to \forall y (subset(y, x) \to finite(y))) for x
+        apply invoke \forall y (subset(y, x) \to finite(y)) for y
+      }
+    }
+  }
+}

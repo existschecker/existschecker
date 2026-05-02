@@ -125,3 +125,60 @@ theorem rem_suc \forall x (notin(x, x) \to equal(rem(suc(x), x), x)) {
     }
   }
 }
+
+theorem subset_adj_in \forall x \forall z \forall y (in(z, y) \wedge subset(y, adj(x, z)) \to subset(rem(y, z), x)) {
+  any x, z, y {
+    assume in(z, y) \wedge subset(y, adj(x, z)) {
+      split in(z, y) \wedge subset(y, adj(x, z))
+      any w {
+        assume in(w, rem(y, z)) {
+          apply invoke rightward rem_existence for y, z, w
+          split in(w, y) \wedge neq(w, z)
+          apply invoke subset(y, adj(x, z)) for w
+          apply invoke rightward adj_existence for x, z, w
+          divide in(w, x) \vee equal(w, z)
+            case in(w, x) {}
+            case equal(w, z) {
+              contradict equal(w, z)
+              explode in(w, x)
+            }
+        }
+      }
+      fold for subset conclude subset(rem(y, z), x)
+    }
+  }
+}
+
+theorem equal_adj_rem \forall X \forall x (in(x, X) \to equal(adj(rem(X, x), x), X)) {
+  any X, x {
+    assume in(x, X) {
+      any y {
+        assume in(y, adj(rem(X, x), x)) {
+          apply invoke rightward adj_existence for rem(X, x), x, y
+          divide in(y, rem(X, x)) \vee equal(y, x)
+            case in(y, rem(X, x)) {
+              apply invoke rightward rem_existence for X, x, y
+              split 1 in(y, X) \wedge neq(y, x)
+            }
+            case equal(y, x) {
+              substitute in(x, X) for x: y
+            }
+        }
+        assume in(y, X) {
+          apply law_of_excluded_middle for \lambda^P. equal(y, x)
+          divide equal(y, x) \vee neq(y, x)
+            case equal(y, x) {
+              apply invoke adj_cor2 for rem(X, x), x, y
+            }
+            case neq(y, x) {
+              connect in(y, X) \wedge neq(y, x)
+              apply invoke leftward rem_existence for X, x, y
+              apply invoke adj_cor1 for rem(X, x), x, y
+            }
+        }
+        connect in(y, adj(rem(X, x), x)) \leftrightarrow in(y, X)
+      }
+      apply invoke axiom_of_extensionality for adj(rem(X, x), x), X
+    }
+  }
+}

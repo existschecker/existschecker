@@ -79,3 +79,129 @@ theorem element_is_minimal_in_its_singleton \forall x (minimal(in, singleton(x),
     connect minimal(in, singleton(x), x)
   }
 }
+
+theorem trans_irrefrel_wellfounded_not_emptyset_contains_emptyset \forall x (trans(x) \wedge irrefrel(x, in) \wedge wellfounded(x, in) \wedge neq(x, emptyset) \to in(emptyset, x)) {
+  any x {
+    assume trans(x) \wedge irrefrel(x, in) \wedge wellfounded(x, in) \wedge neq(x, emptyset) {
+      split trans(x) \wedge irrefrel(x, in) \wedge wellfounded(x, in) \wedge neq(x, emptyset)
+      apply subset_reflexivity for x
+      connect subset(x, x) \wedge neq(x, emptyset)
+      apply invoke wellfounded(x, in) for x
+      some a such \exists a (minimal(in, x, a)) {
+        split minimal(in, x, a)
+        deny neq(a, emptyset) {
+          apply invoke not_emptyset_has_a_member for a
+          some b such \exists b (in(b, a)) {
+            deny equal(b, a) {
+              apply invoke irrefrel(x, in) for a
+              substitute notin(a, a) for a[1]: b
+              contradict in(b, a)
+            }
+            connect in(b, a) \wedge in(a, x)
+            apply invoke trans(x) for a, b
+            connect in(b, x) \wedge neq(b, a)
+            apply invoke minimal_core(in, x, a) for b
+            contradict in(b, a)
+          }
+        }
+        substitute in(a, x) for a: emptyset
+      }
+    }
+  }
+}
+
+theorem ordinal_not_emptyset_contains_emptyset \forall \alpha (ordinal(\alpha) \wedge neq(\alpha, emptyset) \to in(emptyset, \alpha)) {
+  any \alpha {
+    assume ordinal(\alpha) \wedge neq(\alpha, emptyset) {
+      split ordinal(\alpha) \wedge neq(\alpha, emptyset)
+      split ordinal(\alpha)
+      split wellorder(\alpha, in)
+      connect trans(\alpha) \wedge irrefrel(\alpha, in) \wedge wellfounded(\alpha, in) \wedge neq(\alpha, emptyset)
+      apply invoke trans_irrefrel_wellfounded_not_emptyset_contains_emptyset for \alpha
+    }
+  }
+}
+
+definition predicate closed(X, predicate \psi[2]) as \forall x \forall y (in(x, X) \wedge \psi(y, x) \to in(y, X))
+
+theorem trans_iff_closed_in \forall x (trans(x) \leftrightarrow closed(x, in)) {
+  any x {
+    assume trans(x) {
+      any y, z {
+        assume in(y, x) \wedge in(z, y) {
+          apply invoke trans(x) for y, z
+        }
+      }
+      fold for closed conclude closed(x, in)
+    }
+    assume closed(x, in) {
+      any y, z {
+        assume in(y, x) \wedge in(z, y) {
+          apply invoke closed(x, in) for y, z
+        }
+      }
+      fold for trans conclude trans(x)
+    }
+    connect trans(x) \leftrightarrow closed(x, in)
+  }
+}
+
+theorem wellfounded_induction \forall^P \psi[2] \forall^P \chi[1] \forall X (closed(X, \psi) \wedge irrefrel(X, \psi) \wedge wellfounded(X, \psi) \wedge \forall x (in(x, X) \to (\forall y (\psi(y, x) \to \chi(y)) \to \chi(x))) \to \forall x (in(x, X) \to \chi(x))) {
+  any predicate \psi[2], predicate \chi[1], X {
+    assume closed(X, \psi) \wedge irrefrel(X, \psi) \wedge wellfounded(X, \psi) \wedge \forall x (in(x, X) \to (\forall y (\psi(y, x) \to \chi(y)) \to \chi(x))) {
+      split closed(X, \psi) \wedge irrefrel(X, \psi) \wedge wellfounded(X, \psi) \wedge \forall x (in(x, X) \to (\forall y (\psi(y, x) \to \chi(y)) \to \chi(x)))
+      deny \neg(\forall x (in(x, X) \to \chi(x))) {
+        apply invoke leftward exist_neg_leftrightarrow_neg_forall for \lambda^P x. in(x, X) \to \chi(x)
+        some x such \exists x (\neg(in(x, X) \to \chi(x))) {
+          apply invoke rightward neg_implication for \lambda^P. in(x, X), \lambda^P. \chi(x)
+          split in(x, X) \wedge \neg(\chi(x))
+          apply sep_is_subset for X, \lambda^P y. \neg(\chi(y))
+          apply in_suc for x
+          connect in(x, suc(x)) \wedge \neg(\chi(x))
+          apply invoke leftward sep_existence for X, \lambda^P y. \neg(\chi(y)), x
+          lift for x conclude \exists z (in(z, sep(X, \lambda^P y. \neg(\chi(y)))))
+          apply invoke has_a_member_not_emptyset for sep(X, \lambda^P y. \neg(\chi(y)))
+          connect subset(sep(X, \lambda^P y. \neg(\chi(y))), X) \wedge neq(sep(X, \lambda^P y. \neg(\chi(y))), emptyset)
+          apply invoke wellfounded(X, \psi) for sep(X, \lambda^P y. \neg(\chi(y)))
+          some z such \exists z (minimal(\psi, sep(X, \lambda^P y. \neg(\chi(y))), z)) {
+            split minimal(\psi, sep(X, \lambda^P y. \neg(\chi(y))), z)
+            apply invoke rightward sep_existence for X, \lambda^P y. \neg(\chi(y)), z
+            split in(z, X) \wedge \neg(\chi(z))
+            any y {
+              assume \psi(y, z) {
+                connect in(z, X) \wedge \psi(y, z)
+                apply invoke closed(X, \psi) for z, y
+                deny equal(y, z) {
+                  substitute \psi(y, z) for y: z
+                  apply invoke irrefrel(X, \psi) for z
+                  contradict \psi(z, z)
+                }
+                deny \neg(\chi(y)) {
+                  connect in(y, X) \wedge \neg(\chi(y))
+                  apply invoke leftward sep_existence for X, \lambda^P m. \neg(\chi(m)), y
+                  connect in(y, sep(X, \lambda^P m. \neg(\chi(m)))) \wedge neq(y, z)
+                  apply invoke minimal_core(\psi, sep(X, \lambda^P m. \neg(\chi(m))), z) for y
+                  contradict \psi(y, z)
+                }
+              }
+            }
+            apply invoke \forall x (in(x, X) \to (\forall y (\psi(y, x) \to \chi(y)) \to \chi(x))) for z
+            invoke \forall y (\psi(y, z) \to \chi(y)) \to \chi(z)
+            contradict \neg(\chi(z))
+          }
+        }
+      }
+    }
+  }
+}
+
+theorem wellfounded_induction_in \forall^P \chi[1] \forall X (trans(X) \wedge irrefrel(X, in) \wedge wellfounded(X, in) \wedge \forall x (in(x, X) \to (\forall y (in(y, x) \to \chi(y)) \to \chi(x))) \to \forall x (in(x, X) \to \chi(x))) {
+  any predicate \chi[1], X {
+    assume trans(X) \wedge irrefrel(X, in) \wedge wellfounded(X, in) \wedge \forall x (in(x, X) \to (\forall y (in(y, x) \to \chi(y)) \to \chi(x))) {
+      split trans(X) \wedge irrefrel(X, in) \wedge wellfounded(X, in) \wedge \forall x (in(x, X) \to (\forall y (in(y, x) \to \chi(y)) \to \chi(x)))
+      apply invoke rightward trans_iff_closed_in for X
+      connect closed(X, in) \wedge irrefrel(X, in) \wedge wellfounded(X, in) \wedge \forall x (in(x, X) \to (\forall y (in(y, x) \to \chi(y)) \to \chi(x)))
+      apply invoke wellfounded_induction for in, \chi, X
+    }
+  }
+}

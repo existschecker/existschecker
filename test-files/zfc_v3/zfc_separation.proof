@@ -24,3 +24,14 @@ theorem sep_is_subset \forall x \forall^P \phi[1] (subset(sep(x, \phi), x)) {
     fold for subset conclude subset(sep(x, \phi), x)
   }
 }
+
+theorem sep_satisfies_predicate \forall x \forall^P \phi[1] \forall y (in(y, sep(x, \phi)) \to \phi(y)) {
+  any x, predicate \phi[1] {
+    any y {
+      assume in(y, sep(x, \phi)) {
+        apply invoke rightward sep_existence for x, \phi, y
+        split 2 in(y, x) \wedge \phi(y)
+      }
+    }
+  }
+}

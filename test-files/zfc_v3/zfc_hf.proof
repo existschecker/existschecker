@@ -1,0 +1,82 @@
+include "zfc_tc.proof"
+
+definition predicate hf(x) as \exists y (finite(y) \wedge tcm(x, y))
+
+definition predicate ptrans(predicate \phi[1]) as \forall x \forall y (\phi(x) \wedge in(y, x) \to \phi(y))
+
+theorem hf_is_trans ptrans(hf) {
+  any x, y {
+    assume hf(x) \wedge in(y, x) {
+      split hf(x) \wedge in(y, x)
+      some t such hf(x) {
+        split finite(t) \wedge tcm(x, t)
+        apply sep_is_subset for t, \lambda^P z. tc(\lambda^P p, q. in(q, p), y, z)
+        connect finite(t) \wedge subset(sep(t, \lambda^P z. tc(\lambda^P p, q. in(q, p), y, z)), t)
+        apply invoke subset_of_finite_is_finite for t, sep(t, \lambda^P z. tc(\lambda^P p, q. in(q, p), y, z))
+        any z {
+          assume in(z, sep(t, \lambda^P z. tc(\lambda^P p, q. in(q, p), y, z))) {
+            apply invoke sep_satisfies_predicate for t, \lambda^P z. tc(\lambda^P p, q. in(q, p), y, z), z
+          }
+          assume tc(\lambda^P p, q. in(q, p), y, z) {
+            connect in(y, x) \wedge tc(\lambda^P p, q. in(q, p), y, z)
+            apply invoke tc_add_first for \lambda^P p, q. in(q, p), x, y, z
+            apply invoke leftward tcm(x, t) for z
+            connect in(z, t) \wedge tc(\lambda^P p, q. in(q, p), y, z)
+            apply invoke leftward sep_existence for t, \lambda^P z. tc(\lambda^P p, q. in(q, p), y, z), z
+          }
+          connect in(z, sep(t, \lambda^P z. tc(\lambda^P p, q. in(q, p), y, z))) \leftrightarrow tc(\lambda^P p, q. in(q, p), y, z)
+        }
+        fold for tcm conclude tcm(y, sep(t, \lambda^P z. tc(\lambda^P p, q. in(q, p), y, z)))
+        connect finite(sep(t, \lambda^P z. tc(\lambda^P p, q. in(q, p), y, z))) \wedge tcm(y, sep(t, \lambda^P z. tc(\lambda^P p, q. in(q, p), y, z)))
+        lift for sep(t, \lambda^P z. tc(\lambda^P p, q. in(q, p), y, z)) conclude \exists s (finite(s) \wedge tcm(y, s))
+      }
+      fold for hf conclude hf(y)
+    }
+  }
+  fold for ptrans conclude ptrans(hf)
+}
+
+theorem hf_satisfies_axiom_of_extensionality \forall x \forall y (hf(x) \wedge hf(y) \to (\forall z (hf(z) \to (in(z, x) \leftrightarrow in(z, y))) \to equal(x, y))) {
+  assert hf_is_trans
+  any x, y {
+    assume hf(x) \wedge hf(y) {
+      split hf(x) \wedge hf(y)
+      assume \forall z (hf(z) \to (in(z, x) \leftrightarrow in(z, y))) {
+        any z {
+          assume in(z, x) {
+            connect hf(x) \wedge in(z, x)
+            apply invoke ptrans(hf) for x, z
+            apply invoke \forall z (hf(z) \to (in(z, x) \leftrightarrow in(z, y))) for z
+            invoke rightward in(z, x) \leftrightarrow in(z, y)
+          }
+          assume in(z, y) {
+            connect hf(y) \wedge in(z, y)
+            apply invoke ptrans(hf) for y, z
+            apply invoke \forall z (hf(z) \to (in(z, x) \leftrightarrow in(z, y))) for z
+            invoke leftward in(z, x) \leftrightarrow in(z, y)
+          }
+          connect in(z, x) \leftrightarrow in(z, y)
+        }
+        apply invoke axiom_of_extensionality for x, y
+      }
+    }
+  }
+}
+
+theorem emptyset_is_hf hf(emptyset) {
+  assert emptyset_is_finite
+  assert emptyset_is_tcm_of_emptyset
+  connect finite(emptyset) \wedge tcm(emptyset, emptyset)
+  lift for emptyset conclude hf(emptyset)
+}
+
+theorem hf_satisfies_axiom_of_emptyset \exists x (hf(x) \wedge \forall y (hf(y) \to notin(y, x))) {
+  assert emptyset_is_hf
+  any y {
+    assume hf(y) {
+      apply emptyset_existence for y
+    }
+  }
+  connect hf(emptyset) \wedge \forall y (hf(y) \to notin(y, emptyset))
+  lift for emptyset conclude \exists x (hf(x) \wedge \forall y (hf(y) \to notin(y, x)))
+}

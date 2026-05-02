@@ -127,3 +127,60 @@ theorem natural_implies_suc_is_injection_contrapositive \forall n \forall m (nat
     }
   }
 }
+
+theorem pnatural_is_not_emptyset \forall n (pnatural(n) \to neq(n, emptyset)) {
+  any n {
+    assume pnatural(n) {
+      split pnatural(n)
+      split sucordinal(n)
+      some m such \exists m (equal(n, suc(m))) {
+        apply suc_is_not_emptyset for m
+        substitute neq(suc(m), emptyset) for suc(m): n
+      }
+    }
+  }
+}
+
+theorem pnatural_is_suc_of_natural_element \forall n (pnatural(n) \to \exists m (equal(n, suc(m)) \wedge in(m, n) \wedge natural(m))) {
+  any n {
+    assume pnatural(n) {
+      split pnatural(n)
+      split sucordinal(n)
+      some m such \exists m (equal(n, suc(m))) {
+        apply in_suc for m
+        substitute in(m, suc(m)) for suc(m): n
+        pad pnatural(n) conclude natural(n)
+        connect in(m, n) \wedge natural(n)
+        apply invoke element_of_natural_is_natural for n, m
+        connect equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)
+        lift for m conclude \exists m (equal(n, suc(m)) \wedge in(m, n) \wedge natural(m))
+      }
+    }
+  }
+}
+
+theorem natural_and_neq_emptyset_implies_pnatural \forall n (natural(n) \wedge neq(n, emptyset) \to pnatural(n)) {
+  any n {
+    assume natural(n) \wedge neq(n, emptyset) {
+      split natural(n) \wedge neq(n, emptyset)
+      divide natural(n)
+        case equal(n, emptyset) {
+          contradict equal(n, emptyset)
+          explode pnatural(n)
+        }
+        case pnatural(n) {}
+    }
+  }
+}
+
+theorem pnatural_contains_emptyset \forall n (pnatural(n) \to in(emptyset, n)) {
+  any n {
+    assume pnatural(n) {
+      pad pnatural(n) conclude natural(n)
+      apply invoke natural_is_ordinal for n
+      apply invoke pnatural_is_not_emptyset for n
+      connect ordinal(n) \wedge neq(n, emptyset)
+      apply invoke ordinal_not_emptyset_contains_emptyset for n
+    }
+  }
+}

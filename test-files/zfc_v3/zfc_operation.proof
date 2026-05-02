@@ -9,6 +9,81 @@ theorem add_characterization \forall m (equal(add(m, emptyset), m) \wedge \foral
   }
 }
 
+theorem add_base_step \forall m (equal(add(m, emptyset), m)) {
+  any m {
+    apply add_characterization for m
+    split 1 equal(add(m, emptyset), m) \wedge \forall n (natural(n) \to equal(add(m, suc(n)), suc(add(m, n))))
+  }
+}
+
+theorem add_induction_step \forall m \forall n (natural(n) \to equal(add(m, suc(n)), suc(add(m, n)))) {
+  any m {
+    apply add_characterization for m
+    split 2 equal(add(m, emptyset), m) \wedge \forall n (natural(n) \to equal(add(m, suc(n)), suc(add(m, n))))
+  }
+}
+
+theorem addition_of_natural_is_natural \forall m \forall n (natural(m) \wedge natural(n) \to natural(add(m, n))) {
+  any m {
+    assume natural(m) {
+      apply add_base_step for m
+      substitute natural(m) for m: add(m, emptyset)
+    }
+  }
+  any n {
+    assume natural(n) {
+      assume \forall m (natural(m) \to natural(add(m, n))) {
+        any m {
+          assume natural(m) {
+            apply invoke \forall m (natural(m) \to natural(add(m, n))) for m
+            apply invoke suc_of_natural_is_natural for add(m, n)
+            apply invoke add_induction_step for m, n
+            substitute natural(suc(add(m, n))) for suc(add(m, n)): add(m, suc(n))
+          }
+        }
+      }
+    }
+  }
+  connect \forall m (natural(m) \to natural(add(m, emptyset))) \wedge \forall n (natural(n) \to (\forall m ((natural(m) \to natural(add(m, n)))) \to \forall m (natural(m) \to natural(add(m, suc(n))))))
+  apply invoke natural_induction for \lambda^P n. \forall m (natural(m) \to natural(add(m, n)))
+  any m, n {
+    assume natural(m) \wedge natural(n) {
+      split natural(m) \wedge natural(n)
+      apply invoke \forall n (natural(n) \to \forall m (natural(m) \to natural(add(m, n)))) for n
+      apply invoke \forall m (natural(m) \to natural(add(m, n))) for m
+    }
+  }
+}
+
+theorem adding_pnatural_is_not_emptyset \forall x \forall n (pnatural(n) \to neq(add(x, n), emptyset)) {
+  any x, n {
+    assume pnatural(n) {
+      apply invoke pnatural_is_suc_of_natural_element for n
+      some m such \exists m (equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)) {
+        split equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)
+        apply suc_is_not_emptyset for add(x, m)
+        apply invoke add_induction_step for x, m
+        substitute neq(suc(add(x, m)), emptyset) for suc(add(x, m)): add(x, suc(m))
+        substitute neq(add(x, suc(m)), emptyset) for suc(m): n
+      }
+    }
+  }
+}
+
+theorem addition_of_natural_and_pnatural_is_pnatural \forall m \forall n (natural(m) \wedge pnatural(n) \to pnatural(add(m, n))) {
+  any m, n {
+    assume natural(m) \wedge pnatural(n) {
+      split natural(m) \wedge pnatural(n)
+      pad pnatural(n) conclude natural(n)
+      connect natural(m) \wedge natural(n)
+      apply invoke addition_of_natural_is_natural for m, n
+      apply invoke adding_pnatural_is_not_emptyset for m, n
+      connect natural(add(m, n)) \wedge neq(add(m, n), emptyset)
+      apply invoke natural_and_neq_emptyset_implies_pnatural for add(m, n)
+    }
+  }
+}
+
 definition function mul(m, n) as iterate(\lambda^F l. add(l, m), n, emptyset) tex infix "\cdot"
 
 theorem mul_characterization \forall m (equal(mul(m, emptyset), emptyset) \wedge \forall n (natural(n) \to equal(mul(m, suc(n)), add(mul(m, n), m)))) {

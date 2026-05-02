@@ -48,3 +48,45 @@ theorem set_exists_implies_set_exists_uniquely \forall^P \phi[1] (\exists x \for
 }
 
 definition predicate subset(x, y) as \forall z (in(z, x) \to in(z, y)) tex infix "\subset"
+
+theorem subset_reflexivity \forall x (subset(x, x)) {
+  any x {
+    any y {
+      assume in(y, x) {}
+    }
+    fold for subset conclude subset(x, x)
+  }
+}
+
+theorem subset_transivity \forall x \forall y \forall z (subset(x, y) \wedge subset(y, z) \to subset(x, z)) {
+  any x, y, z {
+    assume subset(x, y) \wedge subset(y, z) {
+      split subset(x, y) \wedge subset(y, z)
+      any w {
+        assume in(w, x) {
+          apply invoke subset(x, y) for w
+          apply invoke subset(y, z) for w
+        }
+      }
+      fold for subset conclude subset(x, z)
+    }
+  }
+}
+
+theorem subset_antisymmetry \forall x \forall y (subset(x, y) \wedge subset(y, x) \to equal(x, y)) {
+  any x, y {
+    assume subset(x, y) \wedge subset(y, x) {
+      split subset(x, y) \wedge subset(y, x)
+      any z {
+        assume in(z, x) {
+          apply invoke subset(x, y) for z
+        }
+        assume in(z, y) {
+          apply invoke subset(y, x) for z
+        }
+        connect in(z, x) \leftrightarrow in(z, y)
+      }
+      apply invoke axiom_of_extensionality for x, y
+    }
+  }
+}

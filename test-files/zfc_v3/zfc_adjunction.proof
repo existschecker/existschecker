@@ -151,3 +151,25 @@ theorem suc_emptyset_is_singleton_emptyset equal(suc(emptyset), singleton(emptys
   }
   apply invoke axiom_of_extensionality for suc(emptyset), singleton(emptyset)
 }
+
+theorem subset_adj_notin \forall x \forall z \forall y (notin(z, y) \wedge subset(y, adj(x, z)) \to subset(y, x)) {
+  any x, z, y {
+    assume notin(z, y) \wedge subset(y, adj(x, z)) {
+      split notin(z, y) \wedge subset(y, adj(x, z))
+      any w {
+        assume in(w, y) {
+          apply invoke subset(y, adj(x, z)) for w
+          apply invoke rightward adj_existence for x, z, w
+          divide in(w, x) \vee equal(w, z)
+            case in(w, x) {}
+            case equal(w, z) {
+              substitute in(w, y) for w: z
+              contradict in(z, y)
+              explode in(w, x)
+            }
+        }
+      }
+      fold for subset conclude subset(y, x)
+    }
+  }
+}
