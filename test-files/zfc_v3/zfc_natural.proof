@@ -2,7 +2,9 @@ include "zfc_ordinal_suc.proof"
 
 definition predicate sucordinal(\alpha) as ordinal(\alpha) \wedge \exists \beta (equal(\alpha, suc(\beta)))
 
-definition predicate natural(n) as equal(n, emptyset) \vee (sucordinal(n) \wedge \forall m (in(m, n) \to equal(m, emptyset) \vee sucordinal(m)))
+definition predicate pnatural(n) as sucordinal(n) \wedge \forall m (in(m, n) \to equal(m, emptyset) \vee sucordinal(m))
+
+definition predicate natural(n) as equal(n, emptyset) \vee pnatural(n)
 
 theorem natural_is_ordinal \forall n (natural(n) \to ordinal(n)) {
   any n {
@@ -11,8 +13,8 @@ theorem natural_is_ordinal \forall n (natural(n) \to ordinal(n)) {
         case equal(n, emptyset) {
           substitute emptyset_is_ordinal for emptyset: n
         }
-        case sucordinal(n) \wedge \forall m (in(m, n) \to equal(m, emptyset) \vee sucordinal(m)) {
-          split 1 sucordinal(n) \wedge \forall m (in(m, n) \to equal(m, emptyset) \vee sucordinal(m))
+        case pnatural(n) {
+          split 1 pnatural(n)
           split 1 sucordinal(n)
         }
     }
@@ -42,8 +44,8 @@ theorem suc_of_natural_is_natural \forall n (natural(n) \to natural(suc(n))) {
                   contradict in(m, emptyset)
                   explode equal(m, emptyset) \vee sucordinal(m)
                 }
-                case sucordinal(n) \wedge \forall m (in(m, n) \to equal(m, emptyset) \vee sucordinal(m)) {
-                  split 2 sucordinal(n) \wedge \forall m (in(m, n) \to equal(m, emptyset) \vee sucordinal(m))
+                case pnatural(n) {
+                  split 2 pnatural(n)
                   apply invoke \forall m (in(m, n) \to equal(m, emptyset) \vee sucordinal(m)) for m
                 }
             }
@@ -53,15 +55,15 @@ theorem suc_of_natural_is_natural \forall n (natural(n) \to natural(suc(n))) {
                 case equal(m, emptyset) {
                   pad equal(m, emptyset) conclude equal(m, emptyset) \vee sucordinal(m)
                 }
-                case sucordinal(m) \wedge \forall l (in(l, m) \to equal(l, emptyset) \vee sucordinal(l)) {
-                  split 1 sucordinal(m) \wedge \forall l (in(l, m) \to equal(l, emptyset) \vee sucordinal(l))
+                case pnatural(m) {
+                  split 1 pnatural(m)
                   pad sucordinal(m) conclude equal(m, emptyset) \vee sucordinal(m)
                 }
             }
         }
       }
-      connect sucordinal(suc(n)) \wedge \forall m (in(m, suc(n)) \to equal(m, emptyset) \vee sucordinal(m))
-      pad sucordinal(suc(n)) \wedge \forall m (in(m, suc(n)) \to equal(m, emptyset) \vee sucordinal(m)) conclude natural(suc(n))
+      connect pnatural(suc(n))
+      pad pnatural(suc(n)) conclude natural(suc(n))
     }
   }
 }
@@ -77,8 +79,8 @@ theorem element_of_natural_is_natural \forall n \forall m (in(m, n) \wedge natur
           contradict in(m, n)
           explode natural(m)
         }
-        case sucordinal(n) \wedge \forall m (in(m, n) \to equal(m, emptyset) \vee sucordinal(m)) {
-          split sucordinal(n) \wedge \forall m (in(m, n) \to equal(m, emptyset) \vee sucordinal(m))
+        case pnatural(n) {
+          split pnatural(n)
           apply invoke \forall m (in(m, n) \to equal(m, emptyset) \vee sucordinal(m)) for m
           divide equal(m, emptyset) \vee sucordinal(m)
             case equal(m, emptyset) {
@@ -94,8 +96,8 @@ theorem element_of_natural_is_natural \forall n \forall m (in(m, n) \wedge natur
                   apply invoke \forall m (in(m, n) \to equal(m, emptyset) \vee sucordinal(m)) for l
                 }
               }
-              connect sucordinal(m) \wedge \forall l (in(l, m) \to equal(l, emptyset) \vee sucordinal(l))
-              pad sucordinal(m) \wedge \forall l (in(l, m) \to equal(l, emptyset) \vee sucordinal(l)) conclude natural(m)
+              connect pnatural(m)
+              pad pnatural(m) conclude natural(m)
             }
         }
     }

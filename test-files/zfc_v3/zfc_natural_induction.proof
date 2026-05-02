@@ -31,8 +31,8 @@ theorem natural_induction \forall^P \chi[1] (\chi(emptyset) \wedge \forall n (na
                 contradict equal(suc(n), emptyset)
                 explode equal(l, emptyset) \vee sucordinal(l)
               }
-              case sucordinal(suc(n)) \wedge \forall k (in(k, suc(n)) \to equal(k, emptyset) \vee sucordinal(k)) {
-                split sucordinal(suc(n)) \wedge \forall k (in(k, suc(n)) \to equal(k, emptyset) \vee sucordinal(k)) 
+              case pnatural(suc(n)) {
+                split pnatural(suc(n))
                 apply invoke \forall k (in(k, suc(n)) \to equal(k, emptyset) \vee sucordinal(k)) for l
               }
             divide equal(l, emptyset) \vee sucordinal(l)
