@@ -23,6 +23,49 @@ theorem add_induction_step \forall m \forall n (natural(n) \to equal(add(m, suc(
   }
 }
 
+theorem add_base_step_left \forall n (natural(n) \to equal(add(emptyset, n), n)) {
+  apply add_base_step for emptyset
+  any n {
+    assume natural(n) {
+      assume equal(add(emptyset, n), n) {
+        apply invoke add_induction_step for emptyset, n
+        substitute equal(add(emptyset, suc(n)), suc(add(emptyset, n))) for add(emptyset, n): n
+      }
+    }
+  }
+  connect equal(add(emptyset, emptyset), emptyset) \wedge \forall n (natural(n) \to (equal(add(emptyset, n), n) \to equal(add(emptyset, suc(n)), suc(n))))
+  apply invoke natural_induction for \lambda^P n. equal(add(emptyset, n), n)
+}
+
+theorem add_induction_step_left \forall m \forall n (natural(n) \to equal(add(suc(m), n), suc(add(m, n)))) {
+  any m {
+    apply add_base_step for m
+    apply add_base_step for suc(m)
+    substitute equal(add(suc(m), emptyset), suc(m)) for m[2]: add(m, emptyset)
+  }
+  any n {
+    assume natural(n) {
+      assume \forall m (equal(add(suc(m), n), suc(add(m, n)))) {
+        any m {
+          apply invoke add_induction_step for suc(m), n
+          apply \forall m (equal(add(suc(m), n), suc(add(m, n)))) for m
+          apply invoke add_induction_step for m, n
+          substitute equal(add(suc(m), suc(n)), suc(add(suc(m), n))) for add(suc(m), n): suc(add(m, n))
+          substitute equal(add(suc(m), suc(n)), suc(suc(add(m, n)))) for suc(add(m, n)): add(m, suc(n))
+        }
+      }
+    }
+  }
+  connect \forall m (equal(add(suc(m), emptyset), suc(add(m, emptyset)))) \wedge \forall n (natural(n) \to (\forall m (equal(add(suc(m), n), suc(add(m, n)))) \to \forall m (equal(add(suc(m), suc(n)), suc(add(m, suc(n)))))))
+  apply invoke natural_induction for \lambda^P n. \forall m (equal(add(suc(m), n), suc(add(m, n))))
+  any m, n {
+    assume natural(n) {
+      apply invoke \forall n (natural(n) \to \forall m (equal(add(suc(m), n), suc(add(m, n))))) for n
+      apply \forall m (equal(add(suc(m), n), suc(add(m, n)))) for m
+    }
+  }
+}
+
 theorem addition_of_natural_is_natural \forall m \forall n (natural(m) \wedge natural(n) \to natural(add(m, n))) {
   any m {
     assume natural(m) {

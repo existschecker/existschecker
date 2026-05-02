@@ -184,3 +184,14 @@ theorem pnatural_contains_emptyset \forall n (pnatural(n) \to in(emptyset, n)) {
     }
   }
 }
+
+theorem suc_of_natural_is_pnatural \forall n (natural(n) \to pnatural(suc(n))) {
+  any n {
+    assume natural(n) {
+      apply invoke suc_of_natural_is_natural for n
+      apply suc_is_not_emptyset for n
+      connect natural(suc(n)) \wedge neq(suc(n), emptyset)
+      apply invoke natural_and_neq_emptyset_implies_pnatural for suc(n)
+    }
+  }
+}

@@ -147,3 +147,118 @@ theorem emptyset_is_tcm_of_emptyset tcm(emptyset, emptyset) {
   }
   fold for tcm conclude tcm(emptyset, emptyset)
 }
+
+theorem tcm_adjunction \forall x \forall y \forall p \forall q \forall r (tcm(x, p) \wedge tcm(y, q) \wedge cup(p, q, r) \to tcm(adj(x, y), adj(r, y))) {
+  any x, y, p, q, r {
+    assume tcm(x, p) \wedge tcm(y, q) \wedge cup(p, q, r) {
+      split tcm(x, p) \wedge tcm(y, q) \wedge cup(p, q, r)
+      any s {
+        assume in(s, adj(r, y)) {
+          apply invoke rightward adj_existence for r, y, s
+          divide in(s, r) \vee equal(s, y)
+            case in(s, r) {
+              apply invoke rightward cup(p, q, r) for s
+              divide in(s, p) \vee in(s, q)
+                case in(s, p) {
+                  apply invoke rightward tcm(x, p) for s
+                  some n such tc(owns, x, s) {
+                    split pnatural(n) \wedge piterate(owns, n, x, s)
+                    pad pnatural(n) conclude natural(n)
+                    apply invoke pnatural_is_suc_of_natural_element for n
+                    some m such \exists m (equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)) {
+                      split equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)
+                      substitute piterate(owns, n, x, s) for n: suc(m)
+                      connect natural(m) \wedge piterate(owns, suc(m), x, s)
+                      apply invoke piterate_first_step for owns, m, x, s
+                      some t such \exists t (in(t, x) \wedge piterate(owns, m, t, s)) {
+                        split in(t, x) \wedge piterate(owns, m, t, s)
+                        apply invoke adj_cor1 for x, y, t
+                        apply invoke piterate_one_step for owns, adj(x, y), t
+                        assert emptyset_is_natural
+                        apply invoke suc_of_natural_is_natural for emptyset
+                        connect natural(suc(emptyset)) \wedge natural(m) \wedge piterate(owns, suc(emptyset), adj(x, y), t) \wedge piterate(owns, m, t, s)
+                        apply invoke piterate_addition for owns, suc(emptyset), m, adj(x, y), t, s
+                        apply invoke add_induction_step_left for emptyset, m
+                        apply invoke add_base_step_left for m
+                        substitute equal(add(suc(emptyset), m), suc(add(emptyset, m))) for add(emptyset, m): m
+                        substitute equal(add(suc(emptyset), m), suc(m)) for suc(m): n
+                        substitute piterate(owns, add(suc(emptyset), m), adj(x, y), s) for add(suc(emptyset), m): n
+                        connect pnatural(n) \wedge piterate(owns, n, adj(x, y), s)
+                        lift for n conclude tc(owns, adj(x, y), s)
+                      }
+                    }
+                  }
+                }
+                case in(s, q) {
+                  apply invoke rightward tcm(y, q) for s
+                  apply adj_cor3 for x, y
+                  apply invoke tc_one_step for owns, adj(x, y), y
+                  connect tc(owns, adj(x, y), y) \wedge tc(owns, y, s)
+                  apply invoke tc_is_transitive for owns, adj(x, y), y, s
+                }
+            }
+            case equal(s, y) {
+              apply adj_cor3 for x, y
+              substitute in(y, adj(x, y)) for y[1]: s
+              apply invoke tc_one_step for owns, adj(x, y), s
+            }
+        }
+        assume tc(owns, adj(x, y), s) {
+          some n such tc(owns, adj(x, y), s) {
+            split pnatural(n) \wedge piterate(owns, n, adj(x, y), s)
+            apply invoke pnatural_is_suc_of_natural_element for n
+            some m such \exists m (equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)) {
+              split equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)
+              substitute piterate(owns, n, adj(x, y), s) for n: suc(m)
+              connect natural(m) \wedge piterate(owns, suc(m), adj(x, y), s)
+              apply invoke piterate_first_step for owns, m, adj(x, y), s
+              some t such \exists t (in(t, adj(x, y)) \wedge piterate(owns, m, t, s)) {
+                split in(t, adj(x, y)) \wedge piterate(owns, m, t, s)
+                apply invoke rightward adj_existence for x, y, t
+                divide in(t, x) \vee equal(t, y)
+                  case in(t, x) {
+                    apply invoke piterate_one_step for owns, x, t
+                    assert emptyset_is_natural
+                    apply invoke suc_of_natural_is_natural for emptyset
+                    connect natural(suc(emptyset)) \wedge natural(m) \wedge piterate(owns, suc(emptyset), x, t) \wedge piterate(owns, m, t, s)
+                    apply invoke piterate_addition for owns, suc(emptyset), m, x, t, s
+                    apply invoke add_induction_step_left for emptyset, m
+                    apply invoke add_base_step_left for m
+                    substitute equal(add(suc(emptyset), m), suc(add(emptyset, m))) for add(emptyset, m): m
+                    substitute equal(add(suc(emptyset), m), suc(m)) for suc(m): n
+                    substitute piterate(owns, add(suc(emptyset), m), x, s) for add(suc(emptyset), m): n
+                    connect pnatural(n) \wedge piterate(owns, n, x, s)
+                    lift for n conclude tc(owns, x, s)
+                    apply invoke leftward tcm(x, p) for s
+                    pad in(s, p) conclude in(s, p) \vee in(s, q)
+                    apply invoke leftward cup(p, q, r) for s
+                    apply invoke adj_cor1 for r, y, s
+                  }
+                  case equal(t, y) {
+                    substitute piterate(owns, m, t, s) for t: y
+                    divide natural(m)
+                      case equal(m, emptyset) {
+                        substitute piterate(owns, m, y, s) for m: emptyset
+                        apply invoke piterate_is_unique_base_step for owns, y, s
+                        apply adj_cor3 for r, y
+                        substitute in(y, adj(r, y)) for y[1]: s
+                      }
+                      case pnatural(m) {
+                        connect pnatural(m) \wedge piterate(owns, m, y, s)
+                        lift for m conclude tc(owns, y, s)
+                        apply invoke leftward tcm(y, q) for s
+                        pad in(s, q) conclude in(s, p) \vee in(s, q)
+                        apply invoke leftward cup(p, q, r) for s
+                        apply invoke adj_cor1 for r, y, s
+                      }
+                  }
+              }
+            }
+          }
+        }
+        connect in(s, adj(r, y)) \leftrightarrow tc(owns, adj(x, y), s)
+      }
+      fold for tcm conclude tcm(adj(x, y), adj(r, y))
+    }
+  }
+}

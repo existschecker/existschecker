@@ -196,3 +196,140 @@ theorem subset_of_finite_is_finite \forall x \forall y (finite(x) \wedge subset(
     }
   }
 }
+
+definition predicate cup(X, Y, Z) as \forall z (in(z, Z) \leftrightarrow in(z, X) \vee in(z, Y))
+
+theorem cup_is_unique \forall X \forall Y \forall Z \forall Z' (cup(X, Y, Z) \wedge cup(X, Y, Z') \to equal(Z, Z')) {
+  any X, Y, Z, Z' {
+    assume cup(X, Y, Z) \wedge cup(X, Y, Z') {
+      split cup(X, Y, Z) \wedge cup(X, Y, Z')
+      expand cup(X, Y, Z) for cup
+      expand cup(X, Y, Z') for cup
+      connect \forall z (in(z, Z) \leftrightarrow in(z, X) \vee in(z, Y)) \wedge \forall z (in(z, Z') \leftrightarrow in(z, X) \vee in(z, Y))
+      apply invoke set_is_unique_for_predicate for \lambda^P z. in(z, X) \vee in(z, Y), Z, Z'
+    }
+  }
+}
+
+theorem finite_cup_exists_uniquely \forall X \forall Y (finite(X) \wedge finite(Y) \to \exists! Z (finite(Z) \wedge cup(X, Y, Z))) {
+  any X, Y {
+    assume finite(X) \wedge size(Y, emptyset) {
+      split finite(X) \wedge size(Y, emptyset)
+      apply invoke size_emptyset_implies_set_emptyset for Y
+      any z {
+        assume in(z, X) {
+          pad in(z, X) conclude in(z, X) \vee in(z, Y)
+        }
+        assume in(z, X) \vee in(z, Y) {
+          divide in(z, X) \vee in(z, Y)
+            case in(z, X) {}
+            case in(z, Y) {
+              substitute in(z, Y) for Y: emptyset
+              apply emptyset_existence for z
+              contradict in(z, emptyset)
+              explode in(z, X)
+            }
+        }
+        connect in(z, X) \leftrightarrow in(z, X) \vee in(z, Y)
+      }
+      fold for cup conclude cup(X, Y, X)
+      connect finite(X) \wedge cup(X, Y, X)
+      lift for X conclude \exists Z (finite(Z) \wedge cup(X, Y, Z))
+    }
+  }
+  any n {
+    assume natural(n) {
+      assume \forall X \forall Y (finite(X) \wedge size(Y, n) \to \exists Z (finite(Z) \wedge cup(X, Y, Z))) {
+        any X, Y {
+          assume finite(X) \wedge size(Y, suc(n)) {
+            split finite(X) \wedge size(Y, suc(n))
+            apply invoke size_suc_decomposition for Y, n
+            some Y', y such \exists Y' \exists y (size(Y', n) \wedge notin(y, Y') \wedge equal(Y, adj(Y', y))) {
+              split size(Y', n) \wedge notin(y, Y') \wedge equal(Y, adj(Y', y))
+              connect finite(X) \wedge size(Y', n)
+              apply invoke \forall X \forall Y (finite(X) \wedge size(Y, n) \to \exists Z (finite(Z) \wedge cup(X, Y, Z))) for X, Y'
+              some Z such \exists Z (finite(Z) \wedge cup(X, Y', Z)) {
+                split finite(Z) \wedge cup(X, Y', Z)
+                apply invoke finite_adj for Z, y
+                any z {
+                  assume in(z, adj(Z, y)) {
+                    apply invoke rightward adj_existence for Z, y, z
+                    divide in(z, Z) \vee equal(z, y)
+                      case in(z, Z) {
+                        apply invoke rightward cup(X, Y', Z) for z
+                        divide in(z, X) \vee in(z, Y')
+                          case in(z, X) {
+                            pad in(z, X) conclude in(z, X) \vee in(z, Y)
+                          }
+                          case in(z, Y') {
+                            apply invoke adj_cor1 for Y', y, z
+                            substitute in(z, adj(Y', y)) for adj(Y', y): Y
+                            pad in(z, Y) conclude in(z, X) \vee in(z, Y)
+                          }
+                      }
+                      case equal(z, y) {
+                        apply adj_cor3 for Y', y
+                        substitute in(y, adj(Y', y)) for y[1]: z, adj(Y', y): Y
+                        pad in(z, Y) conclude in(z, X) \vee in(z, Y)
+                      }
+                  }
+                  assume in(z, X) \vee in(z, Y) {
+                    divide in(z, X) \vee in(z, Y)
+                      case in(z, X) {
+                        pad in(z, X) conclude in(z, X) \vee in(z, Y')
+                        apply invoke leftward cup(X, Y', Z) for z
+                        apply invoke adj_cor1 for Z, y, z
+                      }
+                      case in(z, Y) {
+                        substitute in(z, Y) for Y: adj(Y', y)
+                        apply invoke rightward adj_existence for Y', y, z
+                        divide in(z, Y') \vee equal(z, y)
+                          case in(z, Y') {
+                            pad in(z, Y') conclude in(z, X) \vee in(z, Y')
+                            apply invoke leftward cup(X, Y', Z) for z
+                            apply invoke adj_cor1 for Z, y, z
+                          }
+                          case equal(z, y) {
+                            apply adj_cor3 for Z, y
+                            substitute in(y, adj(Z, y)) for y[1]: z
+                          }
+                      }
+                  }
+                  connect in(z, adj(Z, y)) \leftrightarrow in(z, X) \vee in(z, Y)
+                }
+                fold for cup conclude cup(X, Y, adj(Z, y))
+                connect finite(adj(Z, y)) \wedge cup(X, Y, adj(Z, y))
+                lift for adj(Z, y) conclude \exists Z' (finite(Z') \wedge cup(X, Y, Z'))
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  connect \forall X \forall Y (finite(X) \wedge size(Y, emptyset) \to \exists Z (finite(Z) \wedge cup(X, Y, Z))) \wedge \forall n (natural(n) \to (\forall X \forall Y (finite(X) \wedge size(Y, n) \to \exists Z (finite(Z) \wedge cup(X, Y, Z))) \to \forall X \forall Y (finite(X) \wedge size(Y, suc(n)) \to \exists Z (finite(Z) \wedge cup(X, Y, Z)))))
+  apply invoke natural_induction for \lambda^P n. \forall X \forall Y (finite(X) \wedge size(Y, n) \to \exists Z (finite(Z) \wedge cup(X, Y, Z)))
+  any X, Y {
+    assume finite(X) \wedge finite(Y) {
+      split finite(X) \wedge finite(Y)
+      some n such finite(Y) {
+        split 1 size(Y, n)
+        apply invoke \forall n (natural(n) \to \forall X \forall Y (finite(X) \wedge size(Y, n) \to \exists Z (finite(Z) \wedge cup(X, Y, Z)))) for n
+        connect finite(X) \wedge size(Y, n)
+        apply invoke \forall X \forall Y (finite(X) \wedge size(Y, n) \to \exists Z (finite(Z) \wedge cup(X, Y, Z))) for X, Y
+        some Z such \exists Z (finite(Z) \wedge cup(X, Y, Z)) {
+          split finite(Z) \wedge cup(X, Y, Z)
+          any Z' {
+            assume finite(Z') \wedge cup(X, Y, Z') {
+              split finite(Z') \wedge cup(X, Y, Z')
+              connect cup(X, Y, Z) \wedge cup(X, Y, Z')
+              apply invoke cup_is_unique for X, Y, Z, Z'
+            }
+          }
+          connect finite(Z) \wedge cup(X, Y, Z) \wedge \forall Z' (finite(Z') \wedge cup(X, Y, Z') \to equal(Z', Z))
+          characterize for Z conclude \exists! Z (finite(Z) \wedge cup(X, Y, Z))
+        }
+      }
+    }
+  }
+}
