@@ -10,25 +10,25 @@ theorem hf_is_trans ptrans(hf) {
       split hf(x) \wedge in(y, x)
       some t such hf(x) {
         split finite(t) \wedge tcm(x, t)
-        apply sep_is_subset for t, \lambda^P z. tc(\lambda^P p, q. in(q, p), y, z)
-        connect finite(t) \wedge subset(sep(t, \lambda^P z. tc(\lambda^P p, q. in(q, p), y, z)), t)
-        apply invoke subset_of_finite_is_finite for t, sep(t, \lambda^P z. tc(\lambda^P p, q. in(q, p), y, z))
+        apply sep_is_subset for t, \lambda^P z. tc(owns, y, z)
+        connect finite(t) \wedge subset(sep(t, \lambda^P z. tc(owns, y, z)), t)
+        apply invoke subset_of_finite_is_finite for t, sep(t, \lambda^P z. tc(owns, y, z))
         any z {
-          assume in(z, sep(t, \lambda^P z. tc(\lambda^P p, q. in(q, p), y, z))) {
-            apply invoke sep_satisfies_predicate for t, \lambda^P z. tc(\lambda^P p, q. in(q, p), y, z), z
+          assume in(z, sep(t, \lambda^P z. tc(owns, y, z))) {
+            apply invoke sep_satisfies_predicate for t, \lambda^P z. tc(owns, y, z), z
           }
-          assume tc(\lambda^P p, q. in(q, p), y, z) {
-            connect in(y, x) \wedge tc(\lambda^P p, q. in(q, p), y, z)
-            apply invoke tc_add_first for \lambda^P p, q. in(q, p), x, y, z
+          assume tc(owns, y, z) {
+            connect in(y, x) \wedge tc(owns, y, z)
+            apply invoke tc_add_first for owns, x, y, z
             apply invoke leftward tcm(x, t) for z
-            connect in(z, t) \wedge tc(\lambda^P p, q. in(q, p), y, z)
-            apply invoke leftward sep_existence for t, \lambda^P z. tc(\lambda^P p, q. in(q, p), y, z), z
+            connect in(z, t) \wedge tc(owns, y, z)
+            apply invoke leftward sep_existence for t, \lambda^P z. tc(owns, y, z), z
           }
-          connect in(z, sep(t, \lambda^P z. tc(\lambda^P p, q. in(q, p), y, z))) \leftrightarrow tc(\lambda^P p, q. in(q, p), y, z)
+          connect in(z, sep(t, \lambda^P z. tc(owns, y, z))) \leftrightarrow tc(owns, y, z)
         }
-        fold for tcm conclude tcm(y, sep(t, \lambda^P z. tc(\lambda^P p, q. in(q, p), y, z)))
-        connect finite(sep(t, \lambda^P z. tc(\lambda^P p, q. in(q, p), y, z))) \wedge tcm(y, sep(t, \lambda^P z. tc(\lambda^P p, q. in(q, p), y, z)))
-        lift for sep(t, \lambda^P z. tc(\lambda^P p, q. in(q, p), y, z)) conclude \exists s (finite(s) \wedge tcm(y, s))
+        fold for tcm conclude tcm(y, sep(t, \lambda^P z. tc(owns, y, z)))
+        connect finite(sep(t, \lambda^P z. tc(owns, y, z))) \wedge tcm(y, sep(t, \lambda^P z. tc(owns, y, z)))
+        lift for sep(t, \lambda^P z. tc(owns, y, z)) conclude \exists s (finite(s) \wedge tcm(y, s))
       }
       fold for hf conclude hf(y)
     }

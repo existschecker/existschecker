@@ -5,7 +5,9 @@ definition predicate tc(predicate \phi[2], x, y) as \exists n (pnatural(n) \wedg
 
 definition predicate rtc(predicate \phi[2], x, y) as \exists n (natural(n) \wedge piterate(\phi, n, x, y))
 
-definition predicate tcm(X, Y) as \forall y (in(y, Y) \leftrightarrow tc(\lambda^P p, q. in(q, p), X, y))
+definition predicate autoexpand owns(x, y) as in(y, x) tex infix "\owns"
+
+definition predicate tcm(X, Y) as \forall y (in(y, Y) \leftrightarrow tc(owns, X, y))
 
 theorem tc_one_step \forall^P \phi[2] \forall x \forall y (\phi(x, y) \to tc(\phi, x, y)) {
   any predicate \phi[2], x, y {
@@ -118,14 +120,14 @@ theorem emptyset_is_tcm_of_emptyset tcm(emptyset, emptyset) {
     assume in(y, emptyset) {
       apply emptyset_existence for y
       contradict in(y, emptyset)
-      explode tc(\lambda^P p, q. in(q, p), emptyset, y)
+      explode tc(owns, emptyset, y)
     }
-    assume tc(\lambda^P p, q. in(q, p), emptyset, y) {
-      some n such tc(\lambda^P p, q. in(q, p), emptyset, y) {
-        split pnatural(n) \wedge piterate(\lambda^P p, q. in(q, p), n, emptyset, y)
-        some g such piterate(\lambda^P p, q. in(q, p), n, emptyset, y) {
-          split trace(\lambda^P p, q. in(q, p), n, g) \wedge in(op(emptyset, emptyset), g) \wedge in(op(n, y), g)
-          split trace(\lambda^P p, q. in(q, p), n, g)
+    assume tc(owns, emptyset, y) {
+      some n such tc(owns, emptyset, y) {
+        split pnatural(n) \wedge piterate(owns, n, emptyset, y)
+        some g such piterate(owns, n, emptyset, y) {
+          split trace(owns, n, g) \wedge in(op(emptyset, emptyset), g) \wedge in(op(n, y), g)
+          split trace(owns, n, g)
           split fun(g)
           apply invoke pnatural_contains_emptyset for n
           apply invoke \forall k (in(k, n) \to \exists p \exists q (in(op(k, p), g) \wedge in(op(suc(k), q), g) \wedge in(q, p))) for emptyset
@@ -141,7 +143,7 @@ theorem emptyset_is_tcm_of_emptyset tcm(emptyset, emptyset) {
         explode in(y, emptyset)
       }
     }
-    connect in(y, emptyset) \leftrightarrow tc(\lambda^P p, q. in(q, p), emptyset, y)
+    connect in(y, emptyset) \leftrightarrow tc(owns, emptyset, y)
   }
   fold for tcm conclude tcm(emptyset, emptyset)
 }
