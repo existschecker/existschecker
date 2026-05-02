@@ -111,3 +111,43 @@ theorem hf_satisfies_axiom_of_adjunction \forall x \forall y (hf(x) \wedge hf(y)
     }
   }
 }
+
+theorem hf_satisfies_axiom_of_separation \forall^P \phi[1] \forall x (hf(x) \to \exists y (hf(y) \wedge \forall z (hf(z) \to (in(z, y) \leftrightarrow in(z, x) \wedge \phi(z))))) {
+  any predicate \phi[1], x {
+    assume hf(x) {
+      some p such hf(x) {
+        split finite(p) \wedge tcm(x, p)
+        apply sep_is_subset for x, \phi
+        apply sep_is_subset for p, \lambda^P z. tc(owns, sep(x, \phi), z)
+        connect finite(p) \wedge subset(sep(p, \lambda^P z. tc(owns, sep(x, \phi), z)), p)
+        apply invoke subset_of_finite_is_finite for p, sep(p, \lambda^P z. tc(owns, sep(x, \phi), z))
+        show tcm(sep(x, \phi), sep(p, \lambda^P z. tc(owns, sep(x, \phi), z))) {
+          any s {
+            assume in(s, sep(p, \lambda^P z. tc(owns, sep(x, \phi), z))) {
+              apply invoke rightward sep_existence for p, \lambda^P z. tc(owns, sep(x, \phi), z), s
+              split 2 in(s, p) \wedge tc(owns, sep(x, \phi), s)
+            }
+            assume tc(owns, sep(x, \phi), s) {
+              connect tc(owns, sep(x, \phi), s) \wedge subset(sep(x, \phi), x)
+              apply invoke tc_subset for sep(x, \phi), s, x
+              apply invoke leftward tcm(x, p) for s
+              connect in(s, p) \wedge tc(owns, sep(x, \phi), s)
+              apply invoke leftward sep_existence for p, \lambda^P z. tc(owns, sep(x, \phi), z), s
+            }
+            connect in(s, sep(p, \lambda^P z. tc(owns, sep(x, \phi), z))) \leftrightarrow tc(owns, sep(x, \phi), s)
+          }
+          fold for tcm conclude tcm(sep(x, \phi), sep(p, \lambda^P z. tc(owns, sep(x, \phi), z)))
+        }
+        connect finite(sep(p, \lambda^P z. tc(owns, sep(x, \phi), z))) \wedge tcm(sep(x, \phi), sep(p, \lambda^P z. tc(owns, sep(x, \phi), z)))
+        lift for sep(p, \lambda^P z. tc(owns, sep(x, \phi), z)) conclude hf(sep(x, \phi))
+        any z {
+          assume hf(z) {
+            apply sep_existence for x, \phi
+          }
+        }
+        connect hf(sep(x, \phi)) \wedge \forall z (hf(z) \to (in(z, sep(x, \phi)) \leftrightarrow in(z, x) \wedge \phi(z)))
+        lift for sep(x, \phi) conclude \exists y (hf(y) \wedge \forall z (hf(z) \to (in(z, y) \leftrightarrow in(z, x) \wedge \phi(z))))
+      }
+    }
+  }
+}

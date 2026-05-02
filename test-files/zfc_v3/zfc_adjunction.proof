@@ -152,6 +152,17 @@ theorem suc_emptyset_is_singleton_emptyset equal(suc(emptyset), singleton(emptys
   apply invoke axiom_of_extensionality for suc(emptyset), singleton(emptyset)
 }
 
+theorem subset_adj \forall x \forall y (subset(x, adj(x, y))) {
+  any x, y {
+    any z {
+      assume in(z, x) {
+        apply invoke adj_cor1 for x, y, z
+      }
+    }
+    fold for subset conclude subset(x, adj(x, y))
+  }
+}
+
 theorem subset_adj_notin \forall x \forall z \forall y (notin(z, y) \wedge subset(y, adj(x, z)) \to subset(y, x)) {
   any x, z, y {
     assume notin(z, y) \wedge subset(y, adj(x, z)) {
