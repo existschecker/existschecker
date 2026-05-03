@@ -24,6 +24,35 @@ definition predicate wellorder(X, predicate \psi[2]) as wellfounded(X, \psi) \we
 
 definition predicate ordinal(\alpha) as trans(\alpha) \wedge irrefrel(\alpha, in) \wedge wellorder(\alpha, in)
 
+theorem trans_iff_element_is_subset \forall x (trans(x) \leftrightarrow \forall y (in(y, x) \to subset(y, x))) {
+  any x {
+    assume trans(x) {
+      any y {
+        assume in(y, x) {
+          any z {
+            assume in(z, y) {
+              connect in(y, x) \wedge in(z, y)
+              apply invoke trans(x) for y, z
+            }
+          }
+          fold for subset conclude subset(y, x)
+        }
+      }
+    }
+    assume \forall y (in(y, x) \to subset(y, x)) {
+      any y, z {
+        assume in(y, x) \wedge in(z, y) {
+          split in(y, x) \wedge in(z, y)
+          apply invoke \forall y (in(y, x) \to subset(y, x)) for y
+          apply invoke subset(y, x) for z
+        }
+      }
+      fold for trans conclude trans(x)
+    }
+    connect trans(x) \leftrightarrow \forall y (in(y, x) \to subset(y, x))
+  }
+}
+
 theorem irrefrel_and_transrel_implies_antisymrel \forall X \forall^P \psi[2] (irrefrel(X, \psi) \wedge transrel(X, \psi) \to antisymrel(X, \psi)) {
   any X, predicate \psi[2] {
     assume irrefrel(X, \psi) \wedge transrel(X, \psi) {
@@ -151,6 +180,22 @@ theorem subset_of_wellfounded_is_wellfounded \forall^P \phi[2] \forall x \forall
         }
       }
       fold for wellfounded conclude wellfounded(y, \phi)
+    }
+  }
+}
+
+theorem element_of_trans_irrefrel_is_irrefrel \forall x \forall y (trans(x) \wedge irrefrel(x, in) \wedge in(y, x) \to irrefrel(y, in)) {
+  any x, y {
+    assume trans(x) \wedge irrefrel(x, in) \wedge in(y, x) {
+      split trans(x) \wedge irrefrel(x, in) \wedge in(y, x)
+      any z {
+        assume in(z, y) {
+          connect in(y, x) \wedge in(z, y)
+          apply invoke trans(x) for y, z
+          apply invoke irrefrel(x, in) for z
+        }
+      }
+      fold for irrefrel conclude irrefrel(y, in)
     }
   }
 }

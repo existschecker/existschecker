@@ -2,9 +2,25 @@ include "zfc_tc.proof"
 
 definition predicate hf(x) as \exists y (irrefrel(y, in) \wedge wellfounded(y, in) \wedge finite(y) \wedge tcm(x, y))
 
-definition predicate ptrans(predicate \phi[1]) as \forall x \forall y (\phi(x) \wedge in(y, x) \to \phi(y))
+theorem hf_is_irrefrel_wellfounded_finite \forall x (hf(x) \to irrefrel(x, in) \wedge wellfounded(x, in) \wedge finite(x)) {
+  any x {
+    assume hf(x) {
+      some y such hf(x) {
+        split irrefrel(y, in) \wedge wellfounded(y, in) \wedge finite(y) \wedge tcm(x, y)
+        apply invoke tcm_implies_subset for x, y
+        connect finite(y) \wedge subset(x, y)
+        apply invoke subset_of_finite_is_finite for y, x
+        connect irrefrel(y, in) \wedge subset(x, y)
+        apply invoke subset_of_irrefrel_is_irrefrel for in, y, x
+        connect wellfounded(y, in) \wedge subset(x, y)
+        apply invoke subset_of_wellfounded_is_wellfounded for in, y, x
+        connect irrefrel(x, in) \wedge wellfounded(x, in) \wedge finite(x)
+      }
+    }
+  }
+}
 
-theorem hf_is_trans ptrans(hf) {
+theorem element_of_hf_is_hf \forall x \forall y (hf(x) \wedge in(y, x) \to hf(y)) {
   any x, y {
     assume hf(x) \wedge in(y, x) {
       split hf(x) \wedge in(y, x)
@@ -37,11 +53,9 @@ theorem hf_is_trans ptrans(hf) {
       fold for hf conclude hf(y)
     }
   }
-  fold for ptrans conclude ptrans(hf)
 }
 
 theorem hf_satisfies_axiom_of_extensionality \forall x \forall y (hf(x) \wedge hf(y) \to (\forall z (hf(z) \to (in(z, x) \leftrightarrow in(z, y))) \to equal(x, y))) {
-  assert hf_is_trans
   any x, y {
     assume hf(x) \wedge hf(y) {
       split hf(x) \wedge hf(y)
@@ -49,13 +63,13 @@ theorem hf_satisfies_axiom_of_extensionality \forall x \forall y (hf(x) \wedge h
         any z {
           assume in(z, x) {
             connect hf(x) \wedge in(z, x)
-            apply invoke ptrans(hf) for x, z
+            apply invoke element_of_hf_is_hf for x, z
             apply invoke \forall z (hf(z) \to (in(z, x) \leftrightarrow in(z, y))) for z
             invoke rightward in(z, x) \leftrightarrow in(z, y)
           }
           assume in(z, y) {
             connect hf(y) \wedge in(z, y)
-            apply invoke ptrans(hf) for y, z
+            apply invoke element_of_hf_is_hf for y, z
             apply invoke \forall z (hf(z) \to (in(z, x) \leftrightarrow in(z, y))) for z
             invoke leftward in(z, x) \leftrightarrow in(z, y)
           }
@@ -171,6 +185,109 @@ theorem hf_satisfies_axiom_of_separation \forall^P \phi[1] \forall x (hf(x) \to 
         }
         connect hf(sep(x, \phi)) \wedge \forall z (hf(z) \to (in(z, sep(x, \phi)) \leftrightarrow in(z, x) \wedge \phi(z)))
         lift for sep(x, \phi) conclude \exists y (hf(y) \wedge \forall z (hf(z) \to (in(z, y) \leftrightarrow in(z, x) \wedge \phi(z))))
+      }
+    }
+  }
+}
+
+theorem hf_satisfies_axiom_of_union \forall x (hf(x) \to \exists y (hf(y) \wedge \forall z (hf(z) \to (in(z, y) \leftrightarrow \exists w (hf(w) \wedge in(z, w) \wedge in(w, x)))))) {
+  any x {
+    assume hf(x) {
+      some t such hf(x) {
+        split irrefrel(t, in) \wedge wellfounded(t, in) \wedge finite(t) \wedge tcm(x, t)
+        apply invoke hf_is_irrefrel_wellfounded_finite for x
+        split 3 irrefrel(x, in) \wedge wellfounded(x, in) \wedge finite(x)
+        any y {
+          assume in(y, x) {
+            connect hf(x) \wedge in(y, x)
+            apply invoke element_of_hf_is_hf for x, y
+            apply invoke hf_is_irrefrel_wellfounded_finite for y
+            split 3 irrefrel(y, in) \wedge wellfounded(y, in) \wedge finite(y)
+          }
+        }
+        connect finite(x) \wedge \forall y (in(y, x) \to finite(y))
+        apply invoke finite_bigcup_exists_uniquely for x
+        some y such \exists! y (finite(y) \wedge bigcup(x, y)) {
+          split finite(y) \wedge bigcup(x, y)
+          apply sep_is_subset for t, \lambda^P z. tc(owns, y, z)
+          connect finite(t) \wedge subset(sep(t, \lambda^P z. tc(owns, y, z)), t)
+          apply invoke subset_of_finite_is_finite for t, sep(t, \lambda^P z. tc(owns, y, z))
+          connect irrefrel(t, in) \wedge subset(sep(t, \lambda^P z. tc(owns, y, z)), t)
+          apply invoke subset_of_irrefrel_is_irrefrel for in, t, sep(t, \lambda^P z. tc(owns, y, z))
+          connect wellfounded(t, in) \wedge subset(sep(t, \lambda^P z. tc(owns, y, z)), t)
+          apply invoke subset_of_wellfounded_is_wellfounded for in, t, sep(t, \lambda^P z. tc(owns, y, z))
+          any z {
+            assume in(z, sep(t, \lambda^P z. tc(owns, y, z))) {
+              apply invoke sep_satisfies_predicate for t, \lambda^P z. tc(owns, y, z), z
+            }
+            assume tc(owns, y, z) {
+              some n such tc(owns, y, z) {
+                split pnatural(n) \wedge piterate(owns, n, y, z)
+                apply invoke pnatural_is_suc_of_natural_element for n
+                some m such \exists m (equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)) {
+                  split equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)
+                  substitute piterate(owns, n, y, z) for n: suc(m)
+                  connect natural(m) \wedge piterate(owns, suc(m), y, z)
+                  apply invoke piterate_first_step for owns, m, y, z
+                  some w such \exists w (in(w, y) \wedge piterate(owns, m, w, z)) {
+                    split in(w, y) \wedge piterate(owns, m, w, z)
+                    apply invoke rightward bigcup(x, y) for w
+                    some v such \exists v (in(w, v) \wedge in(v, x)) {
+                      split in(w, v) \wedge in(v, x)
+                      apply invoke piterate_one_step for owns, v, w
+                      assert emptyset_is_natural
+                      apply invoke suc_of_natural_is_natural for emptyset
+                      connect natural(suc(emptyset)) \wedge natural(m) \wedge piterate(owns, suc(emptyset), v, w) \wedge piterate(owns, m, w, z)
+                      apply invoke piterate_addition for owns, suc(emptyset), m, v, w, z
+                      apply invoke add_induction_step_left for emptyset, m
+                      apply invoke add_base_step_left for m
+                      substitute piterate(owns, add(suc(emptyset), m), v, z) for add(suc(emptyset), m): suc(add(emptyset, m))
+                      substitute piterate(owns, suc(add(emptyset, m)), v, z) for add(emptyset, m): m
+                      apply invoke suc_of_natural_is_pnatural for m
+                      connect pnatural(suc(m)) \wedge piterate(owns, suc(m), v, z)
+                      lift for suc(m) conclude tc(owns, v, z)
+                      apply invoke tc_one_step for owns, x, v
+                      connect tc(owns, x, v) \wedge tc(owns, v, z)
+                      apply invoke tc_is_transitive for owns, x, v, z
+                    }
+                  }
+                }
+              }
+              apply invoke leftward tcm(x, t) for z
+              connect in(z, t) \wedge tc(owns, y, z)
+              apply invoke leftward sep_existence for t, \lambda^P z. tc(owns, y, z), z
+            }
+            connect in(z, sep(t, \lambda^P z. tc(owns, y, z))) \leftrightarrow tc(owns, y, z)
+          }
+          fold for tcm conclude tcm(y, sep(t, \lambda^P z. tc(owns, y, z)))
+          connect irrefrel(sep(t, \lambda^P z. tc(owns, y, z)), in) \wedge wellfounded(sep(t, \lambda^P z. tc(owns, y, z)), in) \wedge finite(sep(t, \lambda^P z. tc(owns, y, z))) \wedge tcm(y, sep(t, \lambda^P z. tc(owns, y, z)))
+          lift for sep(t, \lambda^P z. tc(owns, y, z)) conclude hf(y)
+          any z {
+            assume hf(z) {
+              assume in(z, y) {
+                apply invoke rightward bigcup(x, y) for z
+                some w such \exists w (in(z, w) \wedge in(w, x)) {
+                  split in(z, w) \wedge in(w, x)
+                  connect hf(x) \wedge in(w, x)
+                  apply invoke element_of_hf_is_hf for x, w
+                  connect hf(w) \wedge in(z, w) \wedge in(w, x)
+                  lift for w conclude \exists w (hf(w) \wedge in(z, w) \wedge in(w, x))
+                }
+              }
+              assume \exists w (hf(w) \wedge in(z, w) \wedge in(w, x)) {
+                some w such \exists w (hf(w) \wedge in(z, w) \wedge in(w, x)) {
+                  split hf(w) \wedge in(z, w) \wedge in(w, x)
+                  connect in(z, w) \wedge in(w, x)
+                  lift for w conclude \exists w (in(z, w) \wedge in(w, x))
+                  apply invoke leftward bigcup(x, y) for z
+                }
+              }
+              connect in(z, y) \leftrightarrow \exists w (hf(w) \wedge in(z, w) \wedge in(w, x))
+            }
+          }
+          connect hf(y) \wedge \forall z (hf(z) \to (in(z, y) \leftrightarrow \exists w (hf(w) \wedge in(z, w) \wedge in(w, x))))
+          lift for y conclude \exists y (hf(y) \wedge \forall z (hf(z) \to (in(z, y) \leftrightarrow \exists w (hf(w) \wedge in(z, w) \wedge in(w, x)))))
+        }
       }
     }
   }
