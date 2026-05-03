@@ -26,83 +26,107 @@ theorem suc_of_trans_is_trans \forall x (trans(x) \to trans(suc(x))) {
   }
 }
 
-theorem suc_of_irrefrel_is_irrefrel \forall x (irrefrel(x, in) \to irrefrel(suc(x), in)) {
-  any x {
-    assume irrefrel(x, in) {
-      apply invoke irrefrel_not_contain_itself for x
-      any y {
-        assume in(y, suc(x)) {
-          deny in(y, y) {
-            apply invoke rightward suc_characterization for x, y
-            divide in(y, x) \vee equal(y, x)
-              case in(y, x) {
-                apply invoke irrefrel(x, in) for y
-                contradict in(y, y)
-              }
-              case equal(y, x) {
-                substitute in(y, y) for y: x
-                contradict in(x, x)
-              }
-          }
+theorem adj_of_irrefrel_is_irrefrel \forall x \forall y (irrefrel(x, in) \wedge notin(y, y) \to irrefrel(adj(x, y), in)) {
+  any x, y {
+    assume irrefrel(x, in) \wedge notin(y, y) {
+      split irrefrel(x, in) \wedge notin(y, y)
+      any z {
+        assume in(z, adj(x, y)) {
+          apply invoke rightward adj_existence for x, y, z
+          divide in(z, x) \vee equal(z, y)
+            case in(z, x) {
+              apply invoke irrefrel(x, in) for z
+            }
+            case equal(z, y) {
+              substitute notin(y, y) for y: z
+            }
         }
       }
-      fold for irrefrel conclude irrefrel(suc(x), in)
+      fold for irrefrel conclude irrefrel(adj(x, y), in)
     }
   }
 }
 
-theorem suc_of_trans_irrefrel_wellfounded_is_wellfounded \forall \alpha (trans(\alpha) \wedge irrefrel(\alpha, in) \wedge wellfounded(\alpha, in) \to wellfounded(suc(\alpha), in)) {
-  any \alpha {
-    assume trans(\alpha) \wedge irrefrel(\alpha, in) \wedge wellfounded(\alpha, in) {
-      split trans(\alpha) \wedge irrefrel(\alpha, in) \wedge wellfounded(\alpha, in)
-      any A {
-        assume subset(A, suc(\alpha)) \wedge neq(A, emptyset) {
-          split subset(A, suc(\alpha)) \wedge neq(A, emptyset)
-          apply law_of_excluded_middle for \lambda^P. equal(A, singleton(\alpha))
-          divide equal(A, singleton(\alpha)) \vee neq(A, singleton(\alpha))
-            case equal(A, singleton(\alpha)) {
-              apply element_is_minimal_in_its_singleton for \alpha
-              substitute minimal(in, singleton(\alpha), \alpha) for singleton(\alpha): A
-              lift for \alpha conclude \exists \alpha (minimal(in, A, \alpha))
-            }
-            case neq(A, singleton(\alpha)) {
-              apply invoke subset_suc_implies_subset_rem for A, \alpha
-              connect neq(A, singleton(\alpha)) \wedge neq(A, emptyset)
-              apply invoke neq_singleton_implies_rem_neq_emptyset for A, \alpha
-              connect subset(rem(A, \alpha), \alpha) \wedge neq(rem(A, \alpha), emptyset)
-              apply invoke wellfounded(\alpha, in) for rem(A, \alpha)
-              some \beta such \exists \beta (minimal(in, rem(A, \alpha), \beta)) {
-                split minimal(in, rem(A, \alpha), \beta)
-                apply invoke rightward rem_existence for A, \alpha, \beta
-                split in(\beta, A) \wedge neq(\beta, \alpha)
-                deny \neg(minimal_core(in, A, \beta)) {
-                  expand \neg(minimal_core(in, A, \beta)) for minimal_core
-                  apply invoke leftward exist_neg_leftrightarrow_neg_forall for \lambda^P x. in(x, A) \wedge neq(x, \beta) \to notin(x, \beta)
-                  some \gamma such \exists x (\neg(in(x, A) \wedge neq(x, \beta) \to notin(x, \beta))) {
-                    apply invoke rightward neg_implication for \lambda^P. in(\gamma, A) \wedge neq(\gamma, \beta), \lambda^P. notin(\gamma, \beta)                    
-                    split in(\gamma, A) \wedge neq(\gamma, \beta) \wedge in(\gamma, \beta)
-                    deny equal(\gamma, \alpha) {
-                      substitute in(\gamma, \beta) for \gamma: \alpha                      
-                      apply invoke subset(rem(A, \alpha), \alpha) for \beta
-                      connect in(\alpha, \beta) \wedge in(\beta, \alpha)
-                      apply invoke trans(\alpha) for \beta, \alpha
-                      apply invoke irrefrel_not_contain_itself for \alpha
-                      contradict in(\alpha, \alpha)
-                    }
-                    connect in(\gamma, A) \wedge neq(\gamma, \alpha)
-                    apply invoke leftward rem_existence for A, \alpha, \gamma
-                    connect in(\gamma, rem(A, \alpha)) \wedge neq(\gamma, \beta)
-                    apply invoke minimal_core(in, rem(A, \alpha), \beta) for \gamma
-                    contradict in(\gamma, \beta)
-                  }
+theorem suc_of_irrefrel_is_irrefrel \forall x (irrefrel(x, in) \to irrefrel(suc(x), in)) {
+  any x {
+    assume irrefrel(x, in) {
+      apply invoke irrefrel_not_contain_itself for x
+      connect irrefrel(x, in) \wedge notin(x, x)
+      apply invoke adj_of_irrefrel_is_irrefrel for x, x
+      fold for suc conclude irrefrel(suc(x), in)
+    }
+  }
+}
+
+theorem adj_of_trans_wellfounded_is_wellfounded \forall x \forall y (trans(x) \wedge wellfounded(x, in) \to wellfounded(adj(x, y), in)) {
+  any x, y {
+    assume trans(x) \wedge wellfounded(x, in) {
+      split trans(x) \wedge wellfounded(x, in)
+      apply law_of_excluded_middle for \lambda^P. in(y, x)
+      divide in(y, x) \vee notin(y, x)
+        case in(y, x) {
+          apply invoke adj_equal for x, y
+          substitute wellfounded(x, in) for x: adj(x, y)
+        }
+        case notin(y, x) {
+          any A {
+            assume subset(A, adj(x, y)) \wedge neq(A, emptyset) {
+              split subset(A, adj(x, y)) \wedge neq(A, emptyset)
+              apply law_of_excluded_middle for \lambda^P. equal(A, singleton(y))
+              divide equal(A, singleton(y)) \vee neq(A, singleton(y))
+                case equal(A, singleton(y)) {
+                  apply element_is_minimal_in_its_singleton for y
+                  substitute minimal(in, singleton(y), y) for singleton(y): A
+                  lift for y conclude \exists y (minimal(in, A, y))
                 }
-                connect minimal(in, A, \beta)
-                lift for \beta conclude \exists \beta (minimal(in, A, \beta))
+                case neq(A, singleton(y)) {
+                  apply invoke subset_adj_implies_subset_rem for A, x, y
+                  connect neq(A, singleton(y)) \wedge neq(A, emptyset)
+                  apply invoke neq_singleton_implies_rem_neq_emptyset for A, y
+                  connect subset(rem(A, y), x) \wedge neq(rem(A, y), emptyset)
+                  apply invoke wellfounded(x, in) for rem(A, y)
+                  some a such \exists a (minimal(in, rem(A, y), a)) {
+                    split minimal(in, rem(A, y), a)
+                    apply invoke rightward rem_existence for A, y, a
+                    split in(a, A) \wedge neq(a, y)
+                    deny \neg(minimal_core(in, A, a)) {
+                      expand \neg(minimal_core(in, A, a)) for minimal_core
+                      apply invoke leftward exist_neg_leftrightarrow_neg_forall for \lambda^P x. in(x, A) \wedge neq(x, a) \to notin(x, a)
+                      some b such \exists x (\neg(in(x, A) \wedge neq(x, a) \to notin(x, a))) {
+                        apply invoke rightward neg_implication for \lambda^P. in(b, A) \wedge neq(b, a), \lambda^P. notin(b, a)
+                        split in(b, A) \wedge neq(b, a) \wedge in(b, a)
+                        deny equal(b, y) {
+                          substitute in(b, a) for b: y
+                          apply invoke subset(rem(A, y), x) for a
+                          connect in(y, a) \wedge in(a, x)
+                          apply invoke trans(x) for a, y
+                          contradict in(y, x)
+                        }
+                        connect in(b, A) \wedge neq(b, y)
+                        apply invoke leftward rem_existence for A, y, b
+                        connect in(b, rem(A, y)) \wedge neq(b, a)
+                        apply invoke minimal_core(in, rem(A, y), a) for b
+                        contradict in(b, a)
+                      }
+                    }
+                    connect minimal(in, A, a)
+                    lift for a conclude \exists a (minimal(in, A, a))
+                  }
               }
             }
+          }
+          fold for wellfounded conclude wellfounded(adj(x, y), in)
         }
-      }
-      fold for wellfounded conclude wellfounded(suc(\alpha), in)
+    }
+  }
+}
+
+theorem suc_of_trans_wellfounded_is_wellfounded \forall \alpha (trans(\alpha) \wedge wellfounded(\alpha, in) \to wellfounded(suc(\alpha), in)) {
+  any \alpha {
+    assume trans(\alpha) \wedge wellfounded(\alpha, in) {
+      split trans(\alpha) \wedge wellfounded(\alpha, in)
+      apply invoke adj_of_trans_wellfounded_is_wellfounded for \alpha, \alpha
+      fold for suc conclude wellfounded(suc(\alpha), in)
     }
   }
 }
@@ -199,8 +223,8 @@ theorem suc_of_ordinal_is_wellorder \forall \alpha (ordinal(\alpha) \to wellorde
     assume ordinal(\alpha) {
       split ordinal(\alpha)
       split wellorder(\alpha, in)
-      connect trans(\alpha) \wedge irrefrel(\alpha, in) \wedge wellfounded(\alpha, in)
-      apply invoke suc_of_trans_irrefrel_wellfounded_is_wellfounded for \alpha
+      connect trans(\alpha) \wedge wellfounded(\alpha, in)
+      apply invoke suc_of_trans_wellfounded_is_wellfounded for \alpha
       connect trans(\alpha) \wedge irrefrel(\alpha, in) \wedge linorder(\alpha, in)
       apply invoke suc_of_trans_irrefrel_linorder_is_linorder for \alpha
       connect wellorder(suc(\alpha), in)

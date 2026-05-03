@@ -1,0 +1,15 @@
+include "zfc_cup.proof"
+
+definition predicate bigcup(X, Y) as \forall y (in(y, Y) \leftrightarrow \exists x (in(y, x) \wedge in(x, X)))
+
+theorem bigcup_is_unique \forall X \forall Y \forall Y' (bigcup(X, Y) \wedge bigcup(X, Y') \to equal(Y, Y')) {
+  any X, Y, Y' {
+    assume bigcup(X, Y) \wedge bigcup(X, Y') {
+      split bigcup(X, Y) \wedge bigcup(X, Y')
+      expand bigcup(X, Y) for bigcup
+      expand bigcup(X, Y') for bigcup
+      connect \forall y (in(y, Y) \leftrightarrow \exists x (in(y, x) \wedge in(x, X))) \wedge \forall y (in(y, Y') \leftrightarrow \exists x (in(y, x) \wedge in(x, X)))
+      apply invoke set_is_unique_for_predicate for \lambda^P y. \exists x (in(y, x) \wedge in(x, X)), Y, Y'
+    }
+  }
+}

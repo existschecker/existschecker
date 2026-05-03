@@ -37,6 +37,28 @@ theorem adj_cor3 \forall x \forall y (in(y, adj(x, y))) {
   }
 }
 
+theorem adj_equal \forall x \forall y (in(y, x) \to equal(adj(x, y), x)) {
+  any x, y {
+    assume in(y, x) {
+      any z {
+        assume in(z, adj(x, y)) {
+          apply invoke rightward adj_existence for x, y, z
+          divide in(z, x) \vee equal(z, y)
+            case in(z, x) {}
+            case equal(z, y) {
+              substitute in(y, x) for y: z
+            }
+        }
+        assume in(z, x) {
+          apply invoke adj_cor1 for x, y, z
+        }
+        connect in(z, adj(x, y)) \leftrightarrow in(z, x)
+      }
+      apply invoke axiom_of_extensionality for adj(x, y), x
+    }
+  }
+}
+
 definition function suc(x) as adj(x, x)
 
 theorem suc_characterization \forall x \forall y (in(y, suc(x)) \leftrightarrow in(y, x) \vee equal(y, x)) {

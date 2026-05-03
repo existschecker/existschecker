@@ -1,4 +1,3 @@
-include "zfc_operation.proof"
 include "zfc_finite.proof"
 
 definition predicate tc(predicate \phi[2], x, y) as \exists n (pnatural(n) \wedge piterate(\phi, n, x, y))
@@ -21,6 +20,34 @@ theorem tc_one_step \forall^P \phi[2] \forall x \forall y (\phi(x, y) \to tc(\ph
       connect pnatural(suc(emptyset)) \wedge piterate(\phi, suc(emptyset), x, y)
       lift for suc(emptyset) conclude \exists n (pnatural(n) \wedge piterate(\phi, n, x, y))
       fold for tc conclude tc(\phi, x, y)
+    }
+  }
+}
+
+theorem tcm_implies_subset \forall X \forall Y (tcm(X, Y) \to subset(X, Y)) {
+  any X, Y {
+    assume tcm(X, Y) {
+      any x {
+        assume in(x, X) {
+          apply invoke tc_one_step for owns, X, x
+          apply invoke leftward tcm(X, Y) for x
+        }
+      }
+      fold for subset conclude subset(X, Y)
+    }
+  }
+}
+
+theorem tcm_irrefrel_implies_not_contain_itself \forall X \forall Y (tcm(X, Y) \wedge irrefrel(Y, in) \to notin(X, X)) {
+  any X, Y {
+    assume tcm(X, Y) \wedge irrefrel(Y, in) {
+      split tcm(X, Y) \wedge irrefrel(Y, in)
+      apply invoke tcm_implies_subset for X, Y
+      deny in(X, X) {
+        apply invoke subset(X, Y) for X
+        apply invoke irrefrel(Y, in) for X
+        contradict in(X, X)
+      }
     }
   }
 }
@@ -89,6 +116,24 @@ theorem tc_is_transitive \forall^P \phi[2] \forall x \forall y \forall z (tc(\ph
         }
       }
       fold for tc conclude tc(\phi, x, z)
+    }
+  }
+}
+
+theorem tcm_is_trans \forall X \forall Y (tcm(X, Y) \to trans(Y)) {
+  any X, Y {
+    assume tcm(X, Y) {
+      any p, q {
+        assume in(p, Y) \wedge in(q, p) {
+          split in(p, Y) \wedge in(q, p)
+          apply invoke rightward tcm(X, Y) for p
+          apply invoke tc_one_step for owns, p, q
+          connect tc(owns, X, p) \wedge tc(owns, p, q)
+          apply invoke tc_is_transitive for owns, X, p, q
+          apply invoke leftward tcm(X, Y) for q
+        }
+      }
+      fold for trans conclude trans(Y)
     }
   }
 }

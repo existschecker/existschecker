@@ -1,4 +1,4 @@
-include "zfc_removal.proof"
+include "zfc_cap.proof"
 
 definition predicate trans(x) as \forall y \forall z (in(z, y) \wedge in(y, x) \to in(z, x))
 
@@ -118,6 +118,39 @@ theorem ordinal_not_emptyset_contains_emptyset \forall \alpha (ordinal(\alpha) \
       split wellorder(\alpha, in)
       connect trans(\alpha) \wedge irrefrel(\alpha, in) \wedge wellfounded(\alpha, in) \wedge neq(\alpha, emptyset)
       apply invoke trans_irrefrel_wellfounded_not_emptyset_contains_emptyset for \alpha
+    }
+  }
+}
+
+theorem subset_of_irrefrel_is_irrefrel \forall^P \phi[2] \forall x \forall y (irrefrel(x, \phi) \wedge subset(y, x) \to irrefrel(y, \phi)) {
+  any predicate \phi[2], x, y {
+    assume irrefrel(x, \phi) \wedge subset(y, x) {
+      split irrefrel(x, \phi) \wedge subset(y, x)
+      any z {
+        assume in(z, y) {
+          apply invoke subset(y, x) for z
+          apply invoke irrefrel(x, \phi) for z
+        }
+      }
+      fold for irrefrel conclude irrefrel(y, \phi)
+    }
+  }
+}
+
+theorem subset_of_wellfounded_is_wellfounded \forall^P \phi[2] \forall x \forall y (wellfounded(x, \phi) \wedge subset(y, x) \to wellfounded(y, \phi)) {
+  any predicate \phi[2], x, y {
+    assume wellfounded(x, \phi) \wedge subset(y, x) {
+      split wellfounded(x, \phi) \wedge subset(y, x)
+      any A {
+        assume subset(A, y) \wedge neq(A, emptyset) {
+          split subset(A, y) \wedge neq(A, emptyset)
+          connect subset(A, y) \wedge subset(y, x)
+          apply invoke subset_transivity for A, y, x
+          connect subset(A, x) \wedge neq(A, emptyset)
+          apply invoke wellfounded(x, \phi) for A
+        }
+      }
+      fold for wellfounded conclude wellfounded(y, \phi)
     }
   }
 }

@@ -1,0 +1,41 @@
+include "zfc_removal.proof"
+
+definition function cap(x, y) as sep(x, \lambda^P z. in(z, y)) tex infix "\cap"
+
+theorem cap_characterization \forall x \forall y \forall z (in(z, cap(x, y)) \leftrightarrow in(z, x) \wedge in(z, y)) {
+  any x, y, z {
+    assume in(z, cap(x, y)) {
+      expand in(z, cap(x, y)) for cap
+      apply invoke rightward sep_existence for x, \lambda^P z. in(z, y), z
+    }
+    assume in(z, x) \wedge in(z, y) {
+      apply invoke leftward sep_existence for x, \lambda^P z. in(z, y), z
+      fold for cap conclude in(z, cap(x, y))
+    }
+    connect in(z, cap(x, y)) \leftrightarrow in(z, x) \wedge in(z, y)
+  }
+}
+
+theorem cap_is_subset_left \forall x \forall y (subset(cap(x, y), x)) {
+  any x, y {
+    any z {
+      assume in(z, cap(x, y)) {
+        apply invoke rightward cap_characterization for x, y, z
+        split 1 in(z, x) \wedge in(z, y)
+      }
+    }
+    fold for subset conclude subset(cap(x, y), x)
+  }
+}
+
+theorem cap_is_subset_right \forall x \forall y (subset(cap(x, y), y)) {
+  any x, y {
+    any z {
+      assume in(z, cap(x, y)) {
+        apply invoke rightward cap_characterization for x, y, z
+        split 2 in(z, x) \wedge in(z, y)
+      }
+    }
+    fold for subset conclude subset(cap(x, y), y)
+  }
+}

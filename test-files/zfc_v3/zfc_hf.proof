@@ -1,6 +1,6 @@
 include "zfc_tc.proof"
 
-definition predicate hf(x) as \exists y (finite(y) \wedge tcm(x, y))
+definition predicate hf(x) as \exists y (irrefrel(y, in) \wedge wellfounded(y, in) \wedge finite(y) \wedge tcm(x, y))
 
 definition predicate ptrans(predicate \phi[1]) as \forall x \forall y (\phi(x) \wedge in(y, x) \to \phi(y))
 
@@ -9,8 +9,12 @@ theorem hf_is_trans ptrans(hf) {
     assume hf(x) \wedge in(y, x) {
       split hf(x) \wedge in(y, x)
       some t such hf(x) {
-        split finite(t) \wedge tcm(x, t)
+        split irrefrel(t, in) \wedge wellfounded(t, in) \wedge finite(t) \wedge tcm(x, t)
         apply sep_is_subset for t, \lambda^P z. tc(owns, y, z)
+        connect irrefrel(t, in) \wedge subset(sep(t, \lambda^P z. tc(owns, y, z)), t)
+        apply invoke subset_of_irrefrel_is_irrefrel for in, t, sep(t, \lambda^P z. tc(owns, y, z))
+        connect wellfounded(t, in) \wedge subset(sep(t, \lambda^P z. tc(owns, y, z)), t)
+        apply invoke subset_of_wellfounded_is_wellfounded for in, t, sep(t, \lambda^P z. tc(owns, y, z))
         connect finite(t) \wedge subset(sep(t, \lambda^P z. tc(owns, y, z)), t)
         apply invoke subset_of_finite_is_finite for t, sep(t, \lambda^P z. tc(owns, y, z))
         any z {
@@ -27,8 +31,8 @@ theorem hf_is_trans ptrans(hf) {
           connect in(z, sep(t, \lambda^P z. tc(owns, y, z))) \leftrightarrow tc(owns, y, z)
         }
         fold for tcm conclude tcm(y, sep(t, \lambda^P z. tc(owns, y, z)))
-        connect finite(sep(t, \lambda^P z. tc(owns, y, z))) \wedge tcm(y, sep(t, \lambda^P z. tc(owns, y, z)))
-        lift for sep(t, \lambda^P z. tc(owns, y, z)) conclude \exists s (finite(s) \wedge tcm(y, s))
+        connect irrefrel(sep(t, \lambda^P z. tc(owns, y, z)), in) \wedge wellfounded(sep(t, \lambda^P z. tc(owns, y, z)), in) \wedge finite(sep(t, \lambda^P z. tc(owns, y, z))) \wedge tcm(y, sep(t, \lambda^P z. tc(owns, y, z)))
+        lift for sep(t, \lambda^P z. tc(owns, y, z)) conclude \exists s (irrefrel(s, in) \wedge wellfounded(s, in) \wedge finite(s) \wedge tcm(y, s))
       }
       fold for hf conclude hf(y)
     }
@@ -64,9 +68,11 @@ theorem hf_satisfies_axiom_of_extensionality \forall x \forall y (hf(x) \wedge h
 }
 
 theorem emptyset_is_hf hf(emptyset) {
+  assert emptyset_is_irrefrel
+  assert emptyset_is_wellfounded
   assert emptyset_is_finite
   assert emptyset_is_tcm_of_emptyset
-  connect finite(emptyset) \wedge tcm(emptyset, emptyset)
+  connect irrefrel(emptyset, in) \wedge wellfounded(emptyset, in) \wedge finite(emptyset) \wedge tcm(emptyset, emptyset)
   lift for emptyset conclude hf(emptyset)
 }
 
@@ -86,9 +92,9 @@ theorem hf_satisfies_axiom_of_adjunction \forall x \forall y (hf(x) \wedge hf(y)
     assume hf(x) \wedge hf(y) {
       split hf(x) \wedge hf(y)
       some p such hf(x) {
-        split finite(p) \wedge tcm(x, p)
+        split irrefrel(p, in) \wedge wellfounded(p, in) \wedge finite(p) \wedge tcm(x, p)
         some q such hf(y) {
-          split finite(q) \wedge tcm(y, q)
+          split irrefrel(q, in) \wedge wellfounded(q, in) \wedge finite(q) \wedge tcm(y, q)
           connect finite(p) \wedge finite(q)
           apply invoke finite_cup_exists_uniquely for p, q
           some r such \exists! r (finite(r) \wedge cup(p, q, r)) {
@@ -96,7 +102,21 @@ theorem hf_satisfies_axiom_of_adjunction \forall x \forall y (hf(x) \wedge hf(y)
             connect tcm(x, p) \wedge tcm(y, q) \wedge cup(p, q, r)
             apply invoke tcm_adjunction for x, y, p, q, r
             apply invoke finite_adj for r, y
-            connect finite(adj(r, y)) \wedge tcm(adj(x, y), adj(r, y))
+            connect irrefrel(p, in) \wedge irrefrel(q, in) \wedge cup(p, q, r)
+            apply invoke cup_of_irrefrel_is_irrefrel for in, p, q, r
+            connect tcm(y, q) \wedge irrefrel(q, in)
+            apply invoke tcm_irrefrel_implies_not_contain_itself for y, q
+            connect irrefrel(r, in) \wedge notin(y, y)
+            apply invoke adj_of_irrefrel_is_irrefrel for r, y
+            apply invoke tcm_is_trans for x, p
+            connect trans(p) \wedge wellfounded(p, in) \wedge wellfounded(q, in) \wedge cup(p, q, r)
+            apply invoke cup_of_trans_wellfounded_is_wellfounded_left for p, q, r
+            apply invoke tcm_is_trans for y, q
+            connect trans(p) \wedge trans(q) \wedge cup(p, q, r)
+            apply invoke cup_of_trans_is_trans for p, q, r
+            connect trans(r) \wedge wellfounded(r, in)
+            apply invoke adj_of_trans_wellfounded_is_wellfounded for r, y
+            connect irrefrel(adj(r, y), in) \wedge wellfounded(adj(r, y), in) \wedge finite(adj(r, y)) \wedge tcm(adj(x, y), adj(r, y))
             lift for adj(r, y) conclude hf(adj(x, y))
             any w {
               assume hf(w) {
@@ -116,9 +136,13 @@ theorem hf_satisfies_axiom_of_separation \forall^P \phi[1] \forall x (hf(x) \to 
   any predicate \phi[1], x {
     assume hf(x) {
       some p such hf(x) {
-        split finite(p) \wedge tcm(x, p)
+        split irrefrel(p, in) \wedge wellfounded(p, in) \wedge finite(p) \wedge tcm(x, p)
         apply sep_is_subset for x, \phi
         apply sep_is_subset for p, \lambda^P z. tc(owns, sep(x, \phi), z)
+        connect irrefrel(p, in) \wedge subset(sep(p, \lambda^P z. tc(owns, sep(x, \phi), z)), p)
+        apply invoke subset_of_irrefrel_is_irrefrel for in, p, sep(p, \lambda^P z. tc(owns, sep(x, \phi), z))
+        connect wellfounded(p, in) \wedge subset(sep(p, \lambda^P z. tc(owns, sep(x, \phi), z)), p)
+        apply invoke subset_of_wellfounded_is_wellfounded for in, p, sep(p, \lambda^P z. tc(owns, sep(x, \phi), z))
         connect finite(p) \wedge subset(sep(p, \lambda^P z. tc(owns, sep(x, \phi), z)), p)
         apply invoke subset_of_finite_is_finite for p, sep(p, \lambda^P z. tc(owns, sep(x, \phi), z))
         show tcm(sep(x, \phi), sep(p, \lambda^P z. tc(owns, sep(x, \phi), z))) {
@@ -138,7 +162,7 @@ theorem hf_satisfies_axiom_of_separation \forall^P \phi[1] \forall x (hf(x) \to 
           }
           fold for tcm conclude tcm(sep(x, \phi), sep(p, \lambda^P z. tc(owns, sep(x, \phi), z)))
         }
-        connect finite(sep(p, \lambda^P z. tc(owns, sep(x, \phi), z))) \wedge tcm(sep(x, \phi), sep(p, \lambda^P z. tc(owns, sep(x, \phi), z)))
+        connect irrefrel(sep(p, \lambda^P z. tc(owns, sep(x, \phi), z)), in) \wedge wellfounded(sep(p, \lambda^P z. tc(owns, sep(x, \phi), z)), in) \wedge finite(sep(p, \lambda^P z. tc(owns, sep(x, \phi), z))) \wedge tcm(sep(x, \phi), sep(p, \lambda^P z. tc(owns, sep(x, \phi), z)))
         lift for sep(p, \lambda^P z. tc(owns, sep(x, \phi), z)) conclude hf(sep(x, \phi))
         any z {
           assume hf(z) {
