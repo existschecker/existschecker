@@ -292,3 +292,293 @@ theorem hf_satisfies_axiom_of_union \forall x (hf(x) \to \exists y (hf(y) \wedge
     }
   }
 }
+
+theorem hf_satisfies_axiom_of_replacement \forall^P \psi[2] (\forall x \forall y \forall y' (hf(x) \wedge hf(y) \wedge hf(y') \to (\psi(x, y) \wedge \psi(x, y') \to equal(y, y'))) \to \forall X (hf(X) \to \exists Y (hf(Y) \wedge \forall y (hf(y) \to (in(y, Y) \leftrightarrow \exists x (hf(x) \wedge in(x, X) \wedge \psi(x, y))))))) {
+  any predicate \psi[2] {
+    assume \forall x \forall y \forall y' (hf(x) \wedge hf(y) \wedge hf(y') \to (\psi(x, y) \wedge \psi(x, y') \to equal(y, y'))) {
+      any x, y, y' {
+        assume hf(x) \wedge hf(y) \wedge \psi(x, y) \wedge hf(x) \wedge hf(y') \wedge \psi(x, y') {
+          split hf(x) \wedge hf(y) \wedge \psi(x, y) \wedge hf(x) \wedge hf(y') \wedge \psi(x, y')
+          connect hf(x) \wedge hf(y) \wedge hf(y')
+          apply invoke \forall x \forall y \forall y' (hf(x) \wedge hf(y) \wedge hf(y') \to (\psi(x, y) \wedge \psi(x, y') \to equal(y, y'))) for x, y, y'
+          connect \psi(x, y) \wedge \psi(x, y')
+          invoke \psi(x, y) \wedge \psi(x, y') \to equal(y, y')
+        }
+      }
+      fold for functional conclude functional(\lambda^P x, y. hf(x) \wedge hf(y) \wedge \psi(x, y))
+      any X {
+        assume hf(X) {
+          apply invoke hf_is_irrefrel_wellfounded_finite for X
+          split irrefrel(X, in) \wedge wellfounded(X, in) \wedge finite(X)
+          connect finite(X) \wedge functional(\lambda^P x, y. hf(x) \wedge hf(y) \wedge \psi(x, y))
+          apply invoke finite_replacement_exists_uniquely for X, \lambda^P x, y. hf(x) \wedge hf(y) \wedge \psi(x, y)
+          some Y such \exists! Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge hf(x) \wedge hf(y) \wedge \psi(x, y)))) {
+            split finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge hf(x) \wedge hf(y) \wedge \psi(x, y)))
+            any y {
+              assume in(y, Y) {
+                apply invoke rightward \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge hf(x) \wedge hf(y) \wedge \psi(x, y))) for y
+                some x such \exists x (in(x, X) \wedge hf(x) \wedge hf(y) \wedge \psi(x, y)) {
+                  split in(x, X) \wedge hf(x) \wedge hf(y) \wedge \psi(x, y)
+                  apply invoke hf_is_irrefrel_wellfounded_finite for y
+                  split 1 irrefrel(y, in) \wedge wellfounded(y, in) \wedge finite(y)
+                  apply invoke irrefrel_not_contain_itself for y
+                }
+              }
+            }
+            fold for irrefrel conclude irrefrel(Y, in)
+            assert tcm_is_functional
+            connect finite(Y) \wedge functional(tcm)
+            apply invoke finite_replacement_exists_uniquely for Y, tcm
+            some Z such \exists! Z (finite(Z) \wedge \forall z (in(z, Z) \leftrightarrow \exists y (in(y, Y) \wedge tcm(y, z)))) {
+              split finite(Z) \wedge \forall z (in(z, Z) \leftrightarrow \exists y (in(y, Y) \wedge tcm(y, z)))
+              any z {
+                assume in(z, Z) {
+                  apply invoke rightward \forall z (in(z, Z) \leftrightarrow \exists y (in(y, Y) \wedge tcm(y, z))) for z
+                  some y such \exists y (in(y, Y) \wedge tcm(y, z)) {
+                    split in(y, Y) \wedge tcm(y, z)
+                    apply invoke rightward \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge hf(x) \wedge hf(y) \wedge \psi(x, y))) for y
+                    some x such \exists x (in(x, X) \wedge hf(x) \wedge hf(y) \wedge \psi(x, y)) {
+                      split in(x, X) \wedge hf(x) \wedge hf(y) \wedge \psi(x, y)
+                      some z' such hf(y) {
+                        split irrefrel(z', in) \wedge wellfounded(z', in) \wedge finite(z') \wedge tcm(y, z')
+                        connect tcm(y, z) \wedge tcm(y, z')
+                        apply invoke tcm_is_unique for y, z, z'
+                        substitute finite(z') for z': z
+                      }
+                    }
+                  }
+                }
+              }
+              connect finite(Z) \wedge \forall z (in(z, Z) \to finite(z))
+              apply invoke finite_bigcup_exists_uniquely for Z
+              some W such \exists! W (finite(W) \wedge bigcup(Z, W)) {
+                split finite(W) \wedge bigcup(Z, W)
+                any w {
+                  assume in(w, W) {
+                    apply invoke rightward bigcup(Z, W) for w
+                    some z such \exists z (in(w, z) \wedge in(z, Z)) {
+                      split in(w, z) \wedge in(z, Z)
+                      apply invoke rightward \forall z (in(z, Z) \leftrightarrow \exists y (in(y, Y) \wedge tcm(y, z))) for z
+                      some y such \exists y (in(y, Y) \wedge tcm(y, z)) {
+                        split in(y, Y) \wedge tcm(y, z)
+                        apply invoke rightward \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge hf(x) \wedge hf(y) \wedge \psi(x, y))) for y
+                        some x such \exists x (in(x, X) \wedge hf(x) \wedge hf(y) \wedge \psi(x, y)) {
+                          split in(x, X) \wedge hf(x) \wedge hf(y) \wedge \psi(x, y)
+                          some z' such hf(y) {
+                            split irrefrel(z', in) \wedge wellfounded(z', in) \wedge finite(z') \wedge tcm(y, z')
+                            connect tcm(y, z) \wedge tcm(y, z')
+                            apply invoke tcm_is_unique for y, z, z'
+                            substitute irrefrel(z', in) for z': z
+                            apply invoke irrefrel(z, in) for w
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+                fold for irrefrel conclude irrefrel(W, in)
+                connect finite(Y) \wedge finite(W)
+                apply invoke finite_cup_exists_uniquely for Y, W
+                some V such \exists! V (finite(V) \wedge cup(Y, W, V)) {
+                  split finite(V) \wedge cup(Y, W, V)
+                  connect irrefrel(Y, in) \wedge irrefrel(W, in) \wedge cup(Y, W, V)
+                  apply invoke cup_of_irrefrel_is_irrefrel for in, Y, W, V
+                  any A {
+                    assume subset(A, V) \wedge neq(A, emptyset) {
+                      split subset(A, V) \wedge neq(A, emptyset)
+                      apply invoke not_emptyset_has_a_member for A
+                      some v such \exists v (in(v, A)) {
+                        apply invoke subset(A, V) for v
+                        apply invoke rightward cup(Y, W, V) for v
+                        divide in(v, Y) \vee in(v, W)
+                          case in(v, Y) {
+                            apply invoke rightward \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge hf(x) \wedge hf(y) \wedge \psi(x, y))) for v
+                            some x such \exists x (in(x, X) \wedge hf(x) \wedge hf(v) \wedge \psi(x, v)) {
+                              split 3 in(x, X) \wedge hf(x) \wedge hf(v) \wedge \psi(x, v)
+                            }
+                          }
+                          case in(v, W) {
+                            apply invoke rightward bigcup(Z, W) for v
+                            some z such \exists z (in(v, z) \wedge in(z, Z)) {
+                              split in(v, z) \wedge in(z, Z)
+                              apply invoke rightward \forall z (in(z, Z) \leftrightarrow \exists y (in(y, Y) \wedge tcm(y, z))) for z
+                              some y such \exists y (in(y, Y) \wedge tcm(y, z)) {
+                                split in(y, Y) \wedge tcm(y, z)
+                                apply invoke rightward \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge hf(x) \wedge hf(y) \wedge \psi(x, y))) for y
+                                some x such \exists x (in(x, X) \wedge hf(x) \wedge hf(y) \wedge \psi(x, y)) {
+                                  split 3 in(x, X) \wedge hf(x) \wedge hf(y) \wedge \psi(x, y)
+                                }
+                                some z' such hf(y) {
+                                  split irrefrel(z', in) \wedge wellfounded(z', in) \wedge finite(z') \wedge tcm(y, z')
+                                  apply invoke tcm_is_tcm_of_itself for y, z'
+                                  connect irrefrel(z', in) \wedge wellfounded(z', in) \wedge finite(z') \wedge tcm(z', z')
+                                  lift for z' conclude hf(z')
+                                  connect tcm(y, z) \wedge tcm(y, z')
+                                  apply invoke tcm_is_unique for y, z, z'
+                                  substitute hf(z') for z': z
+                                  connect hf(z) \wedge in(v, z)
+                                  apply invoke element_of_hf_is_hf for z, v
+                                }
+                              }
+                            }
+                          }
+                        some T such hf(v) {
+                          split irrefrel(T, in) \wedge wellfounded(T, in) \wedge finite(T) \wedge tcm(v, T)
+                          apply invoke tcm_implies_subset for v, T
+                          apply invoke tcm_is_trans for v, T
+                          apply law_of_excluded_middle for \lambda^P. equal(cap(A, T), emptyset)
+                          divide equal(cap(A, T), emptyset) \vee neq(cap(A, T), emptyset)
+                            case equal(cap(A, T), emptyset) {
+                              any x {
+                                assume in(x, A) \wedge neq(x, v) {
+                                  split in(x, A) \wedge neq(x, v)
+                                  deny in(x, v) {
+                                    apply invoke subset(v, T) for x
+                                    apply invoke rightward tcm(v, T) for x
+                                    connect in(x, A) \wedge in(x, T)
+                                    apply invoke leftward cap_characterization for A, T, x
+                                    substitute in(x, cap(A, T)) for cap(A, T): emptyset
+                                    apply emptyset_existence for x
+                                    contradict in(x, emptyset)
+                                  }
+                                }
+                              }
+                              fold for minimal_core conclude minimal_core(in, A, v)
+                              connect minimal(in, A, v)
+                              lift for v conclude \exists a (minimal(in, A, a))
+                            }
+                            case neq(cap(A, T), emptyset) {
+                              apply cap_is_subset_right for A, T
+                              connect subset(cap(A, T), T) \wedge neq(cap(A, T), emptyset)
+                              apply invoke wellfounded(T, in) for cap(A, T)
+                              some a such \exists a (minimal(in, cap(A, T), a)) {
+                                split minimal(in, cap(A, T), a)
+                                apply invoke rightward cap_characterization for A, T, a
+                                split in(a, A) \wedge in(a, T)
+                                any x {
+                                  assume in(x, A) \wedge neq(x, a) {
+                                    split in(x, A) \wedge neq(x, a)
+                                    deny in(x, a) {
+                                      connect in(x, a) \wedge in(a, T)
+                                      apply invoke trans(T) for a, x
+                                      connect in(x, A) \wedge in(x, T)
+                                      apply invoke leftward cap_characterization for A, T, x
+                                      connect in(x, cap(A, T)) \wedge neq(x, a)
+                                      apply invoke minimal_core(in, cap(A, T), a) for x
+                                      contradict in(x, a)
+                                    }
+                                  }
+                                }
+                                fold for minimal_core conclude minimal_core(in, A, a)
+                                connect minimal(in, A, a)
+                                lift for a conclude \exists a (minimal(in, A, a))
+                              }
+                            }
+                        }
+                      }
+                    }
+                  }
+                  fold for wellfounded conclude wellfounded(V, in)
+                  any v {
+                    assume in(v, V) {
+                      apply invoke rightward cup(Y, W, V) for v
+                      divide in(v, Y) \vee in(v, W)
+                        case in(v, Y) {
+                          apply invoke tc_one_step for owns, Y, v
+                        }
+                        case in(v, W) {
+                          apply invoke rightward bigcup(Z, W) for v
+                          some z such \exists z (in(v, z) \wedge in(z, Z)) {
+                            split in(v, z) \wedge in(z, Z)
+                            apply invoke rightward \forall z (in(z, Z) \leftrightarrow \exists y (in(y, Y) \wedge tcm(y, z))) for z
+                            some y such \exists y (in(y, Y) \wedge tcm(y, z)) {
+                              split in(y, Y) \wedge tcm(y, z)
+                              apply invoke rightward tcm(y, z) for v
+                              apply invoke tc_one_step for owns, Y, y
+                              connect tc(owns, Y, y) \wedge tc(owns, y, v)
+                              apply invoke tc_is_transitive for owns, Y, y, v
+                            }
+                          }
+                        }
+                    }
+                    assume tc(owns, Y, v) {
+                      some n such tc(owns, Y, v) {
+                        split pnatural(n) \wedge piterate(owns, n, Y, v)
+                        apply invoke pnatural_is_suc_of_natural_element for n
+                        some m such \exists m (equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)) {
+                          split equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)
+                          substitute piterate(owns, n, Y, v) for n: suc(m)
+                          connect natural(m) \wedge piterate(owns, suc(m), Y, v)
+                          apply invoke piterate_first_step for owns, m, Y, v
+                          some y such \exists y (in(y, Y) \wedge piterate(owns, m, y, v)) {
+                            split in(y, Y) \wedge piterate(owns, m, y, v)
+                            divide natural(m)
+                              case equal(m, emptyset) {
+                                substitute piterate(owns, m, y, v) for m: emptyset
+                                apply invoke piterate_is_unique_base_step for owns, y, v
+                                substitute in(y, Y) for y: v
+                                pad in(v, Y) conclude in(v, Y) \vee in(v, W)
+                                apply invoke leftward cup(Y, W, V) for v
+                              }
+                              case pnatural(m) {
+                                connect pnatural(m) \wedge piterate(owns, m, y, v)
+                                lift for m conclude tc(owns, y, v)
+                                apply invoke rightward \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge hf(x) \wedge hf(y) \wedge \psi(x, y))) for y
+                                some x such \exists x (in(x, X) \wedge hf(x) \wedge hf(y) \wedge \psi(x, y)) {
+                                  split in(x, X) \wedge hf(x) \wedge hf(y) \wedge \psi(x, y)
+                                  some z such hf(y) {
+                                    split irrefrel(z, in) \wedge wellfounded(z, in) \wedge finite(z) \wedge tcm(y, z)
+                                    connect in(y, Y) \wedge tcm(y, z)
+                                    lift for y conclude \exists y (in(y, Y) \wedge tcm(y, z))
+                                    apply invoke leftward \forall z (in(z, Z) \leftrightarrow \exists y (in(y, Y) \wedge tcm(y, z))) for z
+                                    apply invoke leftward tcm(y, z) for v
+                                    connect in(v, z) \wedge in(z, Z)
+                                    lift for z conclude \exists z (in(v, z) \wedge in(z, Z))
+                                  }
+                                }
+                                apply invoke leftward bigcup(Z, W) for v
+                                pad in(v, W) conclude in(v, Y) \vee in(v, W)
+                                apply invoke leftward cup(Y, W, V) for v
+                              }
+                          }
+                        }
+                      }
+
+                    }
+                    connect in(v, V) \leftrightarrow tc(owns, Y, v)
+                  }
+                  fold for tcm conclude tcm(Y, V)
+                  connect irrefrel(V, in) \wedge wellfounded(V, in) \wedge finite(V) \wedge tcm(Y, V)
+                  lift for V conclude hf(Y)
+                  any y {
+                    assume hf(y) {
+                      assume in(y, Y) {
+                        apply invoke rightward \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge hf(x) \wedge hf(y) \wedge \psi(x, y))) for y
+                        some x such \exists x (in(x, X) \wedge hf(x) \wedge hf(y) \wedge \psi(x, y)) {
+                          split in(x, X) \wedge hf(x) \wedge hf(y) \wedge \psi(x, y)
+                          connect in(x, X) \wedge hf(x) \wedge \psi(x, y)
+                          lift for x conclude \exists x (in(x, X) \wedge hf(x) \wedge \psi(x, y))
+                        }
+                      }
+                      assume \exists x (in(x, X) \wedge hf(x) \wedge \psi(x, y)) {
+                        some x such \exists x (in(x, X) \wedge hf(x) \wedge \psi(x, y)) {
+                          split in(x, X) \wedge hf(x) \wedge \psi(x, y)
+                          connect in(x, X) \wedge hf(x) \wedge hf(y) \wedge \psi(x, y)
+                          lift for x conclude \exists x (in(x, X) \wedge hf(x) \wedge hf(y) \wedge \psi(x, y))
+                        }
+                        apply invoke leftward \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge hf(x) \wedge hf(y) \wedge \psi(x, y))) for y
+                      }
+                      connect in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge hf(x) \wedge \psi(x, y))
+                    }
+                  }
+                  connect hf(Y) \wedge \forall y (hf(y) \to (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge hf(x) \wedge \psi(x, y))))
+                  lift for Y conclude \exists Y (hf(Y) \wedge \forall y (hf(y) \to (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge hf(x) \wedge \psi(x, y)))))
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

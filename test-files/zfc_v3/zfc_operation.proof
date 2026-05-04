@@ -127,6 +127,46 @@ theorem addition_of_natural_and_pnatural_is_pnatural \forall m \forall n (natura
   }
 }
 
+theorem adding_to_not_emptyset_is_not_emptyset \forall x \forall n (neq(x, emptyset) \wedge natural(n) \to neq(add(x, n), emptyset)) {
+  any x, n {
+    assume neq(x, emptyset) \wedge natural(n) {
+      split neq(x, emptyset) \wedge natural(n)
+      divide natural(n)
+        case equal(n, emptyset) {
+          apply add_base_step for x
+          substitute equal(add(x, emptyset), x) for emptyset: n
+          substitute neq(x, emptyset) for x: add(x, n)
+        }
+        case pnatural(n) {
+          apply invoke pnatural_is_suc_of_natural_element for n
+          some m such \exists m (equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)) {
+            split equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)
+            apply invoke add_induction_step for x, m
+            apply suc_is_not_emptyset for add(x, m)
+            substitute neq(suc(add(x, m)), emptyset) for suc(add(x, m)): add(x, suc(m))
+            substitute neq(add(x, suc(m)), emptyset) for suc(m): n
+          }
+        }
+    }
+  }
+}
+
+theorem addition_of_pnatural_and_natural_is_pnatural \forall m \forall n (pnatural(m) \wedge natural(n) \to pnatural(add(m, n))) {
+  any m, n {
+    assume pnatural(m) \wedge natural(n) {
+      split pnatural(m) \wedge natural(n)
+      pad pnatural(m) conclude natural(m)
+      connect natural(m) \wedge natural(n)
+      apply invoke addition_of_natural_is_natural for m, n
+      apply invoke pnatural_is_not_emptyset for m
+      connect neq(m, emptyset) \wedge natural(n)
+      apply invoke adding_to_not_emptyset_is_not_emptyset for m, n
+      connect natural(add(m, n)) \wedge neq(add(m, n), emptyset)
+      apply invoke natural_and_neq_emptyset_implies_pnatural for add(m, n)
+    }
+  }
+}
+
 definition function mul(m, n) as iterate(\lambda^F l. add(l, m), n, emptyset) tex infix "\cdot"
 
 theorem mul_characterization \forall m (equal(mul(m, emptyset), emptyset) \wedge \forall n (natural(n) \to equal(mul(m, suc(n)), add(mul(m, n), m)))) {

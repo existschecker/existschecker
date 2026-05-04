@@ -8,6 +8,20 @@ definition predicate autoexpand owns(x, y) as in(y, x) tex infix "\owns"
 
 definition predicate tcm(X, Y) as \forall y (in(y, Y) \leftrightarrow tc(owns, X, y))
 
+theorem tcm_is_unique \forall X \forall Y \forall Y' (tcm(X, Y) \wedge tcm(X, Y') \to equal(Y, Y')) {
+  any X, Y, Y' {
+    assume tcm(X, Y) \wedge tcm(X, Y') {
+      expand tcm(X, Y) \wedge tcm(X, Y') for tcm
+      apply invoke set_is_unique_for_predicate for \lambda^P y. tc(owns, X, y), Y, Y'
+    }
+  }
+}
+
+theorem tcm_is_functional functional(tcm) {
+  assert tcm_is_unique
+  fold for functional conclude functional(tcm)
+}
+
 theorem tc_one_step \forall^P \phi[2] \forall x \forall y (\phi(x, y) \to tc(\phi, x, y)) {
   any predicate \phi[2], x, y {
     assume \phi(x, y) {
@@ -120,6 +134,39 @@ theorem tc_is_transitive \forall^P \phi[2] \forall x \forall y \forall z (tc(\ph
   }
 }
 
+theorem tc_rtc_transitive \forall^P \phi[2] \forall x \forall y \forall z (tc(\phi, x, y) \wedge rtc(\phi, y, z) \to tc(\phi, x, z)) {
+  any predicate \phi[2], x, y, z {
+    assume tc(\phi, x, y) \wedge rtc(\phi, y, z) {
+      split tc(\phi, x, y) \wedge rtc(\phi, y, z)
+      some m such tc(\phi, x, y) {
+        split pnatural(m) \wedge piterate(\phi, m, x, y)
+        pad pnatural(m) conclude natural(m)
+        some n such rtc(\phi, y, z) {
+          split natural(n) \wedge piterate(\phi, n, y, z)
+          connect natural(m) \wedge natural(n) \wedge piterate(\phi, m, x, y) \wedge piterate(\phi, n, y, z)
+          apply invoke piterate_addition for \phi, m, n, x, y, z
+          connect pnatural(m) \wedge natural(n)
+          apply invoke addition_of_pnatural_and_natural_is_pnatural for m, n
+          connect pnatural(add(m, n)) \wedge piterate(\phi, add(m, n), x, z)
+          lift for add(m, n) conclude \exists l (pnatural(l) \wedge piterate(\phi, l, x, z))
+        }
+      }
+      fold for tc conclude tc(\phi, x, z)
+    }
+  }
+}
+
+theorem one_step_rtc_transitive \forall^P \phi[2] \forall x \forall y \forall z (\phi(x, y) \wedge rtc(\phi, y, z) \to tc(\phi, x, z)) {
+  any predicate \phi[2], x, y, z {
+    assume \phi(x, y) \wedge rtc(\phi, y, z) {
+      split \phi(x, y) \wedge rtc(\phi, y, z)
+      apply invoke tc_one_step for \phi, x, y
+      connect tc(\phi, x, y) \wedge rtc(\phi, y, z)
+      apply invoke tc_rtc_transitive for \phi, x, y, z
+    }
+  }
+}
+
 theorem tcm_is_trans \forall X \forall Y (tcm(X, Y) \to trans(Y)) {
   any X, Y {
     assume tcm(X, Y) {
@@ -193,6 +240,30 @@ theorem emptyset_is_tcm_of_emptyset tcm(emptyset, emptyset) {
   fold for tcm conclude tcm(emptyset, emptyset)
 }
 
+theorem tc_first_step \forall^P \phi[2] \forall x \forall y (tc(\phi, x, y) \to \exists z (\phi(x, z) \wedge rtc(\phi, z, y))) {
+  any predicate  \phi[2], x, y {
+    assume tc(\phi, x, y) {
+      some n such tc(\phi, x, y) {
+        split pnatural(n) \wedge piterate(\phi, n, x, y)
+        apply invoke pnatural_is_suc_of_natural_element for n
+        some m such \exists m (equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)) {
+          split equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)
+          substitute piterate(\phi, n, x, y) for n: suc(m)
+          connect natural(m) \wedge piterate(\phi, suc(m), x, y)
+          apply invoke piterate_first_step for \phi, m, x, y
+          some z such \exists z (\phi(x, z) \wedge piterate(\phi, m, z, y)) {
+            split \phi(x, z) \wedge piterate(\phi, m, z, y)
+            connect natural(m) \wedge piterate(\phi, m, z, y)
+            lift for m conclude rtc(\phi, z, y)
+            connect \phi(x, z) \wedge rtc(\phi, z, y)
+            lift for z conclude \exists z (\phi(x, z) \wedge rtc(\phi, z, y))
+          }
+        }
+      }
+    }
+  }
+}
+
 theorem tc_subset \forall x \forall s \forall y (tc(owns, x, s) \wedge subset(x, y) \to tc(owns, y, s)) {
   any x, s, y {
     assume tc(owns, x, s) \wedge subset(x, y) {
@@ -224,6 +295,33 @@ theorem tc_subset \forall x \forall s \forall y (tc(owns, x, s) \wedge subset(x,
           }
         }
       }
+    }
+  }
+}
+
+theorem tcm_is_tcm_of_itself \forall X \forall Y (tcm(X, Y) \to tcm(Y, Y)) {
+  any X, Y {
+    assume tcm(X, Y) {
+      any y {
+        assume in(y, Y) {
+          apply invoke rightward tcm(X, Y) for y
+          apply invoke tcm_implies_subset for X, Y
+          connect tc(owns, X, y) \wedge subset(X, Y)
+          apply invoke tc_subset for X, y, Y
+        }
+        assume tc(owns, Y, y) {
+          apply invoke tc_first_step for owns, Y, y
+          some z such \exists z (in(z, Y) \wedge rtc(owns, z, y)) {
+            split in(z, Y) \wedge rtc(owns, z, y)
+            apply invoke rightward tcm(X, Y) for z
+            connect tc(owns, X, z) \wedge rtc(owns, z, y)
+            apply invoke tc_rtc_transitive for owns, X, z, y
+            apply invoke leftward tcm(X, Y) for y
+          }
+        }
+        connect in(y, Y) \leftrightarrow tc(owns, Y, y)
+      }
+      fold for tcm conclude tcm(Y, Y)
     }
   }
 }

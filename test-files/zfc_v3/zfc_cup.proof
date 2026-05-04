@@ -14,6 +14,34 @@ theorem cup_is_unique \forall X \forall Y \forall Z \forall Z' (cup(X, Y, Z) \we
   }
 }
 
+theorem subset_of_cup_left \forall X \forall Y \forall Z (cup(X, Y, Z) \to subset(X, Z)) {
+  any X, Y, Z {
+    assume cup(X, Y, Z) {
+      any x {
+        assume in(x, X) {
+          pad in(x, X) conclude in(x, X) \vee in(x, Y)
+          apply invoke leftward cup(X, Y, Z) for x
+        }
+      }
+      fold for subset conclude subset(X, Z)
+    }
+  }
+}
+
+theorem subset_of_cup_right \forall X \forall Y \forall Z (cup(X, Y, Z) \to subset(Y, Z)) {
+  any X, Y, Z {
+    assume cup(X, Y, Z) {
+      any y {
+        assume in(y, Y) {
+          pad in(y, Y) conclude in(y, X) \vee in(y, Y)
+          apply invoke leftward cup(X, Y, Z) for y
+        }
+      }
+      fold for subset conclude subset(Y, Z)
+    }
+  }
+}
+
 theorem cup_of_trans_is_trans \forall X \forall Y \forall Z (trans(X) \wedge trans(Y) \wedge cup(X, Y, Z) \to trans(Z)) {
   any X, Y, Z {
     assume trans(X) \wedge trans(Y) \wedge cup(X, Y, Z) {
