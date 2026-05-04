@@ -563,3 +563,44 @@ theorem hf_satisfies_axiom_of_powerset \forall x (hf(x) \to \exists y (hf(y) \we
     }
   }
 }
+
+theorem hf_satisfies_axiom_of_foundation \forall x (hf(x) \to (neq(x, emptyset) \to \exists y (hf(y) \wedge in(y, x) \wedge \forall z (hf(z) \to (in(z, y) \to notin(z, x)))))) {
+  any A {
+    assume hf(A) {
+      assume neq(A, emptyset) {
+        apply invoke hf_is_irrefrel_wellfounded_finite for A
+        split irrefrel(A, in) \wedge wellfounded(A, in) \wedge finite(A)
+        apply subset_reflexivity for A
+        connect subset(A, A) \wedge neq(A, emptyset)
+        apply invoke wellfounded(A, in) for A
+        some y such \exists y (minimal(in, A, y)) {
+          split minimal(in, A, y)
+          connect hf(A) \wedge in(y, A)
+          apply invoke element_of_hf_is_hf for A, y
+          any z {
+            assume hf(z) {
+              assume in(z, y) {
+                deny in(z, A) {
+                  apply law_of_excluded_middle for \lambda^P. equal(z, y)
+                  divide equal(z, y) \vee neq(z, y)
+                    case equal(z, y) {
+                      substitute in(z, y) for z: y
+                      apply invoke irrefrel(A, in) for y
+                      contradict in(y, y)
+                    }
+                    case neq(z, y) {
+                      connect in(z, A) \wedge neq(z, y)
+                      apply invoke minimal_core(in, A, y) for z
+                      contradict in(z, y)
+                    }
+                }
+              }
+            }
+          }
+          connect hf(y) \wedge in(y, A) \wedge \forall z (hf(z) \to (in(z, y) \to notin(z, A)))
+          lift for y conclude \exists y (hf(y) \wedge in(y, A) \wedge \forall z (hf(z) \to (in(z, y) \to notin(z, A))))
+        }
+      }
+    }
+  }
+}
