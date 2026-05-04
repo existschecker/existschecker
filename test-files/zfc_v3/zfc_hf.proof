@@ -101,51 +101,6 @@ theorem hf_satisfies_axiom_of_emptyset \exists x (hf(x) \wedge \forall y (hf(y) 
   lift for emptyset conclude \exists x (hf(x) \wedge \forall y (hf(y) \to notin(y, x)))
 }
 
-theorem hf_satisfies_axiom_of_adjunction \forall x \forall y (hf(x) \wedge hf(y) \to \exists z (hf(z) \wedge \forall w (hf(w) \to (in(w, z) \leftrightarrow in(w, x) \vee equal(w, y))))) {
-  any x, y {
-    assume hf(x) \wedge hf(y) {
-      split hf(x) \wedge hf(y)
-      some p such hf(x) {
-        split irrefrel(p, in) \wedge wellfounded(p, in) \wedge finite(p) \wedge tcm(x, p)
-        some q such hf(y) {
-          split irrefrel(q, in) \wedge wellfounded(q, in) \wedge finite(q) \wedge tcm(y, q)
-          connect finite(p) \wedge finite(q)
-          apply invoke finite_cup_exists_uniquely for p, q
-          some r such \exists! r (finite(r) \wedge cup(p, q, r)) {
-            split finite(r) \wedge cup(p, q, r)
-            connect tcm(x, p) \wedge tcm(y, q) \wedge cup(p, q, r)
-            apply invoke tcm_adjunction for x, y, p, q, r
-            apply invoke finite_adj for r, y
-            connect irrefrel(p, in) \wedge irrefrel(q, in) \wedge cup(p, q, r)
-            apply invoke cup_of_irrefrel_is_irrefrel for in, p, q, r
-            connect tcm(y, q) \wedge irrefrel(q, in)
-            apply invoke tcm_irrefrel_implies_not_contain_itself for y, q
-            connect irrefrel(r, in) \wedge notin(y, y)
-            apply invoke adj_of_irrefrel_is_irrefrel for r, y
-            apply invoke tcm_is_trans for x, p
-            connect trans(p) \wedge wellfounded(p, in) \wedge wellfounded(q, in) \wedge cup(p, q, r)
-            apply invoke cup_of_trans_wellfounded_is_wellfounded_left for p, q, r
-            apply invoke tcm_is_trans for y, q
-            connect trans(p) \wedge trans(q) \wedge cup(p, q, r)
-            apply invoke cup_of_trans_is_trans for p, q, r
-            connect trans(r) \wedge wellfounded(r, in)
-            apply invoke adj_of_trans_wellfounded_is_wellfounded for r, y
-            connect irrefrel(adj(r, y), in) \wedge wellfounded(adj(r, y), in) \wedge finite(adj(r, y)) \wedge tcm(adj(x, y), adj(r, y))
-            lift for adj(r, y) conclude hf(adj(x, y))
-            any w {
-              assume hf(w) {
-                apply adj_existence for x, y, w
-              }
-            }
-            connect hf(adj(x, y)) \wedge (\forall w (hf(w) \to (in(w, adj(x, y)) \leftrightarrow in(w, x) \vee equal(w, y))))
-            lift for adj(x, y) conclude \exists z (hf(z) \wedge \forall w (hf(w) \to (in(w, z) \leftrightarrow in(w, x) \vee equal(w, y))))
-          }
-        }
-      }
-    }
-  }
-}
-
 theorem hf_satisfies_axiom_of_separation \forall^P \phi[1] \forall x (hf(x) \to \exists y (hf(y) \wedge \forall z (hf(z) \to (in(z, y) \leftrightarrow in(z, x) \wedge \phi(z))))) {
   any predicate \phi[1], x {
     assume hf(x) {
@@ -415,6 +370,39 @@ theorem finite_set_of_hf_is_hf \forall Y (finite(Y) \wedge \forall y (in(y, Y) \
           }
         }
       }
+    }
+  }
+}
+
+theorem hf_satisfies_axiom_of_adjunction \forall x \forall y (hf(x) \wedge hf(y) \to \exists z (hf(z) \wedge \forall w (hf(w) \to (in(w, z) \leftrightarrow in(w, x) \vee equal(w, y))))) {
+  any x, y {
+    assume hf(x) \wedge hf(y) {
+      split hf(x) \wedge hf(y)
+      apply invoke hf_is_irrefrel_wellfounded_finite for x
+      split 3 irrefrel(x, in) \wedge wellfounded(x, in) \wedge finite(x)
+      apply invoke finite_adj for x, y
+      any p {
+        assume in(p, adj(x, y)) {
+          apply invoke rightward adj_existence for x, y, p
+          divide in(p, x) \vee equal(p, y)
+            case in(p, x) {
+              connect hf(x) \wedge in(p, x)
+              apply invoke element_of_hf_is_hf for x, p
+            }
+            case equal(p, y) {
+              substitute hf(y) for y: p
+            }
+        }
+      }
+      connect finite(adj(x, y)) \wedge \forall p (in(p, adj(x, y)) \to hf(p))
+      apply invoke finite_set_of_hf_is_hf for adj(x, y)
+      any w {
+        assume hf(w) {
+          apply adj_existence for x, y, w
+        }
+      }
+      connect hf(adj(x, y)) \wedge \forall w (hf(w) \to (in(w, adj(x, y)) \leftrightarrow in(w, x) \vee equal(w, y)))
+      lift for adj(x, y) conclude \exists z (hf(z) \wedge \forall w (hf(w) \to (in(w, z) \leftrightarrow in(w, x) \vee equal(w, y))))
     }
   }
 }
