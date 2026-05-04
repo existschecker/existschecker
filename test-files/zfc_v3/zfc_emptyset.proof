@@ -63,6 +63,19 @@ theorem has_a_member_not_emptyset \forall x (\exists y (in(y, x)) \to neq(x, emp
   }
 }
 
+theorem emptyset_is_subset_of_any_set \forall x (subset(emptyset, x)) {
+  any x {
+    any y {
+      assume in(y, emptyset) {
+        apply emptyset_existence for y
+        contradict in(y, emptyset)
+        explode in(y, x)
+      }
+    }
+    fold for subset conclude subset(emptyset, x)
+  }
+}
+
 theorem subset_of_emptyset_is_emptyset \forall x (subset(x, emptyset) \to equal(x, emptyset)) {
   any x {
     assume subset(x, emptyset) {

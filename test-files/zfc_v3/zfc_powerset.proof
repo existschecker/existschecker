@@ -1,0 +1,12 @@
+include "zfc_bigcup.proof"
+
+definition predicate powerset(X, Y) as \forall y (in(y, Y) \leftrightarrow subset(y, X))
+
+theorem powerset_is_unique \forall X \forall Y \forall Y' (powerset(X, Y) \wedge powerset(X, Y') \to equal(Y, Y')) {
+  any X, Y, Y' {
+    assume powerset(X, Y) \wedge powerset(X, Y') {
+      expand powerset(X, Y) \wedge powerset(X, Y') for powerset
+      apply invoke set_is_unique_for_predicate for \lambda^P y. subset(y, X), Y, Y'
+    }
+  }
+}

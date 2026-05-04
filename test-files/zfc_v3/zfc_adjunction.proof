@@ -206,3 +206,24 @@ theorem subset_adj_notin \forall x \forall z \forall y (notin(z, y) \wedge subse
     }
   }
 }
+
+theorem subset_implies_subset_adj \forall x \forall y \forall z (subset(x, y) \to subset(adj(x, z), adj(y, z))) {
+  any x, y, z {
+    assume subset(x, y) {
+      any w {
+        assume in(w, adj(x, z)) {
+          apply invoke rightward adj_existence for x, z, w
+          divide in(w, x) \vee equal(w, z)
+            case in(w, x) {
+              apply invoke subset(x, y) for w
+              apply invoke adj_cor1 for y, z, w
+            }
+            case equal(w, z) {
+              apply invoke adj_cor2 for y, z, w
+            }
+        }
+      }
+      fold for subset conclude subset(adj(x, z), adj(y, z))
+    }
+  }
+}

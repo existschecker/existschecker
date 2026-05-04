@@ -1,4 +1,4 @@
-include "zfc_bigcup.proof"
+include "zfc_powerset.proof"
 
 definition predicate equipotent(X, Y) as \exists f (bij(f, X, Y))
 
@@ -128,6 +128,12 @@ theorem finite_adj \forall Y \forall y (finite(Y) \to finite(adj(Y, y))) {
         }
     }
   }
+}
+
+theorem singleton_emptyset_is_finite finite(singleton(emptyset)) {
+  assert emptyset_is_finite
+  apply invoke finite_adj for emptyset, emptyset
+  fold for singleton conclude finite(singleton(emptyset))
 }
 
 theorem subset_of_finite_is_finite \forall x \forall y (finite(x) \wedge subset(y, x) \to finite(y)) {
@@ -627,6 +633,141 @@ theorem finite_replacement_exists_uniquely \forall X \forall^P \psi[2] (finite(X
           }
           connect finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))) \wedge \forall Y' (finite(Y') \wedge \forall y (in(y, Y') \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))) \to equal(Y', Y))
           characterize for Y conclude \exists! Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))))
+        }
+      }
+    }
+  }
+}
+
+theorem finite_powerset_exists_uniquely \forall X (finite(X) \to \exists! Y (finite(Y) \wedge powerset(X, Y))) {
+  any X {
+    assume size(X, emptyset) {
+      apply invoke size_emptyset_implies_set_emptyset for X
+      assert singleton_emptyset_is_finite
+      any y {
+        assume in(y, singleton(emptyset)) {
+          apply invoke rightward singleton_characterization for emptyset, y
+          apply emptyset_is_subset_of_any_set for X
+          substitute subset(emptyset, X) for emptyset: y
+        }
+        assume subset(y, X) {
+          substitute subset(y, X) for X: emptyset
+          apply invoke subset_of_emptyset_is_emptyset for y
+          apply invoke leftward singleton_characterization for emptyset, y
+        }
+        connect in(y, singleton(emptyset)) \leftrightarrow subset(y, X)
+      }
+      fold for powerset conclude powerset(X, singleton(emptyset))
+      connect finite(singleton(emptyset)) \wedge powerset(X, singleton(emptyset))
+      lift for singleton(emptyset) conclude \exists Y (finite(Y) \wedge powerset(X, Y))
+    }
+  }
+  any n {
+    assume natural(n) {
+      assume \forall X (size(X, n) \to \exists Y (finite(Y) \wedge powerset(X, Y))) {
+        any X {
+          assume size(X, suc(n)) {
+            apply invoke size_suc_decomposition for X, n
+            some X', x such \exists X' \exists x (size(X', n) \wedge notin(x, X') \wedge equal(X, adj(X', x))) {
+              split size(X', n) \wedge notin(x, X') \wedge equal(X, adj(X', x))
+              apply invoke \forall X (size(X, n) \to \exists Y (finite(Y) \wedge powerset(X, Y))) for X'
+              some Y such \exists Y (finite(Y) \wedge powerset(X', Y)) {
+                split finite(Y) \wedge powerset(X', Y)
+                any y, z, z' {
+                  assume equal(z, adj(y, x)) \wedge equal(z', adj(y, x)) {
+                    split equal(z, adj(y, x)) \wedge equal(z', adj(y, x))
+                    substitute equal(z, adj(y, x)) for adj(y, x): z'
+                  }
+                }
+                fold for functional conclude functional(\lambda^P y, z. equal(z, adj(y, x)))
+                connect finite(Y) \wedge functional(\lambda^P y, z. equal(z, adj(y, x)))
+                apply invoke finite_replacement_exists_uniquely for Y, \lambda^P y, z. equal(z, adj(y, x))
+                some Z such \exists! Z (finite(Z) \wedge \forall z (in(z, Z) \leftrightarrow \exists y (in(y, Y) \wedge equal(z, adj(y, x))))) {
+                  split finite(Z) \wedge \forall z (in(z, Z) \leftrightarrow \exists y (in(y, Y) \wedge equal(z, adj(y, x))))
+                  connect finite(Y) \wedge finite(Z)
+                  apply invoke finite_cup_exists_uniquely for Y, Z
+                  some W such \exists! W (finite(W) \wedge cup(Y, Z, W)) {
+                    split finite(W) \wedge cup(Y, Z, W)
+                    any w {
+                      assume in(w, W) {
+                        apply invoke rightward cup(Y, Z, W) for w
+                        divide in(w, Y) \vee in(w, Z)
+                          case in(w, Y) {
+                            apply invoke rightward powerset(X', Y) for w
+                            apply subset_adj for X', x
+                            substitute subset(X', adj(X', x)) for adj(X', x): X
+                            connect subset(w, X') \wedge subset(X', X)
+                            apply invoke subset_transivity for w, X', X
+                          }
+                          case in(w, Z) {
+                            apply invoke rightward \forall z (in(z, Z) \leftrightarrow \exists y (in(y, Y) \wedge equal(z, adj(y, x)))) for w
+                            some y such \exists y (in(y, Y) \wedge equal(w, adj(y, x))) {
+                              split in(y, Y) \wedge equal(w, adj(y, x))
+                              apply invoke rightward powerset(X', Y) for y
+                              apply invoke subset_implies_subset_adj for y, X', x
+                              substitute subset(adj(y, x), adj(X', x)) for adj(y, x): w, adj(X', x): X
+                            }
+                          }
+                      }
+                      assume subset(w, X) {
+                        substitute subset(w, X) for X: adj(X', x)
+                        apply law_of_excluded_middle for \lambda^P. in(x, w)
+                        divide notin(x, w) \vee in(x, w)
+                          case notin(x, w) {
+                            substitute subset(w, X) for X: adj(X', x)
+                            connect subset(w, adj(X', x)) \wedge notin(x, w)
+                            apply invoke subset_adj_notin for X', x, w
+                            apply invoke leftward powerset(X', Y) for w
+                            pad in(w, Y) conclude in(w, Y) \vee in(w, Z)
+                            apply invoke leftward cup(Y, Z, W) for w
+                          }
+                          case in(x, w) {
+                            apply invoke subset_implies_subset_rem for w, X, x
+                            substitute subset(rem(w, x), rem(X, x)) for X: adj(X', x)
+                            apply invoke equal_rem_adj for X', x
+                            substitute subset(rem(w, x), rem(adj(X', x), x)) for rem(adj(X', x), x): X'
+                            apply invoke leftward powerset(X', Y) for rem(w, x)
+                            apply invoke equal_adj_rem for w, x
+                            connect in(rem(w, x), Y) \wedge equal(w, adj(rem(w, x), x))
+                            lift for rem(w, x) conclude \exists y (in(y, Y) \wedge equal(w, adj(y, x)))
+                            apply invoke leftward \forall z (in(z, Z) \leftrightarrow \exists y (in(y, Y) \wedge equal(z, adj(y, x)))) for w
+                            pad in(w, Z) conclude in(w, Y) \vee in(w, Z)
+                            apply invoke leftward cup(Y, Z, W) for w
+                          }
+                      }
+                      connect in(w, W) \leftrightarrow subset(w, X)
+                    }
+                    fold for powerset conclude powerset(X, W)
+                    connect finite(W) \wedge powerset(X, W)
+                    lift for W conclude \exists W (finite(W) \wedge powerset(X, W))
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  connect \forall X (size(X, emptyset) \to \exists Y (finite(Y) \wedge powerset(X, Y))) \wedge \forall n (natural(n) \to (\forall X (size(X, n) \to \exists Y (finite(Y) \wedge powerset(X, Y))) \to \forall X (size(X, suc(n)) \to \exists Y (finite(Y) \wedge powerset(X, Y)))))
+  apply invoke natural_induction for \lambda^P n. \forall X (size(X, n) \to \exists Y (finite(Y) \wedge powerset(X, Y)))
+  any X {
+    assume finite(X) {
+      some n such finite(X) {
+        split 1 size(X, n)
+        apply invoke \forall n (natural(n) \to \forall X (size(X, n) \to \exists Y (finite(Y) \wedge powerset(X, Y)))) for n
+        apply invoke \forall X (size(X, n) \to \exists Y (finite(Y) \wedge powerset(X, Y))) for X
+        some Y such \exists Y (finite(Y) \wedge powerset(X, Y)) {
+          split finite(Y) \wedge powerset(X, Y)
+          any Y' {
+            assume finite(Y') \wedge powerset(X, Y') {
+              split 2 finite(Y') \wedge powerset(X, Y')
+              connect powerset(X, Y) \wedge powerset(X, Y')
+              apply invoke powerset_is_unique for X, Y, Y'
+            }
+          }
+          connect finite(Y) \wedge powerset(X, Y) \wedge \forall Y' (finite(Y') \wedge powerset(X, Y') \to equal(Y', Y))
+          characterize for Y conclude \exists! Y (finite(Y) \wedge powerset(X, Y))
         }
       }
     }

@@ -330,6 +330,27 @@ theorem finite_set_of_hf_is_hf \forall Y (finite(Y) \wedge \forall y (in(y, Y) \
   }
 }
 
+theorem subset_of_hf_is_hf \forall x \forall y (hf(x) \wedge subset(y, x) \to hf(y)) {
+  any x, y {
+    assume hf(x) \wedge subset(y, x) {
+      split hf(x) \wedge subset(y, x)
+      apply invoke hf_is_irrefrel_wellfounded_finite for x
+      split 3 irrefrel(x, in) \wedge wellfounded(x, in) \wedge finite(x)
+      connect finite(x) \wedge subset(y, x)
+      apply invoke subset_of_finite_is_finite for x, y
+      any z {
+        assume in(z, y) {
+          apply invoke subset(y, x) for z
+          connect hf(x) \wedge in(z, x)
+          apply invoke element_of_hf_is_hf for x, z
+        }
+      }
+      connect finite(y) \wedge \forall z (in(z, y) \to hf(z))
+      apply invoke finite_set_of_hf_is_hf for y
+    }
+  }
+}
+
 theorem hf_satisfies_axiom_of_adjunction \forall x \forall y (hf(x) \wedge hf(y) \to \exists z (hf(z) \wedge \forall w (hf(w) \to (in(w, z) \leftrightarrow in(w, x) \vee equal(w, y))))) {
   any x, y {
     assume hf(x) \wedge hf(y) {
@@ -509,6 +530,35 @@ theorem hf_satisfies_axiom_of_replacement \forall^P \psi[2] (\forall x \forall y
             lift for Y conclude \exists Y (hf(Y) \wedge \forall y (hf(y) \to (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge hf(x) \wedge \psi(x, y)))))
           }
         }
+      }
+    }
+  }
+}
+
+theorem hf_satisfies_axiom_of_powerset \forall x (hf(x) \to \exists y (hf(y) \wedge \forall z (hf(z) \to (in(z, y) \leftrightarrow subset(z, x))))) {
+  any x {
+    assume hf(x) {
+      apply invoke hf_is_irrefrel_wellfounded_finite for x
+      split 3 irrefrel(x, in) \wedge wellfounded(x, in) \wedge finite(x)
+      apply invoke finite_powerset_exists_uniquely for x
+      some y such \exists! y (finite(y) \wedge powerset(x, y)) {
+        split finite(y) \wedge powerset(x, y)
+        any z {
+          assume in(z, y) {
+            apply invoke rightward powerset(x, y) for z
+            connect hf(x) \wedge subset(z, x)
+            apply invoke subset_of_hf_is_hf for x, z
+          }
+        }
+        connect finite(y) \wedge \forall z (in(z, y) \to hf(z))
+        apply invoke finite_set_of_hf_is_hf for y
+        any z {
+          assume hf(z) {
+            apply powerset(x, y) for z
+          }
+        }
+        connect hf(y) \wedge \forall z (hf(z) \to (in(z, y) \leftrightarrow subset(z, x)))
+        lift for y conclude \exists y (hf(y) \wedge \forall z (hf(z) \to (in(z, y) \leftrightarrow subset(z, x))))
       }
     }
   }

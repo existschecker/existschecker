@@ -182,3 +182,51 @@ theorem equal_adj_rem \forall X \forall x (in(x, X) \to equal(adj(rem(X, x), x),
     }
   }
 }
+
+theorem subset_implies_subset_rem \forall x \forall y \forall z (subset(x, y) \to subset(rem(x, z), rem(y, z))) {
+  any x, y, z {
+    assume subset(x, y) {
+      any w {
+        assume in(w, rem(x, z)) {
+          apply invoke rightward rem_existence for x, z, w
+          split in(w, x) \wedge neq(w, z)
+          apply invoke subset(x, y) for w
+          connect in(w, y) \wedge neq(w, z)
+          apply invoke leftward rem_existence for y, z, w
+        }
+      }
+      fold for subset conclude subset(rem(x, z), rem(y, z))
+    }
+  }
+}
+
+theorem equal_rem_adj \forall x \forall y (notin(y, x) \to equal(rem(adj(x, y), y), x)) {
+  any x, y {
+    assume notin(y, x) {
+      any z {
+        assume in(z, rem(adj(x, y), y)) {
+          apply invoke rightward rem_existence for adj(x, y), y, z
+          split in(z, adj(x, y)) \wedge neq(z, y)
+          apply invoke rightward adj_existence for x, y, z
+          divide in(z, x) \vee equal(z, y)
+            case in(z, x) {}
+            case equal(z, y) {
+              contradict equal(z, y)
+              explode in(z, x)
+            }
+        }
+        assume in(z, x) {
+          apply invoke adj_cor1 for x, y, z
+          deny equal(z, y) {
+            substitute in(z, x) for z: y
+            contradict in(y, x)
+          }
+          connect in(z, adj(x, y)) \wedge neq(z, y)
+          apply invoke leftward rem_existence for adj(x, y), y, z
+        }
+        connect in(z, rem(adj(x, y), y)) \leftrightarrow in(z, x)
+      }
+      apply invoke axiom_of_extensionality for rem(adj(x, y), y), x
+    }
+  }
+}
