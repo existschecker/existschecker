@@ -117,11 +117,11 @@ theorem finite_set_of_hf_is_hf \forall Y (finite(Y) \wedge \forall y (in(y, Y) \
       assert tcm_is_functional
       connect finite(Y) \wedge functional(tcm)
       apply invoke finite_replacement_exists_uniquely for Y, tcm
-      some Z such \exists! Z (finite(Z) \wedge \forall z (in(z, Z) \leftrightarrow \exists y (in(y, Y) \wedge tcm(y, z)))) {
-        split finite(Z) \wedge \forall z (in(z, Z) \leftrightarrow \exists y (in(y, Y) \wedge tcm(y, z)))
+      some Z such \exists! Z (finite(Z) \wedge replacement(Y, tcm, Z)) {
+        split finite(Z) \wedge replacement(Y, tcm, Z)
         any z {
           assume in(z, Z) {
-            apply invoke rightward \forall z (in(z, Z) \leftrightarrow \exists y (in(y, Y) \wedge tcm(y, z))) for z
+            apply invoke rightward replacement(Y, tcm, Z) for z
             some y such \exists y (in(y, Y) \wedge tcm(y, z)) {
               split in(y, Y) \wedge tcm(y, z)
               apply invoke \forall y (in(y, Y) \to hf(y)) for y
@@ -143,7 +143,7 @@ theorem finite_set_of_hf_is_hf \forall Y (finite(Y) \wedge \forall y (in(y, Y) \
               apply invoke rightward bigcup(Z, W) for w
               some z such \exists z (in(w, z) \wedge in(z, Z)) {
                 split in(w, z) \wedge in(z, Z)
-                apply invoke rightward \forall z (in(z, Z) \leftrightarrow \exists y (in(y, Y) \wedge tcm(y, z))) for z
+                apply invoke rightward replacement(Y, tcm, Z) for z
                 some y such \exists y (in(y, Y) \wedge tcm(y, z)) {
                   split in(y, Y) \wedge tcm(y, z)
                   apply invoke \forall y (in(y, Y) \to hf(y)) for y
@@ -180,7 +180,7 @@ theorem finite_set_of_hf_is_hf \forall Y (finite(Y) \wedge \forall y (in(y, Y) \
                       apply invoke rightward bigcup(Z, W) for v
                       some z such \exists z (in(v, z) \wedge in(z, Z)) {
                         split in(v, z) \wedge in(z, Z)
-                        apply invoke rightward \forall z (in(z, Z) \leftrightarrow \exists y (in(y, Y) \wedge tcm(y, z))) for z
+                        apply invoke rightward replacement(Y, tcm, Z) for z
                         some y such \exists y (in(y, Y) \wedge tcm(y, z)) {
                           split in(y, Y) \wedge tcm(y, z)
                           apply invoke \forall y (in(y, Y) \to hf(y)) for y
@@ -266,7 +266,7 @@ theorem finite_set_of_hf_is_hf \forall Y (finite(Y) \wedge \forall y (in(y, Y) \
                     apply invoke rightward bigcup(Z, W) for v
                     some z such \exists z (in(v, z) \wedge in(z, Z)) {
                       split in(v, z) \wedge in(z, Z)
-                      apply invoke rightward \forall z (in(z, Z) \leftrightarrow \exists y (in(y, Y) \wedge tcm(y, z))) for z
+                      apply invoke rightward replacement(Y, tcm, Z) for z
                       some y such \exists y (in(y, Y) \wedge tcm(y, z)) {
                         split in(y, Y) \wedge tcm(y, z)
                         apply invoke rightward tcm(y, z) for v
@@ -304,7 +304,7 @@ theorem finite_set_of_hf_is_hf \forall Y (finite(Y) \wedge \forall y (in(y, Y) \
                             split irrefrel(z, in) \wedge wellfounded(z, in) \wedge finite(z) \wedge tcm(y, z)
                             connect in(y, Y) \wedge tcm(y, z)
                             lift for y conclude \exists y (in(y, Y) \wedge tcm(y, z))
-                            apply invoke leftward \forall z (in(z, Z) \leftrightarrow \exists y (in(y, Y) \wedge tcm(y, z))) for z
+                            apply invoke leftward replacement(Y, tcm, Z) for z
                             apply invoke leftward tcm(y, z) for v
                             connect in(v, z) \wedge in(z, Z)
                             lift for z conclude \exists z (in(v, z) \wedge in(z, Z))
@@ -493,11 +493,11 @@ theorem hf_satisfies_axiom_of_replacement \forall^P \psi[2] (\forall x \forall y
           split irrefrel(X, in) \wedge wellfounded(X, in) \wedge finite(X)
           connect finite(X) \wedge functional(\lambda^P x, y. hf(x) \wedge hf(y) \wedge \psi(x, y))
           apply invoke finite_replacement_exists_uniquely for X, \lambda^P x, y. hf(x) \wedge hf(y) \wedge \psi(x, y)
-          some Y such \exists! Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge hf(x) \wedge hf(y) \wedge \psi(x, y)))) {
-            split finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge hf(x) \wedge hf(y) \wedge \psi(x, y)))
+          some Y such \exists! Y (finite(Y) \wedge replacement(X, \lambda^P x, y. hf(x) \wedge hf(y) \wedge \psi(x, y), Y)) {
+            split finite(Y) \wedge replacement(X, \lambda^P x, y. hf(x) \wedge hf(y) \wedge \psi(x, y), Y)
             any y {
               assume in(y, Y) {
-                apply invoke rightward \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge hf(x) \wedge hf(y) \wedge \psi(x, y))) for y
+                apply invoke rightward replacement(X, \lambda^P x, y. hf(x) \wedge hf(y) \wedge \psi(x, y), Y) for y
                 some x such \exists x (in(x, X) \wedge hf(x) \wedge hf(y) \wedge \psi(x, y)) {
                   split 3 in(x, X) \wedge hf(x) \wedge hf(y) \wedge \psi(x, y)
                 }
@@ -508,7 +508,7 @@ theorem hf_satisfies_axiom_of_replacement \forall^P \psi[2] (\forall x \forall y
             any y {
               assume hf(y) {
                 assume in(y, Y) {
-                  apply invoke rightward \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge hf(x) \wedge hf(y) \wedge \psi(x, y))) for y
+                  apply invoke rightward replacement(X, \lambda^P x, y. hf(x) \wedge hf(y) \wedge \psi(x, y), Y) for y
                   some x such \exists x (in(x, X) \wedge hf(x) \wedge hf(y) \wedge \psi(x, y)) {
                     split in(x, X) \wedge hf(x) \wedge hf(y) \wedge \psi(x, y)
                     connect in(x, X) \wedge hf(x) \wedge \psi(x, y)
@@ -521,7 +521,7 @@ theorem hf_satisfies_axiom_of_replacement \forall^P \psi[2] (\forall x \forall y
                     connect in(x, X) \wedge hf(x) \wedge hf(y) \wedge \psi(x, y)
                     lift for x conclude \exists x (in(x, X) \wedge hf(x) \wedge hf(y) \wedge \psi(x, y))
                   }
-                  apply invoke leftward \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge hf(x) \wedge hf(y) \wedge \psi(x, y))) for y
+                  apply invoke leftward replacement(X, \lambda^P x, y. hf(x) \wedge hf(y) \wedge \psi(x, y), Y) for y
                 }
                 connect in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge hf(x) \wedge \psi(x, y))
               }

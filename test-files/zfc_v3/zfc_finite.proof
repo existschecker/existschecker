@@ -460,15 +460,7 @@ theorem finite_bigcup_exists_uniquely \forall X (finite(X) \wedge \forall x (in(
   }
 }
 
-theorem replacement_is_unique \forall X \forall^P \psi[2] \forall Y \forall Y' (\forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))) \wedge \forall y (in(y, Y') \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))) \to equal(Y, Y')) {
-  any X, predicate \psi[2], Y, Y' {
-    assume \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))) \wedge \forall y (in(y, Y') \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))) {
-      apply invoke set_is_unique_for_predicate for \lambda^P y. \exists x (in(x, X) \wedge \psi(x, y)), Y, Y'
-    }
-  }
-}
-
-theorem finite_replacement_exists_uniquely \forall X \forall^P \psi[2] (finite(X) \wedge functional(\psi) \to \exists! Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))))) {
+theorem finite_replacement_exists_uniquely \forall X \forall^P \psi[2] (finite(X) \wedge functional(\psi) \to \exists! Y (finite(Y) \wedge replacement(X, \psi, Y))) {
   any X, predicate \psi[2] {
     assume size(X, emptyset) \wedge functional(\psi) {
       split size(X, emptyset) \wedge functional(\psi)
@@ -491,13 +483,14 @@ theorem finite_replacement_exists_uniquely \forall X \forall^P \psi[2] (finite(X
         }
         connect in(y, emptyset) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))
       }
-      connect finite(emptyset) \wedge \forall y (in(y, emptyset) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y)))
-      lift for emptyset conclude \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))))
+      fold for replacement conclude replacement(X, \psi, emptyset)
+      connect finite(emptyset) \wedge replacement(X, \psi, emptyset)
+      lift for emptyset conclude \exists Y (finite(Y) \wedge replacement(X, \psi, Y))
     }
   }
   any n {
     assume natural(n) {
-      assume \forall X \forall^P \psi[2] (size(X, n) \wedge functional(\psi) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))))) {
+      assume \forall X \forall^P \psi[2] (size(X, n) \wedge functional(\psi) \to \exists Y (finite(Y) \wedge replacement(X, \psi, Y))) {
         any X, predicate \psi[2] {
           assume size(X, suc(n)) \wedge functional(\psi) {
             split size(X, suc(n)) \wedge functional(\psi)
@@ -505,9 +498,9 @@ theorem finite_replacement_exists_uniquely \forall X \forall^P \psi[2] (finite(X
             some X', x such \exists X' \exists x (size(X', n) \wedge notin(x, X') \wedge equal(X, adj(X', x))) {
               split size(X', n) \wedge notin(x, X') \wedge equal(X, adj(X', x))
               connect size(X', n) \wedge functional(\psi)
-              apply invoke \forall X \forall^P \psi[2] (size(X, n) \wedge functional(\psi) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))))) for X', \psi
-              some Y such \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x' (in(x', X') \wedge \psi(x', y)))) {
-                split finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x' (in(x', X') \wedge \psi(x', y)))
+              apply invoke \forall X \forall^P \psi[2] (size(X, n) \wedge functional(\psi) \to \exists Y (finite(Y) \wedge replacement(X, \psi, Y))) for X', \psi
+              some Y such \exists Y (finite(Y) \wedge replacement(X', \psi, Y)) {
+                split finite(Y) \wedge replacement(X', \psi, Y)
                 apply adj_cor3 for X', x
                 substitute in(x, adj(X', x)) for adj(X', x): X
                 apply law_of_excluded_middle for \lambda^P. \exists y (\psi(x, y))
@@ -520,7 +513,7 @@ theorem finite_replacement_exists_uniquely \forall X \forall^P \psi[2] (finite(X
                           apply invoke rightward adj_existence for Y, y, y'
                           divide in(y', Y) \vee equal(y', y)
                             case in(y', Y) {
-                              apply invoke rightward \forall y (in(y, Y) \leftrightarrow \exists x' (in(x', X') \wedge \psi(x', y))) for y'
+                              apply invoke rightward replacement(X', \psi, Y) for y'
                               some x' such \exists x' (in(x', X') \wedge \psi(x', y')) {
                                 split in(x', X') \wedge \psi(x', y')
                                 apply invoke adj_cor1 for X', x, x'
@@ -544,7 +537,7 @@ theorem finite_replacement_exists_uniquely \forall X \forall^P \psi[2] (finite(X
                               case in(x', X') {
                                 connect in(x', X') \wedge \psi(x', y')
                                 lift for x' conclude \exists x' (in(x', X') \wedge \psi(x', y'))
-                                apply invoke leftward \forall y (in(y, Y) \leftrightarrow \exists x' (in(x', X') \wedge \psi(x', y))) for y'
+                                apply invoke leftward replacement(X', \psi, Y) for y'
                                 apply invoke adj_cor1 for Y, y, y'
                               }
                               case equal(x', x) {
@@ -558,15 +551,16 @@ theorem finite_replacement_exists_uniquely \forall X \forall^P \psi[2] (finite(X
                         }
                         connect in(y', adj(Y, y)) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y'))
                       }
-                      connect finite(adj(Y, y)) \wedge \forall y' (in(y', adj(Y, y)) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y')))
-                      lift for adj(Y, y) conclude \exists Y' (finite(Y') \wedge \forall y' (in(y', Y') \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y'))))
+                      fold for replacement conclude replacement(X, \psi, adj(Y, y))
+                      connect finite(adj(Y, y)) \wedge replacement(X, \psi, adj(Y, y))
+                      lift for adj(Y, y) conclude \exists Y' (finite(Y') \wedge replacement(X, \psi, Y'))
                     }
                   }
                   case \neg(\exists y (\psi(x, y))) {
                     apply invoke rightward neg_exist_leftrightarrow_forall_neg for \lambda^P y. \psi(x, y)
                     any y {
                       assume in(y, Y) {
-                        apply invoke rightward \forall y (in(y, Y) \leftrightarrow \exists x' (in(x', X') \wedge \psi(x', y))) for y
+                        apply invoke rightward replacement(X', \psi, Y) for y
                         some x' such \exists x' (in(x', X') \wedge \psi(x', y)) {
                           split in(x', X') \wedge \psi(x', y)
                           apply invoke adj_cor1 for X', x, x'
@@ -584,7 +578,7 @@ theorem finite_replacement_exists_uniquely \forall X \forall^P \psi[2] (finite(X
                             case in(x', X') {
                               connect in(x', X') \wedge \psi(x', y)
                               lift for x' conclude \exists x' (in(x', X') \wedge \psi(x', y))
-                              apply invoke leftward \forall y (in(y, Y) \leftrightarrow \exists x' (in(x', X') \wedge \psi(x', y))) for y
+                              apply invoke leftward replacement(X', \psi, Y) for y
                             }
                             case equal(x', x) {
                               substitute \psi(x', y) for x': x
@@ -596,8 +590,9 @@ theorem finite_replacement_exists_uniquely \forall X \forall^P \psi[2] (finite(X
                       }
                       connect in(y, Y) \leftrightarrow \exists x' (in(x', X) \wedge \psi(x', y))
                     }
-                    connect finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x' (in(x', X) \wedge \psi(x', y)))
-                    lift for Y conclude \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x' (in(x', X) \wedge \psi(x', y))))
+                    fold for replacement conclude replacement(X, \psi, Y)
+                    connect finite(Y) \wedge replacement(X, \psi, Y)
+                    lift for Y conclude \exists Y (finite(Y) \wedge replacement(X, \psi, Y))
                   }
               }
             }
@@ -606,14 +601,14 @@ theorem finite_replacement_exists_uniquely \forall X \forall^P \psi[2] (finite(X
       }
     }
   }
-  connect \forall X \forall^P \psi[2] (size(X, emptyset) \wedge functional(\psi) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))))) \wedge \forall n (natural(n) \to (\forall X \forall^P \psi[2] (size(X, n) \wedge functional(\psi) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))))) \to \forall X \forall^P \psi[2] (size(X, suc(n)) \wedge functional(\psi) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y)))))))
-  apply invoke natural_induction for \lambda^P n. \forall X \forall^P \psi[2] (size(X, n) \wedge functional(\psi) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y)))))
+  connect \forall X \forall^P \psi[2] (size(X, emptyset) \wedge functional(\psi) \to \exists Y (finite(Y) \wedge replacement(X, \psi, Y))) \wedge \forall n (natural(n) \to (\forall X \forall^P \psi[2] (size(X, n) \wedge functional(\psi) \to \exists Y (finite(Y) \wedge replacement(X, \psi, Y))) \to \forall X \forall^P \psi[2] (size(X, suc(n)) \wedge functional(\psi) \to \exists Y (finite(Y) \wedge replacement(X, \psi, Y)))))
+  apply invoke natural_induction for \lambda^P n. \forall X \forall^P \psi[2] (size(X, n) \wedge functional(\psi) \to \exists Y (finite(Y) \wedge replacement(X, \psi, Y)))
   any X, n, predicate \psi[2] {
     assume size(X, n) \wedge functional(\psi) {
       split 1 size(X, n) \wedge functional(\psi)
       split 1 size(X, n)
-      apply invoke \forall n (natural(n) \to \forall X \forall^P \psi[2] (size(X, n) \wedge functional(\psi) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y)))))) for n
-      apply invoke \forall X \forall^P \psi[2] (size(X, n) \wedge functional(\psi) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))))) for X, \psi
+      apply invoke \forall n (natural(n) \to \forall X \forall^P \psi[2] (size(X, n) \wedge functional(\psi) \to \exists Y (finite(Y) \wedge replacement(X, \psi, Y)))) for n
+      apply invoke \forall X \forall^P \psi[2] (size(X, n) \wedge functional(\psi) \to \exists Y (finite(Y) \wedge replacement(X, \psi, Y))) for X, \psi
     }
   }
   any X, predicate \psi[2] {
@@ -621,18 +616,18 @@ theorem finite_replacement_exists_uniquely \forall X \forall^P \psi[2] (finite(X
       split finite(X) \wedge functional(\psi)
       some n such finite(X) {
         connect size(X, n) \wedge functional(\psi)
-        apply invoke \forall X \forall n \forall^P \psi[2] (size(X, n) \wedge functional(\psi) \to \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))))) for X, n, \psi
-        some Y such \exists Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y)))) {
-          split finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y)))
+        apply invoke \forall X \forall n \forall^P \psi[2] (size(X, n) \wedge functional(\psi) \to \exists Y (finite(Y) \wedge replacement(X, \psi, Y))) for X, n, \psi
+        some Y such \exists Y (finite(Y) \wedge replacement(X, \psi, Y)) {
+          split finite(Y) \wedge replacement(X, \psi, Y)
           any Y' {
-            assume finite(Y') \wedge \forall y (in(y, Y') \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))) {
-              split finite(Y') \wedge \forall y (in(y, Y') \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y)))
-              connect \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))) \wedge \forall y (in(y, Y') \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y)))
+            assume finite(Y') \wedge replacement(X, \psi, Y') {
+              split finite(Y') \wedge replacement(X, \psi, Y')
+              connect replacement(X, \psi, Y) \wedge replacement(X, \psi, Y')
               apply invoke replacement_is_unique for X, \psi, Y, Y'
             }
           }
-          connect finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))) \wedge \forall Y' (finite(Y') \wedge \forall y (in(y, Y') \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))) \to equal(Y', Y))
-          characterize for Y conclude \exists! Y (finite(Y) \wedge \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y))))
+          connect finite(Y) \wedge replacement(X, \psi, Y) \wedge \forall Y' (finite(Y') \wedge replacement(X, \psi, Y') \to equal(Y', Y))
+          characterize for Y conclude \exists! Y (finite(Y) \wedge replacement(X, \psi, Y))
         }
       }
     }
@@ -682,8 +677,8 @@ theorem finite_powerset_exists_uniquely \forall X (finite(X) \to \exists! Y (fin
                 fold for functional conclude functional(\lambda^P y, z. equal(z, adj(y, x)))
                 connect finite(Y) \wedge functional(\lambda^P y, z. equal(z, adj(y, x)))
                 apply invoke finite_replacement_exists_uniquely for Y, \lambda^P y, z. equal(z, adj(y, x))
-                some Z such \exists! Z (finite(Z) \wedge \forall z (in(z, Z) \leftrightarrow \exists y (in(y, Y) \wedge equal(z, adj(y, x))))) {
-                  split finite(Z) \wedge \forall z (in(z, Z) \leftrightarrow \exists y (in(y, Y) \wedge equal(z, adj(y, x))))
+                some Z such \exists! Z (finite(Z) \wedge replacement(Y, \lambda^P y, z. equal(z, adj(y, x)), Z)) {
+                  split finite(Z) \wedge replacement(Y, \lambda^P y, z. equal(z, adj(y, x)), Z)
                   connect finite(Y) \wedge finite(Z)
                   apply invoke finite_cup_exists_uniquely for Y, Z
                   some W such \exists! W (finite(W) \wedge cup(Y, Z, W)) {
@@ -700,7 +695,7 @@ theorem finite_powerset_exists_uniquely \forall X (finite(X) \to \exists! Y (fin
                             apply invoke subset_transivity for w, X', X
                           }
                           case in(w, Z) {
-                            apply invoke rightward \forall z (in(z, Z) \leftrightarrow \exists y (in(y, Y) \wedge equal(z, adj(y, x)))) for w
+                            apply invoke rightward replacement(Y, \lambda^P y, z. equal(z, adj(y, x)), Z) for w
                             some y such \exists y (in(y, Y) \wedge equal(w, adj(y, x))) {
                               split in(y, Y) \wedge equal(w, adj(y, x))
                               apply invoke rightward powerset(X', Y) for y
@@ -730,7 +725,7 @@ theorem finite_powerset_exists_uniquely \forall X (finite(X) \to \exists! Y (fin
                             apply invoke equal_adj_rem for w, x
                             connect in(rem(w, x), Y) \wedge equal(w, adj(rem(w, x), x))
                             lift for rem(w, x) conclude \exists y (in(y, Y) \wedge equal(w, adj(y, x)))
-                            apply invoke leftward \forall z (in(z, Z) \leftrightarrow \exists y (in(y, Y) \wedge equal(z, adj(y, x)))) for w
+                            apply invoke leftward replacement(Y, \lambda^P y, z. equal(z, adj(y, x)), Z) for w
                             pad in(w, Z) conclude in(w, Y) \vee in(w, Z)
                             apply invoke leftward cup(Y, Z, W) for w
                           }

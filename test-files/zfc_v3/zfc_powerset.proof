@@ -1,4 +1,4 @@
-include "zfc_bigcup.proof"
+include "zfc_replacement.proof"
 
 definition predicate powerset(X, Y) as \forall y (in(y, Y) \leftrightarrow subset(y, X))
 
