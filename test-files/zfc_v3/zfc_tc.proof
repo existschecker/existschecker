@@ -6,22 +6,6 @@ definition predicate rtc(predicate \phi[2], x, y) as \exists n (natural(n) \wedg
 
 definition predicate autoexpand owns(x, y) as in(y, x) tex infix "\owns"
 
-definition predicate tcm(X, Y) as \forall y (in(y, Y) \leftrightarrow tc(owns, X, y))
-
-theorem tcm_is_unique \forall X \forall Y \forall Y' (tcm(X, Y) \wedge tcm(X, Y') \to equal(Y, Y')) {
-  any X, Y, Y' {
-    assume tcm(X, Y) \wedge tcm(X, Y') {
-      expand tcm(X, Y) \wedge tcm(X, Y') for tcm
-      apply invoke set_is_unique_for_predicate for \lambda^P y. tc(owns, X, y), Y, Y'
-    }
-  }
-}
-
-theorem tcm_is_functional functional(tcm) {
-  assert tcm_is_unique
-  fold for functional conclude functional(tcm)
-}
-
 theorem tc_one_step \forall^P \phi[2] \forall x \forall y (\phi(x, y) \to tc(\phi, x, y)) {
   any predicate \phi[2], x, y {
     assume \phi(x, y) {
@@ -34,34 +18,6 @@ theorem tc_one_step \forall^P \phi[2] \forall x \forall y (\phi(x, y) \to tc(\ph
       connect pnatural(suc(emptyset)) \wedge piterate(\phi, suc(emptyset), x, y)
       lift for suc(emptyset) conclude \exists n (pnatural(n) \wedge piterate(\phi, n, x, y))
       fold for tc conclude tc(\phi, x, y)
-    }
-  }
-}
-
-theorem tcm_implies_subset \forall X \forall Y (tcm(X, Y) \to subset(X, Y)) {
-  any X, Y {
-    assume tcm(X, Y) {
-      any x {
-        assume in(x, X) {
-          apply invoke tc_one_step for owns, X, x
-          apply invoke leftward tcm(X, Y) for x
-        }
-      }
-      fold for subset conclude subset(X, Y)
-    }
-  }
-}
-
-theorem tcm_irrefrel_implies_not_contain_itself \forall X \forall Y (tcm(X, Y) \wedge irrefrel(Y, in) \to notin(X, X)) {
-  any X, Y {
-    assume tcm(X, Y) \wedge irrefrel(Y, in) {
-      split tcm(X, Y) \wedge irrefrel(Y, in)
-      apply invoke tcm_implies_subset for X, Y
-      deny in(X, X) {
-        apply invoke subset(X, Y) for X
-        apply invoke irrefrel(Y, in) for X
-        contradict in(X, X)
-      }
     }
   }
 }
@@ -167,24 +123,6 @@ theorem one_step_rtc_transitive \forall^P \phi[2] \forall x \forall y \forall z 
   }
 }
 
-theorem tcm_is_trans \forall X \forall Y (tcm(X, Y) \to trans(Y)) {
-  any X, Y {
-    assume tcm(X, Y) {
-      any p, q {
-        assume in(p, Y) \wedge in(q, p) {
-          split in(p, Y) \wedge in(q, p)
-          apply invoke rightward tcm(X, Y) for p
-          apply invoke tc_one_step for owns, p, q
-          connect tc(owns, X, p) \wedge tc(owns, p, q)
-          apply invoke tc_is_transitive for owns, X, p, q
-          apply invoke leftward tcm(X, Y) for q
-        }
-      }
-      fold for trans conclude trans(Y)
-    }
-  }
-}
-
 theorem tc_add_first \forall^P \phi[2] \forall x \forall y \forall z (\phi(x, y) \wedge tc(\phi, y, z) \to tc(\phi, x, z)) {
   any predicate \phi[2], x, y, z {
     assume \phi(x, y) \wedge tc(\phi, y, z) {
@@ -205,39 +143,6 @@ theorem tc_add_last \forall^P \phi[2] \forall x \forall y \forall z (tc(\phi, x,
       apply invoke tc_is_transitive for \phi, x, y, z
     }
   }
-}
-
-theorem emptyset_is_tcm_of_emptyset tcm(emptyset, emptyset) {
-  any y {
-    assume in(y, emptyset) {
-      apply emptyset_existence for y
-      contradict in(y, emptyset)
-      explode tc(owns, emptyset, y)
-    }
-    assume tc(owns, emptyset, y) {
-      some n such tc(owns, emptyset, y) {
-        split pnatural(n) \wedge piterate(owns, n, emptyset, y)
-        some g such piterate(owns, n, emptyset, y) {
-          split trace(owns, n, g) \wedge in(op(emptyset, emptyset), g) \wedge in(op(n, y), g)
-          split trace(owns, n, g)
-          split fun(g)
-          apply invoke pnatural_contains_emptyset for n
-          apply invoke \forall k (in(k, n) \to \exists p \exists q (in(op(k, p), g) \wedge in(op(suc(k), q), g) \wedge in(q, p))) for emptyset
-          some p, q such \exists p \exists q (in(op(emptyset, p), g) \wedge in(op(suc(emptyset), q), g) \wedge in(q, p)) {
-            split in(op(emptyset, p), g) \wedge in(op(suc(emptyset), q), g) \wedge in(q, p)
-            connect in(op(emptyset, emptyset), g) \wedge in(op(emptyset, p), g)
-            apply invoke \forall x \forall y \forall y' (in(op(x, y), g) \wedge in(op(x, y'), g) \to equal(y, y')) for emptyset, emptyset, p
-            substitute in(q, p) for p: emptyset
-            apply emptyset_existence for q
-            contradict in(q, emptyset)
-          }
-        }
-        explode in(y, emptyset)
-      }
-    }
-    connect in(y, emptyset) \leftrightarrow tc(owns, emptyset, y)
-  }
-  fold for tcm conclude tcm(emptyset, emptyset)
 }
 
 theorem tc_first_step \forall^P \phi[2] \forall x \forall y (tc(\phi, x, y) \to \exists z (\phi(x, z) \wedge rtc(\phi, z, y))) {
@@ -295,124 +200,6 @@ theorem tc_subset \forall x \forall s \forall y (tc(owns, x, s) \wedge subset(x,
           }
         }
       }
-    }
-  }
-}
-
-theorem tcm_is_tcm_of_itself \forall X \forall Y (tcm(X, Y) \to tcm(Y, Y)) {
-  any X, Y {
-    assume tcm(X, Y) {
-      any y {
-        assume in(y, Y) {
-          apply invoke rightward tcm(X, Y) for y
-          apply invoke tcm_implies_subset for X, Y
-          connect tc(owns, X, y) \wedge subset(X, Y)
-          apply invoke tc_subset for X, y, Y
-        }
-        assume tc(owns, Y, y) {
-          apply invoke tc_first_step for owns, Y, y
-          some z such \exists z (in(z, Y) \wedge rtc(owns, z, y)) {
-            split in(z, Y) \wedge rtc(owns, z, y)
-            apply invoke rightward tcm(X, Y) for z
-            connect tc(owns, X, z) \wedge rtc(owns, z, y)
-            apply invoke tc_rtc_transitive for owns, X, z, y
-            apply invoke leftward tcm(X, Y) for y
-          }
-        }
-        connect in(y, Y) \leftrightarrow tc(owns, Y, y)
-      }
-      fold for tcm conclude tcm(Y, Y)
-    }
-  }
-}
-
-theorem tcm_adjunction \forall x \forall y \forall p \forall q \forall r (tcm(x, p) \wedge tcm(y, q) \wedge cup(p, q, r) \to tcm(adj(x, y), adj(r, y))) {
-  any x, y, p, q, r {
-    assume tcm(x, p) \wedge tcm(y, q) \wedge cup(p, q, r) {
-      split tcm(x, p) \wedge tcm(y, q) \wedge cup(p, q, r)
-      any s {
-        assume in(s, adj(r, y)) {
-          apply invoke rightward adj_existence for r, y, s
-          divide in(s, r) \vee equal(s, y)
-            case in(s, r) {
-              apply invoke rightward cup(p, q, r) for s
-              divide in(s, p) \vee in(s, q)
-                case in(s, p) {
-                  apply invoke rightward tcm(x, p) for s
-                  apply subset_adj for x, y
-                  connect tc(owns, x, s) \wedge subset(x, adj(x, y))
-                  apply invoke tc_subset for x, s, adj(x, y)
-                }
-                case in(s, q) {
-                  apply invoke rightward tcm(y, q) for s
-                  apply adj_cor3 for x, y
-                  apply invoke tc_one_step for owns, adj(x, y), y
-                  connect tc(owns, adj(x, y), y) \wedge tc(owns, y, s)
-                  apply invoke tc_is_transitive for owns, adj(x, y), y, s
-                }
-            }
-            case equal(s, y) {
-              apply adj_cor3 for x, y
-              substitute in(y, adj(x, y)) for y[1]: s
-              apply invoke tc_one_step for owns, adj(x, y), s
-            }
-        }
-        assume tc(owns, adj(x, y), s) {
-          some n such tc(owns, adj(x, y), s) {
-            split pnatural(n) \wedge piterate(owns, n, adj(x, y), s)
-            apply invoke pnatural_is_suc_of_natural_element for n
-            some m such \exists m (equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)) {
-              split equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)
-              substitute piterate(owns, n, adj(x, y), s) for n: suc(m)
-              connect natural(m) \wedge piterate(owns, suc(m), adj(x, y), s)
-              apply invoke piterate_first_step for owns, m, adj(x, y), s
-              some t such \exists t (in(t, adj(x, y)) \wedge piterate(owns, m, t, s)) {
-                split in(t, adj(x, y)) \wedge piterate(owns, m, t, s)
-                apply invoke rightward adj_existence for x, y, t
-                divide in(t, x) \vee equal(t, y)
-                  case in(t, x) {
-                    apply invoke piterate_one_step for owns, x, t
-                    assert emptyset_is_natural
-                    apply invoke suc_of_natural_is_natural for emptyset
-                    connect natural(suc(emptyset)) \wedge natural(m) \wedge piterate(owns, suc(emptyset), x, t) \wedge piterate(owns, m, t, s)
-                    apply invoke piterate_addition for owns, suc(emptyset), m, x, t, s
-                    apply invoke add_induction_step_left for emptyset, m
-                    apply invoke add_base_step_left for m
-                    substitute equal(add(suc(emptyset), m), suc(add(emptyset, m))) for add(emptyset, m): m
-                    substitute equal(add(suc(emptyset), m), suc(m)) for suc(m): n
-                    substitute piterate(owns, add(suc(emptyset), m), x, s) for add(suc(emptyset), m): n
-                    connect pnatural(n) \wedge piterate(owns, n, x, s)
-                    lift for n conclude tc(owns, x, s)
-                    apply invoke leftward tcm(x, p) for s
-                    pad in(s, p) conclude in(s, p) \vee in(s, q)
-                    apply invoke leftward cup(p, q, r) for s
-                    apply invoke adj_cor1 for r, y, s
-                  }
-                  case equal(t, y) {
-                    substitute piterate(owns, m, t, s) for t: y
-                    divide natural(m)
-                      case equal(m, emptyset) {
-                        substitute piterate(owns, m, y, s) for m: emptyset
-                        apply invoke piterate_is_unique_base_step for owns, y, s
-                        apply adj_cor3 for r, y
-                        substitute in(y, adj(r, y)) for y[1]: s
-                      }
-                      case pnatural(m) {
-                        connect pnatural(m) \wedge piterate(owns, m, y, s)
-                        lift for m conclude tc(owns, y, s)
-                        apply invoke leftward tcm(y, q) for s
-                        pad in(s, q) conclude in(s, p) \vee in(s, q)
-                        apply invoke leftward cup(p, q, r) for s
-                        apply invoke adj_cor1 for r, y, s
-                      }
-                  }
-              }
-            }
-          }
-        }
-        connect in(s, adj(r, y)) \leftrightarrow tc(owns, adj(x, y), s)
-      }
-      fold for tcm conclude tcm(adj(x, y), adj(r, y))
     }
   }
 }

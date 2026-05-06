@@ -1,4 +1,4 @@
-include "zfc_tc.proof"
+include "zfc_tcm.proof"
 
 definition predicate hf(x) as \exists y (irrefrel(y, in) \wedge wellfounded(y, in) \wedge finite(y) \wedge tcm(x, y))
 
