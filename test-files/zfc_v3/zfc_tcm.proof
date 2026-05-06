@@ -1,5 +1,42 @@
 include "zfc_tc.proof"
 
+definition predicate autoexpand owns(x, y) as in(y, x) tex infix "\owns"
+
+theorem tc_subset \forall x \forall s \forall y (tc(owns, x, s) \wedge subset(x, y) \to tc(owns, y, s)) {
+  any x, s, y {
+    assume tc(owns, x, s) \wedge subset(x, y) {
+      split tc(owns, x, s) \wedge subset(x, y)
+      some n such tc(owns, x, s) {
+        split pnatural(n) \wedge piterate(owns, n, x, s)
+        pad pnatural(n) conclude natural(n)
+        apply invoke pnatural_is_suc_of_natural_element for n
+        some m such \exists m (equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)) {
+          split equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)
+          substitute piterate(owns, n, x, s) for n: suc(m)
+          connect natural(m) \wedge piterate(owns, suc(m), x, s)
+          apply invoke piterate_first_step for owns, m, x, s
+          some t such \exists t (in(t, x) \wedge piterate(owns, m, t, s)) {
+            split in(t, x) \wedge piterate(owns, m, t, s)
+            apply invoke subset(x, y) for t
+            apply invoke piterate_one_step for owns, y, t
+            assert emptyset_is_natural
+            apply invoke suc_of_natural_is_natural for emptyset
+            connect natural(suc(emptyset)) \wedge natural(m) \wedge piterate(owns, suc(emptyset), y, t) \wedge piterate(owns, m, t, s)
+            apply invoke piterate_addition for owns, suc(emptyset), m, y, t, s
+            apply invoke add_induction_step_left for emptyset, m
+            apply invoke add_base_step_left for m
+            substitute equal(add(suc(emptyset), m), suc(add(emptyset, m))) for add(emptyset, m): m
+            substitute equal(add(suc(emptyset), m), suc(m)) for suc(m): n
+            substitute piterate(owns, add(suc(emptyset), m), y, s) for add(suc(emptyset), m): n
+            connect pnatural(n) \wedge piterate(owns, n, y, s)
+            lift for n conclude tc(owns, y, s)
+          }
+        }
+      }
+    }
+  }
+}
+
 definition predicate tcm(X, Y) as \forall y (in(y, Y) \leftrightarrow tc(owns, X, y))
 
 theorem tcm_is_unique \forall X \forall Y \forall Y' (tcm(X, Y) \wedge tcm(X, Y') \to equal(Y, Y')) {
