@@ -323,51 +323,12 @@ theorem finite_set_of_hfcore_is_hfcore \forall Y (finite(Y) \wedge \forall y (in
   }
 }
 
-definition predicate hf(x) as \exists y (irrefrel(y, in) \wedge wellfounded(y, in) \wedge finite(y) \wedge tcm(x, y))
-
-theorem hf_iff_hirrefrel_hwellfounded_hfcore \forall x (hf(x) \leftrightarrow hirrefrel(x) \wedge hwellfounded(x) \wedge hfcore(x)) {
-  any x {
-    assume hf(x) {
-      some t such hf(x) {
-        split irrefrel(t, in) \wedge wellfounded(t, in) \wedge finite(t) \wedge tcm(x, t)
-        connect irrefrel(t, in) \wedge tcm(x, t)
-        lift for t conclude hirrefrel(x)
-        connect wellfounded(t, in) \wedge tcm(x, t)
-        lift for t conclude hwellfounded(x)
-        connect finite(t) \wedge tcm(x, t)
-        lift for t conclude hfcore(x)
-        connect hirrefrel(x) \wedge hwellfounded(x) \wedge hfcore(x)
-      }
-    }
-    assume hirrefrel(x) \wedge hwellfounded(x) \wedge hfcore(x) {
-      split hirrefrel(x) \wedge hwellfounded(x) \wedge hfcore(x)
-      some t such hirrefrel(x) {
-        split irrefrel(t, in) \wedge tcm(x, t)
-        some t' such hwellfounded(x) {
-          split wellfounded(t', in) \wedge tcm(x, t')
-          connect tcm(x, t) \wedge tcm(x, t')
-          apply invoke tcm_is_unique for x, t, t'
-          substitute wellfounded(t', in) for t': t
-        }
-        some t'' such hfcore(x) {
-          split finite(t'') \wedge tcm(x, t'')
-          connect tcm(x, t) \wedge tcm(x, t'')
-          apply invoke tcm_is_unique for x, t, t''
-          substitute finite(t'') for t'': t
-        }
-        connect irrefrel(t, in) \wedge wellfounded(t, in) \wedge finite(t) \wedge tcm(x, t)
-        lift for t conclude hf(x)
-      }
-    }
-    connect hf(x) \leftrightarrow hirrefrel(x) \wedge hwellfounded(x) \wedge hfcore(x)
-  }
-}
+definition predicate hf(x) as hirrefrel(x) \wedge hwellfounded(x) \wedge hfcore(x)
 
 theorem hf_is_irrefrel_wellfounded_finite \forall x (hf(x) \to irrefrel(x, in) \wedge wellfounded(x, in) \wedge finite(x)) {
   any x {
     assume hf(x) {
-      apply invoke rightward hf_iff_hirrefrel_hwellfounded_hfcore for x
-      split hirrefrel(x) \wedge hwellfounded(x) \wedge hfcore(x)
+      split hf(x)
       apply invoke hirrefrel_is_irrefrel for x
       apply invoke hwellfounded_is_wellfounded for x
       apply invoke hfcore_is_finite for x
@@ -380,16 +341,14 @@ theorem element_of_hf_is_hf \forall x \forall y (hf(x) \wedge in(y, x) \to hf(y)
   any x, y {
     assume hf(x) \wedge in(y, x) {
       split hf(x) \wedge in(y, x)
-      apply invoke rightward hf_iff_hirrefrel_hwellfounded_hfcore for x
-      split hirrefrel(x) \wedge hwellfounded(x) \wedge hfcore(x)
+      split hf(x)
       connect hirrefrel(x) \wedge in(y, x)
       apply invoke element_of_hirrefrel_is_hirrefrel for x, y
       connect hwellfounded(x) \wedge in(y, x)
       apply invoke element_of_hwellfounded_is_hwellfounded for x, y
       connect hfcore(x) \wedge in(y, x)
       apply invoke element_of_hfcore_is_hfcore for x, y
-      connect hirrefrel(y) \wedge hwellfounded(y) \wedge hfcore(y)
-      apply invoke leftward hf_iff_hirrefrel_hwellfounded_hfcore for y
+      connect hf(y)
     }
   }
 }
@@ -421,12 +380,17 @@ theorem hf_satisfies_axiom_of_extensionality \forall x \forall y (hf(x) \wedge h
 }
 
 theorem emptyset_is_hf hf(emptyset) {
-  assert emptyset_is_irrefrel
-  assert emptyset_is_wellfounded
-  assert emptyset_is_finite
   assert emptyset_is_tcm_of_emptyset
-  connect irrefrel(emptyset, in) \wedge wellfounded(emptyset, in) \wedge finite(emptyset) \wedge tcm(emptyset, emptyset)
-  lift for emptyset conclude hf(emptyset)
+  assert emptyset_is_irrefrel
+  connect irrefrel(emptyset, in) \wedge tcm(emptyset, emptyset)
+  lift for emptyset conclude hirrefrel(emptyset)
+  assert emptyset_is_wellfounded
+  connect wellfounded(emptyset, in) \wedge tcm(emptyset, emptyset)
+  lift for emptyset conclude hwellfounded(emptyset)
+  assert emptyset_is_finite
+  connect finite(emptyset) \wedge tcm(emptyset, emptyset)
+  lift for emptyset conclude hfcore(emptyset)
+  connect hf(emptyset)
 }
 
 theorem hf_satisfies_axiom_of_emptyset \exists x (hf(x) \wedge \forall y (hf(y) \to notin(y, x))) {
@@ -447,22 +411,19 @@ theorem finite_set_of_hf_is_hf \forall Y (finite(Y) \wedge \forall y (in(y, Y) \
       any y {
         assume in(y, Y) {
           apply invoke \forall y (in(y, Y) \to hf(y)) for y
-          apply invoke rightward hf_iff_hirrefrel_hwellfounded_hfcore for y
-          split 1 hirrefrel(y) \wedge hwellfounded(y) \wedge hfcore(y)
+          split 1 hf(y)
         }
       }
       any y {
         assume in(y, Y) {
           apply invoke \forall y (in(y, Y) \to hf(y)) for y
-          apply invoke rightward hf_iff_hirrefrel_hwellfounded_hfcore for y
-          split 2 hirrefrel(y) \wedge hwellfounded(y) \wedge hfcore(y)
+          split 2 hf(y)
         }
       }
       any y {
         assume in(y, Y) {
           apply invoke \forall y (in(y, Y) \to hf(y)) for y
-          apply invoke rightward hf_iff_hirrefrel_hwellfounded_hfcore for y
-          split 3 hirrefrel(y) \wedge hwellfounded(y) \wedge hfcore(y)
+          split 3 hf(y)
         }
       }
       connect finite(Y) \wedge \forall y (in(y, Y) \to hfcore(y))
@@ -474,8 +435,7 @@ theorem finite_set_of_hf_is_hf \forall Y (finite(Y) \wedge \forall y (in(y, Y) \
         apply invoke set_of_hirrefrel_is_hirrefrel for Y, Z, W, V
         connect \forall y (in(y, Y) \to hwellfounded(y)) \wedge replacement(Y, tcm, Z) \wedge bigcup(Z, W) \wedge cup(Y, W, V)
         apply invoke set_of_hwellfounded_is_hwellfounded for Y, Z, W, V
-        connect hfcore(Y) \wedge hirrefrel(Y) \wedge hwellfounded(Y)
-        apply invoke leftward hf_iff_hirrefrel_hwellfounded_hfcore for Y
+        connect hf(Y)
       }
     }
   }
