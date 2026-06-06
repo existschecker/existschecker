@@ -365,3 +365,205 @@ theorem finite_approx_exists \forall X \forall^P \psi[2] \forall^P \phi[2] (clos
     }
   }
 }
+
+theorem finite_wellfounded_recursion_exists \forall X \forall^P \psi[2] \forall^P \phi[2] (closed(X, \psi) \wedge irrefrel(X, \psi) \wedge wellfounded(X, \psi) \wedge finite(X) \wedge functional(\phi) \wedge \forall p \exists q (\phi(p, q)) \to \exists F (finite(F) \wedge fun(F) \wedge dom(F, X) \wedge \forall u \forall v (in(op(u, v), F) \leftrightarrow in(u, X) \wedge \exists s (seg(u, \psi, s) \wedge \phi(op(u, res(F, s)), v))))) {
+  any X, predicate \psi[2], predicate \phi[2] {
+    assume closed(X, \psi) \wedge irrefrel(X, \psi) \wedge wellfounded(X, \psi) \wedge finite(X) \wedge functional(\phi) \wedge \forall p \exists q (\phi(p, q)) {
+      split closed(X, \psi) \wedge irrefrel(X, \psi) \wedge wellfounded(X, \psi) \wedge finite(X) \wedge functional(\phi) \wedge \forall p \exists q (\phi(p, q))
+      apply invoke finite_approx_exists for X, \psi, \phi
+      connect closed(X, \psi) \wedge irrefrel(X, \psi) \wedge wellfounded(X, \psi) \wedge functional(\phi)
+      apply invoke approx_is_functional for X, \psi, \phi
+      connect finite(X) \wedge functional(\lambda^P x, h. in(x, X) \wedge approx(\psi, \phi, x, h))
+      apply invoke finite_replacement_exists_uniquely for X, \lambda^P x, h. in(x, X) \wedge approx(\psi, \phi, x, h)
+      some H such \exists! H (finite(H) \wedge replacement(X, \lambda^P x, h. in(x, X) \wedge approx(\psi, \phi, x, h), H)) {
+        split finite(H) \wedge replacement(X, \lambda^P x, h. in(x, X) \wedge approx(\psi, \phi, x, h), H)
+        any h {
+          assume in(h, H) {
+            apply invoke rightward replacement(X, \lambda^P x, h. in(x, X) \wedge approx(\psi, \phi, x, h), H) for h
+            some x such \exists x (in(x, X) \wedge in(x, X) \wedge approx(\psi, \phi, x, h)) {
+              split in(x, X) \wedge in(x, X) \wedge approx(\psi, \phi, x, h)
+              apply invoke finite_approx_exists for X, \psi, \phi
+              apply invoke \forall x (in(x, X) \to \exists h' (finite(h') \wedge approx(\psi, \phi, x, h'))) for x
+              some h' such \exists h' (finite(h') \wedge approx(\psi, \phi, x, h')) {
+                split finite(h') \wedge approx(\psi, \phi, x, h')
+                connect in(x, X) \wedge approx(\psi, \phi, x, h) \wedge in(x, X) \wedge approx(\psi, \phi, x, h')
+                apply invoke functional(\lambda^P x, h. in(x, X) \wedge approx(\psi, \phi, x, h)) for x, h, h'
+                substitute finite(h') for h': h
+              }
+            }
+          }
+        }
+        connect finite(H) \wedge \forall h (in(h, H) \to finite(h))
+        apply invoke finite_bigcup_exists_uniquely for H
+        some F such \exists! F (finite(F) \wedge bigcup(H, F)) {
+          split finite(F) \wedge bigcup(H, F)
+          any z {
+            assume in(z, F) {
+              apply invoke rightward bigcup(H, F) for z
+              some h such \exists h (in(z, h) \wedge in(h, H)) {
+                split in(z, h) \wedge in(h, H)
+                apply invoke rightward replacement(X, \lambda^P x, h. in(x, X) \wedge approx(\psi, \phi, x, h), H) for h
+                some x such \exists x (in(x, X) \wedge in(x, X) \wedge approx(\psi, \phi, x, h)) {
+                  split in(x, X) \wedge in(x, X) \wedge approx(\psi, \phi, x, h)
+                  split approx(\psi, \phi, x, h)
+                  split fun(h)
+                  apply invoke rel(h) for z
+                }
+              }
+            }
+          }
+          fold for rel conclude rel(F)
+          any u, v, v' {
+            assume in(op(u, v), F) \wedge in(op(u, v'), F) {
+              split in(op(u, v), F) \wedge in(op(u, v'), F)
+              apply invoke rightward bigcup(H, F) for op(u, v)
+              some g such \exists g (in(g, H) \wedge in(op(u, v), g)) {
+                split in(g, H) \wedge in(op(u, v), g)
+                apply invoke rightward replacement(X, \lambda^P x, h. in(x, X) \wedge approx(\psi, \phi, x, h), H) for g
+                some x such \exists x (in(x, X) \wedge in(x, X) \wedge approx(\psi, \phi, x, g)) {
+                  split in(x, X) \wedge in(x, X) \wedge approx(\psi, \phi, x, g)
+                  apply invoke rightward bigcup(H, F) for op(u, v')
+                  some h such \exists h (in(h, H) \wedge in(op(u, v'), h)) {
+                    split in(h, H) \wedge in(op(u, v'), h)
+                    apply invoke rightward replacement(X, \lambda^P x, h. in(x, X) \wedge approx(\psi, \phi, x, h), H) for h
+                    some y such \exists y (in(y, X) \wedge in(y, X) \wedge approx(\psi, \phi, y, h)) {
+                      split in(y, X) \wedge in(y, X) \wedge approx(\psi, \phi, y, h)
+                      connect approx(\psi, \phi, x, g) \wedge approx(\psi, \phi, y, h)
+                      apply invoke approx_is_unique for X, \psi, \phi
+                      connect in(x, X) \wedge approx(\psi, \phi, x, g) \wedge in(y, X) \wedge approx(\psi, \phi, y, h)
+                      apply invoke \forall x \forall y \forall g \forall h (in(x, X) \wedge approx(\psi, \phi, x, g) \wedge in(y, X) \wedge approx(\psi, \phi, y, h) \to \forall u \forall v \forall v' (in(op(u, v), g) \wedge in(op(u, v'), h) \to equal(v, v'))) for x, y, g, h
+                      connect in(op(u, v), g) \wedge in(op(u, v'), h)
+                      apply invoke \forall u \forall v \forall v' (in(op(u, v), g) \wedge in(op(u, v'), h) \to equal(v, v')) for u, v, v'
+                    }
+                  }
+                }
+              }
+            }
+          }
+          connect fun(F)
+          any u {
+            assume in(u, X) {
+              apply invoke \forall x (in(x, X) \to \exists h (finite(h) \wedge approx(\psi, \phi, x, h))) for u
+              some h such \exists h (finite(h) \wedge approx(\psi, \phi, u, h)) {
+                split finite(h) \wedge approx(\psi, \phi, u, h)
+                connect in(u, X) \wedge in(u, X) \wedge approx(\psi, \phi, u, h)
+                lift for u conclude \exists x (in(x, X) \wedge in(x, X) \wedge approx(\psi, \phi, x, h))
+                apply invoke leftward replacement(X, \lambda^P x, h. in(x, X) \wedge approx(\psi, \phi, x, h), H) for h
+                split approx(\psi, \phi, u, h)
+                some r such \exists r (dom(h, r) \wedge rtcset(u, \psi, r) \wedge \forall u_0 \forall v (in(op(u_0, v), h) \leftrightarrow in(u_0, r) \wedge \exists s (seg(u_0, \psi, s) \wedge \phi(op(u_0, res(h, s)), v)))) {
+                  split dom(h, r) \wedge rtcset(u, \psi, r) \wedge \forall u_0 \forall v (in(op(u_0, v), h) \leftrightarrow in(u_0, r) \wedge \exists s (seg(u_0, \psi, s) \wedge \phi(op(u_0, res(h, s)), v)))
+                  split rtcset(u, \psi, r)
+                  apply invoke rightward dom(h, r) for u
+                  some v such \exists v (in(op(u, v), h)) {
+                    connect in(h, H) \wedge in(op(u, v), h)
+                    lift for h conclude \exists h (in(h, H) \wedge in(op(u, v), h))
+                    apply invoke leftward bigcup(H, F) for op(u, v)
+                    lift for v conclude \exists v (in(op(u, v), F))
+                  }
+                }
+              }
+            }
+            assume \exists v (in(op(u, v), F)) {
+              some v such \exists v (in(op(u, v), F)) {
+                apply invoke rightward bigcup(H, F) for op(u, v)
+                some h such \exists h (in(h, H) \wedge in(op(u, v), h)) {
+                  split in(h, H) \wedge in(op(u, v), h)
+                  apply invoke rightward replacement(X, \lambda^P x, k. in(x, X) \wedge approx(\psi, \phi, x, k), H) for h
+                  some x such \exists x (in(x, X) \wedge in(x, X) \wedge approx(\psi, \phi, x, h)) {
+                    split in(x, X) \wedge in(x, X) \wedge approx(\psi, \phi, x, h)
+                    split approx(\psi, \phi, x, h)
+                    some r such \exists r (dom(h, r) \wedge rtcset(x, \psi, r) \wedge \forall u_0 \forall v_0 (in(op(u_0, v_0), h) \leftrightarrow in(u_0, r) \wedge \exists s (seg(u_0, \psi, s) \wedge \phi(op(u_0, res(h, s)), v_0)))) {
+                      split dom(h, r) \wedge rtcset(x, \psi, r) \wedge \forall u_0 \forall v_0 (in(op(u_0, v_0), h) \leftrightarrow in(u_0, r) \wedge \exists s (seg(u_0, \psi, s) \wedge \phi(op(u_0, res(h, s)), v_0)))
+                      connect closed(X, \psi) \wedge in(x, X) \wedge rtcset(x, \psi, r)
+                      apply invoke closed_implies_rtcset_is_subset for X, \psi, x, r
+                      lift for v conclude \exists v (in(op(u, v), h))
+                      apply invoke leftward dom(h, r) for u
+                      apply invoke subset(r, X) for u
+                    }
+                  }
+                }
+              }
+            }
+            connect in(u, X) \leftrightarrow \exists v (in(op(u, v), F))
+          }
+          fold for dom conclude dom(F, X)
+          any u, v {
+            assume in(op(u, v), F) {
+              lift for v conclude \exists v (in(op(u, v), F))
+              apply invoke leftward dom(F, X) for u
+              apply invoke rightward bigcup(H, F) for op(u, v)
+              some h such \exists h (in(h, H) \wedge in(op(u, v), h)) {
+                split in(h, H) \wedge in(op(u, v), h)
+                apply invoke rightward replacement(X, \lambda^P x, k. in(x, X) \wedge approx(\psi, \phi, x, k), H) for h
+                some x such \exists x (in(x, X) \wedge in(x, X) \wedge approx(\psi, \phi, x, h)) {
+                  split in(x, X) \wedge in(x, X) \wedge approx(\psi, \phi, x, h)
+                  split approx(\psi, \phi, x, h)
+                  some r such \exists r (dom(h, r) \wedge rtcset(x, \psi, r) \wedge \forall u_0 \forall v_0 (in(op(u_0, v_0), h) \leftrightarrow in(u_0, r) \wedge \exists s (seg(u_0, \psi, s) \wedge \phi(op(u_0, res(h, s)), v_0)))) {
+                    split dom(h, r) \wedge rtcset(x, \psi, r) \wedge \forall u_0 \forall v_0 (in(op(u_0, v_0), h) \leftrightarrow in(u_0, r) \wedge \exists s (seg(u_0, \psi, s) \wedge \phi(op(u_0, res(h, s)), v_0)))
+                    split rtcset(x, \psi, r)
+                    lift for v conclude \exists v (in(op(u, v), h))
+                    apply invoke leftward dom(h, r) for u
+                    apply invoke rightward \forall u_0 \forall v_0 (in(op(u_0, v_0), h) \leftrightarrow in(u_0, r) \wedge \exists s (seg(u_0, \psi, s) \wedge \phi(op(u_0, res(h, s)), v_0))) for u, v
+                    split in(u, r) \wedge \exists s (seg(u, \psi, s) \wedge \phi(op(u, res(h, s)), v))
+                    some s such \exists s (seg(u, \psi, s) \wedge \phi(op(u, res(h, s)), v)) {
+                      split seg(u, \psi, s) \wedge \phi(op(u, res(h, s)), v)
+                      connect bigcup(H, F) \wedge in(h, H)
+                      apply invoke bigcup_subset for H, F, h
+                      connect closed(X, \psi) \wedge in(x, X) \wedge rtcset(x, \psi, r)
+                      apply invoke closed_implies_rtcset_is_subset for X, \psi, x, r
+                      connect closed(r, \psi) \wedge in(u, r) \wedge seg(u, \psi, s)
+                      apply invoke closed_implies_seg_is_subset for x, \psi, r, u, s
+                      connect fun(h) \wedge fun(F) \wedge subset(h, F) \wedge dom(h, r) \wedge subset(s, r)
+                      apply invoke res_subset_equality for h, F, r, s
+                      substitute \phi(op(u, res(h, s)), v) for res(h, s): res(F, s)
+                      connect seg(u, \psi, s) \wedge \phi(op(u, res(F, s)), v)
+                      lift for s conclude \exists s (seg(u, \psi, s) \wedge \phi(op(u, res(F, s)), v))
+                    }
+                  }
+                }
+              }
+              connect in(u, X) \wedge \exists s (seg(u, \psi, s) \wedge \phi(op(u, res(F, s)), v))
+            }
+            assume in(u, X) \wedge \exists s (seg(u, \psi, s) \wedge \phi(op(u, res(F, s)), v)) {
+              split in(u, X) \wedge \exists s (seg(u, \psi, s) \wedge \phi(op(u, res(F, s)), v))
+              some s such \exists s (seg(u, \psi, s) \wedge \phi(op(u, res(F, s)), v)) {
+                split seg(u, \psi, s) \wedge \phi(op(u, res(F, s)), v)
+                apply invoke \forall x (in(x, X) \to \exists h_0 (finite(h_0) \wedge approx(\psi, \phi, x, h_0))) for u
+                some h_u such \exists h_u (finite(h_u) \wedge approx(\psi, \phi, u, h_u)) {
+                  split finite(h_u) \wedge approx(\psi, \phi, u, h_u)
+                  connect in(u, X) \wedge in(u, X) \wedge approx(\psi, \phi, u, h_u)
+                  lift for u conclude \exists x (in(x, X) \wedge in(x, X) \wedge approx(\psi, \phi, x, h_u))
+                  apply invoke leftward replacement(X, \lambda^P x, k. in(x, X) \wedge approx(\psi, \phi, x, k), H) for h_u
+                  split approx(\psi, \phi, u, h_u)
+                  some r_u such \exists r_u (dom(h_u, r_u) \wedge rtcset(u, \psi, r_u) \wedge \forall u_0 \forall v_0 (in(op(u_0, v_0), h_u) \leftrightarrow in(u_0, r_u) \wedge \exists s_0 (seg(u_0, \psi, s_0) \wedge \phi(op(u_0, res(h_u, s_0)), v_0)))) {
+                    split dom(h_u, r_u) \wedge rtcset(u, \psi, r_u) \wedge \forall u_0 \forall v_0 (in(op(u_0, v_0), h_u) \leftrightarrow in(u_0, r_u) \wedge \exists s_0 (seg(u_0, \psi, s_0) \wedge \phi(op(u_0, res(h_u, s_0)), v_0)))
+                    split rtcset(u, \psi, r_u)
+                    connect bigcup(H, F) \wedge in(h_u, H)
+                    apply invoke bigcup_subset for H, F, h_u
+                    connect closed(X, \psi) \wedge in(u, X) \wedge rtcset(u, \psi, r_u)
+                    apply invoke closed_implies_rtcset_is_subset for X, \psi, u, r_u
+                    connect closed(r_u, \psi) \wedge in(u, r_u) \wedge seg(u, \psi, s)
+                    apply invoke closed_implies_seg_is_subset for u, \psi, r_u, u, s
+                    connect fun(h_u) \wedge fun(F) \wedge subset(h_u, F) \wedge dom(h_u, r_u) \wedge subset(s, r_u)
+                    apply invoke res_subset_equality for h_u, F, r_u, s
+                    substitute \phi(op(u, res(F, s)), v) for res(F, s): res(h_u, s)
+                    connect seg(u, \psi, s) \wedge \phi(op(u, res(h_u, s)), v)
+                    lift for s conclude \exists s_0 (seg(u, \psi, s_0) \wedge \phi(op(u, res(h_u, s_0)), v))
+                    connect in(u, r_u) \wedge \exists s_0 (seg(u, \psi, s_0) \wedge \phi(op(u, res(h_u, s_0)), v))
+                    apply invoke leftward \forall u_0 \forall v_0 (in(op(u_0, v_0), h_u) \leftrightarrow in(u_0, r_u) \wedge \exists s_0 (seg(u_0, \psi, s_0) \wedge \phi(op(u_0, res(h_u, s_0)), v_0))) for u, v
+                    connect in(h_u, H) \wedge in(op(u, v), h_u)
+                    lift for h_u conclude \exists h_0 (in(h_0, H) \wedge in(op(u, v), h_0))
+                    apply invoke leftward bigcup(H, F) for op(u, v)
+                  }
+                }
+              }
+            }
+            connect in(op(u, v), F) \leftrightarrow in(u, X) \wedge \exists s (seg(u, \psi, s) \wedge \phi(op(u, res(F, s)), v))
+          }
+          connect finite(F) \wedge fun(F) \wedge dom(F, X) \wedge \forall u \forall v (in(op(u, v), F) \leftrightarrow in(u, X) \wedge \exists s (seg(u, \psi, s) \wedge \phi(op(u, res(F, s)), v)))
+          lift for F conclude \exists F (finite(F) \wedge fun(F) \wedge dom(F, X) \wedge \forall u \forall v (in(op(u, v), F) \leftrightarrow in(u, X) \wedge \exists s (seg(u, \psi, s) \wedge \phi(op(u, res(F, s)), v))))
+        }
+      }
+    }
+  }
+}
