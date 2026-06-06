@@ -1,6 +1,6 @@
 include "zfc_finite.proof"
 
-theorem finite_approx_exists \forall X \forall^P \psi[2] \forall^P \phi[2] (closed(X, \psi) \wedge irrefrel(X, \psi) \wedge wellfounded(X, \psi) \wedge finite(X) \wedge functional(\phi) \wedge \forall p \exists q (\phi(p, q)) \to \forall x (in(x, X) \to \exists h (approx(\psi, \phi, x, h)))) {
+theorem finite_approx_exists \forall X \forall^P \psi[2] \forall^P \phi[2] (closed(X, \psi) \wedge irrefrel(X, \psi) \wedge wellfounded(X, \psi) \wedge finite(X) \wedge functional(\phi) \wedge \forall p \exists q (\phi(p, q)) \to \forall x (in(x, X) \to \exists h (finite(h) \wedge approx(\psi, \phi, x, h)))) {
   any X, predicate \psi[2], predicate \phi[2] {
     assume closed(X, \psi) \wedge irrefrel(X, \psi) \wedge wellfounded(X, \psi) \wedge finite(X) \wedge functional(\phi) \wedge \forall p \exists q (\phi(p, q)) {
       split closed(X, \psi) \wedge irrefrel(X, \psi) \wedge wellfounded(X, \psi) \wedge finite(X) \wedge functional(\phi) \wedge \forall p \exists q (\phi(p, q))
@@ -11,7 +11,7 @@ theorem finite_approx_exists \forall X \forall^P \psi[2] \forall^P \phi[2] (clos
           some r such \exists r (rtcset(x, \psi, r) \wedge subset(r, X)) {
             split rtcset(x, \psi, r) \wedge subset(r, X)
             split rtcset(x, \psi, r)
-            assume \forall y (\psi(y, x) \to \exists h (approx(\psi, \phi, y, h))) {
+            assume \forall y (\psi(y, x) \to \exists h (finite(h) \wedge approx(\psi, \phi, y, h))) {
               apply invoke closed_implies_seg_exists for X, \psi, x
               apply sep_is_subset for X, \lambda^P y. \psi(y, x)
               connect finite(X) \wedge subset(sep(X, \lambda^P y. \psi(y, x)), X)
@@ -47,6 +47,7 @@ theorem finite_approx_exists \forall X \forall^P \psi[2] \forall^P \phi[2] (clos
                   apply invoke closed_implies_seg_exists for X, \psi, x
                   apply \forall p \exists q (\phi(p, q)) for op(x, res(Z, sep(X, \lambda^P y. \psi(y, x))))
                   some q such \exists q (\phi(op(x, res(Z, sep(X, \lambda^P y. \psi(y, x)))), q)) {
+                    apply invoke finite_adj for Z, op(x, q)
                     any z {
                       assume in(z, Z) {
                         apply invoke rightward bigcup(Y, Z) for z
@@ -134,8 +135,9 @@ theorem finite_approx_exists \forall X \forall^P \psi[2] \forall^P \phi[2] (clos
                               apply invoke closed(X, \psi) for x, y
                               connect in(y, X) \wedge \psi(y, x)
                               apply invoke leftward sep_existence for X, \lambda^P y'. \psi(y', x), y
-                              apply invoke \forall y (\psi(y, x) \to \exists h (approx(\psi, \phi, y, h))) for y
-                              some h such \exists h (approx(\psi, \phi, y, h)) {
+                              apply invoke \forall y (\psi(y, x) \to \exists h (finite(h) \wedge approx(\psi, \phi, y, h))) for y
+                              some h such \exists h (finite(h) \wedge approx(\psi, \phi, y, h)) {
+                                split finite(h) \wedge approx(\psi, \phi, y, h)
                                 connect in(y, sep(X, \lambda^P y'. \psi(y', x))) \wedge in(y, X) \wedge approx(\psi, \phi, y, h)
                                 lift for y conclude \exists y (in(y, sep(X, \lambda^P y'. \psi(y', x))) \wedge in(y, X) \wedge approx(\psi, \phi, y, h))
                                 apply invoke leftward replacement(sep(X, \lambda^P y'. \psi(y', x)), \lambda^P y', h. in(y', X) \wedge approx(\psi, \phi, y', h), Y) for h
@@ -295,8 +297,9 @@ theorem finite_approx_exists \forall X \forall^P \psi[2] \forall^P \phi[2] (clos
                                 apply invoke closed(X, \psi) for x, y
                                 connect in(y, X) \wedge \psi(y, x)
                                 apply invoke leftward sep_existence for X, \lambda^P y'. \psi(y', x), y
-                                apply invoke \forall y (\psi(y, x) \to \exists h (approx(\psi, \phi, y, h))) for y
-                                some h such \exists h (approx(\psi, \phi, y, h)) {
+                                apply invoke \forall y (\psi(y, x) \to \exists h (finite(h) \wedge approx(\psi, \phi, y, h))) for y
+                                some h such \exists h (finite(h) \wedge approx(\psi, \phi, y, h)) {
+                                  split finite(h) \wedge approx(\psi, \phi, y, h)
                                   connect in(y, sep(X, \lambda^P y'. \psi(y', x))) \wedge in(y, X) \wedge approx(\psi, \phi, y, h)
                                   lift for y conclude \exists y (in(y, sep(X, \lambda^P y'. \psi(y', x))) \wedge in(y, X) \wedge approx(\psi, \phi, y, h))
                                   apply invoke leftward replacement(sep(X, \lambda^P y'. \psi(y', x)), \lambda^P y', h. in(y', X) \wedge approx(\psi, \phi, y', h), Y) for h
@@ -348,7 +351,8 @@ theorem finite_approx_exists \forall X \forall^P \psi[2] \forall^P \phi[2] (clos
                     connect dom(adj(Z, op(x, q)), r) \wedge rtcset(x, \psi, r) \wedge \forall u \forall v (in(op(u, v), adj(Z, op(x, q))) \leftrightarrow in(u, r) \wedge \exists s (seg(u, \psi, s) \wedge \phi(op(u, res(adj(Z, op(x, q)), s)), v)))
                     lift for r conclude \exists r (dom(adj(Z, op(x, q)), r) \wedge rtcset(x, \psi, r) \wedge \forall u \forall v (in(op(u, v), adj(Z, op(x, q))) \leftrightarrow in(u, r) \wedge \exists s (seg(u, \psi, s) \wedge \phi(op(u, res(adj(Z, op(x, q)), s)), v))))
                     connect approx(\psi, \phi, x, adj(Z, op(x, q)))
-                    lift for adj(Z, op(x, q)) conclude \exists h (approx(\psi, \phi, x, h))
+                    connect finite(adj(Z, op(x, q))) \wedge approx(\psi, \phi, x, adj(Z, op(x, q)))
+                    lift for adj(Z, op(x, q)) conclude \exists h (finite(h) \wedge approx(\psi, \phi, x, h))
                   }
                 }
               }
@@ -356,8 +360,8 @@ theorem finite_approx_exists \forall X \forall^P \psi[2] \forall^P \phi[2] (clos
           }
         }
       }
-      connect closed( X , \psi ) \wedge irrefrel( X , \psi ) \wedge wellfounded( X , \psi ) \wedge \forall x_0 (in( x_0 , X ) \to (\forall y (\psi(y,x_0) \to \exists h (approx( \psi , \phi , y , h ))) \to \exists h (approx( \psi , \phi , x_0 , h ))))
-      apply invoke wellfounded_induction for \psi, \lambda^P x. \exists h (approx(\psi, \phi, x, h)), X
+      connect closed( X , \psi ) \wedge irrefrel( X , \psi ) \wedge wellfounded( X , \psi ) \wedge \forall x_0 (in( x_0 , X ) \to (\forall y (\psi(y,x_0) \to \exists h (finite(h) \wedge approx( \psi , \phi , y , h ))) \to \exists h (finite(h) \wedge approx( \psi , \phi , x_0 , h ))))
+      apply invoke wellfounded_induction for \psi, \lambda^P x. \exists h (finite(h) \wedge approx(\psi, \phi, x, h)), X
     }
   }
 }
