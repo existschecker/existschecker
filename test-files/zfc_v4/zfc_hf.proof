@@ -1,4 +1,4 @@
-include "zfc_finite.proof"
+include "zfc_finite_recursion.proof"
 
 definition predicate hfcore(x) as \exists y (finite(y) \wedge tcm(x, y))
 
