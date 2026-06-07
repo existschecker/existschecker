@@ -40,9 +40,10 @@ theorem natural_wellfounded_induction \forall^P \chi[1] (\forall n (natural(n) \
   assert natural_is_pwellfounded
   assert natural_is_closed_under_in
   assert natural_is_tcsetlike
+  apply invoke tcsetlike_implies_rtcsetlike for natural, in
   any predicate \chi[1] {
     assume \forall n (natural(n) \wedge \forall m (in(m, n) \to \chi(m)) \to \chi(n)) {
-      connect tcsetlike(natural, in) \wedge pclosed(natural, in) \wedge pirrefrel(natural, in) \wedge pwellfounded(natural, in) \wedge \forall n (natural(n) \wedge \forall m (in(m, n) \to \chi(m)) \to \chi(n))
+      connect rtcsetlike(natural, in) \wedge pclosed(natural, in) \wedge pirrefrel(natural, in) \wedge pwellfounded(natural, in) \wedge \forall n (natural(n) \wedge \forall m (in(m, n) \to \chi(m)) \to \chi(n))
       apply invoke pwellfounded_induction for natural, in, \chi
     }
   }

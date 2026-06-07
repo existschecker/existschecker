@@ -567,3 +567,91 @@ theorem finite_wellfounded_recursion_exists \forall X \forall^P \psi[2] \forall^
     }
   }
 }
+
+definition predicate finitertcsetlike(predicate \psi[2]) as \forall x \exists r (finite(r) \wedge rtcset(x, \psi, r))
+
+theorem finitertcsetlike_approx_exists \forall^P \chi[1] \forall^P \psi[2] \forall^P \phi[2] (pclosed(\chi, \psi) \wedge pirrefrel(\chi, \psi) \wedge pwellfounded(\chi, \psi) \wedge finitertcsetlike(\psi) \wedge functional(\phi) \wedge \forall p \exists q (\phi(p, q)) \to \forall x (\chi(x) \to \exists! y \exists h (in(op(x, y), h) \wedge approx(\psi, \phi, x, h)))) {
+  any predicate \chi[1], predicate \psi[2], predicate \phi[2] {
+    assume pclosed(\chi, \psi) \wedge pirrefrel(\chi, \psi) \wedge pwellfounded(\chi, \psi) \wedge finitertcsetlike(\psi) \wedge functional(\phi) \wedge \forall p \exists q (\phi(p, q)) {
+      split pclosed(\chi, \psi) \wedge pirrefrel(\chi, \psi) \wedge pwellfounded(\chi, \psi) \wedge finitertcsetlike(\psi) \wedge functional(\phi) \wedge \forall p \exists q (\phi(p, q))
+      any x {
+        assume \chi(x) {
+          apply finitertcsetlike(\psi) for x
+          some r such \exists r (finite(r) \wedge rtcset(x, \psi, r)) {
+            split 2 finite(r) \wedge rtcset(x, \psi, r)
+            lift for r conclude \exists r (rtcset(x, \psi, r))
+          }
+        }
+      }
+      fold for rtcsetlike conclude rtcsetlike(\chi, \psi)
+      connect pclosed(\chi, \psi) \wedge pirrefrel(\chi, \psi) \wedge pwellfounded(\chi, \psi) \wedge rtcsetlike(\chi, \psi)
+      apply invoke pclosed_implies_rtcset_is_subset for \chi, \psi
+      any x {
+        assume \chi(x) {
+          apply invoke \forall x (\chi(x) \to \forall r \forall u (rtcset(x, \psi, r) \wedge in(u, r) \to \chi(u))) for x
+          apply finitertcsetlike(\psi) for x
+          some r such \exists r (finite(r) \wedge rtcset(x, \psi, r)) {
+            split finite(r) \wedge rtcset(x, \psi, r)
+            split rtcset(x, \psi, r)
+            any u {
+              assume in(u, r) {
+                connect rtcset(x, \psi, r) \wedge in(u, r)
+                apply invoke \forall r \forall u (rtcset(x, \psi, r) \wedge in(u, r) \to \chi(u)) for r, u
+                apply invoke pirrefrel(\chi, \psi) for u
+              }
+            }
+            fold for irrefrel conclude irrefrel(r, \psi)
+            any A {
+              assume subset(A, r) \wedge neq(A, emptyset) {
+                split subset(A, r) \wedge neq(A, emptyset)
+                any u {
+                  assume in(u, A) {
+                    apply invoke subset(A, r) for u
+                    connect rtcset(x, \psi, r) \wedge in(u, r)
+                    apply invoke \forall r \forall u (rtcset(x, \psi, r) \wedge in(u, r) \to \chi(u)) for r, u
+                  }
+                }
+                connect \forall u (in(u, A) \to \chi(u)) \wedge neq(A, emptyset)
+                apply invoke pwellfounded(\chi, \psi) for A
+              }
+            }
+            fold for wellfounded conclude wellfounded(r, \psi)
+            connect closed(r, \psi) \wedge irrefrel(r, \psi) \wedge wellfounded(r, \psi) \wedge finite(r) \wedge functional(\phi) \wedge \forall p \exists q (\phi(p, q))
+            apply invoke finite_approx_exists for r, \psi, \phi
+            apply invoke \forall x (in(x, r) \to \exists h (finite(h) \wedge approx(\psi, \phi, x, h))) for x
+            some h such \exists h (finite(h) \wedge approx(\psi, \phi, x, h)) {
+              split finite(h) \wedge approx(\psi, \phi, x, h)
+              split approx(\psi, \phi, x, h)
+              some r' such \exists r' (dom(h, r') \wedge rtcset(x, \psi, r') \wedge \forall u \forall v (in(op(u, v), h) \leftrightarrow in(u, r') \wedge \exists s (seg(u, \psi, s) \wedge \phi(op(u, res(h, s)), v)))) {
+                split dom(h, r') \wedge rtcset(x, \psi, r') \wedge \forall u \forall v (in(op(u, v), h) \leftrightarrow in(u, r') \wedge \exists s (seg(u, \psi, s) \wedge \phi(op(u, res(h, s)), v)))
+                connect rtcset(x, \psi, r) \wedge rtcset(x, \psi, r')
+                apply invoke rtcset_is_unique for x, \psi, r, r'
+                substitute dom(h, r') for r': r
+              }
+              apply invoke rightward dom(h, r) for x
+              some y such \exists y (in(op(x, y), h)) {
+                connect in(op(x, y), h) \wedge approx(\psi, \phi, x, h)
+                lift for h conclude \exists h (in(op(x, y), h) \wedge approx(\psi, \phi, x, h))
+                any y' {
+                  assume \exists h' (in(op(x, y'), h') \wedge approx(\psi, \phi, x, h')) {
+                    some h' such \exists h' (in(op(x, y'), h') \wedge approx(\psi, \phi, x, h')) {
+                      split in(op(x, y'), h') \wedge approx(\psi, \phi, x, h')
+                      connect closed(r, \psi) \wedge irrefrel(r, \psi) \wedge wellfounded(r, \psi) \wedge functional(\phi)
+                      apply invoke approx_is_unique for r, \psi, \phi
+                      connect in(x, r) \wedge approx(\psi, \phi, x, h) \wedge in(x, r) \wedge approx(\psi, \phi, x, h')
+                      apply invoke \forall x \forall y \forall g \forall h (in(x, r) \wedge approx(\psi, \phi, x, g) \wedge in(y, r) \wedge approx(\psi, \phi, y, h) \to \forall u \forall v \forall v' (in(op(u, v), g) \wedge in(op(u, v'), h) \to equal(v, v'))) for x, x, h, h'
+                      connect in(op(x, y), h) \wedge in(op(x, y'), h')
+                      apply invoke \forall u \forall v \forall v' (in(op(u, v), h) \wedge in(op(u, v'), h') \to equal(v, v')) for x, y, y'
+                    }
+                  }
+                }
+                connect \exists h (in(op(x, y), h) \wedge approx(\psi, \phi, x, h)) \wedge \forall y' (\exists h' (in(op(x, y'), h') \wedge approx(\psi, \phi, x, h')) \to equal(y', y))
+                characterize for y conclude \exists! y (\exists h (in(op(x, y), h) \wedge approx(\psi, \phi, x, h)))
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

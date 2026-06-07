@@ -91,9 +91,10 @@ theorem ordinal_induction \forall^P \chi[1] (\forall \alpha (ordinal(\alpha) \we
   assert ordinal_is_pwellfounded
   assert ordinal_is_closed_under_in
   assert ordinal_is_tcsetlike
+  apply invoke tcsetlike_implies_rtcsetlike for ordinal, in
   any predicate \chi[1] {
     assume \forall \alpha (ordinal(\alpha) \wedge \forall \beta (in(\beta, \alpha) \to \chi(\beta)) \to \chi(\alpha)) {
-      connect tcsetlike(ordinal, in) \wedge pclosed(ordinal, in) \wedge pirrefrel(ordinal, in) \wedge pwellfounded(ordinal, in) \wedge \forall \alpha (ordinal(\alpha) \wedge \forall \beta (in(\beta, \alpha) \to \chi(\beta)) \to \chi(\alpha))
+      connect rtcsetlike(ordinal, in) \wedge pclosed(ordinal, in) \wedge pirrefrel(ordinal, in) \wedge pwellfounded(ordinal, in) \wedge \forall \alpha (ordinal(\alpha) \wedge \forall \beta (in(\beta, \alpha) \to \chi(\beta)) \to \chi(\alpha))
       apply invoke pwellfounded_induction for ordinal, in, \chi
     }
   }

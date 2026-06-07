@@ -601,11 +601,10 @@ theorem psubset_of_tcsetlike_is_tcsetlike \forall^P \phi[1] \forall^P \psi[2] \f
   }
 }
 
-theorem pwellfounded_induction \forall^P \phi[1] \forall^P \psi[2] \forall^P \chi[1] (tcsetlike(\phi, \psi) \wedge pclosed(\phi, \psi) \wedge pirrefrel(\phi, \psi) \wedge pwellfounded(\phi, \psi) \wedge \forall x (\phi(x) \wedge \forall y (\psi(y, x) \to \chi(y)) \to \chi(x)) \to \forall x (\phi(x) \to \chi(x))) {
+theorem pwellfounded_induction \forall^P \phi[1] \forall^P \psi[2] \forall^P \chi[1] (rtcsetlike(\phi, \psi) \wedge pclosed(\phi, \psi) \wedge pirrefrel(\phi, \psi) \wedge pwellfounded(\phi, \psi) \wedge \forall x (\phi(x) \wedge \forall y (\psi(y, x) \to \chi(y)) \to \chi(x)) \to \forall x (\phi(x) \to \chi(x))) {
   any predicate \phi[1], predicate \psi[2], predicate \chi[1] {
-    assume tcsetlike(\phi, \psi) \wedge pclosed(\phi, \psi) \wedge pirrefrel(\phi, \psi) \wedge pwellfounded(\phi, \psi) \wedge \forall x (\phi(x) \wedge \forall y (\psi(y, x) \to \chi(y)) \to \chi(x)) {
-      split tcsetlike(\phi, \psi) \wedge pclosed(\phi, \psi) \wedge pirrefrel(\phi, \psi) \wedge pwellfounded(\phi, \psi) \wedge \forall x (\phi(x) \wedge \forall y (\psi(y, x) \to \chi(y)) \to \chi(x))
-      apply invoke tcsetlike_implies_rtcsetlike for \phi, \psi
+    assume rtcsetlike(\phi, \psi) \wedge pclosed(\phi, \psi) \wedge pirrefrel(\phi, \psi) \wedge pwellfounded(\phi, \psi) \wedge \forall x (\phi(x) \wedge \forall y (\psi(y, x) \to \chi(y)) \to \chi(x)) {
+      split rtcsetlike(\phi, \psi) \wedge pclosed(\phi, \psi) \wedge pirrefrel(\phi, \psi) \wedge pwellfounded(\phi, \psi) \wedge \forall x (\phi(x) \wedge \forall y (\psi(y, x) \to \chi(y)) \to \chi(x))
       deny \neg(\forall x (\phi(x) \to \chi(x))) {
         apply invoke leftward exist_neg_leftrightarrow_neg_forall for \lambda^P x. \phi(x) \to \chi(x)
         some x such \exists x (\neg(\phi(x) \to \chi(x))) {
@@ -657,6 +656,39 @@ theorem pwellfounded_induction \forall^P \phi[1] \forall^P \psi[2] \forall^P \ch
           }
         }
       }
+    }
+  }
+}
+
+theorem pclosed_implies_rtcset_is_subset \forall^P \chi[1] \forall^P \psi[2] (pclosed(\chi, \psi) \wedge pirrefrel(\chi, \psi) \wedge pwellfounded(\chi, \psi) \wedge rtcsetlike(\chi, \psi) \to \forall x (\chi(x) \to \forall r \forall u (rtcset(x, \psi, r) \wedge in(u, r) \to \chi(u)))) {
+  any predicate \chi[1], predicate \psi[2] {
+    assume pclosed(\chi, \psi) \wedge pirrefrel(\chi, \psi) \wedge pwellfounded(\chi, \psi) \wedge rtcsetlike(\chi, \psi) {
+      split pclosed(\chi, \psi) \wedge pirrefrel(\chi, \psi) \wedge pwellfounded(\chi, \psi) \wedge rtcsetlike(\chi, \psi)
+      any x {
+        assume \chi(x) \wedge \forall y (\psi(y, x) \to \forall r \forall u (rtcset(y, \psi, r) \wedge in(u, r) \to \chi(u))) {
+          split \chi(x) \wedge \forall y (\psi(y, x) \to \forall r \forall u (rtcset(y, \psi, r) \wedge in(u, r) \to \chi(u)))
+          any r, u {
+            assume rtcset(x, \psi, r) \wedge in(u, r) {
+              split rtcset(x, \psi, r) \wedge in(u, r)
+              apply invoke rtcset_one_step for \psi, x, r, u
+              divide equal(u, x) \vee \exists y \exists t (\psi(y, x) \wedge rtcset(y, \psi, t) \wedge in(u, t))
+                case equal(u, x) {
+                  substitute \chi(x) for x: u
+                }
+                case \exists y \exists t (\psi(y, x) \wedge rtcset(y, \psi, t) \wedge in(u, t)) {
+                  some y, t such \exists y \exists t (\psi(y, x) \wedge rtcset(y, \psi, t) \wedge in(u, t)) {
+                    split \psi(y, x) \wedge rtcset(y, \psi, t) \wedge in(u, t)
+                    apply invoke \forall y (\psi(y, x) \to \forall r \forall u (rtcset(y, \psi, r) \wedge in(u, r) \to \chi(u))) for y
+                    connect rtcset(y, \psi, t) \wedge in(u, t)
+                    apply invoke \forall r \forall u (rtcset(y, \psi, r) \wedge in(u, r) \to \chi(u)) for t, u
+                  }
+                }
+            }
+          }
+        }
+      }
+      connect rtcsetlike(\chi, \psi) \wedge pclosed(\chi, \psi) \wedge pirrefrel(\chi, \psi) \wedge pwellfounded(\chi, \psi) \wedge \forall x (\chi(x) \wedge \forall y (\psi(y, x) \to \forall r \forall u (rtcset(y, \psi, r) \wedge in(u, r) \to \chi(u))) \to \forall r \forall u (rtcset(x, \psi, r) \wedge in(u, r) \to \chi(u)))
+      apply invoke pwellfounded_induction for \chi, \psi, \lambda^P x. \forall r \forall u (rtcset(x, \psi, r) \wedge in(u, r) \to \chi(u))
     }
   }
 }

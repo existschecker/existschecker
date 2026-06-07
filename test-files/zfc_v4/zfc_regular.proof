@@ -634,9 +634,10 @@ theorem regular_induction \forall^P \chi[1] (\forall x (regular(x) \wedge \foral
   assert regular_is_pwellfounded
   assert regular_is_closed_under_in
   assert regular_is_tcsetlike
+  apply invoke tcsetlike_implies_rtcsetlike for regular, in
   any predicate \chi[1] {
     assume \forall x (regular(x) \wedge \forall y (in(y, x) \to \chi(y)) \to \chi(x)) {
-      connect tcsetlike(regular, in) \wedge pclosed(regular, in) \wedge pirrefrel(regular, in) \wedge pwellfounded(regular, in) \wedge \forall x (regular(x) \wedge \forall y (in(y, x) \to \chi(y)) \to \chi(x))
+      connect rtcsetlike(regular, in) \wedge pclosed(regular, in) \wedge pirrefrel(regular, in) \wedge pwellfounded(regular, in) \wedge \forall x (regular(x) \wedge \forall y (in(y, x) \to \chi(y)) \to \chi(x))
       apply invoke pwellfounded_induction for regular, in, \chi
     }
   }

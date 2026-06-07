@@ -604,9 +604,10 @@ theorem hf_induction \forall^P \chi[1] (\forall x (hf(x) \wedge \forall y (in(y,
   assert hf_is_pwellfounded
   assert hf_is_closed_under_in
   assert hf_is_tcsetlike
+  apply invoke tcsetlike_implies_rtcsetlike for hf, in
   any predicate \chi[1] {
     assume \forall x (hf(x) \wedge \forall y (in(y, x) \to \chi(y)) \to \chi(x)) {
-      connect tcsetlike(hf, in) \wedge pclosed(hf, in) \wedge pirrefrel(hf, in) \wedge pwellfounded(hf, in) \wedge \forall x (hf(x) \wedge \forall y (in(y, x) \to \chi(y)) \to \chi(x))
+      connect rtcsetlike(hf, in) \wedge pclosed(hf, in) \wedge pirrefrel(hf, in) \wedge pwellfounded(hf, in) \wedge \forall x (hf(x) \wedge \forall y (in(y, x) \to \chi(y)) \to \chi(x))
       apply invoke pwellfounded_induction for hf, in, \chi
     }
   }
