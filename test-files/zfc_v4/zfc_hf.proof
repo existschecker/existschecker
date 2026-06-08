@@ -446,7 +446,7 @@ theorem hf_poweset_exists \forall x (hf(x) \to \exists y (hf(y) \wedge powerset(
 }
 
 
-theorem hf_satisfies_axiom_of_powerset \forall x (hf(x) \to \exists y (hf(y) \wedge \forall z (hf(z) \to (in(z, y) \leftrightarrow subset(z, x))))) {
+theorem hf_satisfies_axiom_of_powerset \forall x (hf(x) \to \exists y (hf(y) \wedge \forall z (hf(z) \to (in(z, y) \leftrightarrow \forall w (hf(w) \to (in(w, z) \to in(w, x))))))) {
   any x {
     assume hf(x) {
       apply invoke hf_poweset_exists for x
@@ -454,11 +454,33 @@ theorem hf_satisfies_axiom_of_powerset \forall x (hf(x) \to \exists y (hf(y) \we
         split hf(y) \wedge powerset(x, y)
         any z {
           assume hf(z) {
-            apply powerset(x, y) for z
+            assume in(z, y) {
+              apply invoke rightward powerset(x, y) for z
+              any w {
+                assume hf(w) {
+                  assume in(w, z) {
+                    apply invoke subset(z, x) for w
+                  }
+                }
+              }
+            }
+            assume \forall w (hf(w) \to (in(w, z) \to in(w, x))) {
+              any w {
+                assume in(w, z) {
+                  connect hf(z) \wedge in(w, z)
+                  apply invoke element_of_hf_is_hf for z, w
+                  apply invoke \forall w (hf(w) \to (in(w, z) \to in(w, x))) for w
+                  invoke in(w, z) \to in(w, x)
+                }
+              }
+              fold for subset conclude subset(z, x)
+              apply invoke leftward powerset(x, y) for z
+            }
+            connect in(z, y) \leftrightarrow \forall w (hf(w) \to (in(w, z) \to in(w, x)))
           }
         }
-        connect hf(y) \wedge \forall z (hf(z) \to (in(z, y) \leftrightarrow subset(z, x)))
-        lift for y conclude \exists y (hf(y) \wedge \forall z (hf(z) \to (in(z, y) \leftrightarrow subset(z, x))))
+        connect hf(y) \wedge \forall z (hf(z) \to (in(z, y) \leftrightarrow \forall w (hf(w) \to (in(w, z) \to in(w, x)))))
+        lift for y conclude \exists y (hf(y) \wedge \forall z (hf(z) \to (in(z, y) \leftrightarrow \forall w (hf(w) \to (in(w, z) \to in(w, x))))))
       }
     }
   }
