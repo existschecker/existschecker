@@ -612,3 +612,106 @@ theorem hf_induction \forall^P \chi[1] (\forall x (hf(x) \wedge \forall y (in(y,
     }
   }
 }
+
+theorem hf_satisfies_axiom_of_choice \forall x (hf(x) \to (\forall y (hf(y) \to (in(y, x) \to \exists w (hf(w) \wedge in(w, y)))) \wedge \forall y \forall z (hf(y) \wedge hf(z) \to (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (hf(w) \wedge in(w, y) \wedge in(w, z))))) \to \exists v (hf(v) \wedge \forall y (hf(y) \to (in(y, x) \to \exists! w (hf(w) \wedge in(w, v) \wedge in(w, y)))) \wedge \forall w (hf(w) \to (in(w, v) \to \exists y (hf(y) \wedge in(y, x) \wedge in(w, y))))))) {
+  any x {
+    assume hf(x) {
+      split 2 hf(x)
+      apply invoke hfcore_is_finite for x
+      apply invoke finite_choice for x
+      assume \forall y (hf(y) \to (in(y, x) \to \exists w (hf(w) \wedge in(w, y)))) \wedge \forall y \forall z (hf(y) \wedge hf(z) \to (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (hf(w) \wedge in(w, y) \wedge in(w, z))))) {
+        split \forall y (hf(y) \to (in(y, x) \to \exists w (hf(w) \wedge in(w, y)))) \wedge \forall y \forall z (hf(y) \wedge hf(z) \to (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (hf(w) \wedge in(w, y) \wedge in(w, z)))))
+        any y {
+          assume in(y, x) {
+            connect hf(x) \wedge in(y, x)
+            apply invoke element_of_hf_is_hf for x, y
+            apply invoke \forall y (hf(y) \to (in(y, x) \to \exists w (hf(w) \wedge in(w, y)))) for y
+            invoke in(y, x) \to \exists w (hf(w) \wedge in(w, y))
+            some w such \exists w (hf(w) \wedge in(w, y)) {
+              split 2 hf(w) \wedge in(w, y)
+              lift for w conclude \exists w (in(w, y))
+            }
+          }
+        }
+        any y, z {
+          assume in(y, x) \wedge in(z, x) \wedge neq(y, z) {
+            split in(y, x) \wedge in(z, x) \wedge neq(y, z)
+            connect hf(x) \wedge in(y, x)
+            apply invoke element_of_hf_is_hf for x, y
+            connect hf(x) \wedge in(z, x)
+            apply invoke element_of_hf_is_hf for x, z
+            connect hf(y) \wedge hf(z)
+            apply invoke \forall y \forall z (hf(y) \wedge hf(z) \to (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (hf(w) \wedge in(w, y) \wedge in(w, z))))) for y, z
+            invoke in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (hf(w) \wedge in(w, y) \wedge in(w, z)))
+            deny \exists w (in(w, y) \wedge in(w, z)) {
+              some w such \exists w (in(w, y) \wedge in(w, z)) {
+                split in(w, y) \wedge in(w, z)
+                connect hf(y) \wedge in(w, y)
+                apply invoke element_of_hf_is_hf for y, w
+                connect hf(w) \wedge in(w, y) \wedge in(w, z)
+                lift for w conclude \exists w (hf(w) \wedge in(w, y) \wedge in(w, z))
+                contradict \exists w (hf(w) \wedge in(w, y) \wedge in(w, z))
+              }
+            }
+          }
+        }
+        connect \forall y (in(y, x) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z))))
+        invoke \forall y (in(y, x) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) \to \exists v (finite(v) \wedge \forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y))))
+        some v such \exists v (finite(v) \wedge \forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y)))) {
+          split finite(v) \wedge \forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y)))
+          any w {
+            assume in(w, v) {
+              apply invoke \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y))) for w
+              some y such \exists y (in(y, x) \wedge in(w, y)) {
+                split in(y, x) \wedge in(w, y)
+                connect hf(x) \wedge in(y, x)
+                apply invoke element_of_hf_is_hf for x, y
+                connect hf(y) \wedge in(w, y)
+                apply invoke element_of_hf_is_hf for y, w
+              }
+            }
+          }
+          connect finite(v) \wedge \forall w (in(w, v) \to hf(w))
+          apply invoke finite_set_of_hf_is_hf for v
+          any y {
+            assume hf(y) {
+              assume in(y, x) {
+                apply invoke \forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) for y
+                some w such \exists! w (in(w, v) \wedge in(w, y)) {
+                  split in(w, v) \wedge in(w, y)
+                  connect hf(y) \wedge in(w, y)
+                  apply invoke element_of_hf_is_hf for y, w
+                  any w' {
+                    assume hf(w') \wedge in(w', v) \wedge in(w', y) {
+                      split hf(w') \wedge in(w', v) \wedge in(w', y)
+                      connect in(w', v) \wedge in(w', y)
+                      apply invoke \forall w' (in(w', v) \wedge in(w', y) \to equal(w', w)) for w'
+                    }
+                  }
+                  connect hf(w) \wedge in(w, v) \wedge in(w, y) \wedge \forall w' (hf(w') \wedge in(w', v) \wedge in(w', y) \to equal(w', w))
+                  characterize for w conclude \exists! w (hf(w) \wedge in(w, v) \wedge in(w, y))
+                }
+              }
+            }
+          }
+          any w {
+            assume hf(w) {
+              assume in(w, v) {
+                apply invoke \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y))) for w
+                some y such \exists y (in(y, x) \wedge in(w, y)) {
+                  split in(y, x) \wedge in(w, y)
+                  connect hf(x) \wedge in(y, x)
+                  apply invoke element_of_hf_is_hf for x, y
+                  connect hf(y) \wedge in(y, x) \wedge in(w, y)
+                  lift for y conclude \exists y (hf(y) \wedge in(y, x) \wedge in(w, y))
+                }
+              }
+            }
+          }
+          connect hf(v) \wedge \forall y (hf(y) \to (in(y, x) \to \exists! w (hf(w) \wedge in(w, v) \wedge in(w, y)))) \wedge \forall w (hf(w) \to (in(w, v) \to \exists y (hf(y) \wedge in(y, x) \wedge in(w, y))))
+          lift for v conclude \exists v (hf(v) \wedge \forall y (hf(y) \to (in(y, x) \to \exists! w (hf(w) \wedge in(w, v) \wedge in(w, y)))) \wedge \forall w (hf(w) \to (in(w, v) \to \exists y (hf(y) \wedge in(y, x) \wedge in(w, y)))))
+        }
+      }
+    }
+  }
+}

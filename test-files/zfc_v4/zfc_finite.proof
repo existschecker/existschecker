@@ -971,11 +971,12 @@ theorem dom_finite_implies_fun_finite \forall f \forall X (fun(f) \wedge dom(f, 
   }
 }
 
-theorem finite_choice \forall x (finite(x) \to (\forall y (in(y, x) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) \to \exists v (\forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y)))))) {
+theorem finite_choice \forall x (finite(x) \to (\forall y (in(y, x) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) \to \exists v (finite(v) \wedge \forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y)))))) {
   any x {
     assume size(x, emptyset) {
       apply invoke size_emptyset_implies_set_emptyset for x
       assume \forall y (in(y, x) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) {
+        assert emptyset_is_finite
         any y {
           assume in(y, emptyset) {
             apply emptyset_existence for y
@@ -990,15 +991,15 @@ theorem finite_choice \forall x (finite(x) \to (\forall y (in(y, x) \to \exists 
             explode \exists y (in(y, emptyset) \wedge in(w, y))
           }
         }
-        connect \forall y (in(y, emptyset) \to \exists! w (in(w, emptyset) \wedge in(w, y))) \wedge \forall w (in(w, emptyset) \to \exists y (in(y, emptyset) \wedge in(w, y)))
-        lift for emptyset conclude \exists v (\forall y (in(y, emptyset) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, emptyset) \wedge in(w, y))))
-        substitute \exists v (\forall y (in(y, emptyset) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, emptyset) \wedge in(w, y)))) for emptyset: x
+        connect finite(emptyset) \wedge \forall y (in(y, emptyset) \to \exists! w (in(w, emptyset) \wedge in(w, y))) \wedge \forall w (in(w, emptyset) \to \exists y (in(y, emptyset) \wedge in(w, y)))
+        lift for emptyset conclude \exists v (finite(v) \wedge \forall y (in(y, emptyset) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, emptyset) \wedge in(w, y))))
+        substitute \exists v (finite(v) \wedge \forall y (in(y, emptyset) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, emptyset) \wedge in(w, y)))) for emptyset: x
       }
     }
   }
   any n {
     assume natural(n) {
-      assume \forall x (size(x, n) \to (\forall y (in(y, x) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) \to \exists v (\forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y)))))) {
+      assume \forall x (size(x, n) \to (\forall y (in(y, x) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) \to \exists v (finite(v) \wedge \forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y)))))) {
         any x {
           assume size(x, suc(n)) {
             assume \forall y (in(y, x) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) {
@@ -1006,7 +1007,7 @@ theorem finite_choice \forall x (finite(x) \to (\forall y (in(y, x) \to \exists 
               apply invoke size_suc_decomposition for x, n
               some p, q such \exists p \exists q (size(p, n) \wedge notin(q, p) \wedge equal(x, adj(p, q))) {
                 split size(p, n) \wedge notin(q, p) \wedge equal(x, adj(p, q))
-                apply invoke \forall x (size(x, n) \to (\forall y (in(y, x) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) \to \exists v (\forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y)))))) for p
+                apply invoke \forall x (size(x, n) \to (\forall y (in(y, x) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) \to \exists v (finite(v) \wedge \forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y)))))) for p
                 any y {
                   assume in(y, p) {
                     apply invoke adj_cor1 for p, q, y
@@ -1029,13 +1030,14 @@ theorem finite_choice \forall x (finite(x) \to (\forall y (in(y, x) \to \exists 
                   }
                 }
                 connect \forall y (in(y, p) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, p) \wedge in(z, p) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z))))
-                invoke \forall y (in(y, p) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, p) \wedge in(z, p) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) \to \exists v (\forall y (in(y, p) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, p) \wedge in(w, y))))
-                some r such \exists v (\forall y (in(y, p) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, p) \wedge in(w, y)))) {
-                  split \forall y (in(y, p) \to \exists! w (in(w, r) \wedge in(w, y))) \wedge \forall w (in(w, r) \to \exists y (in(y, p) \wedge in(w, y)))
+                invoke \forall y (in(y, p) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, p) \wedge in(z, p) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) \to \exists v (finite(v) \wedge \forall y (in(y, p) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, p) \wedge in(w, y))))
+                some r such \exists v (finite(v) \wedge \forall y (in(y, p) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, p) \wedge in(w, y)))) {
+                  split finite(r) \wedge \forall y (in(y, p) \to \exists! w (in(w, r) \wedge in(w, y))) \wedge \forall w (in(w, r) \to \exists y (in(y, p) \wedge in(w, y)))
                   apply adj_cor3 for p, q
                   substitute in(q, adj(p, q)) for adj(p, q): x
                   apply invoke \forall y (in(y, x) \to \exists w (in(w, y))) for q
                   some s such \exists w (in(w, q)) {
+                    apply invoke finite_adj for r, s
                     any y {
                       assume in(y, x) {
                         substitute in(y, x) for x: adj(p, q)
@@ -1128,8 +1130,8 @@ theorem finite_choice \forall x (finite(x) \to (\forall y (in(y, x) \to \exists 
                           }
                       }
                     }
-                    connect \forall y (in(y, x) \to \exists! w (in(w, adj(r, s)) \wedge in(w, y))) \wedge \forall w (in(w, adj(r, s)) \to \exists y (in(y, x) \wedge in(w, y)))
-                    lift for adj(r, s) conclude \exists v (\forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y))))
+                    connect finite(adj(r, s)) \wedge \forall y (in(y, x) \to \exists! w (in(w, adj(r, s)) \wedge in(w, y))) \wedge \forall w (in(w, adj(r, s)) \to \exists y (in(y, x) \wedge in(w, y)))
+                    lift for adj(r, s) conclude \exists v (finite(v) \wedge \forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y))))
                   }
                 }
               }
@@ -1139,14 +1141,14 @@ theorem finite_choice \forall x (finite(x) \to (\forall y (in(y, x) \to \exists 
       }
     }
   }
-  connect \forall x (size(x, emptyset) \to (\forall y (in(y, x) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) \to \exists v (\forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y)))))) \wedge \forall n (natural(n) \to (\forall x (size(x, n) \to (\forall y (in(y, x) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) \to \exists v (\forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y)))))) \to \forall x (size(x, suc(n)) \to (\forall y (in(y, x) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) \to \exists v (\forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y))))))))
-  apply invoke natural_induction for \lambda^P n. \forall x (size(x, n) \to (\forall y (in(y, x) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) \to \exists v (\forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y))))))
+  connect \forall x (size(x, emptyset) \to (\forall y (in(y, x) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) \to \exists v (finite(v) \wedge \forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y)))))) \wedge \forall n (natural(n) \to (\forall x (size(x, n) \to (\forall y (in(y, x) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) \to \exists v (finite(v) \wedge \forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y)))))) \to \forall x (size(x, suc(n)) \to (\forall y (in(y, x) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) \to \exists v (finite(v) \wedge \forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y))))))))
+  apply invoke natural_induction for \lambda^P n. \forall x (size(x, n) \to (\forall y (in(y, x) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) \to \exists v (finite(v) \wedge \forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y))))))
   any x {
     assume finite(x) {
       some n such finite(x) {
         split 1 size(x, n)
-        apply invoke \forall n (natural(n) \to \forall x (size(x, n) \to (\forall y (in(y, x) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) \to \exists v (\forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y))))))) for n
-        apply invoke \forall x (size(x, n) \to (\forall y (in(y, x) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) \to \exists v (\forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y)))))) for x
+        apply invoke \forall n (natural(n) \to \forall x (size(x, n) \to (\forall y (in(y, x) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) \to \exists v (finite(v) \wedge \forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y))))))) for n
+        apply invoke \forall x (size(x, n) \to (\forall y (in(y, x) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) \to \exists v (finite(v) \wedge \forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y)))))) for x
       }
     }
   }
