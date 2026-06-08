@@ -970,3 +970,184 @@ theorem dom_finite_implies_fun_finite \forall f \forall X (fun(f) \wedge dom(f, 
     }
   }
 }
+
+theorem finite_choice \forall x (finite(x) \to (\forall y (in(y, x) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) \to \exists v (\forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y)))))) {
+  any x {
+    assume size(x, emptyset) {
+      apply invoke size_emptyset_implies_set_emptyset for x
+      assume \forall y (in(y, x) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) {
+        any y {
+          assume in(y, emptyset) {
+            apply emptyset_existence for y
+            contradict in(y, emptyset)
+            explode \exists! w (in(w, emptyset) \wedge in(w, y))
+          }
+        }
+        any w {
+          assume in(w, emptyset) {
+            apply emptyset_existence for w
+            contradict in(w, emptyset)
+            explode \exists y (in(y, emptyset) \wedge in(w, y))
+          }
+        }
+        connect \forall y (in(y, emptyset) \to \exists! w (in(w, emptyset) \wedge in(w, y))) \wedge \forall w (in(w, emptyset) \to \exists y (in(y, emptyset) \wedge in(w, y)))
+        lift for emptyset conclude \exists v (\forall y (in(y, emptyset) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, emptyset) \wedge in(w, y))))
+        substitute \exists v (\forall y (in(y, emptyset) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, emptyset) \wedge in(w, y)))) for emptyset: x
+      }
+    }
+  }
+  any n {
+    assume natural(n) {
+      assume \forall x (size(x, n) \to (\forall y (in(y, x) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) \to \exists v (\forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y)))))) {
+        any x {
+          assume size(x, suc(n)) {
+            assume \forall y (in(y, x) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) {
+              split \forall y (in(y, x) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z))))
+              apply invoke size_suc_decomposition for x, n
+              some p, q such \exists p \exists q (size(p, n) \wedge notin(q, p) \wedge equal(x, adj(p, q))) {
+                split size(p, n) \wedge notin(q, p) \wedge equal(x, adj(p, q))
+                apply invoke \forall x (size(x, n) \to (\forall y (in(y, x) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) \to \exists v (\forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y)))))) for p
+                any y {
+                  assume in(y, p) {
+                    apply invoke adj_cor1 for p, q, y
+                    substitute in(y, adj(p, q)) for adj(p, q): x
+                  }
+                }
+                any y {
+                  assume in(y, p) {
+                    apply invoke \forall y (in(y, p) \to in(y, x)) for y
+                    apply invoke \forall y (in(y, x) \to \exists w (in(w, y))) for y
+                  }
+                }
+                any y, z {
+                  assume in(y, p) \wedge in(z, p) \wedge neq(y, z) {
+                    split in(y, p) \wedge in(z, p) \wedge neq(y, z)
+                    apply invoke \forall y (in(y, p) \to in(y, x)) for y
+                    apply invoke \forall y (in(y, p) \to in(y, x)) for z
+                    connect in(y, x) \wedge in(z, x) \wedge neq(y, z)
+                    apply invoke \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) for y, z
+                  }
+                }
+                connect \forall y (in(y, p) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, p) \wedge in(z, p) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z))))
+                invoke \forall y (in(y, p) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, p) \wedge in(z, p) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) \to \exists v (\forall y (in(y, p) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, p) \wedge in(w, y))))
+                some r such \exists v (\forall y (in(y, p) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, p) \wedge in(w, y)))) {
+                  split \forall y (in(y, p) \to \exists! w (in(w, r) \wedge in(w, y))) \wedge \forall w (in(w, r) \to \exists y (in(y, p) \wedge in(w, y)))
+                  apply adj_cor3 for p, q
+                  substitute in(q, adj(p, q)) for adj(p, q): x
+                  apply invoke \forall y (in(y, x) \to \exists w (in(w, y))) for q
+                  some s such \exists w (in(w, q)) {
+                    any y {
+                      assume in(y, x) {
+                        substitute in(y, x) for x: adj(p, q)
+                        apply invoke rightward adj_existence for p, q, y
+                        divide in(y, p) \vee equal(y, q)
+                          case in(y, p) {
+                            apply invoke \forall y (in(y, p) \to \exists! w (in(w, r) \wedge in(w, y))) for y
+                            some w such \exists! w (in(w, r) \wedge in(w, y)) {
+                              split in(w, r) \wedge in(w, y)
+                              apply invoke adj_cor1 for r, s, w
+                              connect in(w, adj(r, s)) \wedge in(w, y)
+                              any w' {
+                                assume in(w', adj(r, s)) \wedge in(w', y) {
+                                  split in(w', adj(r, s)) \wedge in(w', y)
+                                  apply invoke rightward adj_existence for r, s, w'
+                                  divide in(w', r) \vee equal(w', s)
+                                    case in(w', r) {
+                                      connect in(w', r) \wedge in(w', y)
+                                      apply invoke \forall w' (in(w', r) \wedge in(w', y) \to equal(w', w)) for w'
+                                    }
+                                    case equal(w', s) {
+                                      deny equal(y, q) {
+                                        substitute in(y, p) for y: q
+                                        contradict in(q, p)
+                                      }
+                                      connect in(y, x) \wedge in(q, x) \wedge neq(y, q)
+                                      apply invoke \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) for y, q
+                                      substitute in(s, q) for s: w'
+                                      connect in(w', y) \wedge in(w', q)
+                                      lift for w' conclude \exists w (in(w, y) \wedge in(w, q))
+                                      contradict \exists w (in(w, y) \wedge in(w, q))
+                                      explode equal(w', w)
+                                    }
+                                }
+                              }
+                              connect in(w, adj(r, s)) \wedge in(w, y) \wedge \forall w' (in(w', adj(r, s)) \wedge in(w', y) \to equal(w', w))
+                              characterize for w conclude \exists! w (in(w, adj(r, s)) \wedge in(w, y))
+                            }
+                          }
+                          case equal(y, q) {
+                            apply adj_cor3 for r, s
+                            any w' {
+                              assume in(w', adj(r, s)) \wedge in(w', q) {
+                                split in(w', adj(r, s)) \wedge in(w', q)
+                                apply invoke rightward adj_existence for r, s, w'
+                                divide in(w', r) \vee equal(w', s)
+                                  case in(w', r) {
+                                    apply invoke \forall w (in(w, r) \to \exists y (in(y, p) \wedge in(w, y))) for w'
+                                    some z such \exists y (in(y, p) \wedge in(w', y)) {
+                                      split in(z, p) \wedge in(w', z)
+                                      deny equal(z, q) {
+                                        substitute in(z, p) for z: q
+                                        contradict in(q, p)
+                                      }
+                                      apply invoke \forall y (in(y, p) \to in(y, x)) for z
+                                      connect in(z, x) \wedge in(q, x) \wedge neq(z, q)
+                                      apply invoke \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) for z, q
+                                      connect in(w', z) \wedge in(w', q)
+                                      lift for w' conclude \exists w (in(w, z) \wedge in(w, q))
+                                      contradict \exists w (in(w, z) \wedge in(w, q))
+                                    }
+                                    explode equal(w', s)
+                                  }
+                                  case equal(w', s) {}
+                              }
+                            }
+                            connect in(s, adj(r, s)) \wedge in(s, q) \wedge \forall w' (in(w', adj(r, s)) \wedge in(w', q) \to equal(w', s))
+                            characterize for s conclude \exists! w (in(w, adj(r, s)) \wedge in(w, q))
+                            substitute \exists! w (in(w, adj(r, s)) \wedge in(w, q)) for q: y
+                          }
+                      }
+                    }
+                    any w {
+                      assume in(w, adj(r, s)) {
+                        apply invoke rightward adj_existence for r, s, w
+                        divide in(w, r) \vee equal(w, s)
+                          case in(w, r) {
+                            apply invoke \forall w (in(w, r) \to \exists y (in(y, p) \wedge in(w, y))) for w
+                            some y such \exists y (in(y, p) \wedge in(w, y)) {
+                              split in(y, p) \wedge in(w, y)
+                              apply invoke \forall y (in(y, p) \to in(y, x)) for y
+                              connect in(y, x) \wedge in(w, y)
+                              lift for y conclude \exists y (in(y, x) \wedge in(w, y))
+                            }
+                          }
+                          case equal(w, s) {
+                            connect in(q, x) \wedge in(s, q)
+                            lift for q conclude \exists y (in(y, x) \wedge in(s, y))
+                            substitute \exists y (in(y, x) \wedge in(s, y)) for s: w
+                          }
+                      }
+                    }
+                    connect \forall y (in(y, x) \to \exists! w (in(w, adj(r, s)) \wedge in(w, y))) \wedge \forall w (in(w, adj(r, s)) \to \exists y (in(y, x) \wedge in(w, y)))
+                    lift for adj(r, s) conclude \exists v (\forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y))))
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  connect \forall x (size(x, emptyset) \to (\forall y (in(y, x) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) \to \exists v (\forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y)))))) \wedge \forall n (natural(n) \to (\forall x (size(x, n) \to (\forall y (in(y, x) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) \to \exists v (\forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y)))))) \to \forall x (size(x, suc(n)) \to (\forall y (in(y, x) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) \to \exists v (\forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y))))))))
+  apply invoke natural_induction for \lambda^P n. \forall x (size(x, n) \to (\forall y (in(y, x) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) \to \exists v (\forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y))))))
+  any x {
+    assume finite(x) {
+      some n such finite(x) {
+        split 1 size(x, n)
+        apply invoke \forall n (natural(n) \to \forall x (size(x, n) \to (\forall y (in(y, x) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) \to \exists v (\forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y))))))) for n
+        apply invoke \forall x (size(x, n) \to (\forall y (in(y, x) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) \to \exists v (\forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y)))))) for x
+      }
+    }
+  }
+}
