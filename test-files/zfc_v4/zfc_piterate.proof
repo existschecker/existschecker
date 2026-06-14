@@ -1,4 +1,4 @@
-include "zfc_hf.proof"
+include "zfc_hf_in.proof"
 
 definition predicate trace(predicate \phi[2], n, g) as fun(g) \wedge dom(g, suc(n)) \wedge \forall k (in(k, n) \to \exists p \exists q (in(op(k, p), g) \wedge in(op(suc(k), q), g) \wedge \phi(p, q)))
 

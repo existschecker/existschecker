@@ -214,7 +214,7 @@ theorem adj_in_adjstep \forall X \forall Y \forall p \forall q (adjstep(X, Y) \w
 
 definition predicate hfadj(x) as \exists X (in(x, X) \wedge rtc(adjstep, singleton(emptyset), X))
 
-theorem hfadj_implies_hf \forall x (hfadj(x) \to hf(x)) {
+theorem hfadj_implies_hf \forall x (hfadj(x) \to hf(x, in)) {
   any x {
     assume \exists X (in(x, X) \wedge piterate(adjstep, emptyset, singleton(emptyset), X)) {
       some X such \exists X (in(x, X) \wedge piterate(adjstep, emptyset, singleton(emptyset), X)) {
@@ -223,13 +223,13 @@ theorem hfadj_implies_hf \forall x (hfadj(x) \to hf(x)) {
         substitute in(x, X) for X: singleton(emptyset)
         apply invoke rightward singleton_characterization for emptyset, x
         assert emptyset_is_hf
-        substitute hf(emptyset) for emptyset: x
+        substitute hf(emptyset, in) for emptyset: x
       }
     }
   }
   any n {
     assume natural(n) {
-      assume \forall x (\exists X (in(x, X) \wedge piterate(adjstep, n, singleton(emptyset), X)) \to hf(x)) {
+      assume \forall x (\exists X (in(x, X) \wedge piterate(adjstep, n, singleton(emptyset), X)) \to hf(x, in)) {
         any y {
           assume \exists Y (in(y, Y) \wedge piterate(adjstep, suc(n), singleton(emptyset), Y)) {
             some Y such \exists Y (in(y, Y) \wedge piterate(adjstep, suc(n), singleton(emptyset), Y)) {
@@ -243,20 +243,20 @@ theorem hfadj_implies_hf \forall x (hfadj(x) \to hf(x)) {
                   case in(y, X) {
                     connect in(y, X) \wedge piterate(adjstep, n, singleton(emptyset), X)
                     lift for X conclude \exists X (in(y, X) \wedge piterate(adjstep, n, singleton(emptyset), X))
-                    apply invoke \forall x (\exists X (in(x, X) \wedge piterate(adjstep, n, singleton(emptyset), X)) \to hf(x)) for y
+                    apply invoke \forall x (\exists X (in(x, X) \wedge piterate(adjstep, n, singleton(emptyset), X)) \to hf(x, in)) for y
                   }
                   case \exists p \exists q (in(p, X) \wedge in(q, X) \wedge equal(y, adj(p, q))) {
                     some p, q such \exists p \exists q (in(p, X) \wedge in(q, X) \wedge equal(y, adj(p, q))) {
                       split in(p, X) \wedge in(q, X) \wedge equal(y, adj(p, q))
                       connect in(p, X) \wedge piterate(adjstep, n, singleton(emptyset), X)
                       lift for X conclude \exists X (in(p, X) \wedge piterate(adjstep, n, singleton(emptyset), X))
-                      apply invoke \forall x (\exists X (in(x, X) \wedge piterate(adjstep, n, singleton(emptyset), X)) \to hf(x)) for p
+                      apply invoke \forall x (\exists X (in(x, X) \wedge piterate(adjstep, n, singleton(emptyset), X)) \to hf(x, in)) for p
                       connect in(q, X) \wedge piterate(adjstep, n, singleton(emptyset), X)
                       lift for X conclude \exists X (in(q, X) \wedge piterate(adjstep, n, singleton(emptyset), X))
-                      apply invoke \forall x (\exists X (in(x, X) \wedge piterate(adjstep, n, singleton(emptyset), X)) \to hf(x)) for q
-                      connect hf(p) \wedge hf(q)
+                      apply invoke \forall x (\exists X (in(x, X) \wedge piterate(adjstep, n, singleton(emptyset), X)) \to hf(x, in)) for q
+                      connect hf(p, in) \wedge hf(q, in)
                       apply invoke adj_of_hf_is_hf for p, q
-                      substitute hf(adj(p, q)) for adj(p, q): y
+                      substitute hf(adj(p, q), in) for adj(p, q): y
                     }
                   }
               }
@@ -266,8 +266,8 @@ theorem hfadj_implies_hf \forall x (hfadj(x) \to hf(x)) {
       }
     }
   }
-  connect \forall x (\exists X (in(x, X) \wedge piterate(adjstep, emptyset, singleton(emptyset), X)) \to hf(x)) \wedge \forall n (natural(n) \to ((\forall x (\exists X (in(x, X) \wedge piterate(adjstep, n, singleton(emptyset), X)) \to hf(x))) \to (\forall x (\exists X (in(x, X) \wedge piterate(adjstep, suc(n), singleton(emptyset), X)) \to hf(x)))))
-  apply invoke natural_induction for \lambda^P n. \forall x (\exists X (in(x, X) \wedge piterate(adjstep, n, singleton(emptyset), X)) \to hf(x))
+  connect \forall x (\exists X (in(x, X) \wedge piterate(adjstep, emptyset, singleton(emptyset), X)) \to hf(x, in)) \wedge \forall n (natural(n) \to ((\forall x (\exists X (in(x, X) \wedge piterate(adjstep, n, singleton(emptyset), X)) \to hf(x, in))) \to (\forall x (\exists X (in(x, X) \wedge piterate(adjstep, suc(n), singleton(emptyset), X)) \to hf(x, in)))))
+  apply invoke natural_induction for \lambda^P n. \forall x (\exists X (in(x, X) \wedge piterate(adjstep, n, singleton(emptyset), X)) \to hf(x, in))
   any x {
     assume hfadj(x) {
       some X such hfadj(x) {
@@ -276,8 +276,8 @@ theorem hfadj_implies_hf \forall x (hfadj(x) \to hf(x)) {
           split natural(n) \wedge piterate(adjstep, n, singleton(emptyset), X)
           connect in(x, X) \wedge piterate(adjstep, n, singleton(emptyset), X)
           lift for X conclude \exists X (in(x, X) \wedge piterate(adjstep, n, singleton(emptyset), X))
-          apply invoke \forall n (natural(n) \to \forall x (\exists X (in(x, X) \wedge piterate(adjstep, n, singleton(emptyset), X)) \to hf(x))) for n
-          apply invoke \forall x (\exists X (in(x, X) \wedge piterate(adjstep, n, singleton(emptyset), X)) \to hf(x)) for x
+          apply invoke \forall n (natural(n) \to \forall x (\exists X (in(x, X) \wedge piterate(adjstep, n, singleton(emptyset), X)) \to hf(x, in))) for n
+          apply invoke \forall x (\exists X (in(x, X) \wedge piterate(adjstep, n, singleton(emptyset), X)) \to hf(x, in)) for x
         }
       }
     }
@@ -370,10 +370,10 @@ theorem adj_of_hfadj_is_hfadj \forall x \forall y (hfadj(x) \wedge hfadj(y) \to 
   }
 }
 
-theorem hf_implies_hfadj \forall x (hf(x) \to hfadj(x)) {
+theorem hf_implies_hfadj \forall x (hf(x, in) \to hfadj(x)) {
   any p {
-    assume hf(p) \wedge \forall q (in(q, p) \to hfadj(q)) {
-      split hf(p) \wedge \forall q (in(q, p) \to hfadj(q))
+    assume hf(p, in) \wedge \forall q (in(q, p) \to hfadj(q)) {
+      split hf(p, in) \wedge \forall q (in(q, p) \to hfadj(q))
       any x {
         assume subset(x, p) \wedge size(x, emptyset) {
           split subset(x, p) \wedge size(x, emptyset)
@@ -415,7 +415,7 @@ theorem hf_implies_hfadj \forall x (hf(x) \to hfadj(x)) {
       }
       connect \forall x (subset(x, p) \wedge size(x, emptyset) \to hfadj(x)) \wedge \forall n (natural(n) \to (\forall x (subset(x, p) \wedge size(x, n) \to hfadj(x)) \to \forall x (subset(x, p) \wedge size(x, suc(n)) \to hfadj(x))))
       apply invoke natural_induction for \lambda^P n. \forall x (subset(x, p) \wedge size(x, n) \to hfadj(x))
-      split 2 hf(p)
+      split 2 hf(p, in)
       apply invoke hfcore_is_finite for p
       some n such finite(p) {
         split 1 size(p, n)
@@ -426,13 +426,13 @@ theorem hf_implies_hfadj \forall x (hf(x) \to hfadj(x)) {
       }
     }
   }
-  apply invoke hf_induction for hfadj
+  apply invoke hf_induction for in, hfadj
 }
 
-theorem hf_iff_hfadj \forall x (hf(x) \leftrightarrow hfadj(x)) {
+theorem hf_iff_hfadj \forall x (hf(x, in) \leftrightarrow hfadj(x)) {
   any x {
     apply hf_implies_hfadj for x
     apply hfadj_implies_hf for x
-    connect hf(x) \leftrightarrow hfadj(x)
+    connect hf(x, in) \leftrightarrow hfadj(x)
   }
 }

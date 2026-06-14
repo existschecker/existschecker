@@ -11,34 +11,34 @@ theorem powerset_piterate_is_unique \forall n \forall X \forall X' (natural(n) \
   }
 }
 
-theorem hf_trans_powerset_exists \forall x (hf(x) \wedge trans(x) \to \exists y (hf(y) \wedge trans(y) \wedge powerset(x, y))) {
+theorem hf_trans_powerset_exists \forall x (hf(x, in) \wedge trans(x) \to \exists y (hf(y, in) \wedge trans(y) \wedge powerset(x, y))) {
   any x {
-    assume hf(x) \wedge trans(x) {
-      split hf(x) \wedge trans(x)
+    assume hf(x, in) \wedge trans(x) {
+      split hf(x, in) \wedge trans(x)
       apply invoke hf_poweset_exists for x
-      some y such \exists y (hf(y) \wedge powerset(x, y)) {
-        split hf(y) \wedge powerset(x, y)
+      some y such \exists y (hf(y, in) \wedge powerset(x, y)) {
+        split hf(y, in) \wedge powerset(x, y)
         connect trans(x) \wedge powerset(x, y)
         apply invoke trans_implies_powerset_trans for x, y
-        connect hf(y) \wedge trans(y) \wedge powerset(x, y)
-        lift for y conclude \exists y (hf(y) \wedge trans(y) \wedge powerset(x, y))
+        connect hf(y, in) \wedge trans(y) \wedge powerset(x, y)
+        lift for y conclude \exists y (hf(y, in) \wedge trans(y) \wedge powerset(x, y))
       }
     }
   }
 }
 
-theorem powerset_is_total_on_hf_and_trans total(powerset, \lambda^P x. hf(x) \wedge trans(x)) {
+theorem powerset_is_total_on_hf_and_trans total(powerset, \lambda^P x. hf(x, in) \wedge trans(x)) {
   assert hf_trans_powerset_exists
-  fold for total conclude total(powerset, \lambda^P x. hf(x) \wedge trans(x))
+  fold for total conclude total(powerset, \lambda^P x. hf(x, in) \wedge trans(x))
 }
 
-theorem powerset_piterate_exists_uniquely \forall n (natural(n) \to \exists x (hf(x) \wedge trans(x) \wedge piterate(powerset, n, emptyset, x) \wedge \forall x' (piterate(powerset, n, emptyset, x') \to equal(x', x)))) {
+theorem powerset_piterate_exists_uniquely \forall n (natural(n) \to \exists x (hf(x, in) \wedge trans(x) \wedge piterate(powerset, n, emptyset, x) \wedge \forall x' (piterate(powerset, n, emptyset, x') \to equal(x', x)))) {
   assert powerset_is_functional
   assert powerset_is_total_on_hf_and_trans
   assert emptyset_is_hf
   assert emptyset_is_trans
-  connect functional(powerset) \wedge total(powerset, \lambda^P x. hf(x) \wedge trans(x)) \wedge hf(emptyset) \wedge trans(emptyset)
-  apply invoke piterate_exists_uniquely for powerset, \lambda^P x. hf(x) \wedge trans(x), emptyset
+  connect functional(powerset) \wedge total(powerset, \lambda^P x. hf(x, in) \wedge trans(x)) \wedge hf(emptyset, in) \wedge trans(emptyset)
+  apply invoke piterate_exists_uniquely for powerset, \lambda^P x. hf(x, in) \wedge trans(x), emptyset
 }
 
 theorem powerset_expanding \forall X \forall Y \forall m \forall n (natural(m) \wedge natural(n) \wedge piterate(powerset, m, emptyset, X) \wedge piterate(powerset, n, emptyset, Y) \wedge in(m, n) \to subset(X, Y)) {
@@ -61,8 +61,8 @@ theorem powerset_expanding \forall X \forall Y \forall m \forall n (natural(m) \
             some Z such \exists Z (piterate(powerset, n, emptyset, Z) \wedge powerset(Z, Y)) {
               split piterate(powerset, n, emptyset, Z) \wedge powerset(Z, Y)
               apply invoke powerset_piterate_exists_uniquely for n
-              some Z' such \exists Z' (hf(Z') \wedge trans(Z') \wedge piterate(powerset, n, emptyset, Z') \wedge \forall Z'' (piterate(powerset, n, emptyset, Z'') \to equal(Z'', Z'))) {
-                split hf(Z') \wedge trans(Z') \wedge piterate(powerset, n, emptyset, Z') \wedge \forall Z'' (piterate(powerset, n, emptyset, Z'') \to equal(Z'', Z'))
+              some Z' such \exists Z' (hf(Z', in) \wedge trans(Z') \wedge piterate(powerset, n, emptyset, Z') \wedge \forall Z'' (piterate(powerset, n, emptyset, Z'') \to equal(Z'', Z'))) {
+                split hf(Z', in) \wedge trans(Z') \wedge piterate(powerset, n, emptyset, Z') \wedge \forall Z'' (piterate(powerset, n, emptyset, Z'') \to equal(Z'', Z'))
                 apply invoke \forall Z'' (piterate(powerset, n, emptyset, Z'') \to equal(Z'', Z')) for Z
                 substitute trans(Z') for Z': Z
               }
@@ -125,7 +125,7 @@ theorem trans_implies_adj_in_powerset \forall X \forall Y \forall p \forall q (p
 
 definition predicate hfpower(x) as \exists v (in(x, v) \wedge rtc(powerset, emptyset, v))
 
-theorem hfpower_implies_hf \forall x (hfpower(x) \to hf(x)) {
+theorem hfpower_implies_hf \forall x (hfpower(x) \to hf(x, in)) {
   any x {
     assume \exists X (in(x, X) \wedge piterate(powerset, emptyset, emptyset, X)) {
       some X such \exists X (in(x, X) \wedge piterate(powerset, emptyset, emptyset, X)) {
@@ -134,13 +134,13 @@ theorem hfpower_implies_hf \forall x (hfpower(x) \to hf(x)) {
         substitute in(x, X) for X: emptyset
         apply emptyset_existence for x
         contradict in(x, emptyset)
-        explode hf(x)
+        explode hf(x, in)
       }
     }
   }
   any n {
     assume natural(n) {
-      assume \forall x (\exists X (in(x, X) \wedge piterate(powerset, n, emptyset, X)) \to hf(x)) {
+      assume \forall x (\exists X (in(x, X) \wedge piterate(powerset, n, emptyset, X)) \to hf(x, in)) {
         any y {
           assume \exists Y (in(y, Y) \wedge piterate(powerset, suc(n), emptyset, Y)) {
             some Y such \exists Y (in(y, Y) \wedge piterate(powerset, suc(n), emptyset, Y)) {
@@ -151,12 +151,12 @@ theorem hfpower_implies_hf \forall x (hfpower(x) \to hf(x)) {
                 split piterate(powerset, n, emptyset, X) \wedge powerset(X, Y)
                 apply invoke rightward powerset(X, Y) for y
                 apply invoke powerset_piterate_exists_uniquely for n
-                some X' such \exists X' (hf(X') \wedge trans(X') \wedge piterate(powerset, n, emptyset, X') \wedge \forall X'' (piterate(powerset, n, emptyset, X'') \to equal(X'', X'))) {
-                  split hf(X') \wedge trans(X') \wedge piterate(powerset, n, emptyset, X') \wedge \forall X'' (piterate(powerset, n, emptyset, X'') \to equal(X'', X'))
+                some X' such \exists X' (hf(X', in) \wedge trans(X') \wedge piterate(powerset, n, emptyset, X') \wedge \forall X'' (piterate(powerset, n, emptyset, X'') \to equal(X'', X'))) {
+                  split hf(X', in) \wedge trans(X') \wedge piterate(powerset, n, emptyset, X') \wedge \forall X'' (piterate(powerset, n, emptyset, X'') \to equal(X'', X'))
                   apply invoke \forall X'' (piterate(powerset, n, emptyset, X'') \to equal(X'', X')) for X
-                  substitute hf(X') for X': X
+                  substitute hf(X', in) for X': X
                 }
-                connect hf(X) \wedge subset(y, X)
+                connect hf(X, in) \wedge subset(y, X)
                 apply invoke subset_of_hf_is_hf for X, y
               }
             }
@@ -165,8 +165,8 @@ theorem hfpower_implies_hf \forall x (hfpower(x) \to hf(x)) {
       }
     }
   }
-  connect \forall x (\exists X (in(x, X) \wedge piterate(powerset, emptyset, emptyset, X)) \to hf(x)) \wedge \forall n (natural(n) \to ((\forall x (\exists X (in(x, X) \wedge piterate(powerset, n, emptyset, X)) \to hf(x))) \to (\forall x (\exists X (in(x, X) \wedge piterate(powerset, suc(n), emptyset, X)) \to hf(x)))))
-  apply invoke natural_induction for \lambda^P n. \forall x (\exists X (in(x, X) \wedge piterate(powerset, n, emptyset, X)) \to hf(x))
+  connect \forall x (\exists X (in(x, X) \wedge piterate(powerset, emptyset, emptyset, X)) \to hf(x, in)) \wedge \forall n (natural(n) \to ((\forall x (\exists X (in(x, X) \wedge piterate(powerset, n, emptyset, X)) \to hf(x, in))) \to (\forall x (\exists X (in(x, X) \wedge piterate(powerset, suc(n), emptyset, X)) \to hf(x, in)))))
+  apply invoke natural_induction for \lambda^P n. \forall x (\exists X (in(x, X) \wedge piterate(powerset, n, emptyset, X)) \to hf(x, in))
   any x {
     assume hfpower(x) {
       some X such hfpower(x) {
@@ -175,8 +175,8 @@ theorem hfpower_implies_hf \forall x (hfpower(x) \to hf(x)) {
           split natural(n) \wedge piterate(powerset, n, emptyset, X)
           connect in(x, X) \wedge piterate(powerset, n, emptyset, X)
           lift for X conclude \exists X (in(x, X) \wedge piterate(powerset, n, emptyset, X))
-          apply invoke \forall n (natural(n) \to \forall x (\exists X (in(x, X) \wedge piterate(powerset, n, emptyset, X)) \to hf(x))) for n
-          apply invoke \forall x (\exists X (in(x, X) \wedge piterate(powerset, n, emptyset, X)) \to hf(x)) for x
+          apply invoke \forall n (natural(n) \to \forall x (\exists X (in(x, X) \wedge piterate(powerset, n, emptyset, X)) \to hf(x, in))) for n
+          apply invoke \forall x (\exists X (in(x, X) \wedge piterate(powerset, n, emptyset, X)) \to hf(x, in)) for x
         }
       }
     }
@@ -192,27 +192,27 @@ theorem adj_of_hfpower_is_hfpower \forall x \forall y (hfpower(x) \wedge hfpower
         some m such rtc(powerset, emptyset, X) {
           split natural(m) \wedge piterate(powerset, m, emptyset, X)
           apply invoke powerset_piterate_exists_uniquely for m
-          some X' such \exists X' (hf(X') \wedge trans(X') \wedge piterate(powerset, m, emptyset, X') \wedge \forall X'' (piterate(powerset, m, emptyset, X'') \to equal(X'', X'))) {
-            split hf(X') \wedge trans(X') \wedge piterate(powerset, m, emptyset, X') \wedge \forall X'' (piterate(powerset, m, emptyset, X'') \to equal(X'', X'))
+          some X' such \exists X' (hf(X', in) \wedge trans(X') \wedge piterate(powerset, m, emptyset, X') \wedge \forall X'' (piterate(powerset, m, emptyset, X'') \to equal(X'', X'))) {
+            split hf(X', in) \wedge trans(X') \wedge piterate(powerset, m, emptyset, X') \wedge \forall X'' (piterate(powerset, m, emptyset, X'') \to equal(X'', X'))
             apply invoke \forall X'' (piterate(powerset, m, emptyset, X'') \to equal(X'', X')) for X
-            substitute hf(X') for X': X
+            substitute hf(X', in) for X': X
             substitute trans(X') for X': X
-            connect hf(X) \wedge trans(X)
+            connect hf(X, in) \wedge trans(X)
           }
-          split hf(X) \wedge trans(X)
+          split hf(X, in) \wedge trans(X)
           some Y such hfpower(y) {
             split in(y, Y) \wedge rtc(powerset, emptyset, Y)
             some n such rtc(powerset, emptyset, Y) {
               split natural(n) \wedge piterate(powerset, n, emptyset, Y)
               apply invoke powerset_piterate_exists_uniquely for n
-              some Y' such \exists Y' (hf(Y') \wedge trans(Y') \wedge piterate(powerset, n, emptyset, Y') \wedge \forall Y'' (piterate(powerset, n, emptyset, Y'') \to equal(Y'', Y'))) {
-                split hf(Y') \wedge trans(Y') \wedge piterate(powerset, n, emptyset, Y') \wedge \forall Y'' (piterate(powerset, n, emptyset, Y'') \to equal(Y'', Y'))
+              some Y' such \exists Y' (hf(Y', in) \wedge trans(Y') \wedge piterate(powerset, n, emptyset, Y') \wedge \forall Y'' (piterate(powerset, n, emptyset, Y'') \to equal(Y'', Y'))) {
+                split hf(Y', in) \wedge trans(Y') \wedge piterate(powerset, n, emptyset, Y') \wedge \forall Y'' (piterate(powerset, n, emptyset, Y'') \to equal(Y'', Y'))
                 apply invoke \forall Y'' (piterate(powerset, n, emptyset, Y'') \to equal(Y'', Y')) for Y
-                substitute hf(Y') for Y': Y
+                substitute hf(Y', in) for Y': Y
                 substitute trans(Y') for Y': Y
-                connect hf(Y) \wedge trans(Y)
+                connect hf(Y, in) \wedge trans(Y)
               }
-              split hf(Y) \wedge trans(Y)
+              split hf(Y, in) \wedge trans(Y)
               connect natural(m) \wedge natural(n)
               apply invoke natural_trichotomy_in for m, n
               divide in(m, n) \vee equal(m, n) \vee in(n, m)
@@ -223,8 +223,8 @@ theorem adj_of_hfpower_is_hfpower \forall x \forall y (hfpower(x) \wedge hfpower
                   apply invoke subset(X, Y) for x
                   connect in(x, Y) \wedge in(y, Y)
                   apply invoke hf_trans_powerset_exists for Y
-                  some Z such \exists Z (hf(Z) \wedge trans(Z) \wedge powerset(Y, Z)) {
-                    split hf(Z) \wedge trans(Z) \wedge powerset(Y, Z)
+                  some Z such \exists Z (hf(Z, in) \wedge trans(Z) \wedge powerset(Y, Z)) {
+                    split hf(Z, in) \wedge trans(Z) \wedge powerset(Y, Z)
                     connect trans(Y) \wedge powerset(Y, Z) \wedge in(x, Y) \wedge in(y, Y)
                     apply invoke trans_implies_adj_in_powerset for Y, Z, x, y
                     connect rtc(powerset, emptyset, Y) \wedge powerset(Y, Z)
@@ -240,8 +240,8 @@ theorem adj_of_hfpower_is_hfpower \forall x \forall y (hfpower(x) \wedge hfpower
                   substitute in(x, X) for X: Y
                   connect in(x, Y) \wedge in(y, Y)
                   apply invoke hf_poweset_exists for Y
-                  some Z such \exists Z (hf(Z) \wedge powerset(Y, Z)) {
-                    split hf(Z) \wedge powerset(Y, Z)
+                  some Z such \exists Z (hf(Z, in) \wedge powerset(Y, Z)) {
+                    split hf(Z, in) \wedge powerset(Y, Z)
                     connect trans(Y) \wedge powerset(Y, Z) \wedge in(x, Y) \wedge in(y, Y)
                     apply invoke trans_implies_adj_in_powerset for Y, Z, x, y
                     connect rtc(powerset, emptyset, Y) \wedge powerset(Y, Z)
@@ -257,8 +257,8 @@ theorem adj_of_hfpower_is_hfpower \forall x \forall y (hfpower(x) \wedge hfpower
                   apply invoke subset(Y, X) for y
                   connect in(y, X) \wedge in(y, Y)
                   apply invoke hf_trans_powerset_exists for X
-                  some Z such \exists Z (hf(Z) \wedge trans(Z) \wedge powerset(X, Z)) {
-                    split hf(Z) \wedge trans(Z) \wedge powerset(X, Z)
+                  some Z such \exists Z (hf(Z, in) \wedge trans(Z) \wedge powerset(X, Z)) {
+                    split hf(Z, in) \wedge trans(Z) \wedge powerset(X, Z)
                     connect trans(X) \wedge powerset(X, Z) \wedge in(x, X) \wedge in(y, X)
                     apply invoke trans_implies_adj_in_powerset for X, Z, x, y
                     connect rtc(powerset, emptyset, X) \wedge powerset(X, Z)
@@ -275,10 +275,10 @@ theorem adj_of_hfpower_is_hfpower \forall x \forall y (hfpower(x) \wedge hfpower
   }
 }
 
-theorem hf_implies_hfpower \forall x (hf(x) \to hfpower(x)) {
+theorem hf_implies_hfpower \forall x (hf(x, in) \to hfpower(x)) {
   any p {
-    assume hf(p) \wedge \forall q (in(q, p) \to hfpower(q)) {
-      split hf(p) \wedge \forall q (in(q, p) \to hfpower(q))
+    assume hf(p, in) \wedge \forall q (in(q, p) \to hfpower(q)) {
+      split hf(p, in) \wedge \forall q (in(q, p) \to hfpower(q))
       any x {
         assume subset(x, p) \wedge size(x, emptyset) {
           split subset(x, p) \wedge size(x, emptyset)
@@ -321,7 +321,7 @@ theorem hf_implies_hfpower \forall x (hf(x) \to hfpower(x)) {
       }
       connect \forall x (subset(x, p) \wedge size(x, emptyset) \to hfpower(x)) \wedge \forall n (natural(n) \to (\forall x (subset(x, p) \wedge size(x, n) \to hfpower(x)) \to \forall x (subset(x, p) \wedge size(x, suc(n)) \to hfpower(x))))
       apply invoke natural_induction for \lambda^P n. \forall x (subset(x, p) \wedge size(x, n) \to hfpower(x))
-      split 2 hf(p)
+      split 2 hf(p, in)
       apply invoke hfcore_is_finite for p
       some n such finite(p) {
         split 1 size(p, n)
@@ -332,13 +332,13 @@ theorem hf_implies_hfpower \forall x (hf(x) \to hfpower(x)) {
       }
     }
   }
-  apply invoke hf_induction for hfpower
+  apply invoke hf_induction for in, hfpower
 }
 
-theorem hf_iff_hfpower \forall x (hf(x) \leftrightarrow hfpower(x)) {
+theorem hf_iff_hfpower \forall x (hf(x, in) \leftrightarrow hfpower(x)) {
   any x {
     apply hf_implies_hfpower for x
     apply hfpower_implies_hf for x
-    connect hf(x) \leftrightarrow hfpower(x)
+    connect hf(x, in) \leftrightarrow hfpower(x)
   }
 }

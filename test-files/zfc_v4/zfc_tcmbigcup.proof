@@ -189,26 +189,26 @@ theorem tcmowns_iff_tcmbigcup \forall X \forall Y (hbigcup(X) \to (tcmowns(X, Y)
   }
 }
 
-theorem hf_bigcup_piterate_exists \forall X (hf(X) \to \forall n (natural(n) \to \exists u (hf(u) \wedge piterate(bigcup, n, X, u)))) {
+theorem hf_bigcup_piterate_exists \forall X (hf(X, in) \to \forall n (natural(n) \to \exists u (hf(u, in) \wedge piterate(bigcup, n, X, u)))) {
   any X {
-    assume hf(X) {
+    assume hf(X, in) {
       assert bigcup_is_total_on_hf
       assert emptyset_is_hf
-      connect total(bigcup, hf) \wedge hf(X)
-      apply invoke piterate_exists for bigcup, hf, X
+      connect total(bigcup, \lambda^P x. hf(x, in)) \wedge hf(X, in)
+      apply invoke piterate_exists for bigcup, \lambda^P x. hf(x, in), X
     }
   }
 }
 
-theorem hf_implies_hbigcup \forall X (hf(X) \to hbigcup(X)) {
+theorem hf_implies_hbigcup \forall X (hf(X, in) \to hbigcup(X)) {
   any X {
-    assume hf(X) {
+    assume hf(X, in) {
       apply invoke hf_bigcup_piterate_exists for X
       any n {
         assume natural(n) {
-          apply invoke \forall n (natural(n) \to \exists u (hf(u) \wedge piterate(bigcup, n, X, u))) for n
-          some u such \exists u (hf(u) \wedge piterate(bigcup, n, X, u)) {
-            split hf(u) \wedge piterate(bigcup, n, X, u)
+          apply invoke \forall n (natural(n) \to \exists u (hf(u, in) \wedge piterate(bigcup, n, X, u))) for n
+          some u such \exists u (hf(u, in) \wedge piterate(bigcup, n, X, u)) {
+            split hf(u, in) \wedge piterate(bigcup, n, X, u)
             lift for u conclude \exists u (piterate(bigcup, n, X, u))
           }
         }

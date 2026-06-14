@@ -1,0 +1,621 @@
+include "zfc_hf.proof"
+
+theorem hfcore_is_finite \forall x (hfcore(x, in) \to finite(x)) {
+  any x {
+    assume hfcore(x, in) {
+      some t such hfcore(x, in) {
+        split finite(t) \wedge tcset(x, in, t)
+        fold for tcm conclude tcm(x, t)
+        apply invoke tcm_implies_subset for x, t
+        connect finite(t) \wedge subset(x, t)
+        apply invoke subset_of_finite_is_finite for t, x
+      }
+    }
+  }
+}
+
+theorem finite_set_of_hfcore_is_hfcore \forall Y (finite(Y) \wedge \forall y (in(y, Y) \to hfcore(y, in)) \to hfcore(Y, in) \wedge \exists Z \exists W \exists V (tcmstep(Y, Z, W, V))) {
+  any Y {
+    assume finite(Y) \wedge \forall y (in(y, Y) \to hfcore(y, in)) {
+      split finite(Y) \wedge \forall y (in(y, Y) \to hfcore(y, in))
+      assert tcm_is_functional
+      connect finite(Y) \wedge functional(tcm)
+      apply invoke finite_replacement_exists_uniquely for Y, tcm
+      some Z such \exists! Z (finite(Z) \wedge replacement(Y, tcm, Z)) {
+        split finite(Z) \wedge replacement(Y, tcm, Z)
+        any z {
+          assume in(z, Z) {
+            apply invoke rightward replacement(Y, tcm, Z) for z
+            some y such \exists y (in(y, Y) \wedge tcm(y, z)) {
+              split in(y, Y) \wedge tcm(y, z)
+              apply invoke \forall y (in(y, Y) \to hfcore(y, in)) for y
+              some z' such hfcore(y, in) {
+                split finite(z') \wedge tcset(y, in, z')
+                fold for tcm conclude tcm(y, z')
+                connect tcm(y, z) \wedge tcm(y, z')
+                apply invoke tcm_is_unique for y, z, z'
+                substitute finite(z') for z': z
+              }
+            }
+          }
+        }
+        connect finite(Z) \wedge \forall z (in(z, Z) \to finite(z))
+        apply invoke finite_bigcup_exists_uniquely for Z
+        some W such \exists! W (finite(W) \wedge bigcup(Z, W)) {
+          split finite(W) \wedge bigcup(Z, W)
+          connect finite(Y) \wedge finite(W)
+          apply invoke finite_cup_exists_uniquely for Y, W
+          some V such \exists! V (finite(V) \wedge cup(Y, W, V)) {
+            split finite(V) \wedge cup(Y, W, V)
+            any y {
+              assume in(y, Y) {
+                apply invoke \forall y (in(y, Y) \to hfcore(y, in)) for y
+                some z such hfcore(y, in) {
+                  split 2 finite(z) \wedge tcset(y, in, z)
+                  fold for tcm conclude tcm(y, z)
+                  lift for z conclude \exists z (tcm(y, z))
+                }
+              }
+            }
+            connect tcmstep(Y, Z, W, V)
+            apply invoke tcm_is_cup_of_itself_and_bigcup_of_tcm_of_element for Y, Z, W, V
+            expand tcm(Y, V) for tcm
+            connect finite(V) \wedge tcset(Y, in, V)
+            lift for V conclude hfcore(Y, in)
+            lift for Z, W, V conclude \exists Z \exists W \exists V (tcmstep(Y, Z, W, V))
+            connect hfcore(Y, in) \wedge \exists Z \exists W \exists V (tcmstep(Y, Z, W, V))
+          }
+        }
+      }
+    }
+  }
+}
+
+theorem hf_is_irrefrel_wellfounded_finite \forall x (hf(x, in) \to irrefrel(x, in) \wedge wellfounded(x, in) \wedge finite(x)) {
+  any x {
+    assume hf(x, in) {
+      split hf(x, in)
+      split regular(x, in)
+      apply invoke hirrefrel_is_irrefrel for x
+      apply invoke hwellfounded_is_wellfounded for x
+      apply invoke hfcore_is_finite for x
+      connect irrefrel(x, in) \wedge wellfounded(x, in) \wedge finite(x)
+    }
+  }
+}
+
+theorem hf_satisfies_axiom_of_extensionality \forall x \forall y (hf(x, in) \wedge hf(y, in) \to (\forall z (hf(z, in) \to (in(z, x) \leftrightarrow in(z, y))) \to equal(x, y))) {
+  any x, y {
+    assume hf(x, in) \wedge hf(y, in) {
+      split hf(x, in) \wedge hf(y, in)
+      assume \forall z (hf(z, in) \to (in(z, x) \leftrightarrow in(z, y))) {
+        any z {
+          assume in(z, x) {
+            connect hf(x, in) \wedge in(z, x)
+            apply invoke element_of_hf_is_hf for x, in, z
+            apply invoke \forall z (hf(z, in) \to (in(z, x) \leftrightarrow in(z, y))) for z
+            invoke rightward in(z, x) \leftrightarrow in(z, y)
+          }
+          assume in(z, y) {
+            connect hf(y, in) \wedge in(z, y)
+            apply invoke element_of_hf_is_hf for y, in, z
+            apply invoke \forall z (hf(z, in) \to (in(z, x) \leftrightarrow in(z, y))) for z
+            invoke leftward in(z, x) \leftrightarrow in(z, y)
+          }
+          connect in(z, x) \leftrightarrow in(z, y)
+        }
+        apply invoke axiom_of_extensionality for x, y
+      }
+    }
+  }
+}
+
+theorem emptyset_is_hf hf(emptyset, in) {
+  assert emptyset_is_regular
+  assert emptyset_is_tcm_of_emptyset
+  expand tcm(emptyset, emptyset) for tcm
+  assert emptyset_is_finite
+  connect finite(emptyset) \wedge tcset(emptyset, in, emptyset)
+  lift for emptyset conclude hfcore(emptyset, in)
+  connect hf(emptyset, in)
+}
+
+theorem hf_satisfies_axiom_of_emptyset \exists x (hf(x, in) \wedge \forall y (hf(y, in) \to notin(y, x))) {
+  assert emptyset_is_hf
+  any y {
+    assume hf(y, in) {
+      apply emptyset_existence for y
+    }
+  }
+  connect hf(emptyset, in) \wedge \forall y (hf(y, in) \to notin(y, emptyset))
+  lift for emptyset conclude \exists x (hf(x, in) \wedge \forall y (hf(y, in) \to notin(y, x)))
+}
+
+theorem finite_set_of_hf_is_hf \forall Y (finite(Y) \wedge \forall y (in(y, Y) \to hf(y, in)) \to hf(Y, in)) {
+  any Y {
+    assume finite(Y) \wedge \forall y (in(y, Y) \to hf(y, in)) {
+      split finite(Y) \wedge \forall y (in(y, Y) \to hf(y, in))
+      any y {
+        assume in(y, Y) {
+          apply invoke \forall y (in(y, Y) \to hf(y, in)) for y
+          split 1 hf(y, in)
+        }
+      }
+      any y {
+        assume in(y, Y) {
+          apply invoke \forall y (in(y, Y) \to hf(y, in)) for y
+          split 2 hf(y, in)
+        }
+      }
+      connect finite(Y) \wedge \forall y (in(y, Y) \to hfcore(y, in))
+      apply invoke finite_set_of_hfcore_is_hfcore for Y
+      split hfcore(Y, in) \wedge \exists Z \exists W \exists V (tcmstep(Y, Z, W, V))
+      connect \forall y (in(y, Y) \to regular(y, in)) \wedge \exists Z \exists W \exists V (tcmstep(Y, Z, W, V))
+      apply invoke set_of_regular_is_regular for Y
+      connect hf(Y, in)
+    }
+  }
+}
+
+theorem subset_of_hf_is_hf \forall x \forall y (hf(x, in) \wedge subset(y, x) \to hf(y, in)) {
+  any x, y {
+    assume hf(x, in) \wedge subset(y, x) {
+      split hf(x, in) \wedge subset(y, x)
+      apply invoke hf_is_irrefrel_wellfounded_finite for x
+      split 3 irrefrel(x, in) \wedge wellfounded(x, in) \wedge finite(x)
+      connect finite(x) \wedge subset(y, x)
+      apply invoke subset_of_finite_is_finite for x, y
+      any z {
+        assume in(z, y) {
+          apply invoke subset(y, x) for z
+          connect hf(x, in) \wedge in(z, x)
+          apply invoke element_of_hf_is_hf for x, in, z
+        }
+      }
+      connect finite(y) \wedge \forall z (in(z, y) \to hf(z, in))
+      apply invoke finite_set_of_hf_is_hf for y
+    }
+  }
+}
+
+theorem adj_of_hf_is_hf \forall x \forall y (hf(x, in) \wedge hf(y, in) \to hf(adj(x, y), in)) {
+  any x, y {
+    assume hf(x, in) \wedge hf(y, in) {
+      split hf(x, in) \wedge hf(y, in)
+      apply invoke hf_is_irrefrel_wellfounded_finite for x
+      split 3 irrefrel(x, in) \wedge wellfounded(x, in) \wedge finite(x)
+      apply invoke finite_adj for x, y
+      any p {
+        assume in(p, adj(x, y)) {
+          apply invoke rightward adj_existence for x, y, p
+          divide in(p, x) \vee equal(p, y)
+            case in(p, x) {
+              connect hf(x, in) \wedge in(p, x)
+              apply invoke element_of_hf_is_hf for x, in, p
+            }
+            case equal(p, y) {
+              substitute hf(y, in) for y: p
+            }
+        }
+      }
+      connect finite(adj(x, y)) \wedge \forall p (in(p, adj(x, y)) \to hf(p, in))
+      apply invoke finite_set_of_hf_is_hf for adj(x, y)
+    }
+  }
+}
+
+theorem hf_satisfies_axiom_of_adjunction \forall x \forall y (hf(x, in) \wedge hf(y, in) \to \exists z (hf(z, in) \wedge \forall w (hf(w, in) \to (in(w, z) \leftrightarrow in(w, x) \vee equal(w, y))))) {
+  any x, y {
+    assume hf(x, in) \wedge hf(y, in) {
+      apply invoke adj_of_hf_is_hf for x, y
+      any w {
+        assume hf(w, in) {
+          apply adj_existence for x, y, w
+        }
+      }
+      connect hf(adj(x, y), in) \wedge \forall w (hf(w, in) \to (in(w, adj(x, y)) \leftrightarrow in(w, x) \vee equal(w, y)))
+      lift for adj(x, y) conclude \exists z (hf(z, in) \wedge \forall w (hf(w, in) \to (in(w, z) \leftrightarrow in(w, x) \vee equal(w, y))))
+    }
+  }
+}
+
+theorem hf_satisfies_axiom_of_separation \forall^P \phi[1] \forall x (hf(x, in) \to \exists y (hf(y, in) \wedge \forall z (hf(z, in) \to (in(z, y) \leftrightarrow in(z, x) \wedge \phi(z))))) {
+  any predicate \phi[1], x {
+    assume hf(x, in) {
+      apply invoke hf_is_irrefrel_wellfounded_finite for x
+      split 3 irrefrel(x, in) \wedge wellfounded(x, in) \wedge finite(x)
+      apply sep_is_subset for x, \phi
+      connect finite(x) \wedge subset(sep(x, \phi), x)
+      apply invoke subset_of_finite_is_finite for x, sep(x, \phi)
+      any p {
+        assume in(p, sep(x, \phi)) {
+          apply invoke rightward sep_existence for x, \phi, p
+          split 1 in(p, x) \wedge \phi(p)
+          connect hf(x, in) \wedge in(p, x)
+          apply invoke element_of_hf_is_hf for x, in, p
+        }
+      }
+      connect finite(sep(x, \phi)) \wedge \forall p (in(p, sep(x, \phi)) \to hf(p, in))
+      apply invoke finite_set_of_hf_is_hf for sep(x, \phi)
+      any z {
+        assume hf(z, in) {
+          apply sep_existence for x, \phi, z
+        }
+      }
+      connect hf(sep(x, \phi), in) \wedge \forall z (hf(z, in) \to (in(z, sep(x, \phi)) \leftrightarrow in(z, x) \wedge \phi(z)))
+      lift for sep(x, \phi) conclude \exists y (hf(y, in) \wedge \forall z (hf(z, in) \to (in(z, y) \leftrightarrow in(z, x) \wedge \phi(z))))
+    }
+  }
+}
+
+theorem hf_bigcup_exists \forall x (hf(x, in) \to \exists y (hf(y, in) \wedge bigcup(x, y))) {
+  any x {
+    assume hf(x, in) {
+      apply invoke hf_is_irrefrel_wellfounded_finite for x
+      split 3 irrefrel(x, in) \wedge wellfounded(x, in) \wedge finite(x)
+      any p {
+        assume in(p, x) {
+          connect hf(x, in) \wedge in(p, x)
+          apply invoke element_of_hf_is_hf for x, in, p
+          apply invoke hf_is_irrefrel_wellfounded_finite for p
+          split 3 irrefrel(p, in) \wedge wellfounded(p, in) \wedge finite(p)
+        }
+      }
+      connect finite(x) \wedge \forall p (in(p, x) \to finite(p))
+      apply invoke finite_bigcup_exists_uniquely for x
+      some y such \exists! y (finite(y) \wedge bigcup(x, y)) {
+        split finite(y) \wedge bigcup(x, y)
+        any p {
+          assume in(p, y) {
+            apply invoke rightward bigcup(x, y) for p
+            some q such \exists q (in(p, q) \wedge in(q, x)) {
+              split in(p, q) \wedge in(q, x)
+              connect hf(x, in) \wedge in(q, x)
+              apply invoke element_of_hf_is_hf for x, in, q
+              connect hf(q, in) \wedge in(p, q)
+              apply invoke element_of_hf_is_hf for q, in, p
+            }
+          }
+        }
+        connect finite(y) \wedge \forall p (in(p, y) \to hf(p, in))
+        apply invoke finite_set_of_hf_is_hf for y
+        connect hf(y, in) \wedge bigcup(x, y)
+        lift for y conclude \exists y (hf(y, in) \wedge bigcup(x, y))
+      }
+    }
+  }
+}
+
+theorem bigcup_is_total_on_hf total(bigcup, \lambda^P x. hf(x, in)) {
+  assert hf_bigcup_exists
+  fold for total conclude total(bigcup, \lambda^P x. hf(x, in))
+}
+
+theorem hf_satisfies_axiom_of_union \forall x (hf(x, in) \to \exists y (hf(y, in) \wedge \forall z (hf(z, in) \to (in(z, y) \leftrightarrow \exists w (hf(w, in) \wedge in(z, w) \wedge in(w, x)))))) {
+  any x {
+    assume hf(x, in) {
+      apply invoke hf_bigcup_exists for x
+      some y such \exists y (hf(y, in) \wedge bigcup(x, y)) {
+        split hf(y, in) \wedge bigcup(x, y)
+        any z {
+          assume hf(z, in) {
+            assume in(z, y) {
+              apply invoke rightward bigcup(x, y) for z
+              some w such \exists w (in(z, w) \wedge in(w, x)) {
+                split in(z, w) \wedge in(w, x)
+                connect hf(x, in) \wedge in(w, x)
+                apply invoke element_of_hf_is_hf for x, in, w
+                connect hf(w, in) \wedge in(z, w) \wedge in(w, x)
+                lift for w conclude \exists w (hf(w, in) \wedge in(z, w) \wedge in(w, x))
+              }
+            }
+            assume \exists w (hf(w, in) \wedge in(z, w) \wedge in(w, x)) {
+              some w such \exists w (hf(w, in) \wedge in(z, w) \wedge in(w, x)) {
+                split hf(w, in) \wedge in(z, w) \wedge in(w, x)
+                connect in(z, w) \wedge in(w, x)
+                lift for w conclude \exists w (in(z, w) \wedge in(w, x))
+                apply invoke leftward bigcup(x, y) for z
+              }
+            }
+            connect in(z, y) \leftrightarrow \exists w (hf(w, in) \wedge in(z, w) \wedge in(w, x))
+          }
+        }
+        connect hf(y, in) \wedge \forall z (hf(z, in) \to (in(z, y) \leftrightarrow \exists w (hf(w, in) \wedge in(z, w) \wedge in(w, x))))
+        lift for y conclude \exists y (hf(y, in) \wedge \forall z (hf(z, in) \to (in(z, y) \leftrightarrow \exists w (hf(w, in) \wedge in(z, w) \wedge in(w, x)))))
+      }
+    }
+  }
+}
+
+theorem hf_satisfies_axiom_of_replacement \forall^P \psi[2] (\forall x \forall y \forall y' (hf(x, in) \wedge hf(y, in) \wedge hf(y', in) \to (\psi(x, y) \wedge \psi(x, y') \to equal(y, y'))) \to \forall X (hf(X, in) \to \exists Y (hf(Y, in) \wedge \forall y (hf(y, in) \to (in(y, Y) \leftrightarrow \exists x (hf(x, in) \wedge in(x, X) \wedge \psi(x, y))))))) {
+  any predicate \psi[2] {
+    assume \forall x \forall y \forall y' (hf(x, in) \wedge hf(y, in) \wedge hf(y', in) \to (\psi(x, y) \wedge \psi(x, y') \to equal(y, y'))) {
+      any x, y, y' {
+        assume hf(x, in) \wedge hf(y, in) \wedge \psi(x, y) \wedge hf(x, in) \wedge hf(y', in) \wedge \psi(x, y') {
+          split hf(x, in) \wedge hf(y, in) \wedge \psi(x, y) \wedge hf(x, in) \wedge hf(y', in) \wedge \psi(x, y')
+          connect hf(x, in) \wedge hf(y, in) \wedge hf(y', in)
+          apply invoke \forall x \forall y \forall y' (hf(x, in) \wedge hf(y, in) \wedge hf(y', in) \to (\psi(x, y) \wedge \psi(x, y') \to equal(y, y'))) for x, y, y'
+          connect \psi(x, y) \wedge \psi(x, y')
+          invoke \psi(x, y) \wedge \psi(x, y') \to equal(y, y')
+        }
+      }
+      fold for functional conclude functional(\lambda^P x, y. hf(x, in) \wedge hf(y, in) \wedge \psi(x, y))
+      any X {
+        assume hf(X, in) {
+          apply invoke hf_is_irrefrel_wellfounded_finite for X
+          split irrefrel(X, in) \wedge wellfounded(X, in) \wedge finite(X)
+          connect finite(X) \wedge functional(\lambda^P x, y. hf(x, in) \wedge hf(y, in) \wedge \psi(x, y))
+          apply invoke finite_replacement_exists_uniquely for X, \lambda^P x, y. hf(x, in) \wedge hf(y, in) \wedge \psi(x, y)
+          some Y such \exists! Y (finite(Y) \wedge replacement(X, \lambda^P x, y. hf(x, in) \wedge hf(y, in) \wedge \psi(x, y), Y)) {
+            split finite(Y) \wedge replacement(X, \lambda^P x, y. hf(x, in) \wedge hf(y, in) \wedge \psi(x, y), Y)
+            any y {
+              assume in(y, Y) {
+                apply invoke rightward replacement(X, \lambda^P x, y. hf(x, in) \wedge hf(y, in) \wedge \psi(x, y), Y) for y
+                some x such \exists x (in(x, X) \wedge hf(x, in) \wedge hf(y, in) \wedge \psi(x, y)) {
+                  split 3 in(x, X) \wedge hf(x, in) \wedge hf(y, in) \wedge \psi(x, y)
+                }
+              }
+            }
+            connect finite(Y) \wedge \forall y (in(y, Y) \to hf(y, in))
+            apply invoke finite_set_of_hf_is_hf for Y
+            any y {
+              assume hf(y, in) {
+                assume in(y, Y) {
+                  apply invoke rightward replacement(X, \lambda^P x, y. hf(x, in) \wedge hf(y, in) \wedge \psi(x, y), Y) for y
+                  some x such \exists x (in(x, X) \wedge hf(x, in) \wedge hf(y, in) \wedge \psi(x, y)) {
+                    split in(x, X) \wedge hf(x, in) \wedge hf(y, in) \wedge \psi(x, y)
+                    connect in(x, X) \wedge hf(x, in) \wedge \psi(x, y)
+                    lift for x conclude \exists x (in(x, X) \wedge hf(x, in) \wedge \psi(x, y))
+                  }
+                }
+                assume \exists x (in(x, X) \wedge hf(x, in) \wedge \psi(x, y)) {
+                  some x such \exists x (in(x, X) \wedge hf(x, in) \wedge \psi(x, y)) {
+                    split in(x, X) \wedge hf(x, in) \wedge \psi(x, y)
+                    connect in(x, X) \wedge hf(x, in) \wedge hf(y, in) \wedge \psi(x, y)
+                    lift for x conclude \exists x (in(x, X) \wedge hf(x, in) \wedge hf(y, in) \wedge \psi(x, y))
+                  }
+                  apply invoke leftward replacement(X, \lambda^P x, y. hf(x, in) \wedge hf(y, in) \wedge \psi(x, y), Y) for y
+                }
+                connect in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge hf(x, in) \wedge \psi(x, y))
+              }
+            }
+            connect hf(Y, in) \wedge \forall y (hf(y, in) \to (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge hf(x, in) \wedge \psi(x, y))))
+            lift for Y conclude \exists Y (hf(Y, in) \wedge \forall y (hf(y, in) \to (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge hf(x, in) \wedge \psi(x, y)))))
+          }
+        }
+      }
+    }
+  }
+}
+
+theorem hf_poweset_exists \forall x (hf(x, in) \to \exists y (hf(y, in) \wedge powerset(x, y))) {
+  any x {
+    assume hf(x, in) {
+      apply invoke hf_is_irrefrel_wellfounded_finite for x
+      split 3 irrefrel(x, in) \wedge wellfounded(x, in) \wedge finite(x)
+      apply invoke finite_powerset_exists_uniquely for x
+      some y such \exists! y (finite(y) \wedge powerset(x, y)) {
+        split finite(y) \wedge powerset(x, y)
+        any z {
+          assume in(z, y) {
+            apply invoke rightward powerset(x, y) for z
+            connect hf(x, in) \wedge subset(z, x)
+            apply invoke subset_of_hf_is_hf for x, z
+          }
+        }
+        connect finite(y) \wedge \forall z (in(z, y) \to hf(z, in))
+        apply invoke finite_set_of_hf_is_hf for y
+        connect hf(y, in) \wedge powerset(x, y)
+        lift for y conclude \exists y (hf(y, in) \wedge powerset(x, y))
+      }
+    }
+  }
+}
+
+
+theorem hf_satisfies_axiom_of_powerset \forall x (hf(x, in) \to \exists y (hf(y, in) \wedge \forall z (hf(z, in) \to (in(z, y) \leftrightarrow \forall w (hf(w, in) \to (in(w, z) \to in(w, x))))))) {
+  any x {
+    assume hf(x, in) {
+      apply invoke hf_poweset_exists for x
+      some y such \exists y (hf(y, in) \wedge powerset(x, y)) {
+        split hf(y, in) \wedge powerset(x, y)
+        any z {
+          assume hf(z, in) {
+            assume in(z, y) {
+              apply invoke rightward powerset(x, y) for z
+              any w {
+                assume hf(w, in) {
+                  assume in(w, z) {
+                    apply invoke subset(z, x) for w
+                  }
+                }
+              }
+            }
+            assume \forall w (hf(w, in) \to (in(w, z) \to in(w, x))) {
+              any w {
+                assume in(w, z) {
+                  connect hf(z, in) \wedge in(w, z)
+                  apply invoke element_of_hf_is_hf for z, in, w
+                  apply invoke \forall w (hf(w, in) \to (in(w, z) \to in(w, x))) for w
+                  invoke in(w, z) \to in(w, x)
+                }
+              }
+              fold for subset conclude subset(z, x)
+              apply invoke leftward powerset(x, y) for z
+            }
+            connect in(z, y) \leftrightarrow \forall w (hf(w, in) \to (in(w, z) \to in(w, x)))
+          }
+        }
+        connect hf(y, in) \wedge \forall z (hf(z, in) \to (in(z, y) \leftrightarrow \forall w (hf(w, in) \to (in(w, z) \to in(w, x)))))
+        lift for y conclude \exists y (hf(y, in) \wedge \forall z (hf(z, in) \to (in(z, y) \leftrightarrow \forall w (hf(w, in) \to (in(w, z) \to in(w, x))))))
+      }
+    }
+  }
+}
+
+theorem hf_satisfies_axiom_of_foundation \forall x (hf(x, in) \to (neq(x, emptyset) \to \exists y (hf(y, in) \wedge in(y, x) \wedge \forall z (hf(z, in) \to (in(z, y) \to notin(z, x)))))) {
+  any A {
+    assume hf(A, in) {
+      assume neq(A, emptyset) {
+        apply invoke hf_is_irrefrel_wellfounded_finite for A
+        split irrefrel(A, in) \wedge wellfounded(A, in) \wedge finite(A)
+        apply subset_reflexivity for A
+        connect subset(A, A) \wedge neq(A, emptyset)
+        apply invoke wellfounded(A, in) for A
+        some y such \exists y (minimal(in, A, y)) {
+          split minimal(in, A, y)
+          connect hf(A, in) \wedge in(y, A)
+          apply invoke element_of_hf_is_hf for A, in, y
+          any z {
+            assume hf(z, in) {
+              assume in(z, y) {
+                deny in(z, A) {
+                  apply law_of_excluded_middle for \lambda^P. equal(z, y)
+                  divide equal(z, y) \vee neq(z, y)
+                    case equal(z, y) {
+                      substitute in(z, y) for z: y
+                      apply invoke irrefrel(A, in) for y
+                      contradict in(y, y)
+                    }
+                    case neq(z, y) {
+                      connect in(z, A) \wedge neq(z, y)
+                      apply invoke minimal_core(in, A, y) for z
+                      contradict in(z, y)
+                    }
+                }
+              }
+            }
+          }
+          connect hf(y, in) \wedge in(y, A) \wedge \forall z (hf(z, in) \to (in(z, y) \to notin(z, A)))
+          lift for y conclude \exists y (hf(y, in) \wedge in(y, A) \wedge \forall z (hf(z, in) \to (in(z, y) \to notin(z, A))))
+        }
+      }
+    }
+  }
+}
+
+theorem hf_implies_tcm_is_hf \forall x \forall y (hf(x, in) \wedge tcm(x, y) \to hf(y, in)) {
+  any x, y {
+    assume hf(x, in) \wedge tcm(x, y) {
+      split hf(x, in) \wedge tcm(x, y)
+      apply invoke rightward hf_iff_existence_of_irrefrel_wellfounded_finite_tcset for x, in
+      some y' such \exists y' (irrefrel(y', in) \wedge wellfounded(y', in) \wedge finite(y') \wedge tcset(x, in, y')) {
+        split irrefrel(y', in) \wedge wellfounded(y', in) \wedge finite(y') \wedge tcset(x, in, y')
+        fold for tcm conclude tcm(x, y')
+        connect tcm(x, y) \wedge tcm(x, y')
+        apply invoke tcm_is_unique for x, y, y'
+        substitute irrefrel(y', in) for y': y
+        substitute wellfounded(y', in) for y': y
+        substitute finite(y') for y': y
+        apply invoke tcm_is_tcm_of_itself for x, y
+        expand tcm(y, y) for tcm
+        connect irrefrel(y, in) \wedge wellfounded(y, in) \wedge finite(y) \wedge tcset(y, in, y)
+        lift for y conclude \exists y (irrefrel(y, in) \wedge wellfounded(y, in) \wedge finite(y) \wedge tcset(y, in, y))
+        apply invoke leftward hf_iff_existence_of_irrefrel_wellfounded_finite_tcset for y, in
+      }
+    }
+  }
+}
+
+theorem hf_satisfies_axiom_of_choice \forall x (hf(x, in) \to (\forall y (hf(y, in) \to (in(y, x) \to \exists w (hf(w, in) \wedge in(w, y)))) \wedge \forall y \forall z (hf(y, in) \wedge hf(z, in) \to (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (hf(w, in) \wedge in(w, y) \wedge in(w, z))))) \to \exists v (hf(v, in) \wedge \forall y (hf(y, in) \to (in(y, x) \to \exists! w (hf(w, in) \wedge in(w, v) \wedge in(w, y)))) \wedge \forall w (hf(w, in) \to (in(w, v) \to \exists y (hf(y, in) \wedge in(y, x) \wedge in(w, y))))))) {
+  any x {
+    assume hf(x, in) {
+      split 2 hf(x, in)
+      apply invoke hfcore_is_finite for x
+      apply invoke finite_choice for x
+      assume \forall y (hf(y, in) \to (in(y, x) \to \exists w (hf(w, in) \wedge in(w, y)))) \wedge \forall y \forall z (hf(y, in) \wedge hf(z, in) \to (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (hf(w, in) \wedge in(w, y) \wedge in(w, z))))) {
+        split \forall y (hf(y, in) \to (in(y, x) \to \exists w (hf(w, in) \wedge in(w, y)))) \wedge \forall y \forall z (hf(y, in) \wedge hf(z, in) \to (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (hf(w, in) \wedge in(w, y) \wedge in(w, z)))))
+        any y {
+          assume in(y, x) {
+            connect hf(x, in) \wedge in(y, x)
+            apply invoke element_of_hf_is_hf for x, in, y
+            apply invoke \forall y (hf(y, in) \to (in(y, x) \to \exists w (hf(w, in) \wedge in(w, y)))) for y
+            invoke in(y, x) \to \exists w (hf(w, in) \wedge in(w, y))
+            some w such \exists w (hf(w, in) \wedge in(w, y)) {
+              split 2 hf(w, in) \wedge in(w, y)
+              lift for w conclude \exists w (in(w, y))
+            }
+          }
+        }
+        any y, z {
+          assume in(y, x) \wedge in(z, x) \wedge neq(y, z) {
+            split in(y, x) \wedge in(z, x) \wedge neq(y, z)
+            connect hf(x, in) \wedge in(y, x)
+            apply invoke element_of_hf_is_hf for x, in, y
+            connect hf(x, in) \wedge in(z, x)
+            apply invoke element_of_hf_is_hf for x, in, z
+            connect hf(y, in) \wedge hf(z, in)
+            apply invoke \forall y \forall z (hf(y, in) \wedge hf(z, in) \to (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (hf(w, in) \wedge in(w, y) \wedge in(w, z))))) for y, z
+            invoke in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (hf(w, in) \wedge in(w, y) \wedge in(w, z)))
+            deny \exists w (in(w, y) \wedge in(w, z)) {
+              some w such \exists w (in(w, y) \wedge in(w, z)) {
+                split in(w, y) \wedge in(w, z)
+                connect hf(y, in) \wedge in(w, y)
+                apply invoke element_of_hf_is_hf for y, in, w
+                connect hf(w, in) \wedge in(w, y) \wedge in(w, z)
+                lift for w conclude \exists w (hf(w, in) \wedge in(w, y) \wedge in(w, z))
+                contradict \exists w (hf(w, in) \wedge in(w, y) \wedge in(w, z))
+              }
+            }
+          }
+        }
+        connect \forall y (in(y, x) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z))))
+        invoke \forall y (in(y, x) \to \exists w (in(w, y))) \wedge \forall y \forall z (in(y, x) \wedge in(z, x) \wedge neq(y, z) \to \neg(\exists w (in(w, y) \wedge in(w, z)))) \to \exists v (finite(v) \wedge \forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y))))
+        some v such \exists v (finite(v) \wedge \forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y)))) {
+          split finite(v) \wedge \forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) \wedge \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y)))
+          any w {
+            assume in(w, v) {
+              apply invoke \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y))) for w
+              some y such \exists y (in(y, x) \wedge in(w, y)) {
+                split in(y, x) \wedge in(w, y)
+                connect hf(x, in) \wedge in(y, x)
+                apply invoke element_of_hf_is_hf for x, in, y
+                connect hf(y, in) \wedge in(w, y)
+                apply invoke element_of_hf_is_hf for y, in, w
+              }
+            }
+          }
+          connect finite(v) \wedge \forall w (in(w, v) \to hf(w, in))
+          apply invoke finite_set_of_hf_is_hf for v
+          any y {
+            assume hf(y, in) {
+              assume in(y, x) {
+                apply invoke \forall y (in(y, x) \to \exists! w (in(w, v) \wedge in(w, y))) for y
+                some w such \exists! w (in(w, v) \wedge in(w, y)) {
+                  split in(w, v) \wedge in(w, y)
+                  connect hf(y, in) \wedge in(w, y)
+                  apply invoke element_of_hf_is_hf for y, in, w
+                  any w' {
+                    assume hf(w', in) \wedge in(w', v) \wedge in(w', y) {
+                      split hf(w', in) \wedge in(w', v) \wedge in(w', y)
+                      connect in(w', v) \wedge in(w', y)
+                      apply invoke \forall w' (in(w', v) \wedge in(w', y) \to equal(w', w)) for w'
+                    }
+                  }
+                  connect hf(w, in) \wedge in(w, v) \wedge in(w, y) \wedge \forall w' (hf(w', in) \wedge in(w', v) \wedge in(w', y) \to equal(w', w))
+                  characterize for w conclude \exists! w (hf(w, in) \wedge in(w, v) \wedge in(w, y))
+                }
+              }
+            }
+          }
+          any w {
+            assume hf(w, in) {
+              assume in(w, v) {
+                apply invoke \forall w (in(w, v) \to \exists y (in(y, x) \wedge in(w, y))) for w
+                some y such \exists y (in(y, x) \wedge in(w, y)) {
+                  split in(y, x) \wedge in(w, y)
+                  connect hf(x, in) \wedge in(y, x)
+                  apply invoke element_of_hf_is_hf for x, in, y
+                  connect hf(y, in) \wedge in(y, x) \wedge in(w, y)
+                  lift for y conclude \exists y (hf(y, in) \wedge in(y, x) \wedge in(w, y))
+                }
+              }
+            }
+          }
+          connect hf(v, in) \wedge \forall y (hf(y, in) \to (in(y, x) \to \exists! w (hf(w, in) \wedge in(w, v) \wedge in(w, y)))) \wedge \forall w (hf(w, in) \to (in(w, v) \to \exists y (hf(y, in) \wedge in(y, x) \wedge in(w, y))))
+          lift for v conclude \exists v (hf(v, in) \wedge \forall y (hf(y, in) \to (in(y, x) \to \exists! w (hf(w, in) \wedge in(w, v) \wedge in(w, y)))) \wedge \forall w (hf(w, in) \to (in(w, v) \to \exists y (hf(y, in) \wedge in(y, x) \wedge in(w, y)))))
+        }
+      }
+    }
+  }
+}
