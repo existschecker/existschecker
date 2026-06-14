@@ -21,12 +21,14 @@ theorem element_of_hfcore_is_hfcore \forall x \forall y (hfcore(x) \wedge in(y, 
       split hfcore(x) \wedge in(y, x)
       some t such hfcore(x) {
         split finite(t) \wedge tcm(x, t)
-        connect tcm(x, t) \wedge in(y, x)
-        apply invoke tcm_of_element_is_subset_of_tcm for x, t, y
-        some s such \exists s (subset(s, t) \wedge tcm(y, s)) {
-          split subset(s, t) \wedge tcm(y, s)
+        expand tcm(x, t) for tcm
+        connect tcset(x, in, t) \wedge in(y, x)
+        apply invoke tcset_of_element_is_subset_of_tcset for x, in, t, y
+        some s such \exists s (subset(s, t) \wedge tcset(y, in, s)) {
+          split subset(s, t) \wedge tcset(y, in, s)
           connect finite(t) \wedge subset(s, t)
           apply invoke subset_of_finite_is_finite for t, s
+          fold for tcm conclude tcm(y, s)
           connect finite(s) \wedge tcm(y, s)
           lift for s conclude hfcore(y)
         }
@@ -89,13 +91,13 @@ theorem finite_set_of_hfcore_is_hfcore \forall Y (finite(Y) \wedge \forall y (in
   }
 }
 
-definition predicate hf(x) as regular(x) \wedge hfcore(x)
+definition predicate hf(x) as regular(x, in) \wedge hfcore(x)
 
 theorem hf_is_irrefrel_wellfounded_finite \forall x (hf(x) \to irrefrel(x, in) \wedge wellfounded(x, in) \wedge finite(x)) {
   any x {
     assume hf(x) {
       split hf(x)
-      split regular(x)
+      split regular(x, in)
       apply invoke hirrefrel_is_irrefrel for x
       apply invoke hwellfounded_is_wellfounded for x
       apply invoke hfcore_is_finite for x
@@ -109,8 +111,8 @@ theorem element_of_hf_is_hf \forall x \forall y (hf(x) \wedge in(y, x) \to hf(y)
     assume hf(x) \wedge in(y, x) {
       split hf(x) \wedge in(y, x)
       split hf(x)
-      connect regular(x) \wedge in(y, x)
-      apply invoke element_of_regular_is_regular for x, y
+      connect regular(x, in) \wedge in(y, x)
+      apply invoke element_of_regular_is_regular for x, in, y
       connect hfcore(x) \wedge in(y, x)
       apply invoke element_of_hfcore_is_hfcore for x, y
       connect hf(y)
@@ -183,7 +185,7 @@ theorem finite_set_of_hf_is_hf \forall Y (finite(Y) \wedge \forall y (in(y, Y) \
       connect finite(Y) \wedge \forall y (in(y, Y) \to hfcore(y))
       apply invoke finite_set_of_hfcore_is_hfcore for Y
       split hfcore(Y) \wedge \exists Z \exists W \exists V (tcmstep(Y, Z, W, V))
-      connect \forall y (in(y, Y) \to regular(y)) \wedge \exists Z \exists W \exists V (tcmstep(Y, Z, W, V))
+      connect \forall y (in(y, Y) \to regular(y, in)) \wedge \exists Z \exists W \exists V (tcmstep(Y, Z, W, V))
       apply invoke set_of_regular_is_regular for Y
       connect hf(Y)
     }
@@ -531,11 +533,12 @@ theorem hf_iff_existence_of_irrefrel_wellfounded_finite_tcm \forall x (hf(x) \le
   any x {
     assume hf(x) {
       split hf(x)
-      apply invoke rightward regular_iff_existence_of_irrefrel_wellfounded_tcm for x
-      some y such \exists y (irrefrel(y, in) \wedge wellfounded(y, in) \wedge tcm(x, y)) {
-        split irrefrel(y, in) \wedge wellfounded(y, in) \wedge tcm(x, y)
+      apply invoke rightward regular_iff_existence_of_irrefrel_wellfounded_tcset for x, in
+      some y such \exists y (irrefrel(y, in) \wedge wellfounded(y, in) \wedge tcset(x, in, y)) {
+        split irrefrel(y, in) \wedge wellfounded(y, in) \wedge tcset(x, in, y)
         some y' such hfcore(x) {
           split finite(y') \wedge tcm(x, y')
+          fold for tcm conclude tcm(x, y)
           connect tcm(x, y) \wedge tcm(x, y')
           apply invoke tcm_is_unique for x, y, y'
           substitute finite(y') for y': y
@@ -547,11 +550,12 @@ theorem hf_iff_existence_of_irrefrel_wellfounded_finite_tcm \forall x (hf(x) \le
     assume \exists y (irrefrel(y, in) \wedge wellfounded(y, in) \wedge finite(y) \wedge tcm(x, y)) {
       some y such \exists y (irrefrel(y, in) \wedge wellfounded(y, in) \wedge finite(y) \wedge tcm(x, y)) {
         split irrefrel(y, in) \wedge wellfounded(y, in) \wedge finite(y) \wedge tcm(x, y)
-        connect irrefrel(y, in) \wedge tcm(x, y)
-        lift for y conclude hirrefrel(x)
-        connect wellfounded(y, in) \wedge tcm(x, y)
-        lift for y conclude hwellfounded(x)
-        connect regular(x)
+        expand tcm(x, y) for tcm
+        connect irrefrel(y, in) \wedge tcset(x, in, y)
+        lift for y conclude hirrefrel(x, in)
+        connect wellfounded(y, in) \wedge tcset(x, in, y)
+        lift for y conclude hwellfounded(x, in)
+        connect regular(x, in)
         connect finite(y) \wedge tcm(x, y)
         lift for y conclude hfcore(x)
         connect hf(x)
@@ -582,27 +586,27 @@ theorem hf_implies_tcm_is_hf \forall x \forall y (hf(x) \wedge tcm(x, y) \to hf(
   }
 }
 
-theorem hf_is_psubset_of_regular psubset(hf, regular) {
+theorem hf_is_psubset_of_regular psubset(hf, \lambda^P x. regular(x, in)) {
   any x {
     assume hf(x) {
       split 1 hf(x)
     }
   }
-  fold for psubset conclude psubset(hf, regular)
+  fold for psubset conclude psubset(hf, \lambda^P x. regular(x, in))
 }
 
 theorem hf_is_pirrefrel pirrefrel(hf, in) {
-  assert regular_is_pirrefrel
+  apply regular_is_pirrefrel for in
   assert hf_is_psubset_of_regular
-  connect pirrefrel(regular, in) \wedge psubset(hf, regular)
-  apply invoke psubset_of_pirrefrel_is_pirrefrel for regular, in, hf
+  connect pirrefrel(\lambda^P x. regular(x, in), in) \wedge psubset(hf, \lambda^P x. regular(x, in))
+  apply invoke psubset_of_pirrefrel_is_pirrefrel for \lambda^P x. regular(x, in), in, hf
 }
 
 theorem hf_is_pwellfounded pwellfounded(hf, in) {
-  assert regular_is_pwellfounded
+  apply regular_is_pwellfounded for in
   assert hf_is_psubset_of_regular
-  connect pwellfounded(regular, in) \wedge psubset(hf, regular)
-  apply invoke psubset_of_pwellfounded_is_pwellfounded for regular, in, hf
+  connect pwellfounded(\lambda^P x. regular(x, in), in) \wedge psubset(hf, \lambda^P x. regular(x, in))
+  apply invoke psubset_of_pwellfounded_is_pwellfounded for \lambda^P x. regular(x, in), in, hf
 }
 
 theorem hf_is_closed_under_in pclosed(hf, in) {
@@ -615,10 +619,10 @@ theorem hf_is_closed_under_in pclosed(hf, in) {
 }
 
 theorem hf_is_tcsetlike tcsetlike(hf, in) {
-  assert regular_is_tcsetlike
+  apply regular_is_tcsetlike for in
   assert hf_is_psubset_of_regular
-  connect tcsetlike(regular, in) \wedge psubset(hf, regular)
-  apply invoke psubset_of_tcsetlike_is_tcsetlike for regular, in, hf
+  connect tcsetlike(\lambda^P x. regular(x, in), in) \wedge psubset(hf, \lambda^P x. regular(x, in))
+  apply invoke psubset_of_tcsetlike_is_tcsetlike for \lambda^P x. regular(x, in), in, hf
 }
 
 theorem hf_induction \forall^P \chi[1] (\forall x (hf(x) \wedge \forall y (in(y, x) \to \chi(y)) \to \chi(x)) \to \forall x (hf(x) \to \chi(x))) {

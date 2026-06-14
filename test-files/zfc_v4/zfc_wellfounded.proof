@@ -511,6 +511,66 @@ theorem tcset_is_unique \forall x \forall^P \psi[2] \forall t \forall t' (tcset(
   }
 }
 
+theorem tcset_of_element_is_subset_of_tcset \forall x \forall^P \psi[2] \forall t \forall y (tcset(x, \psi, t) \wedge \psi(y, x) \to \exists s (subset(s, t) \wedge tcset(y, \psi, s))) {
+  any x, predicate \psi[2], t, y {
+    assume tcset(x, \psi, t) \wedge \psi(y, x) {
+      split tcset(x, \psi, t) \wedge \psi(y, x)
+      split tcset(x, \psi, t)
+      apply invoke \forall y (\psi(y, x) \to in(y, t)) for y
+      apply sep_is_subset for t, \lambda^P z. \forall u (closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u)) \to in(z, u))
+      any z, w {
+        assume in(z, sep(t, \lambda^P z. \forall u (closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u)) \to in(z, u)))) \wedge \psi(w, z) {
+          split in(z, sep(t, \lambda^P z. \forall u (closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u)) \to in(z, u)))) \wedge \psi(w, z)
+          apply invoke rightward sep_existence for t, \lambda^P z. \forall u (closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u)) \to in(z, u)), z
+          split in(z, t) \wedge \forall u (closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u)) \to in(z, u))
+          connect \psi(w, z) \wedge in(z, t)
+          apply invoke closed(t, \psi) for z, w
+          any u {
+            assume closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u)) {
+              split closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u))
+              apply invoke \forall u (closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u)) \to in(z, u)) for u
+              connect \psi(w, z) \wedge in(z, u)
+              apply invoke closed(u, \psi) for z, w
+            }
+          }
+          connect in(w, t) \wedge \forall u (closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u)) \to in(w, u))
+          apply invoke leftward sep_existence for t, \lambda^P z. \forall u (closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u)) \to in(z, u)), w
+        }
+      }
+      fold for closed[1] conclude closed(sep(t, \lambda^P z. \forall u (closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u)) \to in(z, u))), \psi)
+      any z {
+        assume \psi(z, y) {
+          connect \psi(z, y) \wedge in(y, t)
+          apply invoke closed(t, \psi) for y, z
+          any u {
+            assume closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u)) {
+              split closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u))
+              apply invoke \forall v (\psi(v, y) \to in(v, u)) for z
+            }
+          }
+          connect in(z, t) \wedge \forall u (closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u)) \to in(z, u))
+          apply invoke leftward sep_existence for t, \lambda^P z. \forall u (closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u)) \to in(z, u)), z
+        }
+      }
+      any s {
+        assume closed(s, \psi) \wedge \forall z (\psi(z, y) \to in(z, s)) {
+          split closed(s, \psi) \wedge \forall z (\psi(z, y) \to in(z, s))
+          any z {
+            assume in(z, sep(t, \lambda^P z. \forall u (closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u)) \to in(z, u)))) {
+              apply invoke sep_satisfies_predicate for t, \lambda^P z. \forall u (closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u)) \to in(z, u)), z
+              apply invoke \forall u (closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u)) \to in(z, u)) for s
+            }
+          }
+          fold for subset[1] conclude subset(sep(t, \lambda^P z. \forall u (closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u)) \to in(z, u))), s)
+        }
+      }
+      connect tcset(y, \psi, sep(t, \lambda^P z. \forall u (closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u)) \to in(z, u))))
+      connect subset(sep(t, \lambda^P z. \forall u (closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u)) \to in(z, u))), t) \wedge tcset(y, \psi, sep(t, \lambda^P z. \forall u (closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u)) \to in(z, u))))
+      lift for sep(t, \lambda^P z. \forall u (closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u)) \to in(z, u))) conclude \exists s (subset(s, t) \wedge tcset(y, \psi, s))
+    }
+  }
+}
+
 theorem adj_of_tcset_is_rtcset \forall x \forall^P \psi[2] \forall t (tcset(x, \psi, t) \to rtcset(x, \psi, adj(t, x))) {
   any x, predicate \psi[2], t {
     assume tcset(x, \psi, t) {
