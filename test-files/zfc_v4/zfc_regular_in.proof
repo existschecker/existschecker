@@ -14,49 +14,16 @@ theorem hirrefrel_is_irrefrel \forall x (hirrefrel(x, in) \to irrefrel(x, in)) {
   }
 }
 
-theorem set_of_hirrefrel_is_hirrefrel \forall Y (\forall y (in(y, Y) \to hirrefrel(y, in)) \wedge \exists Z \exists W \exists V (tcmstep(Y, Z, W, V)) \to hirrefrel(Y, in)) {
+theorem set_of_hirrefrel_is_hirrefrel \forall Y (\forall y (in(y, Y) \to hirrefrel(y, in)) \wedge \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V)) \to hirrefrel(Y, in)) {
   any Y {
-    assume \forall y (in(y, Y) \to hirrefrel(y, in)) \wedge \exists Z \exists W \exists V (tcmstep(Y, Z, W, V)) {
-      split \forall y (in(y, Y) \to hirrefrel(y, in)) \wedge \exists Z \exists W \exists V (tcmstep(Y, Z, W, V))
-      some Z, W, V such \exists Z \exists W \exists V (tcmstep(Y, Z, W, V)) {
-        split tcmstep(Y, Z, W, V)
-        apply invoke tcm_is_cup_of_itself_and_bigcup_of_tcm_of_element for Y, Z, W, V
-        any y {
-          assume in(y, Y) {
-            apply invoke \forall y (in(y, Y) \to hirrefrel(y, in)) for y
-            apply invoke hirrefrel_is_irrefrel for y
-            apply invoke irrefrel_not_contain_itself for y
-          }
-        }
-        fold for irrefrel conclude irrefrel(Y, in)
-        any w {
-          assume in(w, W) {
-            apply invoke rightward bigcup(Z, W) for w
-            some z such \exists z (in(w, z) \wedge in(z, Z)) {
-              split in(w, z) \wedge in(z, Z)
-              apply invoke rightward replacement(Y, tcm, Z) for z
-              some y such \exists y (in(y, Y) \wedge tcm(y, z)) {
-                split in(y, Y) \wedge tcm(y, z)
-                apply invoke \forall y (in(y, Y) \to hirrefrel(y, in)) for y
-                some z' such hirrefrel(y, in) {
-                  split irrefrel(z', in) \wedge tcset(y, in, z')
-                  fold for tcm conclude tcm(y, z')
-                  connect tcm(y, z) \wedge tcm(y, z')
-                  apply invoke tcm_is_unique for y, z, z'
-                  substitute irrefrel(z', in) for z': z
-                  apply invoke irrefrel(z, in) for w
-                }
-              }
-            }
-          }
-        }
-        fold for irrefrel conclude irrefrel(W, in)
-        connect irrefrel(Y, in) \wedge irrefrel(W, in) \wedge cup(Y, W, V)
-        apply invoke cup_of_irrefrel_is_irrefrel for in, Y, W, V
-        expand tcm(Y, V) for tcm
-        connect irrefrel(V, in) \wedge tcset(Y, in, V)
-        lift for V conclude hirrefrel(Y, in)
+    assume \forall y (in(y, Y) \to hirrefrel(y, in)) \wedge \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V)) {
+      split \forall y (in(y, Y) \to hirrefrel(y, in)) \wedge \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V))
+      some Z, W, V such \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V)) {
+        apply invoke tcsetinstep_implies_tcsetstep for Y, Z, W, V
+        lift for Y, Z, W, V conclude \exists S \exists Z \exists W \exists V (tcsetstep(in, Y, S, Z, W, V))
       }
+      connect \forall y (in(y, Y) \to hirrefrel(y, in)) \wedge \exists S \exists Z \exists W \exists V (tcsetstep(in, Y, S, Z, W, V))
+      apply invoke generation_from_hirrefrel_is_hirrefrel for in, Y
     }
   }
 }
@@ -75,13 +42,14 @@ theorem hwellfounded_is_wellfounded \forall x (hwellfounded(x, in) \to wellfound
   }
 }
 
-theorem set_of_hwellfounded_is_hwellfounded \forall Y (\forall y (in(y, Y) \to hwellfounded(y, in)) \wedge \exists Z \exists W \exists V (tcmstep(Y, Z, W, V)) \to hwellfounded(Y, in)) {
+theorem set_of_hwellfounded_is_hwellfounded \forall Y (\forall y (in(y, Y) \to hwellfounded(y, in)) \wedge \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V)) \to hwellfounded(Y, in)) {
   any Y {
-    assume \forall y (in(y, Y) \to hwellfounded(y, in)) \wedge \exists Z \exists W \exists V (tcmstep(Y, Z, W, V)) {
-      split \forall y (in(y, Y) \to hwellfounded(y, in)) \wedge \exists Z \exists W \exists V (tcmstep(Y, Z, W, V))
-      some Z, W, V such \exists Z \exists W \exists V (tcmstep(Y, Z, W, V)) {
-        split tcmstep(Y, Z, W, V)
-        apply invoke tcm_is_cup_of_itself_and_bigcup_of_tcm_of_element for Y, Z, W, V
+    assume \forall y (in(y, Y) \to hwellfounded(y, in)) \wedge \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V)) {
+      split \forall y (in(y, Y) \to hwellfounded(y, in)) \wedge \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V))
+      some Z, W, V such \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V)) {
+        apply invoke tcsetinstep_implies_tcsetstep for Y, Z, W, V
+        split tcsetstep(in, Y, Y, Z, W, V)
+        apply invoke tcset_is_cup_of_itself_and_bigcup_of_tcset_of_element for in, Y, Y, Z, W, V
         any A {
           assume subset(A, V) \wedge neq(A, emptyset) {
             split subset(A, V) \wedge neq(A, emptyset)
@@ -97,9 +65,9 @@ theorem set_of_hwellfounded_is_hwellfounded \forall Y (\forall y (in(y, Y) \to h
                   apply invoke rightward bigcup(Z, W) for v
                   some z such \exists z (in(v, z) \wedge in(z, Z)) {
                     split in(v, z) \wedge in(z, Z)
-                    apply invoke rightward replacement(Y, tcm, Z) for z
-                    some y such \exists y (in(y, Y) \wedge tcm(y, z)) {
-                      split in(y, Y) \wedge tcm(y, z)
+                    apply invoke rightward replacement(Y, \lambda^P y, z. tcset(y, in, z), Z) for z
+                    some y such \exists y (in(y, Y) \wedge tcset(y, in, z)) {
+                      split in(y, Y) \wedge tcset(y, in, z)
                       apply invoke \forall y (in(y, Y) \to hwellfounded(y, in)) for y
                       some z' such hwellfounded(y, in) {
                         split wellfounded(z', in) \wedge tcset(y, in, z')
@@ -108,8 +76,8 @@ theorem set_of_hwellfounded_is_hwellfounded \forall Y (\forall y (in(y, Y) \to h
                         expand tcm(z', z') for tcm
                         connect wellfounded(z', in) \wedge tcset(z', in, z')
                         lift for z' conclude hwellfounded(z', in)
-                        connect tcm(y, z) \wedge tcm(y, z')
-                        apply invoke tcm_is_unique for y, z, z'
+                        connect tcset(y, in, z) \wedge tcset(y, in, z')
+                        apply invoke tcset_is_unique for y, in, z, z'
                         substitute hwellfounded(z', in) for z': z
                         connect hwellfounded(z, in) \wedge in(v, z)
                         apply invoke element_of_hwellfounded_is_hwellfounded for z, in, v
@@ -176,7 +144,6 @@ theorem set_of_hwellfounded_is_hwellfounded \forall Y (\forall y (in(y, Y) \to h
           }
         }
         fold for wellfounded conclude wellfounded(V, in)
-        expand tcm(Y, V) for tcm
         connect wellfounded(V, in) \wedge tcset(Y, in, V)
         lift for V conclude hwellfounded(Y, in)
       }
@@ -195,17 +162,17 @@ theorem regular_is_irrefrel_wellfounded \forall x (regular(x, in) \to irrefrel(x
   }
 }
 
-theorem set_of_regular_is_regular \forall Y (\forall y (in(y, Y) \to regular(y, in)) \wedge \exists Z \exists W \exists V (tcmstep(Y, Z, W, V)) \to regular(Y, in)) {
+theorem set_of_regular_is_regular \forall Y (\forall y (in(y, Y) \to regular(y, in)) \wedge \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V)) \to regular(Y, in)) {
   any Y {
-    assume \forall y (in(y, Y) \to regular(y, in)) \wedge \exists Z \exists W \exists V (tcmstep(Y, Z, W, V)) {
-      split \forall y (in(y, Y) \to regular(y, in)) \wedge \exists Z \exists W \exists V (tcmstep(Y, Z, W, V))
+    assume \forall y (in(y, Y) \to regular(y, in)) \wedge \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V)) {
+      split \forall y (in(y, Y) \to regular(y, in)) \wedge \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V))
       any y {
         assume in(y, Y) {
           apply invoke \forall y (in(y, Y) \to regular(y, in)) for y
           split 1 regular(y, in)
         }
       }
-      connect \forall y (in(y, Y) \to hirrefrel(y, in)) \wedge \exists Z \exists W \exists V (tcmstep(Y, Z, W, V))
+      connect \forall y (in(y, Y) \to hirrefrel(y, in)) \wedge \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V))
       apply invoke set_of_hirrefrel_is_hirrefrel for Y
       any y {
         assume in(y, Y) {
@@ -213,7 +180,7 @@ theorem set_of_regular_is_regular \forall Y (\forall y (in(y, Y) \to regular(y, 
           split 2 regular(y, in)
         }
       }
-      connect \forall y (in(y, Y) \to hwellfounded(y, in)) \wedge \exists Z \exists W \exists V (tcmstep(Y, Z, W, V))
+      connect \forall y (in(y, Y) \to hwellfounded(y, in)) \wedge \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V))
       apply invoke set_of_hwellfounded_is_hwellfounded for Y
       connect regular(Y, in)
     }

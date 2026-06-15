@@ -812,3 +812,13 @@ theorem seg_is_unique \forall x \forall^P \psi[2] \forall s \forall s' (seg(x, \
     }
   }
 }
+
+theorem seg_for_in_is_iself \forall x (seg(x, in, x)) {
+  any x {
+    any y {
+      assume in(y, x) {}
+      connect in(y, x) \leftrightarrow in(y, x)
+    }
+    fold for seg conclude seg(x, in, x)
+  }
+}

@@ -22,6 +22,60 @@ theorem element_of_hirrefrel_is_hirrefrel \forall x \forall^P \psi[2] \forall y 
   }
 }
 
+theorem generation_from_hirrefrel_is_hirrefrel \forall^P \psi[2] \forall Y (\forall y (\psi(y, Y) \to hirrefrel(y, \psi)) \wedge \exists S \exists Z \exists W \exists V (tcsetstep(\psi, Y, S, Z, W, V)) \to hirrefrel(Y, \psi)) {
+  any predicate \psi[2], Y {
+    assume \forall y (\psi(y, Y) \to hirrefrel(y, \psi)) \wedge \exists S \exists Z \exists W \exists V (tcsetstep(\psi, Y, S, Z, W, V)) {
+      split \forall y (\psi(y, Y) \to hirrefrel(y, \psi)) \wedge \exists S \exists Z \exists W \exists V (tcsetstep(\psi, Y, S, Z, W, V))
+      some S, Z, W, V such \exists S \exists Z \exists W \exists V (tcsetstep(\psi, Y, S, Z, W, V)) {
+        split tcsetstep(\psi, Y, S, Z, W, V)
+        apply invoke tcset_is_cup_of_itself_and_bigcup_of_tcset_of_element for \psi, Y, S, Z, W, V
+        any y {
+          assume in(y, S) {
+            apply invoke rightward seg(Y, \psi, S) for y
+            apply invoke \forall y (\psi(y, Y) \to hirrefrel(y, \psi)) for y
+            some z such hirrefrel(y, \psi) {
+              split irrefrel(z, \psi) \wedge tcset(y, \psi, z)
+              split tcset(y, \psi, z)
+              deny \psi(y, y) {
+                apply invoke \forall q (\psi(q, y) \to in(q, z)) for y
+                apply invoke irrefrel(z, \psi) for y
+                contradict \psi(y, y)
+              }
+            }
+          }
+        }
+        fold for irrefrel conclude irrefrel(S, \psi)
+        any w {
+          assume in(w, W) {
+            apply invoke rightward bigcup(Z, W) for w
+            some z such \exists z (in(w, z) \wedge in(z, Z)) {
+              split in(w, z) \wedge in(z, Z)
+              apply invoke rightward replacement(S, \lambda^P y, z. tcset(y, \psi, z), Z) for z
+              some y such \exists y (in(y, S) \wedge tcset(y, \psi, z)) {
+                split in(y, S) \wedge tcset(y, \psi, z)
+                apply invoke rightward seg(Y, \psi, S) for y
+                apply invoke \forall y (\psi(y, Y) \to hirrefrel(y, \psi)) for y
+                some z' such hirrefrel(y, \psi) {
+                  split irrefrel(z', \psi) \wedge tcset(y, \psi, z')
+                  connect tcset(y, \psi, z) \wedge tcset(y, \psi, z')
+                  apply invoke tcset_is_unique for y, \psi, z, z'
+                  substitute irrefrel(z', \psi) for z': z
+                  apply invoke irrefrel(z, \psi) for w
+                }
+              }
+            }
+          }
+        }
+        fold for irrefrel conclude irrefrel(W, \psi)
+        connect irrefrel(S, \psi) \wedge irrefrel(W, \psi) \wedge cup(S, W, V)
+        apply invoke cup_of_irrefrel_is_irrefrel for \psi, S, W, V
+        connect irrefrel(V, \psi) \wedge tcset(Y, \psi, V)
+        lift for V conclude hirrefrel(Y, \psi)
+      }
+    }
+  }
+}
+
 definition predicate hwellfounded(x, predicate \psi[2]) as \exists t (wellfounded(t, \psi) \wedge tcset(x, \psi, t))
 
 theorem element_of_hwellfounded_is_hwellfounded \forall x \forall^P \psi[2] \forall y (hwellfounded(x, \psi) \wedge \psi(y, x) \to hwellfounded(y, \psi)) {

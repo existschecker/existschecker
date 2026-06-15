@@ -195,25 +195,26 @@ theorem tcm_adjunction \forall x \forall y \forall p \forall q \forall r (tcm(x,
   }
 }
 
-definition predicate tcmstep(Y, Z, W, V) as \forall y (in(y, Y) \to \exists z (tcm(y, z))) \wedge replacement(Y, tcm, Z) \wedge bigcup(Z, W) \wedge cup(Y, W, V)
+definition predicate tcsetstep(predicate \psi[2], Y, S, Z, W, V) as seg(Y, \psi, S) \wedge \forall y (\psi(y, Y) \to \exists z (tcset(y, \psi, z))) \wedge replacement(S, \lambda^P y, z. tcset(y, \psi, z), Z) \wedge bigcup(Z, W) \wedge cup(S, W, V)
 
-theorem tcm_is_cup_of_itself_and_bigcup_of_tcm_of_element \forall Y \forall Z \forall W \forall V (tcmstep(Y, Z, W, V) \to tcm(Y, V)) {
-  any Y, Z, W, V {
-    assume tcmstep(Y, Z, W, V) {
-      split tcmstep(Y, Z, W, V)
+theorem tcset_is_cup_of_itself_and_bigcup_of_tcset_of_element \forall^P \psi[2] \forall Y \forall S \forall Z \forall W \forall V (tcsetstep(\psi, Y, S, Z, W, V) \to tcset(Y, \psi, V)) {
+  any predicate \psi[2], Y, S, Z, W, V {
+    assume tcsetstep(\psi, Y, S, Z, W, V) {
+      split tcsetstep(\psi, Y, S, Z, W, V)
       any p, q {
-        assume in(p, V) \wedge in(q, p) {
-          split in(p, V) \wedge in(q, p)
-          apply invoke rightward cup(Y, W, V) for p
-          divide in(p, Y) \vee in(p, W)
-            case in(p, Y) {
-              apply invoke \forall y (in(y, Y) \to \exists z (tcm(y, z))) for p
-              some z such \exists z (tcm(p, z)) {
-                connect in(p, Y) \wedge tcm(p, z)
-                lift for p conclude \exists y (in(y, Y) \wedge tcm(y, z))
-                apply invoke leftward replacement(Y, tcm, Z) for z
-                apply invoke tcm_implies_subset for p, z
-                apply invoke subset(p, z) for q
+        assume in(p, V) \wedge \psi(q, p) {
+          split in(p, V) \wedge \psi(q, p)
+          apply invoke rightward cup(S, W, V) for p
+          divide in(p, S) \vee in(p, W)
+            case in(p, S) {
+              apply invoke rightward seg(Y, \psi, S) for p
+              apply invoke \forall y (\psi(y, Y) \to \exists z (tcset(y, \psi, z))) for p
+              some z such \exists z (tcset(p, \psi, z)) {
+                connect in(p, S) \wedge tcset(p, \psi, z)
+                lift for p conclude \exists p (in(p, S) \wedge tcset(p, \psi, z))
+                apply invoke leftward replacement(S, \lambda^P y, z. tcset(y, \psi, z), Z) for z
+                split tcset(p, \psi, z)
+                apply invoke \forall q (\psi(q, p) \to in(q, z)) for q
                 connect in(q, z) \wedge in(z, Z)
                 lift for z conclude \exists z (in(q, z) \wedge in(z, Z))
                 apply invoke leftward bigcup(Z, W) for q
@@ -223,56 +224,61 @@ theorem tcm_is_cup_of_itself_and_bigcup_of_tcm_of_element \forall Y \forall Z \f
               apply invoke rightward bigcup(Z, W) for p
               some z such \exists z (in(p, z) \wedge in(z, Z)) {
                 split in(p, z) \wedge in(z, Z)
-                apply invoke rightward replacement(Y, tcm, Z) for z
-                some y such \exists y (in(y, Y) \wedge tcm(y, z)) {
-                  split in(y, Y) \wedge tcm(y, z)
-                  expand tcm(y, z) for tcm
-                  split 1 tcset(y, in, z)
-                  connect in(p, z) \wedge in(q, p)
-                  apply invoke closed(z, in) for p, q
+                apply invoke rightward replacement(S, \lambda^P y, z. tcset(y, \psi, z), Z) for z
+                some y such \exists y (in(y, S) \wedge tcset(y, \psi, z)) {
+                  split in(y, S) \wedge tcset(y, \psi, z)
+                  split 1 tcset(y, \psi, z)
+                  connect in(p, z) \wedge \psi(q, p)
+                  apply invoke closed(z, \psi) for p, q
                   connect in(q, z) \wedge in(z, Z)
                   lift for z conclude \exists z (in(q, z) \wedge in(z, Z))
                 }
               }
               apply invoke leftward bigcup(Z, W) for q
             }
-          pad in(q, W) conclude in(q, Y) \vee in(q, W)
-          apply invoke leftward cup(Y, W, V) for q
+          pad in(q, W) conclude in(q, S) \vee in(q, W)
+          apply invoke leftward cup(S, W, V) for q
         }
       }
-      fold for closed conclude closed(V, in)
-      apply invoke subset_of_cup_left for Y, W, V
-      expand subset(Y, V) for subset
+      fold for closed conclude closed(V, \psi)
+      any y {
+        assume \psi(y, Y) {
+          apply invoke leftward seg(Y, \psi, S) for y
+          pad in(y, S) conclude in(y, S) \vee in(y, W)
+          apply invoke leftward cup(S, W, V) for y
+        }
+      }
       any s {
-        assume closed(s, in) \wedge \forall y (in(y, Y) \to in(y, s)) {
-          split closed(s, in) \wedge \forall y (in(y, Y) \to in(y, s))
+        assume closed(s, \psi) \wedge \forall y (\psi(y, Y) \to in(y, s)) {
+          split closed(s, \psi) \wedge \forall y (\psi(y, Y) \to in(y, s))
           any v {
             assume in(v, V) {
-              apply invoke rightward cup(Y, W, V) for v
-              divide in(v, Y) \vee in(v, W)
-                case in(v, Y) {
-                  apply invoke \forall y (in(y, Y) \to in(y, s)) for v
+              apply invoke rightward cup(S, W, V) for v
+              divide in(v, S) \vee in(v, W)
+                case in(v, S) {
+                  apply invoke rightward seg(Y, \psi, S) for v
+                  apply invoke \forall y (\psi(y, Y) \to in(y, s)) for v
                 }
                 case in(v, W) {
                   apply invoke rightward bigcup(Z, W) for v
                   some z such \exists z (in(v, z) \wedge in(z, Z)) {
                     split in(v, z) \wedge in(z, Z)
-                    apply invoke rightward replacement(Y, tcm, Z) for z
-                    some y such \exists y (in(y, Y) \wedge tcm(y, z)) {
-                      split in(y, Y) \wedge tcm(y, z)
-                      expand tcm(y, z) for tcm
-                      split tcset(y, in, z)
-                      show \forall u (in(u, y) \to in(u, s)) {
-                        any u {
-                          assume in(u, y) {
-                            apply invoke \forall y (in(y, Y) \to in(y, s)) for y
-                            connect in(u, y) \wedge in(y, s)
-                            apply invoke closed(s, in) for y, u
+                    apply invoke rightward replacement(S, \lambda^P y, z. tcset(y, \psi, z), Z) for z
+                    some y such \exists y (in(y, S) \wedge tcset(y, \psi, z)) {
+                      split in(y, S) \wedge tcset(y, \psi, z)
+                      split tcset(y, \psi, z)
+                      apply invoke rightward seg(Y, \psi, S) for y
+                      apply invoke \forall y (\psi(y, Y) \to in(y, s)) for y
+                      show \forall q (\psi(q, y) \to in(q, s)) {
+                        any q {
+                          assume \psi(q, y) {
+                            connect in(y, s) \wedge \psi(q, y)
+                            apply invoke closed(s, \psi) for y, q
                           }
                         }
                       }
-                      connect closed(s, in) \wedge \forall u (in(u, y) \to in(u, s))
-                      apply invoke \forall s (closed(s, in) \wedge \forall u (in(u, y) \to in(u, s)) \to subset(z, s)) for s
+                      connect closed(s, \psi) \wedge \forall q (\psi(q, y) \to in(q, s))
+                      apply invoke \forall s (closed(s, \psi) \wedge \forall q (\psi(q, y) \to in(q, s)) \to subset(z, s)) for s
                       apply invoke subset(z, s) for v
                     }
                   }
@@ -282,8 +288,19 @@ theorem tcm_is_cup_of_itself_and_bigcup_of_tcm_of_element \forall Y \forall Z \f
           fold for subset conclude subset(V, s)
         }
       }
-      connect tcset(Y, in, V)
-      fold for tcm conclude tcm(Y, V)
+      connect tcset(Y, \psi, V)
+    }
+  }
+}
+
+definition predicate tcsetinstep(Y, Z, W, V) as \forall y (in(y, Y) \to \exists z (tcset(y, in, z))) \wedge replacement(Y, \lambda^P y, z. tcset(y, in, z), Z) \wedge bigcup(Z, W) \wedge cup(Y, W, V)
+
+theorem tcsetinstep_implies_tcsetstep \forall Y \forall Z \forall W \forall V (tcsetinstep(Y, Z, W, V) \to tcsetstep(in, Y, Y, Z, W, V)) {
+  any Y, Z, W, V {
+    apply seg_for_in_is_iself for Y
+    assume tcsetinstep(Y, Z, W, V) {
+      split tcsetinstep(Y, Z, W, V)
+      connect tcsetstep(in, Y, Y, Z, W, V)
     }
   }
 }
