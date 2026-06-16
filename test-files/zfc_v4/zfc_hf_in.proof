@@ -102,24 +102,11 @@ theorem finite_set_of_hf_is_hf \forall Y (finite(Y) \wedge \forall y (in(y, Y) \
   any Y {
     assume finite(Y) \wedge \forall y (in(y, Y) \to hf(y, in)) {
       split finite(Y) \wedge \forall y (in(y, Y) \to hf(y, in))
-      any y {
-        assume in(y, Y) {
-          apply invoke \forall y (in(y, Y) \to hf(y, in)) for y
-          split 1 hf(y, in)
-        }
-      }
-      any y {
-        assume in(y, Y) {
-          apply invoke \forall y (in(y, Y) \to hf(y, in)) for y
-          split 2 hf(y, in)
-        }
-      }
-      connect finite(Y) \wedge \forall y (in(y, Y) \to hfcore(y, in))
-      apply invoke finite_set_of_hfcore_is_hfcore for Y
-      split hfcore(Y, in) \wedge \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V))
-      connect \forall y (in(y, Y) \to regular(y, in)) \wedge \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V))
-      apply invoke set_of_regular_is_regular for Y
-      connect hf(Y, in)
+      apply seg_for_in_is_iself for Y
+      connect finite(Y) \wedge seg(Y, in, Y)
+      lift for Y conclude \exists S (finite(S) \wedge seg(Y, in, S))
+      connect \exists S (finite(S) \wedge seg(Y, in, S)) \wedge \forall y (in(y, Y) \to hf(y, in))
+      apply invoke finite_generation_of_hf_is_hf for in, Y
     }
   }
 }

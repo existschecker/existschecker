@@ -101,6 +101,32 @@ theorem element_of_hf_is_hf \forall x \forall^P \psi[2] \forall y (hf(x, \psi) \
   }
 }
 
+theorem finite_generation_of_hf_is_hf \forall^P \psi[2] \forall Y (\exists S (finite(S) \wedge seg(Y, \psi, S)) \wedge \forall y (\psi(y, Y) \to hf(y, \psi)) \to hf(Y, \psi)) {
+  any predicate \psi[2], Y {
+    assume \exists S (finite(S) \wedge seg(Y, \psi, S)) \wedge \forall y (\psi(y, Y) \to hf(y, \psi)) {
+      split \exists S (finite(S) \wedge seg(Y, \psi, S)) \wedge \forall y (\psi(y, Y) \to hf(y, \psi))
+      any y {
+        assume \psi(y, Y) {
+          apply invoke \forall y (\psi(y, Y) \to hf(y, \psi)) for y
+          split 1 hf(y, \psi)
+        }
+      }
+      any y {
+        assume \psi(y, Y) {
+          apply invoke \forall y (\psi(y, Y) \to hf(y, \psi)) for y
+          split 2 hf(y, \psi)
+        }
+      }
+      connect \exists S (finite(S) \wedge seg(Y, \psi, S)) \wedge \forall y (\psi(y, Y) \to hfcore(y, \psi))
+      apply invoke finite_generation_of_hfcore_is_hfcore for \psi, Y
+      split hfcore(Y, \psi) \wedge \exists S \exists Z \exists W \exists V (tcsetstep(\psi, Y, S, Z, W, V))
+      connect \forall y (\psi(y, Y) \to regular(y, \psi)) \wedge \exists S \exists Z \exists W \exists V (tcsetstep(\psi, Y, S, Z, W, V))
+      apply invoke generation_from_regular_is_regular for \psi, Y
+      connect hf(Y, \psi)
+    }
+  }
+}
+
 theorem hf_iff_existence_of_irrefrel_wellfounded_finite_tcset \forall x \forall^P \psi[2] (hf(x, \psi) \leftrightarrow \exists t (irrefrel(t, \psi) \wedge wellfounded(t, \psi) \wedge finite(t) \wedge tcset(x, \psi, t))) {
   any x, predicate \psi[2] {
     assume hf(x, \psi) {
