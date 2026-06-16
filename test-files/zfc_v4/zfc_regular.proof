@@ -237,6 +237,31 @@ theorem element_of_regular_is_regular \forall x \forall^P \psi[2] \forall y (reg
   }
 }
 
+theorem generation_from_regular_is_regular \forall^P \psi[2] \forall Y (\forall y (\psi(y, Y) \to regular(y, \psi)) \wedge \exists S \exists Z \exists W \exists V (tcsetstep(\psi, Y, S, Z, W, V)) \to regular(Y, \psi)) {
+  any predicate \psi[2], Y {
+    assume \forall y (\psi(y, Y) \to regular(y, \psi)) \wedge \exists S \exists Z \exists W \exists V (tcsetstep(\psi, Y, S, Z, W, V)) {
+      split \forall y (\psi(y, Y) \to regular(y, \psi)) \wedge \exists S \exists Z \exists W \exists V (tcsetstep(\psi, Y, S, Z, W, V))
+      any y {
+        assume \psi(y, Y) {
+          apply invoke \forall y (\psi(y, Y) \to regular(y, \psi)) for y
+          split 1 regular(y, \psi)
+        }
+      }
+      connect \forall y (\psi(y, Y) \to hirrefrel(y, \psi)) \wedge \exists S \exists Z \exists W \exists V (tcsetstep(\psi, Y, S, Z, W, V))
+      apply invoke generation_from_hirrefrel_is_hirrefrel for \psi, Y
+      any y {
+        assume \psi(y, Y) {
+          apply invoke \forall y (\psi(y, Y) \to regular(y, \psi)) for y
+          split 2 regular(y, \psi)
+        }
+      }
+      connect \forall y (\psi(y, Y) \to hwellfounded(y, \psi)) \wedge \exists S \exists Z \exists W \exists V (tcsetstep(\psi, Y, S, Z, W, V))
+      apply invoke generation_from_hwellfounded_is_hwellfounded for \psi, Y
+      connect regular(Y, \psi)
+    }
+  }
+}
+
 theorem regular_iff_existence_of_irrefrel_wellfounded_tcset \forall x \forall^P \psi[2] (regular(x, \psi) \leftrightarrow \exists t (irrefrel(t, \psi) \wedge wellfounded(t, \psi) \wedge tcset(x, \psi, t))) {
   any x, predicate \psi[2] {
     assume regular(x, \psi) {

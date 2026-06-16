@@ -71,23 +71,12 @@ theorem set_of_regular_is_regular \forall Y (\forall y (in(y, Y) \to regular(y, 
   any Y {
     assume \forall y (in(y, Y) \to regular(y, in)) \wedge \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V)) {
       split \forall y (in(y, Y) \to regular(y, in)) \wedge \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V))
-      any y {
-        assume in(y, Y) {
-          apply invoke \forall y (in(y, Y) \to regular(y, in)) for y
-          split 1 regular(y, in)
-        }
+      some Z, W, V such \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V)) {
+        apply invoke tcsetinstep_implies_tcsetstep for Y, Z, W, V
+        lift for Y, Z, W, V conclude \exists S \exists Z \exists W \exists V (tcsetstep(in, Y, S, Z, W, V))
       }
-      connect \forall y (in(y, Y) \to hirrefrel(y, in)) \wedge \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V))
-      apply invoke set_of_hirrefrel_is_hirrefrel for Y
-      any y {
-        assume in(y, Y) {
-          apply invoke \forall y (in(y, Y) \to regular(y, in)) for y
-          split 2 regular(y, in)
-        }
-      }
-      connect \forall y (in(y, Y) \to hwellfounded(y, in)) \wedge \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V))
-      apply invoke set_of_hwellfounded_is_hwellfounded for Y
-      connect regular(Y, in)
+      connect \forall y (in(y, Y) \to regular(y, in)) \wedge \exists S \exists Z \exists W \exists V (tcsetstep(in, Y, S, Z, W, V))
+      apply invoke generation_from_regular_is_regular for in, Y
     }
   }
 }
