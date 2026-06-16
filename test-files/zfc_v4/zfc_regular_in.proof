@@ -48,105 +48,10 @@ theorem set_of_hwellfounded_is_hwellfounded \forall Y (\forall y (in(y, Y) \to h
       split \forall y (in(y, Y) \to hwellfounded(y, in)) \wedge \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V))
       some Z, W, V such \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V)) {
         apply invoke tcsetinstep_implies_tcsetstep for Y, Z, W, V
-        split tcsetstep(in, Y, Y, Z, W, V)
-        apply invoke tcset_is_cup_of_itself_and_bigcup_of_tcset_of_element for in, Y, Y, Z, W, V
-        any A {
-          assume subset(A, V) \wedge neq(A, emptyset) {
-            split subset(A, V) \wedge neq(A, emptyset)
-            apply invoke not_emptyset_has_a_member for A
-            some v such \exists v (in(v, A)) {
-              apply invoke subset(A, V) for v
-              apply invoke rightward cup(Y, W, V) for v
-              divide in(v, Y) \vee in(v, W)
-                case in(v, Y) {
-                  apply invoke \forall y (in(y, Y) \to hwellfounded(y, in)) for v
-                }
-                case in(v, W) {
-                  apply invoke rightward bigcup(Z, W) for v
-                  some z such \exists z (in(v, z) \wedge in(z, Z)) {
-                    split in(v, z) \wedge in(z, Z)
-                    apply invoke rightward replacement(Y, \lambda^P y, z. tcset(y, in, z), Z) for z
-                    some y such \exists y (in(y, Y) \wedge tcset(y, in, z)) {
-                      split in(y, Y) \wedge tcset(y, in, z)
-                      apply invoke \forall y (in(y, Y) \to hwellfounded(y, in)) for y
-                      some z' such hwellfounded(y, in) {
-                        split wellfounded(z', in) \wedge tcset(y, in, z')
-                        fold for tcm conclude tcm(y, z')
-                        apply invoke tcm_is_tcm_of_itself for y, z'
-                        expand tcm(z', z') for tcm
-                        connect wellfounded(z', in) \wedge tcset(z', in, z')
-                        lift for z' conclude hwellfounded(z', in)
-                        connect tcset(y, in, z) \wedge tcset(y, in, z')
-                        apply invoke tcset_is_unique for y, in, z, z'
-                        substitute hwellfounded(z', in) for z': z
-                        connect hwellfounded(z, in) \wedge in(v, z)
-                        apply invoke element_of_hwellfounded_is_hwellfounded for z, in, v
-                      }
-                    }
-                  }
-                }
-              some T such hwellfounded(v, in) {
-                split wellfounded(T, in) \wedge tcset(v, in, T)
-                fold for tcm conclude tcm(v, T)
-                apply invoke tcm_implies_subset for v, T
-                expand tcm(v, T) for tcm
-                split tcset(v, in, T)
-                apply law_of_excluded_middle for \lambda^P. equal(cap(A, T), emptyset)
-                divide equal(cap(A, T), emptyset) \vee neq(cap(A, T), emptyset)
-                  case equal(cap(A, T), emptyset) {
-                    any x {
-                      assume in(x, A) \wedge neq(x, v) {
-                        split in(x, A) \wedge neq(x, v)
-                        deny in(x, v) {
-                          apply invoke subset(v, T) for x
-                          connect in(x, A) \wedge in(x, T)
-                          apply invoke leftward cap_characterization for A, T, x
-                          substitute in(x, cap(A, T)) for cap(A, T): emptyset
-                          apply emptyset_existence for x
-                          contradict in(x, emptyset)
-                        }
-                      }
-                    }
-                    fold for minimal_core conclude minimal_core(in, A, v)
-                    connect minimal(in, A, v)
-                    lift for v conclude \exists a (minimal(in, A, a))
-                  }
-                  case neq(cap(A, T), emptyset) {
-                    apply cap_is_subset_right for A, T
-                    connect subset(cap(A, T), T) \wedge neq(cap(A, T), emptyset)
-                    apply invoke wellfounded(T, in) for cap(A, T)
-                    some a such \exists a (minimal(in, cap(A, T), a)) {
-                      split minimal(in, cap(A, T), a)
-                      apply invoke rightward cap_characterization for A, T, a
-                      split in(a, A) \wedge in(a, T)
-                      any x {
-                        assume in(x, A) \wedge neq(x, a) {
-                          split in(x, A) \wedge neq(x, a)
-                          deny in(x, a) {
-                            connect in(x, a) \wedge in(a, T)
-                            apply invoke leftward trans_iff_closed_in for T
-                            apply invoke trans(T) for a, x
-                            connect in(x, A) \wedge in(x, T)
-                            apply invoke leftward cap_characterization for A, T, x
-                            connect in(x, cap(A, T)) \wedge neq(x, a)
-                            apply invoke minimal_core(in, cap(A, T), a) for x
-                            contradict in(x, a)
-                          }
-                        }
-                      }
-                      fold for minimal_core conclude minimal_core(in, A, a)
-                      connect minimal(in, A, a)
-                      lift for a conclude \exists a (minimal(in, A, a))
-                    }
-                  }
-              }
-            }
-          }
-        }
-        fold for wellfounded conclude wellfounded(V, in)
-        connect wellfounded(V, in) \wedge tcset(Y, in, V)
-        lift for V conclude hwellfounded(Y, in)
+        lift for Y, Z, W, V conclude \exists S \exists Z \exists W \exists V (tcsetstep(in, Y, S, Z, W, V))
       }
+      connect \forall y (in(y, Y) \to hwellfounded(y, in)) \wedge \exists S \exists Z \exists W \exists V (tcsetstep(in, Y, S, Z, W, V))
+      apply invoke generation_from_hwellfounded_is_hwellfounded for in, Y
     }
   }
 }

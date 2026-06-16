@@ -98,6 +98,129 @@ theorem element_of_hwellfounded_is_hwellfounded \forall x \forall^P \psi[2] \for
   }
 }
 
+theorem generation_from_hwellfounded_is_hwellfounded \forall^P \psi[2] \forall Y (\forall y (\psi(y, Y) \to hwellfounded(y, \psi)) \wedge \exists S \exists Z \exists W \exists V (tcsetstep(\psi, Y, S, Z, W, V)) \to hwellfounded(Y, \psi)) {
+  any predicate \psi[2], Y {
+    assume \forall y (\psi(y, Y) \to hwellfounded(y, \psi)) \wedge \exists S \exists Z \exists W \exists V (tcsetstep(\psi, Y, S, Z, W, V)) {
+      split \forall y (\psi(y, Y) \to hwellfounded(y, \psi)) \wedge \exists S \exists Z \exists W \exists V (tcsetstep(\psi, Y, S, Z, W, V))
+      some S, Z, W, V such \exists S \exists Z \exists W \exists V (tcsetstep(\psi, Y, S, Z, W, V)) {
+        split tcsetstep(\psi, Y, S, Z, W, V)
+        apply invoke tcset_is_cup_of_itself_and_bigcup_of_tcset_of_element for \psi, Y, S, Z, W, V
+        any A {
+          assume subset(A, V) \wedge neq(A, emptyset) {
+            split subset(A, V) \wedge neq(A, emptyset)
+            apply law_of_excluded_middle for \lambda^P. \exists x (in(x, cap(A, W)))
+            divide \exists x (in(x, cap(A, W))) \vee \neg(\exists x (in(x, cap(A, W))))
+              case \exists x (in(x, cap(A, W))) {
+                some x such \exists x (in(x, cap(A, W))) {
+                  apply invoke rightward cap_characterization for A, W, x
+                  split in(x, A) \wedge in(x, W)
+                  apply invoke rightward bigcup(Z, W) for x
+                  some z such \exists z (in(x, z) \wedge in(z, Z)) {
+                    split in(x, z) \wedge in(z, Z)
+                    apply invoke rightward replacement(S, \lambda^P y, z. tcset(y, \psi, z), Z) for z
+                    some y such \exists y (in(y, S) \wedge tcset(y, \psi, z)) {
+                      split in(y, S) \wedge tcset(y, \psi, z)
+                      split tcset(y, \psi, z)
+                      apply invoke rightward seg(Y, \psi, S) for y
+                      apply invoke \forall y (\psi(y, Y) \to hwellfounded(y, \psi)) for y
+                      some z' such hwellfounded(y, \psi) {
+                        split wellfounded(z', \psi) \wedge tcset(y, \psi, z')
+                        connect tcset(y, \psi, z) \wedge tcset(y, \psi, z')
+                        apply invoke tcset_is_unique for y, \psi, z, z'
+                        substitute wellfounded(z', \psi) for z': z
+                      }
+                      apply cap_is_subset_right for A, z
+                      connect in(x, A) \wedge in(x, z)
+                      apply invoke leftward cap_characterization for A, z, x
+                      lift for x conclude \exists x (in(x, cap(A, z)))
+                      apply invoke has_a_member_not_emptyset for cap(A, z)
+                      connect subset(cap(A, z), z) \wedge neq(cap(A, z), emptyset)
+                      apply invoke wellfounded(z, \psi) for cap(A, z)
+                      some a such \exists a (minimal(\psi, cap(A, z), a)) {
+                        split minimal(\psi, cap(A, z), a)
+                        apply invoke rightward cap_characterization for A, z, a
+                        split in(a, A) \wedge in(a, z)
+                        any p {
+                          assume in(p, A) \wedge neq(p, a) {
+                            split in(p, A) \wedge neq(p, a)
+                            apply law_of_excluded_middle for \lambda^P. in(p, z)
+                            divide in(p, z) \vee notin(p, z)
+                              case in(p, z) {
+                                connect in(p, A) \wedge in(p, z)
+                                apply invoke leftward cap_characterization for A, z, p
+                                connect in(p, cap(A, z)) \wedge neq(p, a)
+                                apply invoke minimal_core(\psi, cap(A, z), a) for p
+                              }
+                              case notin(p, z) {
+                                deny \psi(p, a) {
+                                  connect in(a, z) \wedge \psi(p, a)
+                                  apply invoke closed(z, \psi) for a, p
+                                  contradict in(p, z)
+                                }
+                              }
+                          }
+                        }
+                        fold for minimal_core conclude minimal_core(\psi, A, a)
+                        connect minimal(\psi, A, a)
+                        lift for a conclude \exists a (minimal(\psi, A, a))
+                      }
+                    }
+                  }
+                }
+              }
+              case \neg(\exists x (in(x, cap(A, W)))) {
+                apply invoke not_emptyset_has_a_member for A
+                some y such \exists y (in(y, A)) {
+                  apply invoke subset(A, V) for y
+                  apply invoke rightward cup(S, W, V) for y
+                  divide in(y, S) \vee in(y, W)
+                    case in(y, S) {}
+                    case in(y, W) {
+                      connect in(y, A) \wedge in(y, W)
+                      apply invoke leftward cap_characterization for A, W, y
+                      lift for y conclude \exists y (in(y, cap(A, W)))
+                      contradict \exists y (in(y, cap(A, W)))
+                      explode in(y, S)
+                    }
+                  apply invoke rightward seg(Y, \psi, S) for y
+                  apply invoke \forall y (\psi(y, Y) \to hwellfounded(y, \psi)) for y
+                  some z such hwellfounded(y, \psi) {
+                    split wellfounded(z, \psi) \wedge tcset(y, \psi, z)
+                    connect in(y, S) \wedge tcset(y, \psi, z)
+                    lift for y conclude \exists y (in(y, S) \wedge tcset(y, \psi, z))
+                    apply invoke leftward replacement(S, \lambda^P y, z. tcset(y, \psi, z), Z) for z
+                    split tcset(y, \psi, z)
+                    any p {
+                      assume in(p, A) \wedge neq(p, y) {
+                        split in(p, A) \wedge neq(p, y)
+                        deny \psi(p, y) {
+                          apply invoke \forall p (\psi(p, y) \to in(p, z)) for p
+                          connect in(p, z) \wedge in(z, Z)
+                          lift for z conclude \exists z (in(p, z) \wedge in(z, Z))
+                          apply invoke leftward bigcup(Z, W) for p
+                          connect in(p, A) \wedge in(p, W)
+                          apply invoke leftward cap_characterization for A, W, p
+                          lift for p conclude \exists x (in(x, cap(A, W)))
+                          contradict \exists x (in(x, cap(A, W)))
+                        }
+                      }
+                    }
+                  }
+                  fold for minimal_core conclude minimal_core(\psi, A, y)
+                  connect minimal(\psi, A, y)
+                  lift for y conclude \exists a (minimal(\psi, A, a))
+                }
+              }
+          }
+        }
+        fold for wellfounded conclude wellfounded(V, \psi)
+        connect wellfounded(V, \psi) \wedge tcset(Y, \psi, V)
+        lift for V conclude hwellfounded(Y, \psi)
+      }
+    }
+  }
+}
+
 definition predicate regular(x, predicate \psi[2]) as hirrefrel(x, \psi) \wedge hwellfounded(x, \psi)
 
 theorem element_of_regular_is_regular \forall x \forall^P \psi[2] \forall y (regular(x, \psi) \wedge \psi(y, x) \to regular(y, \psi)) {
