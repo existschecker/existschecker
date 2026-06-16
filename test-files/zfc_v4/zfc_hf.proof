@@ -22,6 +22,69 @@ theorem element_of_hfcore_is_hfcore \forall x \forall^P \psi[2] \forall y (hfcor
   }
 }
 
+theorem finite_generation_of_hfcore_is_hfcore \forall^P \psi[2] \forall Y (\exists S (finite(S) \wedge seg(Y, \psi, S)) \wedge \forall y (\psi(y, Y) \to hfcore(y, \psi)) \to hfcore(Y, \psi) \wedge \exists S \exists Z \exists W \exists V (tcsetstep(\psi, Y, S, Z, W, V))) {
+  any predicate \psi[2], Y {
+    assume \exists S (finite(S) \wedge seg(Y, \psi, S)) \wedge \forall y (\psi(y, Y) \to hfcore(y, \psi)) {
+      split \exists S (finite(S) \wedge seg(Y, \psi, S)) \wedge \forall y (\psi(y, Y) \to hfcore(y, \psi))
+      any y, z, z' {
+        assume tcset(y, \psi, z) \wedge tcset(y, \psi, z') {
+          apply invoke tcset_is_unique for y, \psi, z, z'
+        }
+      }
+      fold for functional conclude functional(\lambda^P y, z. tcset(y, \psi, z))
+      some S such \exists S (finite(S) \wedge seg(Y, \psi, S)) {
+        split finite(S) \wedge seg(Y, \psi, S)
+        connect finite(S) \wedge functional(\lambda^P y, z. tcset(y, \psi, z))
+        apply invoke finite_replacement_exists_uniquely for S, \lambda^P y, z. tcset(y, \psi, z)
+        some Z such \exists! Z (finite(Z) \wedge replacement(S, \lambda^P y, z. tcset(y, \psi, z), Z)) {
+          split finite(Z) \wedge replacement(S, \lambda^P y, z. tcset(y, \psi, z), Z)
+          any z {
+            assume in(z, Z) {
+              apply invoke rightward replacement(S, \lambda^P y, z. tcset(y, \psi, z), Z) for z
+              some y such \exists y (in(y, S) \wedge tcset(y, \psi, z)) {
+                split in(y, S) \wedge tcset(y, \psi, z)
+                apply invoke rightward seg(Y, \psi, S) for y
+                apply invoke \forall y (\psi(y, Y) \to hfcore(y, \psi)) for y
+                some z' such hfcore(y, \psi) {
+                  split finite(z') \wedge tcset(y, \psi, z')
+                  connect tcset(y, \psi, z) \wedge tcset(y, \psi, z')
+                  apply invoke tcset_is_unique for y, \psi, z, z'
+                  substitute finite(z') for z': z
+                }
+              }
+            }
+          }
+          connect finite(Z) \wedge \forall z (in(z, Z) \to finite(z))
+          apply invoke finite_bigcup_exists_uniquely for Z
+          some W such \exists! W (finite(W) \wedge bigcup(Z, W)) {
+            split finite(W) \wedge bigcup(Z, W)
+            connect finite(S) \wedge finite(W)
+            apply invoke finite_cup_exists_uniquely for S, W
+            some V such \exists! V (finite(V) \wedge cup(S, W, V)) {
+              split finite(V) \wedge cup(S, W, V)
+              any y {
+                assume \psi(y, Y) {
+                  apply invoke \forall y (\psi(y, Y) \to hfcore(y, \psi)) for y
+                  some z such hfcore(y, \psi) {
+                    split 2 finite(z) \wedge tcset(y, \psi, z)
+                    lift for z conclude \exists z (tcset(y, \psi, z))
+                  }
+                }
+              }
+              connect tcsetstep(\psi,Y, S, Z, W, V)
+              apply invoke tcset_is_cup_of_itself_and_bigcup_of_tcset_of_element for \psi, Y, S, Z, W, V
+              connect finite(V) \wedge tcset(Y, \psi, V)
+              lift for V conclude hfcore(Y, \psi)
+              lift for S, Z, W, V conclude \exists S \exists Z \exists W \exists V (tcsetstep(\psi, Y, S, Z, W, V))
+              connect hfcore(Y, \psi) \wedge \exists S \exists Z \exists W \exists V (tcsetstep(\psi, Y, S, Z, W, V))
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 definition predicate hf(x, predicate \psi[2]) as regular(x, \psi) \wedge hfcore(x, \psi)
 
 theorem element_of_hf_is_hf \forall x \forall^P \psi[2] \forall y (hf(x, \psi) \wedge \psi(y, x) \to hf(y, \psi)) {

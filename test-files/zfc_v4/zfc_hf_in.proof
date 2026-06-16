@@ -18,58 +18,22 @@ theorem finite_set_of_hfcore_is_hfcore \forall Y (finite(Y) \wedge \forall y (in
   any Y {
     assume finite(Y) \wedge \forall y (in(y, Y) \to hfcore(y, in)) {
       split finite(Y) \wedge \forall y (in(y, Y) \to hfcore(y, in))
-      any y, z, z' {
-        assume tcset(y, in, z) \wedge tcset(y, in, z') {
-          apply invoke tcset_is_unique for y, in, z, z'
-        }
+      apply seg_for_in_is_iself for Y
+      connect finite(Y) \wedge seg(Y, in, Y)
+      lift for Y conclude \exists S (finite(S) \wedge seg(Y, in, S))
+      connect \exists S (finite(S) \wedge seg(Y, in, S)) \wedge \forall y (in(y, Y) \to hfcore(y, in))
+      apply invoke finite_generation_of_hfcore_is_hfcore for in, Y
+      split hfcore(Y, in) \wedge \exists S \exists Z \exists W \exists V (tcsetstep(in, Y, S, Z, W, V))
+      some S, Z, W, V such \exists S \exists Z \exists W \exists V (tcsetstep(in, Y, S, Z, W, V)) {
+        split tcsetstep(in, Y, S, Z, W, V)
+        connect seg(Y, in, S) \wedge seg(Y, in, Y)
+        apply invoke seg_is_unique for Y, in, S, Y
+        substitute replacement(S, \lambda^P y, z. tcset(y, in, z), Z) for S: Y
+        substitute cup(S, W, V) for S: Y
+        connect tcsetinstep(Y, Z, W, V)
+        lift for Z, W, V conclude \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V))
       }
-      fold for functional conclude functional(\lambda^P y, z. tcset(y, in, z))
-      connect finite(Y) \wedge functional(\lambda^P y, z. tcset(y, in, z))
-      apply invoke finite_replacement_exists_uniquely for Y, \lambda^P y, z. tcset(y, in, z)
-      some Z such \exists! Z (finite(Z) \wedge replacement(Y, \lambda^P y, z. tcset(y, in, z), Z)) {
-        split finite(Z) \wedge replacement(Y, \lambda^P y, z. tcset(y, in, z), Z)
-        any z {
-          assume in(z, Z) {
-            apply invoke rightward replacement(Y, \lambda^P y, z. tcset(y, in, z), Z) for z
-            some y such \exists y (in(y, Y) \wedge tcset(y, in, z)) {
-              split in(y, Y) \wedge tcset(y, in, z)
-              apply invoke \forall y (in(y, Y) \to hfcore(y, in)) for y
-              some z' such hfcore(y, in) {
-                split finite(z') \wedge tcset(y, in, z')
-                connect tcset(y, in, z) \wedge tcset(y, in, z')
-                apply invoke tcset_is_unique for y, in, z, z'
-                substitute finite(z') for z': z
-              }
-            }
-          }
-        }
-        connect finite(Z) \wedge \forall z (in(z, Z) \to finite(z))
-        apply invoke finite_bigcup_exists_uniquely for Z
-        some W such \exists! W (finite(W) \wedge bigcup(Z, W)) {
-          split finite(W) \wedge bigcup(Z, W)
-          connect finite(Y) \wedge finite(W)
-          apply invoke finite_cup_exists_uniquely for Y, W
-          some V such \exists! V (finite(V) \wedge cup(Y, W, V)) {
-            split finite(V) \wedge cup(Y, W, V)
-            any y {
-              assume in(y, Y) {
-                apply invoke \forall y (in(y, Y) \to hfcore(y, in)) for y
-                some z such hfcore(y, in) {
-                  split 2 finite(z) \wedge tcset(y, in, z)
-                  lift for z conclude \exists z (tcset(y, in, z))
-                }
-              }
-            }
-            connect tcsetinstep(Y, Z, W, V)
-            apply invoke tcsetinstep_implies_tcsetstep for Y, Z, W, V
-            apply invoke tcset_is_cup_of_itself_and_bigcup_of_tcset_of_element for in, Y, Y, Z, W, V
-            connect finite(V) \wedge tcset(Y, in, V)
-            lift for V conclude hfcore(Y, in)
-            lift for Z, W, V conclude \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V))
-            connect hfcore(Y, in) \wedge \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V))
-          }
-        }
-      }
+      connect hfcore(Y, in) \wedge \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V))
     }
   }
 }
