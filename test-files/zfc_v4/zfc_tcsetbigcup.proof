@@ -1,4 +1,4 @@
-include "zfc_tcmowns.proof"
+include "zfc_tcsetacc.proof"
 
 definition predicate hbigcup(X) as \forall n (natural(n) \to \exists u (piterate(bigcup, n, X, u)))
 

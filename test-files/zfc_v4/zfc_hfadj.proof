@@ -1,4 +1,4 @@
-include "zfc_tcmbigcup.proof"
+include "zfc_tcsetbigcup.proof"
 
 definition predicate adjstep(X, Y) as \forall r (in(r, Y) \leftrightarrow in(r, X) \vee \exists p \exists q (in(p, X) \wedge in(q, X) \wedge equal(r, adj(p, q))))
 
