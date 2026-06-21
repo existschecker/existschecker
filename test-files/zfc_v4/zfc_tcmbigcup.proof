@@ -2,17 +2,17 @@ include "zfc_tcmowns.proof"
 
 definition predicate hbigcup(X) as \forall n (natural(n) \to \exists u (piterate(bigcup, n, X, u)))
 
-theorem hbigcup_implies_owns_piterate_iff_bigcup_piterate \forall X \forall n (hbigcup(X) \wedge natural(n) \to \forall y (piterate(owns, suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, n, X, u)))) {
+theorem hbigcup_implies_owns_piterate_iff_bigcup_piterate \forall X \forall n (hbigcup(X) \wedge natural(n) \to \forall y (piterate(\lambda^P p, q. in(q, p), suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, n, X, u)))) {
   any X {
     assume hbigcup(X) {
       any y {
-        assume piterate(owns, suc(emptyset), X, y) {
+        assume piterate(\lambda^P p, q. in(q, p), suc(emptyset), X, y) {
           assert emptyset_is_natural
-          connect natural(emptyset) \wedge piterate(owns, suc(emptyset), X, y)
-          apply invoke piterate_last_step for owns, emptyset, X, y
-          some X' such \exists X' (piterate(owns, emptyset, X, X') \wedge in(y, X')) {
-            split piterate(owns, emptyset, X, X') \wedge in(y, X')
-            apply invoke piterate_is_unique_base_step for owns, X, X'
+          connect natural(emptyset) \wedge piterate(\lambda^P p, q. in(q, p), suc(emptyset), X, y)
+          apply invoke piterate_last_step for \lambda^P p, q. in(q, p), emptyset, X, y
+          some X' such \exists X' (piterate(\lambda^P p, q. in(q, p), emptyset, X, X') \wedge in(y, X')) {
+            split piterate(\lambda^P p, q. in(q, p), emptyset, X, X') \wedge in(y, X')
+            apply invoke piterate_is_unique_base_step for \lambda^P p, q. in(q, p), X, X'
             substitute in(y, X') for X': X
           }
           apply piterate_base_step for bigcup, X
@@ -24,33 +24,33 @@ theorem hbigcup_implies_owns_piterate_iff_bigcup_piterate \forall X \forall n (h
             split in(y, u) \wedge piterate(bigcup, emptyset, X, u)
             apply invoke piterate_is_unique_base_step for bigcup, X, u
             substitute in(y, u) for u: X
-            apply invoke piterate_one_step for owns, X, y
+            apply invoke piterate_one_step for \lambda^P p, q. in(q, p), X, y
           }
         }
-        connect piterate(owns, suc(emptyset), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, emptyset, X, u))
+        connect piterate(\lambda^P p, q. in(q, p), suc(emptyset), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, emptyset, X, u))
       }
     }
   }
   any n {
     assume natural(n) {
       apply invoke suc_of_natural_is_natural for n
-      assume \forall X (hbigcup(X) \to \forall y (piterate(owns, suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, n, X, u)))) {
+      assume \forall X (hbigcup(X) \to \forall y (piterate(\lambda^P p, q. in(q, p), suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, n, X, u)))) {
         any X {
           assume hbigcup(X) {
-            apply invoke \forall X (hbigcup(X) \to \forall y (piterate(owns, suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, n, X, u)))) for X
+            apply invoke \forall X (hbigcup(X) \to \forall y (piterate(\lambda^P p, q. in(q, p), suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, n, X, u)))) for X
             any y {
-              assume piterate(owns, suc(suc(n)), X, y) {
+              assume piterate(\lambda^P p, q. in(q, p), suc(suc(n)), X, y) {
                 apply invoke hbigcup(X) for suc(n)
                 some v such \exists v (piterate(bigcup, suc(n), X, v)) {
                   connect natural(n) \wedge piterate(bigcup, suc(n), X, v)
                   apply invoke piterate_last_step for bigcup, n, X, v
                   some u such \exists u (piterate(bigcup, n, X, u) \wedge bigcup(u, v)) {
                     split piterate(bigcup, n, X, u) \wedge bigcup(u, v)
-                    connect natural(suc(n)) \wedge piterate(owns, suc(suc(n)), X, y)
-                    apply invoke piterate_last_step for owns, suc(n), X, y
-                    some x such \exists x (piterate(owns, suc(n), X, x) \wedge in(y, x)) {
-                      split piterate(owns, suc(n), X, x) \wedge in(y, x)
-                      apply invoke rightward \forall y (piterate(owns, suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, n, X, u))) for x
+                    connect natural(suc(n)) \wedge piterate(\lambda^P p, q. in(q, p), suc(suc(n)), X, y)
+                    apply invoke piterate_last_step for \lambda^P p, q. in(q, p), suc(n), X, y
+                    some x such \exists x (piterate(\lambda^P p, q. in(q, p), suc(n), X, x) \wedge in(y, x)) {
+                      split piterate(\lambda^P p, q. in(q, p), suc(n), X, x) \wedge in(y, x)
+                      apply invoke rightward \forall y (piterate(\lambda^P p, q. in(q, p), suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, n, X, u))) for x
                       some u' such \exists u' (in(x, u') \wedge piterate(bigcup, n, X, u')) {
                         split in(x, u') \wedge piterate(bigcup, n, X, u')
                         assert bigcup_is_functional
@@ -79,45 +79,45 @@ theorem hbigcup_implies_owns_piterate_iff_bigcup_piterate \forall X \forall n (h
                       split in(y, x) \wedge in(x, u)
                       connect in(x, u) \wedge piterate(bigcup, n, X, u)
                       lift for u conclude \exists u (in(x, u) \wedge piterate(bigcup, n, X, u))
-                      apply invoke leftward \forall y (piterate(owns, suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, n, X, u))) for x
-                      connect natural(suc(n)) \wedge piterate(owns, suc(n), X, x) \wedge in(y, x)
-                      apply invoke piterate_induction_step for owns, suc(n), X, x, y
+                      apply invoke leftward \forall y (piterate(\lambda^P p, q. in(q, p), suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, n, X, u))) for x
+                      connect natural(suc(n)) \wedge piterate(\lambda^P p, q. in(q, p), suc(n), X, x) \wedge in(y, x)
+                      apply invoke piterate_induction_step for \lambda^P p, q. in(q, p), suc(n), X, x, y
                     }
                   }
                 }
               }
-              connect piterate(owns, suc(suc(n)), X, y) \leftrightarrow \exists v (in(y, v) \wedge piterate(bigcup, suc(n), X, v))
+              connect piterate(\lambda^P p, q. in(q, p), suc(suc(n)), X, y) \leftrightarrow \exists v (in(y, v) \wedge piterate(bigcup, suc(n), X, v))
             }
           }
         }
       }
     }
   }
-  connect \forall X (hbigcup(X) \to (\forall y (piterate(owns, suc(emptyset), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, emptyset, X, u))))) \wedge \forall n (natural(n) \to (\forall X (hbigcup(X) \to \forall y (piterate(owns, suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, n, X, u)))) \to \forall X (hbigcup(X) \to \forall y (piterate(owns, suc(suc(n)), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, suc(n), X, u))))))
-  apply invoke natural_induction for \lambda^P n. \forall X (hbigcup(X) \to \forall y (piterate(owns, suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, n, X, u))))
+  connect \forall X (hbigcup(X) \to (\forall y (piterate(\lambda^P p, q. in(q, p), suc(emptyset), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, emptyset, X, u))))) \wedge \forall n (natural(n) \to (\forall X (hbigcup(X) \to \forall y (piterate(\lambda^P p, q. in(q, p), suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, n, X, u)))) \to \forall X (hbigcup(X) \to \forall y (piterate(\lambda^P p, q. in(q, p), suc(suc(n)), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, suc(n), X, u))))))
+  apply invoke natural_induction for \lambda^P n. \forall X (hbigcup(X) \to \forall y (piterate(\lambda^P p, q. in(q, p), suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, n, X, u))))
   any X, n {
     assume hbigcup(X) \wedge natural(n) {
       split hbigcup(X) \wedge natural(n)
-      apply invoke \forall n (natural(n) \to \forall X (hbigcup(X) \to \forall y (piterate(owns, suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, n, X, u))))) for n
-      apply invoke \forall X (hbigcup(X) \to \forall y (piterate(owns, suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, n, X, u)))) for X
+      apply invoke \forall n (natural(n) \to \forall X (hbigcup(X) \to \forall y (piterate(\lambda^P p, q. in(q, p), suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, n, X, u))))) for n
+      apply invoke \forall X (hbigcup(X) \to \forall y (piterate(\lambda^P p, q. in(q, p), suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, n, X, u)))) for X
     }
   }
 }
 
-theorem hbigcup_implies_tc_owns_iff_rtc_bigcup \forall X (hbigcup(X) \to \forall y (tc(owns, X, y) \leftrightarrow \exists u (in(y, u) \wedge rtc(bigcup, X, u)))) {
+theorem hbigcup_implies_tc_owns_iff_rtc_bigcup \forall X (hbigcup(X) \to \forall y (tc(\lambda^P p, q. in(q, p), X, y) \leftrightarrow \exists u (in(y, u) \wedge rtc(bigcup, X, u)))) {
   any X {
     assume hbigcup(X) {
       any y {
-        assume tc(owns, X, y) {
-          some n such tc(owns, X, y) {
-            split pnatural(n) \wedge piterate(owns, n, X, y)
+        assume tc(\lambda^P p, q. in(q, p), X, y) {
+          some n such tc(\lambda^P p, q. in(q, p), X, y) {
+            split pnatural(n) \wedge piterate(\lambda^P p, q. in(q, p), n, X, y)
             apply invoke pnatural_is_suc_of_natural_element for n
             some m such \exists m (equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)) {
               split equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)
-              substitute piterate(owns, n, X, y) for n: suc(m)
+              substitute piterate(\lambda^P p, q. in(q, p), n, X, y) for n: suc(m)
               connect hbigcup(X) \wedge natural(m)
               apply invoke hbigcup_implies_owns_piterate_iff_bigcup_piterate for X, m
-              apply invoke rightward \forall y (piterate(owns, suc(m), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, m, X, u))) for y
+              apply invoke rightward \forall y (piterate(\lambda^P p, q. in(q, p), suc(m), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, m, X, u))) for y
               some u such \exists u (in(y, u) \wedge piterate(bigcup, m, X, u)) {
                 split in(y, u) \wedge piterate(bigcup, m, X, u)
                 connect natural(m) \wedge piterate(bigcup, m, X, u)
@@ -137,54 +137,54 @@ theorem hbigcup_implies_tc_owns_iff_rtc_bigcup \forall X (hbigcup(X) \to \forall
               lift for u conclude \exists u (in(y, u) \wedge piterate(bigcup, m, X, u))
               connect hbigcup(X) \wedge natural(m)
               apply invoke hbigcup_implies_owns_piterate_iff_bigcup_piterate for X, m
-              apply invoke leftward \forall y (piterate(owns, suc(m), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, m, X, u))) for y
+              apply invoke leftward \forall y (piterate(\lambda^P p, q. in(q, p), suc(m), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, m, X, u))) for y
               apply invoke suc_of_natural_is_pnatural for m
-              connect pnatural(suc(m)) \wedge piterate(owns, suc(m), X, y)
-              lift for suc(m) conclude tc(owns, X, y)
+              connect pnatural(suc(m)) \wedge piterate(\lambda^P p, q. in(q, p), suc(m), X, y)
+              lift for suc(m) conclude tc(\lambda^P p, q. in(q, p), X, y)
             }
           }
         }
-        connect tc(owns, X, y) \leftrightarrow \exists u (in(y, u) \wedge rtc(bigcup, X, u))
+        connect tc(\lambda^P p, q. in(q, p), X, y) \leftrightarrow \exists u (in(y, u) \wedge rtc(bigcup, X, u))
       }
     }
   }
 }
 
-definition predicate tcmbigcup(X, Y) as \forall y (in(y, Y) \leftrightarrow \exists u (in(y, u) \wedge rtc(bigcup, X, u)))
+definition predicate tcsetbigcup(X, Y) as \forall y (in(y, Y) \leftrightarrow \exists u (in(y, u) \wedge rtc(bigcup, X, u)))
 
-theorem tcmowns_iff_tcmbigcup \forall X \forall Y (hbigcup(X) \to (tcmowns(X, Y) \leftrightarrow tcmbigcup(X, Y))) {
+theorem tcsetacc_iff_tcsetbigcup \forall X \forall Y (hbigcup(X) \to (tcsetacc(X, in, Y) \leftrightarrow tcsetbigcup(X, Y))) {
   any X, Y {
     assume hbigcup(X) {
       apply invoke hbigcup_implies_tc_owns_iff_rtc_bigcup for X
-      assume tcmowns(X, Y) {
+      assume tcsetacc(X, in, Y) {
         any y {
           assume in(y, Y) {
-            apply invoke rightward tcmowns(X, Y) for y
-            apply invoke rightward \forall y (tc(owns, X, y) \leftrightarrow \exists u (in(y, u) \wedge rtc(bigcup, X, u))) for y
+            apply invoke rightward tcsetacc(X, in, Y) for y
+            apply invoke rightward \forall y (tc(\lambda^P p, q. in(q, p), X, y) \leftrightarrow \exists u (in(y, u) \wedge rtc(bigcup, X, u))) for y
           }
           assume \exists u (in(y, u) \wedge rtc(bigcup, X, u)) {
-            apply invoke leftward \forall y (tc(owns, X, y) \leftrightarrow \exists u (in(y, u) \wedge rtc(bigcup, X, u))) for y
-            apply invoke leftward tcmowns(X, Y) for y
+            apply invoke leftward \forall y (tc(\lambda^P p, q. in(q, p), X, y) \leftrightarrow \exists u (in(y, u) \wedge rtc(bigcup, X, u))) for y
+            apply invoke leftward tcsetacc(X, in, Y) for y
           }
           connect in(y, Y) \leftrightarrow \exists u (in(y, u) \wedge rtc(bigcup, X, u))
         }
-        fold for tcmbigcup conclude tcmbigcup(X, Y)
+        fold for tcsetbigcup conclude tcsetbigcup(X, Y)
       }
-      assume tcmbigcup(X, Y) {
+      assume tcsetbigcup(X, Y) {
         any y {
           assume in(y, Y) {
-            apply invoke rightward tcmbigcup(X, Y) for y
-            apply invoke leftward \forall y (tc(owns, X, y) \leftrightarrow \exists u (in(y, u) \wedge rtc(bigcup, X, u))) for y
+            apply invoke rightward tcsetbigcup(X, Y) for y
+            apply invoke leftward \forall y (tc(\lambda^P p, q. in(q, p), X, y) \leftrightarrow \exists u (in(y, u) \wedge rtc(bigcup, X, u))) for y
           }
-          assume tc(owns, X, y) {
-            apply invoke rightward \forall y (tc(owns, X, y) \leftrightarrow \exists u (in(y, u) \wedge rtc(bigcup, X, u))) for y
-            apply invoke leftward tcmbigcup(X, Y) for y
+          assume tc(\lambda^P p, q. in(q, p), X, y) {
+            apply invoke rightward \forall y (tc(\lambda^P p, q. in(q, p), X, y) \leftrightarrow \exists u (in(y, u) \wedge rtc(bigcup, X, u))) for y
+            apply invoke leftward tcsetbigcup(X, Y) for y
           }
-          connect in(y, Y) \leftrightarrow tc(owns, X, y)
+          connect in(y, Y) \leftrightarrow tc(\lambda^P p, q. in(q, p), X, y)
         }
-        fold for tcmowns conclude tcmowns(X, Y)
+        fold for tcsetacc conclude tcsetacc(X, in, Y)
       }
-      connect tcmowns(X, Y) \leftrightarrow tcmbigcup(X, Y)
+      connect tcsetacc(X, in, Y) \leftrightarrow tcsetbigcup(X, Y)
     }
   }
 }
