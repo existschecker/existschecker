@@ -1,190 +1,229 @@
 include "zfc_tcsetacc.proof"
 
-definition predicate hbigcup(X) as \forall n (natural(n) \to \exists u (piterate(bigcup, n, X, u)))
+definition predicate segbigcup(X, predicate \psi[2], Y) as \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(y, x)))
 
-theorem hbigcup_implies_owns_piterate_iff_bigcup_piterate \forall X \forall n (hbigcup(X) \wedge natural(n) \to \forall y (piterate(\lambda^P p, q. in(q, p), suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, n, X, u)))) {
-  any X {
-    assume hbigcup(X) {
-      any y {
-        assume piterate(\lambda^P p, q. in(q, p), suc(emptyset), X, y) {
-          assert emptyset_is_natural
-          connect natural(emptyset) \wedge piterate(\lambda^P p, q. in(q, p), suc(emptyset), X, y)
-          apply invoke piterate_last_step for \lambda^P p, q. in(q, p), emptyset, X, y
-          some X' such \exists X' (piterate(\lambda^P p, q. in(q, p), emptyset, X, X') \wedge in(y, X')) {
-            split piterate(\lambda^P p, q. in(q, p), emptyset, X, X') \wedge in(y, X')
-            apply invoke piterate_is_unique_base_step for \lambda^P p, q. in(q, p), X, X'
-            substitute in(y, X') for X': X
-          }
-          apply piterate_base_step for bigcup, X
-          connect in(y, X) \wedge piterate(bigcup, emptyset, X, X)
-          lift for X conclude \exists u (in(y, u) \wedge piterate(bigcup, emptyset, X, u))
+theorem segbigcup_is_unique \forall^P \psi[2] \forall x \forall y \forall y' (segbigcup(x, \psi, y) \wedge segbigcup(x, \psi, y') \to equal(y, y')) {
+  any predicate \psi[2], x, y, y' {
+    assume segbigcup(x, \psi, y) \wedge segbigcup(x, \psi, y') {
+      split segbigcup(x, \psi, y) \wedge segbigcup(x, \psi, y')
+      any z {
+        assume in(z, y) {
+          apply invoke rightward segbigcup(x, \psi, y) for z
+          apply invoke leftward segbigcup(x, \psi, y') for z
         }
-        assume \exists u (in(y, u) \wedge piterate(bigcup, emptyset, X, u)) {
-          some u such \exists u (in(y, u) \wedge piterate(bigcup, emptyset, X, u)) {
-            split in(y, u) \wedge piterate(bigcup, emptyset, X, u)
-            apply invoke piterate_is_unique_base_step for bigcup, X, u
-            substitute in(y, u) for u: X
-            apply invoke piterate_one_step for \lambda^P p, q. in(q, p), X, y
-          }
+        assume in(z, y') {
+          apply invoke rightward segbigcup(x, \psi, y') for z
+          apply invoke leftward segbigcup(x, \psi, y) for z
         }
-        connect piterate(\lambda^P p, q. in(q, p), suc(emptyset), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, emptyset, X, u))
+        connect in(z, y) \leftrightarrow in(z, y')
       }
+      apply invoke axiom_of_extensionality for y, y'
     }
   }
-  any n {
-    assume natural(n) {
-      apply invoke suc_of_natural_is_natural for n
-      assume \forall X (hbigcup(X) \to \forall y (piterate(\lambda^P p, q. in(q, p), suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, n, X, u)))) {
-        any X {
-          assume hbigcup(X) {
-            apply invoke \forall X (hbigcup(X) \to \forall y (piterate(\lambda^P p, q. in(q, p), suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, n, X, u)))) for X
+}
+
+theorem segbigcup_is_functional \forall^P \psi[2] (functional(\lambda^P x, y. segbigcup(x, \psi, y))) {
+  any predicate \psi[2] {
+    apply segbigcup_is_unique for \psi, _, _, _
+    fold for functional conclude functional(\lambda^P x, y. segbigcup(x, \psi, y))
+  }
+}
+
+definition predicate hsegbigcup(X, predicate \psi[2]) as \forall n (natural(n) \to \exists u (piterate(\lambda^P p, q. segbigcup(p, \psi, q), n, X, u)))
+
+theorem hsegbigcup_implies_piterate_iff_segbigcup_piterate \forall X \forall^P \psi[2] \forall S \forall n (seg(X, \psi, S) \wedge hsegbigcup(S, \psi) \wedge natural(n) \to \forall y (piterate(\lambda^P p, q. \psi(q, p), suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), n, S, u)))) {
+  any X, predicate \psi[2], S {
+    assume seg(X, \psi, S) \wedge hsegbigcup(S, \psi) {
+      split seg(X, \psi, S) \wedge hsegbigcup(S, \psi)
+      any y {
+        assume piterate(\lambda^P p, q. \psi(q, p), suc(emptyset), X, y) {
+          assert emptyset_is_natural
+          connect natural(emptyset) \wedge piterate(\lambda^P p, q. \psi(q, p), suc(emptyset), X, y)
+          apply invoke piterate_last_step for \lambda^P p, q. \psi(q, p), emptyset, X, y
+          some X' such \exists X' (piterate(\lambda^P p, q. \psi(q, p), emptyset, X, X') \wedge \psi(y, X')) {
+            split piterate(\lambda^P p, q. \psi(q, p), emptyset, X, X') \wedge \psi(y, X')
+            apply invoke piterate_is_unique_base_step for \lambda^P p, q. \psi(q, p), X, X'
+            substitute \psi(y, X') for X': X
+          }
+          apply invoke leftward seg(X, \psi, S) for y
+          apply piterate_base_step for \lambda^P p, q. segbigcup(p, \psi, q), S
+          connect in(y, S) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), emptyset, S, S)
+          lift for S conclude \exists u (in(y, u) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), emptyset, S, u))
+        }
+        assume \exists u (in(y, u) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), emptyset, S, u)) {
+          some u such \exists u (in(y, u) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), emptyset, S, u)) {
+            split in(y, u) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), emptyset, S, u)
+            apply invoke piterate_is_unique_base_step for \lambda^P p, q. segbigcup(p, \psi, q), S, u
+            substitute in(y, u) for u: S
+            apply invoke rightward seg(X, \psi, S) for y
+            apply invoke piterate_one_step for \lambda^P p, q. \psi(q, p), X, y
+          }
+        }
+        connect piterate(\lambda^P p, q. \psi(q, p), suc(emptyset), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), emptyset, S, u))
+      }
+      any n {
+        assume natural(n) {
+          apply invoke suc_of_natural_is_natural for n
+          assume \forall y (piterate(\lambda^P p, q. \psi(q, p), suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), n, S, u))) {
             any y {
-              assume piterate(\lambda^P p, q. in(q, p), suc(suc(n)), X, y) {
-                apply invoke hbigcup(X) for suc(n)
-                some v such \exists v (piterate(bigcup, suc(n), X, v)) {
-                  connect natural(n) \wedge piterate(bigcup, suc(n), X, v)
-                  apply invoke piterate_last_step for bigcup, n, X, v
-                  some u such \exists u (piterate(bigcup, n, X, u) \wedge bigcup(u, v)) {
-                    split piterate(bigcup, n, X, u) \wedge bigcup(u, v)
-                    connect natural(suc(n)) \wedge piterate(\lambda^P p, q. in(q, p), suc(suc(n)), X, y)
-                    apply invoke piterate_last_step for \lambda^P p, q. in(q, p), suc(n), X, y
-                    some x such \exists x (piterate(\lambda^P p, q. in(q, p), suc(n), X, x) \wedge in(y, x)) {
-                      split piterate(\lambda^P p, q. in(q, p), suc(n), X, x) \wedge in(y, x)
-                      apply invoke rightward \forall y (piterate(\lambda^P p, q. in(q, p), suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, n, X, u))) for x
-                      some u' such \exists u' (in(x, u') \wedge piterate(bigcup, n, X, u')) {
-                        split in(x, u') \wedge piterate(bigcup, n, X, u')
-                        assert bigcup_is_functional
-                        connect natural(n) \wedge functional(bigcup) \wedge piterate(bigcup, n, X, u) \wedge piterate(bigcup, n, X, u')
-                        apply invoke piterate_is_unique for bigcup, n, X, u, u'
+              assume piterate(\lambda^P p, q. \psi(q, p), suc(suc(n)), X, y) {
+                apply invoke hsegbigcup(S, \psi) for suc(n)
+                some v such \exists v (piterate(\lambda^P p, q. segbigcup(p, \psi, q), suc(n), S, v)) {
+                  connect natural(n) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), suc(n), S, v)
+                  apply invoke piterate_last_step for \lambda^P p, q. segbigcup(p, \psi, q), n, S, v
+                  some u such \exists u (piterate(\lambda^P p, q. segbigcup(p, \psi, q), n, S, u) \wedge segbigcup(u, \psi, v)) {
+                    split piterate(\lambda^P p, q. segbigcup(p, \psi, q), n, S, u) \wedge segbigcup(u, \psi, v)
+                    connect natural(suc(n)) \wedge piterate(\lambda^P p, q. \psi(q, p), suc(suc(n)), X, y)
+                    apply invoke piterate_last_step for \lambda^P p, q. \psi(q, p), suc(n), X, y
+                    some x such \exists x (piterate(\lambda^P p, q. \psi(q, p), suc(n), X, x) \wedge \psi(y, x)) {
+                      split piterate(\lambda^P p, q. \psi(q, p), suc(n), X, x) \wedge \psi(y, x)
+                      apply invoke rightward \forall y (piterate(\lambda^P p, q. \psi(q, p), suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), n, S, u))) for x
+                      some u' such \exists u' (in(x, u') \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), n, S, u')) {
+                        split in(x, u') \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), n, S, u')
+                        apply segbigcup_is_functional for \psi
+                        connect natural(n) \wedge functional(\lambda^P p, q. segbigcup(p, \psi, q)) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), n, S, u) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), n, S, u')
+                        apply invoke piterate_is_unique for \lambda^P p, q. segbigcup(p, \psi, q), n, S, u, u'
                         substitute in(x, u') for u': u
-                        connect in(y, x) \wedge in(x, u)
-                        lift for x conclude \exists x (in(y, x) \wedge in(x, u))
-                        apply invoke leftward bigcup(u, v) for y
-                        connect in(y, v) \wedge piterate(bigcup, suc(n), X, v)
-                        lift for v conclude \exists u (in(y, u) \wedge piterate(bigcup, suc(n), X, u))
+                        connect \psi(y, x) \wedge in(x, u)
+                        lift for x conclude \exists x (\psi(y, x) \wedge in(x, u))
+                        apply invoke leftward segbigcup(u, \psi, v) for y
+                        connect in(y, v) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), suc(n), S, v)
+                        lift for v conclude \exists u (in(y, u) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), suc(n), S, u))
                       }
                     }
                   }
                 }
               }
-              assume \exists v (in(y, v) \wedge piterate(bigcup, suc(n), X, v)) {
-                some v such \exists v (in(y, v) \wedge piterate(bigcup, suc(n), X, v)) {
-                  split in(y, v) \wedge piterate(bigcup, suc(n), X, v)
-                  connect natural(n) \wedge piterate(bigcup, suc(n), X, v)
-                  apply invoke piterate_last_step for bigcup, n, X, v
-                  some u such \exists u (piterate(bigcup, n, X, u) \wedge bigcup(u, v)) {
-                    split piterate(bigcup, n, X, u) \wedge bigcup(u, v)
-                    apply invoke rightward bigcup(u, v) for y
-                    some x such \exists x (in(y, x) \wedge in(x, u)) {
-                      split in(y, x) \wedge in(x, u)
-                      connect in(x, u) \wedge piterate(bigcup, n, X, u)
-                      lift for u conclude \exists u (in(x, u) \wedge piterate(bigcup, n, X, u))
-                      apply invoke leftward \forall y (piterate(\lambda^P p, q. in(q, p), suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, n, X, u))) for x
-                      connect natural(suc(n)) \wedge piterate(\lambda^P p, q. in(q, p), suc(n), X, x) \wedge in(y, x)
-                      apply invoke piterate_induction_step for \lambda^P p, q. in(q, p), suc(n), X, x, y
+              assume \exists v (in(y, v) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), suc(n), S, v)) {
+                some v such \exists v (in(y, v) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), suc(n), S, v)) {
+                  split in(y, v) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), suc(n), S, v)
+                  connect natural(n) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), suc(n), S, v)
+                  apply invoke piterate_last_step for \lambda^P p, q. segbigcup(p, \psi, q), n, S, v
+                  some u such \exists u (piterate(\lambda^P p, q. segbigcup(p, \psi, q), n, S, u) \wedge segbigcup(u, \psi, v)) {
+                    split piterate(\lambda^P p, q. segbigcup(p, \psi, q), n, S, u) \wedge segbigcup(u, \psi, v)
+                    apply invoke rightward segbigcup(u, \psi, v) for y
+                    some x such \exists x (\psi(y, x) \wedge in(x, u)) {
+                      split \psi(y, x) \wedge in(x, u)
+                      connect in(x, u) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), n, S, u)
+                      lift for u conclude \exists u (in(x, u) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), n, S, u))
+                      apply invoke leftward \forall y (piterate(\lambda^P p, q. \psi(q, p), suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), n, S, u))) for x
+                      connect natural(suc(n)) \wedge piterate(\lambda^P p, q. \psi(q, p), suc(n), X, x) \wedge \psi(y, x)
+                      apply invoke piterate_induction_step for \lambda^P p, q. \psi(q, p), suc(n), X, x, y
                     }
                   }
                 }
               }
-              connect piterate(\lambda^P p, q. in(q, p), suc(suc(n)), X, y) \leftrightarrow \exists v (in(y, v) \wedge piterate(bigcup, suc(n), X, v))
+              connect piterate(\lambda^P p, q. \psi(q, p), suc(suc(n)), X, y) \leftrightarrow \exists v (in(y, v) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), suc(n), S, v))
             }
           }
         }
       }
+      connect \forall y (piterate(\lambda^P p, q. \psi(q, p), suc(emptyset), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), emptyset, S, u))) \wedge \forall n (natural(n) \to (\forall y (piterate(\lambda^P p, q. \psi(q, p), suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q) , n, S, u))) \to \forall y (piterate(\lambda^P p, q. \psi(q, p), suc(suc(n)), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), suc(n), S, u)))))
+      apply invoke natural_induction for \lambda^P n. \forall y (piterate(\lambda^P p, q. \psi(q, p), suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), n, S, u)))
     }
   }
-  connect \forall X (hbigcup(X) \to (\forall y (piterate(\lambda^P p, q. in(q, p), suc(emptyset), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, emptyset, X, u))))) \wedge \forall n (natural(n) \to (\forall X (hbigcup(X) \to \forall y (piterate(\lambda^P p, q. in(q, p), suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, n, X, u)))) \to \forall X (hbigcup(X) \to \forall y (piterate(\lambda^P p, q. in(q, p), suc(suc(n)), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, suc(n), X, u))))))
-  apply invoke natural_induction for \lambda^P n. \forall X (hbigcup(X) \to \forall y (piterate(\lambda^P p, q. in(q, p), suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, n, X, u))))
-  any X, n {
-    assume hbigcup(X) \wedge natural(n) {
-      split hbigcup(X) \wedge natural(n)
-      apply invoke \forall n (natural(n) \to \forall X (hbigcup(X) \to \forall y (piterate(\lambda^P p, q. in(q, p), suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, n, X, u))))) for n
-      apply invoke \forall X (hbigcup(X) \to \forall y (piterate(\lambda^P p, q. in(q, p), suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, n, X, u)))) for X
+  any X, predicate \psi[2], S, n {
+    assume seg(X, \psi, S) \wedge hsegbigcup(S, \psi) \wedge natural(n) {
+      split seg(X, \psi, S) \wedge hsegbigcup(S, \psi) \wedge natural(n)
+      connect seg(X, \psi, S) \wedge hsegbigcup(S, \psi)
+      apply invoke \forall X \forall S \forall^P \psi[2] (seg(X, \psi, S) \wedge hsegbigcup(S, \psi) \to \forall n (natural(n) \to \forall y (piterate(\lambda^P p, q. \psi(q, p), suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), n, S, u))))) for X, S, \psi
+      apply invoke \forall n (natural(n) \to \forall y (piterate(\lambda^P p, q. \psi(q, p), suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), n, S, u)))) for n
     }
   }
 }
 
-theorem hbigcup_implies_tc_owns_iff_rtc_bigcup \forall X (hbigcup(X) \to \forall y (tc(\lambda^P p, q. in(q, p), X, y) \leftrightarrow \exists u (in(y, u) \wedge rtc(bigcup, X, u)))) {
-  any X {
-    assume hbigcup(X) {
+theorem hsegbigcup_implies_tc_iff_rtc_segbigcup \forall X \forall^P \psi[2] \forall S (seg(X, \psi, S) \wedge hsegbigcup(S, \psi) \to \forall y (tc(\lambda^P p, q. \psi(q, p), X, y) \leftrightarrow \exists u (in(y, u) \wedge rtc(\lambda^P p, q. segbigcup(p, \psi, q), S, u)))) {
+  any X, predicate \psi[2], S {
+    assume seg(X, \psi, S) \wedge hsegbigcup(S, \psi) {
+      split seg(X, \psi, S) \wedge hsegbigcup(S, \psi)
       any y {
-        assume tc(\lambda^P p, q. in(q, p), X, y) {
-          some n such tc(\lambda^P p, q. in(q, p), X, y) {
-            split pnatural(n) \wedge piterate(\lambda^P p, q. in(q, p), n, X, y)
+        assume tc(\lambda^P p, q. \psi(q, p), X, y) {
+          some n such tc(\lambda^P p, q. \psi(q, p), X, y) {
+            split pnatural(n) \wedge piterate(\lambda^P p, q. \psi(q, p), n, X, y)
             apply invoke pnatural_is_suc_of_natural_element for n
             some m such \exists m (equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)) {
               split equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)
-              substitute piterate(\lambda^P p, q. in(q, p), n, X, y) for n: suc(m)
-              connect hbigcup(X) \wedge natural(m)
-              apply invoke hbigcup_implies_owns_piterate_iff_bigcup_piterate for X, m
-              apply invoke rightward \forall y (piterate(\lambda^P p, q. in(q, p), suc(m), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, m, X, u))) for y
-              some u such \exists u (in(y, u) \wedge piterate(bigcup, m, X, u)) {
-                split in(y, u) \wedge piterate(bigcup, m, X, u)
-                connect natural(m) \wedge piterate(bigcup, m, X, u)
-                lift for m conclude rtc(bigcup, X, u)
-                connect in(y, u) \wedge rtc(bigcup, X, u)
-                lift for u conclude \exists u (in(y, u) \wedge rtc(bigcup, X, u))
+              substitute piterate(\lambda^P p, q. \psi(q, p), n, X, y) for n: suc(m)
+              connect seg(X, \psi, S) \wedge hsegbigcup(S, \psi) \wedge natural(m)
+              apply invoke hsegbigcup_implies_piterate_iff_segbigcup_piterate for X, \psi, S, m
+              apply invoke rightward \forall y (piterate(\lambda^P p, q. \psi(q, p), suc(m), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), m, S, u))) for y
+              some u such \exists u (in(y, u) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), m, S, u)) {
+                split in(y, u) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), m, S, u)
+                connect natural(m) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), m, S, u)
+                lift for m conclude rtc(\lambda^P p, q. segbigcup(p, \psi, q), S, u)
+                connect in(y, u) \wedge rtc(\lambda^P p, q. segbigcup(p, \psi, q), S, u)
+                lift for u conclude \exists u (in(y, u) \wedge rtc(\lambda^P p, q. segbigcup(p, \psi, q), S, u))
               }
             }
           }
         }
-        assume \exists u (in(y, u) \wedge rtc(bigcup, X, u)) {
-          some u such \exists u (in(y, u) \wedge rtc(bigcup, X, u)) {
-            split in(y, u) \wedge rtc(bigcup, X, u)
-            some m such rtc(bigcup, X, u) {
-              split natural(m) \wedge piterate(bigcup, m, X, u)
-              connect in(y, u) \wedge piterate(bigcup, m, X, u)
-              lift for u conclude \exists u (in(y, u) \wedge piterate(bigcup, m, X, u))
-              connect hbigcup(X) \wedge natural(m)
-              apply invoke hbigcup_implies_owns_piterate_iff_bigcup_piterate for X, m
-              apply invoke leftward \forall y (piterate(\lambda^P p, q. in(q, p), suc(m), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(bigcup, m, X, u))) for y
+        assume \exists u (in(y, u) \wedge rtc(\lambda^P p, q. segbigcup(p, \psi, q), S, u)) {
+          some u such \exists u (in(y, u) \wedge rtc(\lambda^P p, q. segbigcup(p, \psi, q), S, u)) {
+            split in(y, u) \wedge rtc(\lambda^P p, q. segbigcup(p, \psi, q), S, u)
+            some m such rtc(\lambda^P p, q. segbigcup(p, \psi, q), S, u) {
+              split natural(m) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), m, S, u)
+              connect in(y, u) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), m, S, u)
+              lift for u conclude \exists u (in(y, u) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), m, S, u))
+              connect seg(X, \psi, S) \wedge hsegbigcup(S, \psi) \wedge natural(m)
+              apply invoke hsegbigcup_implies_piterate_iff_segbigcup_piterate for X, \psi, S, m
+              apply invoke leftward \forall y (piterate(\lambda^P p, q. \psi(q, p), suc(m), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), m, S, u))) for y
               apply invoke suc_of_natural_is_pnatural for m
-              connect pnatural(suc(m)) \wedge piterate(\lambda^P p, q. in(q, p), suc(m), X, y)
-              lift for suc(m) conclude tc(\lambda^P p, q. in(q, p), X, y)
+              connect pnatural(suc(m)) \wedge piterate(\lambda^P p, q. \psi(q, p), suc(m), X, y)
+              lift for suc(m) conclude tc(\lambda^P p, q. \psi(q, p), X, y)
             }
           }
         }
-        connect tc(\lambda^P p, q. in(q, p), X, y) \leftrightarrow \exists u (in(y, u) \wedge rtc(bigcup, X, u))
+        connect tc(\lambda^P p, q. \psi(q, p), X, y) \leftrightarrow \exists u (in(y, u) \wedge rtc(\lambda^P p, q. segbigcup(p, \psi, q), S, u))
       }
     }
   }
 }
 
-definition predicate tcsetbigcup(X, Y) as \forall y (in(y, Y) \leftrightarrow \exists u (in(y, u) \wedge rtc(bigcup, X, u)))
+definition predicate tcsetbigcup(X, predicate \psi[2], Y) as \exists S (seg(X, \psi, S) \wedge \forall y (in(y, Y) \leftrightarrow \exists u (in(y, u) \wedge rtc(\lambda^P p, q. segbigcup(p, \psi, q), S, u))))
 
-theorem tcsetacc_iff_tcsetbigcup \forall X \forall Y (hbigcup(X) \to (tcsetacc(X, in, Y) \leftrightarrow tcsetbigcup(X, Y))) {
-  any X, Y {
-    assume hbigcup(X) {
-      apply invoke hbigcup_implies_tc_owns_iff_rtc_bigcup for X
-      assume tcsetacc(X, in, Y) {
-        any y {
-          assume in(y, Y) {
-            apply invoke rightward tcsetacc(X, in, Y) for y
-            apply invoke rightward \forall y (tc(\lambda^P p, q. in(q, p), X, y) \leftrightarrow \exists u (in(y, u) \wedge rtc(bigcup, X, u))) for y
+theorem tcsetacc_iff_tcsetbigcup \forall X \forall^P \psi[2] \forall Y (\exists S (seg(X, \psi, S) \wedge hsegbigcup(S, \psi)) \to (tcsetacc(X, \psi, Y) \leftrightarrow tcsetbigcup(X, \psi, Y))) {
+  any X, predicate \psi[2], Y {
+    assume \exists S (seg(X, \psi, S) \wedge hsegbigcup(S, \psi)) {
+      some S such \exists S (seg(X, \psi, S) \wedge hsegbigcup(S, \psi)) {
+        split seg(X, \psi, S) \wedge hsegbigcup(S, \psi)
+        apply invoke hsegbigcup_implies_tc_iff_rtc_segbigcup for X, \psi, S
+        assume tcsetacc(X, \psi, Y) {
+          any y {
+            assume in(y, Y) {
+              apply invoke rightward tcsetacc(X, \psi, Y) for y
+              apply invoke rightward \forall y (tc(\lambda^P p, q. \psi(q, p), X, y) \leftrightarrow \exists u (in(y, u) \wedge rtc(\lambda^P p, q. segbigcup(p, \psi, q), S, u))) for y
+            }
+            assume \exists u (in(y, u) \wedge rtc(\lambda^P p, q. segbigcup(p, \psi, q), S, u)) {
+              apply invoke leftward \forall y (tc(\lambda^P p, q. \psi(q, p), X, y) \leftrightarrow \exists u (in(y, u) \wedge rtc(\lambda^P p, q. segbigcup(p, \psi, q), S, u))) for y
+              apply invoke leftward tcsetacc(X, \psi, Y) for y
+            }
+            connect in(y, Y) \leftrightarrow \exists u (in(y, u) \wedge rtc(\lambda^P p, q. segbigcup(p, \psi, q), S, u))
           }
-          assume \exists u (in(y, u) \wedge rtc(bigcup, X, u)) {
-            apply invoke leftward \forall y (tc(\lambda^P p, q. in(q, p), X, y) \leftrightarrow \exists u (in(y, u) \wedge rtc(bigcup, X, u))) for y
-            apply invoke leftward tcsetacc(X, in, Y) for y
-          }
-          connect in(y, Y) \leftrightarrow \exists u (in(y, u) \wedge rtc(bigcup, X, u))
+          connect seg(X, \psi, S) \wedge \forall y (in(y, Y) \leftrightarrow \exists u (in(y, u) \wedge rtc(\lambda^P p, q. segbigcup(p, \psi, q), S, u)))
+          lift for S conclude tcsetbigcup(X, \psi, Y)
         }
-        fold for tcsetbigcup conclude tcsetbigcup(X, Y)
-      }
-      assume tcsetbigcup(X, Y) {
-        any y {
-          assume in(y, Y) {
-            apply invoke rightward tcsetbigcup(X, Y) for y
-            apply invoke leftward \forall y (tc(\lambda^P p, q. in(q, p), X, y) \leftrightarrow \exists u (in(y, u) \wedge rtc(bigcup, X, u))) for y
+        assume tcsetbigcup(X, \psi, Y) {
+          some S' such tcsetbigcup(X, \psi, Y) {
+            split seg(X, \psi, S') \wedge \forall y (in(y, Y) \leftrightarrow \exists u (in(y, u) \wedge rtc(\lambda^P p, q. segbigcup(p, \psi, q), S', u)))
+            connect seg(X, \psi, S) \wedge seg(X, \psi, S')
+            apply invoke seg_is_unique for X, \psi, S, S'
+            substitute \forall y (in(y, Y) \leftrightarrow \exists u (in(y, u) \wedge rtc(\lambda^P p, q. segbigcup(p, \psi, q), S', u))) for S': S
           }
-          assume tc(\lambda^P p, q. in(q, p), X, y) {
-            apply invoke rightward \forall y (tc(\lambda^P p, q. in(q, p), X, y) \leftrightarrow \exists u (in(y, u) \wedge rtc(bigcup, X, u))) for y
-            apply invoke leftward tcsetbigcup(X, Y) for y
+          any y {
+            assume in(y, Y) {
+              apply invoke rightward \forall y (in(y, Y) \leftrightarrow \exists u (in(y, u) \wedge rtc(\lambda^P p, q. segbigcup(p, \psi, q), S, u))) for y
+              apply invoke leftward \forall y (tc(\lambda^P p, q. \psi(q, p), X, y) \leftrightarrow \exists u (in(y, u) \wedge rtc(\lambda^P p, q. segbigcup(p, \psi, q), S, u))) for y
+            }
+            assume tc(\lambda^P p, q. \psi(q, p), X, y) {
+              apply invoke rightward \forall y (tc(\lambda^P p, q. \psi(q, p), X, y) \leftrightarrow \exists u (in(y, u) \wedge rtc(\lambda^P p, q. segbigcup(p, \psi, q), S, u))) for y
+              apply invoke leftward \forall y (in(y, Y) \leftrightarrow \exists u (in(y, u) \wedge rtc(\lambda^P p, q. segbigcup(p, \psi, q), S, u))) for y
+            }
+            connect in(y, Y) \leftrightarrow tc(\lambda^P p, q. \psi(q, p), X, y)
           }
-          connect in(y, Y) \leftrightarrow tc(\lambda^P p, q. in(q, p), X, y)
+          fold for tcsetacc conclude tcsetacc(X, \psi, Y)
         }
-        fold for tcsetacc conclude tcsetacc(X, in, Y)
+        connect tcsetacc(X, \psi, Y) \leftrightarrow tcsetbigcup(X, \psi, Y)
       }
-      connect tcsetacc(X, in, Y) \leftrightarrow tcsetbigcup(X, Y)
     }
   }
 }
@@ -200,7 +239,21 @@ theorem hf_bigcup_piterate_exists \forall X (hf(X, in) \to \forall n (natural(n)
   }
 }
 
-theorem hf_implies_hbigcup \forall X (hf(X, in) \to hbigcup(X)) {
+theorem segbigcup_in_iff_bigcup \forall X \forall Y (segbigcup(X, in, Y) \leftrightarrow bigcup(X, Y)) {
+  any X, Y {
+    assume segbigcup(X, in, Y) {
+      expand segbigcup(X, in, Y) for segbigcup
+      fold for bigcup conclude bigcup(X, Y)
+    }
+    assume bigcup(X, Y) {
+      expand bigcup(X, Y) for bigcup
+      fold for segbigcup conclude segbigcup(X, in, Y)
+    }
+    connect segbigcup(X, in, Y) \leftrightarrow bigcup(X, Y)
+  }
+}
+
+theorem hf_implies_hsegbigcup_in \forall X (hf(X, in) \to hsegbigcup(X, in)) {
   any X {
     assume hf(X, in) {
       apply invoke hf_bigcup_piterate_exists for X
@@ -209,11 +262,29 @@ theorem hf_implies_hbigcup \forall X (hf(X, in) \to hbigcup(X)) {
           apply invoke \forall n (natural(n) \to \exists u (hf(u, in) \wedge piterate(bigcup, n, X, u))) for n
           some u such \exists u (hf(u, in) \wedge piterate(bigcup, n, X, u)) {
             split hf(u, in) \wedge piterate(bigcup, n, X, u)
-            lift for u conclude \exists u (piterate(bigcup, n, X, u))
+            some g such piterate(bigcup, n, X, u) {
+              split trace(bigcup, n, g) \wedge in(op(emptyset, X), g) \wedge in(op(n, u), g)
+              split trace(bigcup, n, g)
+              any k {
+                assume in(k, n) {
+                  apply invoke \forall k (in(k, n) \to \exists p \exists q (in(op(k, p), g) \wedge in(op(suc(k), q), g) \wedge bigcup(p, q))) for k
+                  some p, q such \exists p \exists q (in(op(k, p), g) \wedge in(op(suc(k), q), g) \wedge bigcup(p, q)) {
+                    split in(op(k, p), g) \wedge in(op(suc(k), q), g) \wedge bigcup(p, q)
+                    apply invoke leftward segbigcup_in_iff_bigcup for p, q
+                    connect in(op(k, p), g) \wedge in(op(suc(k), q), g) \wedge segbigcup(p, in, q)
+                    lift for p, q conclude \exists p \exists q (in(op(k, p), g) \wedge in(op(suc(k), q), g) \wedge segbigcup(p, in, q))
+                  }
+                }
+              }
+              connect trace(\lambda^P p, q. segbigcup(p, in, q), n, g)
+              connect trace(\lambda^P p, q. segbigcup(p, in, q), n, g) \wedge in(op(emptyset, X), g) \wedge in(op(n, u), g)
+              lift for g conclude piterate(\lambda^P p, q. segbigcup(p, in, q), n, X, u)
+            }
+            lift for u conclude \exists u (piterate(\lambda^P p, q. segbigcup(p, in, q), n, X, u))
           }
         }
       }
-      fold for hbigcup conclude hbigcup(X)
+      fold for hsegbigcup conclude hsegbigcup(X, in)
     }
   }
 }
