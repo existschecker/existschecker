@@ -1,34 +1,5 @@
 include "zfc_tcsetacc.proof"
 
-definition predicate segbigcup(X, predicate \psi[2], Y) as \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(y, x)))
-
-theorem segbigcup_is_unique \forall^P \psi[2] \forall x \forall y \forall y' (segbigcup(x, \psi, y) \wedge segbigcup(x, \psi, y') \to equal(y, y')) {
-  any predicate \psi[2], x, y, y' {
-    assume segbigcup(x, \psi, y) \wedge segbigcup(x, \psi, y') {
-      split segbigcup(x, \psi, y) \wedge segbigcup(x, \psi, y')
-      any z {
-        assume in(z, y) {
-          apply invoke rightward segbigcup(x, \psi, y) for z
-          apply invoke leftward segbigcup(x, \psi, y') for z
-        }
-        assume in(z, y') {
-          apply invoke rightward segbigcup(x, \psi, y') for z
-          apply invoke leftward segbigcup(x, \psi, y) for z
-        }
-        connect in(z, y) \leftrightarrow in(z, y')
-      }
-      apply invoke axiom_of_extensionality for y, y'
-    }
-  }
-}
-
-theorem segbigcup_is_functional \forall^P \psi[2] (functional(\lambda^P x, y. segbigcup(x, \psi, y))) {
-  any predicate \psi[2] {
-    apply segbigcup_is_unique for \psi, _, _, _
-    fold for functional conclude functional(\lambda^P x, y. segbigcup(x, \psi, y))
-  }
-}
-
 definition predicate hsegbigcup(X, predicate \psi[2]) as \forall n (natural(n) \to \exists u (piterate(\lambda^P p, q. segbigcup(p, \psi, q), n, X, u)))
 
 theorem hsegbigcup_implies_piterate_iff_segbigcup_piterate \forall X \forall^P \psi[2] \forall S \forall n (seg(X, \psi, S) \wedge hsegbigcup(S, \psi) \wedge natural(n) \to \forall y (piterate(\lambda^P p, q. \psi(q, p), suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), n, S, u)))) {
@@ -236,20 +207,6 @@ theorem hf_bigcup_piterate_exists \forall X (hf(X, in) \to \forall n (natural(n)
       connect total(bigcup, \lambda^P x. hf(x, in)) \wedge hf(X, in)
       apply invoke piterate_exists for bigcup, \lambda^P x. hf(x, in), X
     }
-  }
-}
-
-theorem segbigcup_in_iff_bigcup \forall X \forall Y (segbigcup(X, in, Y) \leftrightarrow bigcup(X, Y)) {
-  any X, Y {
-    assume segbigcup(X, in, Y) {
-      expand segbigcup(X, in, Y) for segbigcup
-      fold for bigcup conclude bigcup(X, Y)
-    }
-    assume bigcup(X, Y) {
-      expand bigcup(X, Y) for bigcup
-      fold for segbigcup conclude segbigcup(X, in, Y)
-    }
-    connect segbigcup(X, in, Y) \leftrightarrow bigcup(X, Y)
   }
 }
 

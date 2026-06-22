@@ -326,105 +326,153 @@ theorem finite_cup_exists_uniquely \forall X \forall Y (finite(X) \wedge finite(
   }
 }
 
-theorem finite_bigcup_exists_uniquely \forall X (finite(X) \wedge \forall x (in(x, X) \to finite(x)) \to \exists! Y (finite(Y) \wedge bigcup(X, Y))) {
-  any X {
-    assume size(X, emptyset) \wedge \forall x (in(x, X) \to finite(x)) {
-      split 1 size(X, emptyset) \wedge \forall x (in(x, X) \to finite(x))
+definition predicate segbigcup(X, predicate \psi[2], Y) as \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(y, x)))
+
+theorem segbigcup_is_unique \forall^P \psi[2] \forall x \forall y \forall y' (segbigcup(x, \psi, y) \wedge segbigcup(x, \psi, y') \to equal(y, y')) {
+  any predicate \psi[2], x, y, y' {
+    assume segbigcup(x, \psi, y) \wedge segbigcup(x, \psi, y') {
+      split segbigcup(x, \psi, y) \wedge segbigcup(x, \psi, y')
+      any z {
+        assume in(z, y) {
+          apply invoke rightward segbigcup(x, \psi, y) for z
+          apply invoke leftward segbigcup(x, \psi, y') for z
+        }
+        assume in(z, y') {
+          apply invoke rightward segbigcup(x, \psi, y') for z
+          apply invoke leftward segbigcup(x, \psi, y) for z
+        }
+        connect in(z, y) \leftrightarrow in(z, y')
+      }
+      apply invoke axiom_of_extensionality for y, y'
+    }
+  }
+}
+
+theorem segbigcup_is_functional \forall^P \psi[2] (functional(\lambda^P x, y. segbigcup(x, \psi, y))) {
+  any predicate \psi[2] {
+    apply segbigcup_is_unique for \psi, _, _, _
+    fold for functional conclude functional(\lambda^P x, y. segbigcup(x, \psi, y))
+  }
+}
+
+theorem segbigcup_in_iff_bigcup \forall X \forall Y (segbigcup(X, in, Y) \leftrightarrow bigcup(X, Y)) {
+  any X, Y {
+    assume segbigcup(X, in, Y) {
+      expand segbigcup(X, in, Y) for segbigcup
+      fold for bigcup conclude bigcup(X, Y)
+    }
+    assume bigcup(X, Y) {
+      expand bigcup(X, Y) for bigcup
+      fold for segbigcup conclude segbigcup(X, in, Y)
+    }
+    connect segbigcup(X, in, Y) \leftrightarrow bigcup(X, Y)
+  }
+}
+
+theorem finite_segbigcup_exists_uniquely \forall X \forall^P \psi[2] (finite(X) \wedge \forall x (in(x, X) \to \exists s (finite(s) \wedge seg(x, \psi, s))) \to \exists! Y (finite(Y) \wedge segbigcup(X, \psi, Y))) {
+  any X, predicate \psi[2] {
+    assume size(X, emptyset) \wedge \forall x (in(x, X) \to \exists s (finite(s) \wedge seg(x, \psi, s))) {
+      split 1 size(X, emptyset) \wedge \forall x (in(x, X) \to \exists s (finite(s) \wedge seg(x, \psi, s)))
       apply invoke size_emptyset_implies_set_emptyset for X
       assert emptyset_is_finite
       any y {
         assume in(y, emptyset) {
           apply emptyset_existence for y
           contradict in(y, emptyset)
-          explode \exists x (in(y, x) \wedge in(x, X))
+          explode \exists x (\psi(y, x) \wedge in(x, X))
         }
-        assume \exists x (in(y, x) \wedge in(x, X)) {
-          some x such \exists x (in(y, x) \wedge in(x, X)) {
-            split 2 in(y, x) \wedge in(x, X)
+        assume \exists x (\psi(y, x) \wedge in(x, X)) {
+          some x such \exists x (\psi(y, x) \wedge in(x, X)) {
+            split 2 \psi(y, x) \wedge in(x, X)
             substitute in(x, X) for X: emptyset
             apply emptyset_existence for x
             contradict in(x, emptyset)
             explode in(y, emptyset)
           }
         }
-        connect in(y, emptyset) \leftrightarrow \exists x (in(y, x) \wedge in(x, X))
+        connect in(y, emptyset) \leftrightarrow \exists x (\psi(y, x) \wedge in(x, X))
       }
-      fold for bigcup conclude bigcup(X, emptyset)
-      connect finite(emptyset) \wedge bigcup(X, emptyset)
-      lift for emptyset conclude \exists Y (finite(Y) \wedge bigcup(X, Y))
+      fold for segbigcup conclude segbigcup(X, \psi, emptyset)
+      connect finite(emptyset) \wedge segbigcup(X, \psi, emptyset)
+      lift for emptyset conclude \exists Y (finite(Y) \wedge segbigcup(X, \psi, Y))
     }
   }
   any n {
     assume natural(n) {
-      assume \forall X (size(X, n) \wedge \forall x (in(x, X) \to finite(x)) \to \exists Y (finite(Y) \wedge bigcup(X, Y))) {
-        any X {
-          assume size(X, suc(n)) \wedge \forall x (in(x, X) \to finite(x)) {
-            split size(X, suc(n)) \wedge \forall x (in(x, X) \to finite(x))
+      assume \forall X \forall^P \psi[2] (size(X, n) \wedge \forall x (in(x, X) \to \exists s (finite(s) \wedge seg(x, \psi, s))) \to \exists Y (finite(Y) \wedge segbigcup(X, \psi, Y))) {
+        any X, predicate \psi[2] {
+          assume size(X, suc(n)) \wedge \forall x (in(x, X) \to \exists s (finite(s) \wedge seg(x, \psi, s))) {
+            split size(X, suc(n)) \wedge \forall x (in(x, X) \to \exists s (finite(s) \wedge seg(x, \psi, s)))
             apply invoke size_suc_decomposition for X, n
             some X', x such \exists X' \exists x (size(X', n) \wedge notin(x, X') \wedge equal(X, adj(X', x))) {
               split size(X', n) \wedge notin(x, X') \wedge equal(X, adj(X', x))
               apply adj_cor3 for X', x
               substitute in(x, adj(X', x)) for adj(X', x): X
-              apply invoke \forall x (in(x, X) \to finite(x)) for x
-              any x' {
-                assume in(x', X') {
-                  apply invoke adj_cor1 for X', x, x'
-                  substitute in(x', adj(X', x)) for adj(X', x): X
-                  apply invoke \forall x (in(x, X) \to finite(x)) for x'
+              apply invoke \forall x (in(x, X) \to \exists s (finite(s) \wedge seg(x, \psi, s))) for x
+              some s such \exists s (finite(s) \wedge seg(x, \psi, s)) {
+                split finite(s) \wedge seg(x, \psi, s)
+                any x' {
+                  assume in(x', X') {
+                    apply invoke adj_cor1 for X', x, x'
+                    substitute in(x', adj(X', x)) for adj(X', x): X
+                    apply invoke \forall x (in(x, X) \to \exists s (finite(s) \wedge seg(x, \psi, s))) for x'
+                  }
                 }
-              }
-              connect size(X', n) \wedge \forall x' (in(x', X') \to finite(x'))
-              apply invoke \forall X (size(X, n) \wedge \forall x (in(x, X) \to finite(x)) \to \exists Y (finite(Y) \wedge bigcup(X, Y))) for X'
-              some Y such \exists Y (finite(Y) \wedge bigcup(X', Y)) {
-                split finite(Y) \wedge bigcup(X', Y)
-                connect finite(Y) \wedge finite(x)
-                apply invoke finite_cup_exists_uniquely for Y, x
-                some Z such \exists! Z (finite(Z) \wedge cup(Y, x, Z)) {
-                  split finite(Z) \wedge cup(Y, x, Z)
-                  any y {
-                    assume in(y, Z) {
-                      apply invoke rightward cup(Y, x, Z) for y
-                      divide in(y, Y) \vee in(y, x)
-                        case in(y, Y) {
-                          apply invoke rightward bigcup(X', Y) for y
-                          some x' such \exists x (in(y, x) \wedge in(x, X')) {
-                            split in(y, x') \wedge in(x', X')
-                            apply invoke adj_cor1 for X', x, x'
-                            substitute in(x', adj(X', x)) for adj(X', x): X
-                            connect in(y, x') \wedge in(x', X)
-                            lift for x' conclude \exists x (in(y, x) \wedge in(x, X))
+                connect size(X', n) \wedge \forall x' (in(x', X') \to \exists s (finite(s) \wedge seg(x', \psi, s)))
+                apply invoke \forall X \forall^P \psi[2] (size(X, n) \wedge \forall x (in(x, X) \to \exists s (finite(s) \wedge seg(x, \psi, s))) \to \exists Y (finite(Y) \wedge segbigcup(X, \psi, Y))) for X', \psi
+                some Y such \exists Y (finite(Y) \wedge segbigcup(X', \psi, Y)) {
+                  split finite(Y) \wedge segbigcup(X', \psi, Y)
+                  connect finite(Y) \wedge finite(s)
+                  apply invoke finite_cup_exists_uniquely for Y, s
+                  some Z such \exists! Z (finite(Z) \wedge cup(Y, s, Z)) {
+                    split finite(Z) \wedge cup(Y, s, Z)
+                    any y {
+                      assume in(y, Z) {
+                        apply invoke rightward cup(Y, s, Z) for y
+                        divide in(y, Y) \vee in(y, s)
+                          case in(y, Y) {
+                            apply invoke rightward segbigcup(X', \psi, Y) for y
+                            some x' such \exists x (\psi(y, x) \wedge in(x, X')) {
+                              split \psi(y, x') \wedge in(x', X')
+                              apply invoke adj_cor1 for X', x, x'
+                              substitute in(x', adj(X', x)) for adj(X', x): X
+                              connect \psi(y, x') \wedge in(x', X)
+                              lift for x' conclude \exists x (\psi(y, x) \wedge in(x, X))
+                            }
                           }
-                        }
-                        case in(y, x) {
-                          connect in(y, x) \wedge in(x, X)
-                          lift for x conclude \exists x (in(y, x) \wedge in(x, X))
-                        }
-                    }
-                    assume \exists x (in(y, x) \wedge in(x, X)) {
-                      some x' such \exists x (in(y, x) \wedge in(x, X)) {
-                        split in(y, x') \wedge in(x', X)
-                        substitute in(x', X) for X: adj(X', x)
-                        apply invoke rightward adj_existence for X', x, x'
-                        divide in(x', X') \vee equal(x', x)
-                          case in(x', X') {
-                            connect in(y, x') \wedge in(x', X')
-                            lift for x' conclude \exists x (in(y, x) \wedge in(x, X'))
-                            apply invoke leftward bigcup(X', Y) for y
-                            pad in(y, Y) conclude in(y, Y) \vee in(y, x)
-                            apply invoke leftward cup(Y, x, Z) for y
-                          }
-                          case equal(x', x) {
-                            substitute in(y, x') for x': x
-                            pad in(y, x) conclude in(y, Y) \vee in(y, x)
-                            apply invoke leftward cup(Y, x, Z) for y
+                          case in(y, s) {
+                            apply invoke rightward seg(x, \psi, s) for y
+                            connect \psi(y, x) \wedge in(x, X)
+                            lift for x conclude \exists x (\psi(y, x) \wedge in(x, X))
                           }
                       }
+                      assume \exists x (\psi(y, x) \wedge in(x, X)) {
+                        some x' such \exists x (\psi(y, x) \wedge in(x, X)) {
+                          split \psi(y, x') \wedge in(x', X)
+                          substitute in(x', X) for X: adj(X', x)
+                          apply invoke rightward adj_existence for X', x, x'
+                          divide in(x', X') \vee equal(x', x)
+                            case in(x', X') {
+                              connect \psi(y, x') \wedge in(x', X')
+                              lift for x' conclude \exists x (\psi(y, x) \wedge in(x, X'))
+                              apply invoke leftward segbigcup(X', \psi, Y) for y
+                              pad in(y, Y) conclude in(y, Y) \vee in(y, s)
+                              apply invoke leftward cup(Y, s, Z) for y
+                            }
+                            case equal(x', x) {
+                              substitute \psi(y, x') for x': x
+                              apply invoke leftward seg(x, \psi, s) for y
+                              pad in(y, s) conclude in(y, Y) \vee in(y, s)
+                              apply invoke leftward cup(Y, s, Z) for y
+                            }
+                        }
+                      }
+                      connect in(y, Z) \leftrightarrow \exists x' (\psi(y, x') \wedge in(x', X))
                     }
-                    connect in(y, Z) \leftrightarrow \exists x' (in(y, x') \wedge in(x', X))
+                    fold for segbigcup conclude segbigcup(X, \psi, Z)
+                    connect finite(Z) \wedge segbigcup(X, \psi, Z)
+                    lift for Z conclude \exists Y' (finite(Y') \wedge segbigcup(X, \psi, Y'))
                   }
-                  fold for bigcup conclude bigcup(X, Z)
-                  connect finite(Z) \wedge bigcup(X, Z)
-                  lift for Z conclude \exists Y' (finite(Y') \wedge bigcup(X, Y'))
                 }
               }
             }
@@ -433,28 +481,60 @@ theorem finite_bigcup_exists_uniquely \forall X (finite(X) \wedge \forall x (in(
       }
     }
   }
-  connect \forall X (size(X, emptyset) \wedge \forall x (in(x, X) \to finite(x)) \to \exists Y (finite(Y) \wedge bigcup(X, Y))) \wedge \forall n (natural(n) \to (\forall X (size(X, n) \wedge \forall x (in(x, X) \to finite(x)) \to \exists Y (finite(Y) \wedge bigcup(X, Y))) \to \forall X (size(X, suc(n) ) \wedge \forall x (in(x, X) \to finite(x)) \to \exists Y (finite(Y) \wedge bigcup(X, Y)))))
-  apply invoke natural_induction for \lambda^P n. \forall X (size(X, n) \wedge \forall x (in(x, X) \to finite(x)) \to \exists Y (finite(Y) \wedge bigcup(X, Y)))
+  connect \forall X \forall^P \psi[2] (size(X, emptyset) \wedge \forall x (in(x, X) \to \exists s (finite(s) \wedge seg(x, \psi, s))) \to \exists Y (finite(Y) \wedge segbigcup(X, \psi, Y))) \wedge \forall n (natural(n) \to (\forall X \forall^P \psi[2] (size(X, n) \wedge \forall x (in(x, X) \to \exists s (finite(s) \wedge seg(x, \psi, s))) \to \exists Y (finite(Y) \wedge segbigcup(X, \psi, Y))) \to \forall X \forall^P \psi[2] (size(X, suc(n) ) \wedge \forall x (in(x, X) \to \exists s (finite(s) \wedge seg(x, \psi, s))) \to \exists Y (finite(Y) \wedge segbigcup(X, \psi, Y)))))
+  apply invoke natural_induction for \lambda^P n. \forall X \forall^P \psi[2] (size(X, n) \wedge \forall x (in(x, X) \to \exists s (finite(s) \wedge seg(x, \psi, s))) \to \exists Y (finite(Y) \wedge segbigcup(X, \psi, Y)))
+  any X, predicate \psi[2] {
+    assume finite(X) \wedge \forall x (in(x, X) \to \exists s (finite(s) \wedge seg(x, \psi, s))) {
+      split finite(X) \wedge \forall x (in(x, X) \to \exists s (finite(s) \wedge seg(x, \psi, s)))
+      some n such finite(X) {
+        split 1 size(X, n)
+        apply invoke \forall n (natural(n) \to \forall X \forall^P \psi[2] (size(X, n) \wedge \forall x (in(x, X) \to \exists s (finite(s) \wedge seg(x, \psi, s))) \to \exists Y (finite(Y) \wedge segbigcup(X, \psi, Y)))) for n
+        connect size(X, n) \wedge \forall x (in(x, X) \to \exists s (finite(s) \wedge seg(x, \psi, s)))
+        apply invoke \forall X \forall^P \psi[2] (size(X, n) \wedge \forall x (in(x, X) \to \exists s (finite(s) \wedge seg(x, \psi, s))) \to \exists Y (finite(Y) \wedge segbigcup(X, \psi, Y))) for X, \psi
+        some Y such \exists Y (finite(Y) \wedge segbigcup(X, \psi, Y)) {
+          split finite(Y) \wedge segbigcup(X, \psi, Y)
+          any Y' {
+            assume finite(Y') \wedge segbigcup(X, \psi, Y') {
+              split 2 finite(Y') \wedge segbigcup(X, \psi, Y')
+              connect segbigcup(X, \psi, Y) \wedge segbigcup(X, \psi, Y')
+              apply invoke segbigcup_is_unique for \psi, X, Y, Y'
+            }
+          }
+          connect finite(Y) \wedge segbigcup(X, \psi, Y) \wedge \forall Y' (finite(Y') \wedge segbigcup(X, \psi, Y') \to equal(Y', Y))
+          characterize for Y conclude \exists! Y (finite(Y) \wedge segbigcup(X, \psi, Y))
+        }
+      }
+    }
+  }
+}
+
+theorem finite_bigcup_exists_uniquely \forall X (finite(X) \wedge \forall x (in(x, X) \to finite(x)) \to \exists! Y (finite(Y) \wedge bigcup(X, Y))) {
   any X {
     assume finite(X) \wedge \forall x (in(x, X) \to finite(x)) {
       split finite(X) \wedge \forall x (in(x, X) \to finite(x))
-      some n such finite(X) {
-        split 1 size(X, n)
-        apply invoke \forall n (natural(n) \to \forall X (size(X, n) \wedge \forall x (in(x, X) \to finite(x)) \to \exists Y (finite(Y) \wedge bigcup(X, Y)))) for n
-        connect size(X, n) \wedge \forall x (in(x, X) \to finite(x))
-        apply invoke \forall X (size(X, n) \wedge \forall x (in(x, X) \to finite(x)) \to \exists Y (finite(Y) \wedge bigcup(X, Y))) for X
-        some Y such \exists Y (finite(Y) \wedge bigcup(X, Y)) {
-          split finite(Y) \wedge bigcup(X, Y)
-          any Y' {
-            assume finite(Y') \wedge bigcup(X, Y') {
-              split 2 finite(Y') \wedge bigcup(X, Y')
-              connect bigcup(X, Y) \wedge bigcup(X, Y')
-              apply invoke bigcup_is_unique for X, Y, Y'
-            }
-          }
-          connect finite(Y) \wedge bigcup(X, Y) \wedge \forall Y' (finite(Y') \wedge bigcup(X, Y') \to equal(Y', Y))
-          characterize for Y conclude \exists! Y (finite(Y) \wedge bigcup(X, Y))
+      any x {
+        assume in(x, X) {
+          apply invoke \forall x (in(x, X) \to finite(x)) for x
+          apply seg_for_in_is_iself for x
+          connect finite(x) \wedge seg(x, in, x)
+          lift for x conclude \exists s (finite(s) \wedge seg(x, in, s))
         }
+      }
+      connect finite(X) \wedge \forall x (in(x, X) \to \exists s (finite(s) \wedge seg(x, in, s)))
+      apply invoke finite_segbigcup_exists_uniquely for X, in
+      some Y such \exists! Y (finite(Y) \wedge segbigcup(X, in, Y)) {
+        split finite(Y) \wedge segbigcup(X, in, Y)
+        apply invoke rightward segbigcup_in_iff_bigcup for X, Y
+        connect finite(Y) \wedge bigcup(X, Y)
+        any Y' {
+          assume finite(Y') \wedge bigcup(X, Y') {
+            split 2 finite(Y') \wedge bigcup(X, Y')
+            connect bigcup(X, Y) \wedge bigcup(X, Y')
+            apply invoke bigcup_is_unique for X, Y, Y'
+          }
+        }
+        connect finite(Y) \wedge bigcup(X, Y) \wedge \forall Y' (finite(Y') \wedge bigcup(X, Y') \to equal(Y', Y))
+        characterize for Y conclude \exists! Y (finite(Y) \wedge bigcup(X, Y))
       }
     }
   }
