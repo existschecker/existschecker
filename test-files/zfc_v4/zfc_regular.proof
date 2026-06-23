@@ -1,4 +1,4 @@
-include "zfc_tcm.proof"
+include "zfc_tcset_in.proof"
 
 definition predicate hirrefrel(x, predicate \psi[2]) as \exists t (irrefrel(t, \psi) \wedge tcset(x, \psi, t))
 
