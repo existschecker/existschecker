@@ -5,8 +5,7 @@ theorem hirrefrel_is_irrefrel \forall x (hirrefrel(x, in) \to irrefrel(x, in)) {
     assume hirrefrel(x, in) {
       some y such hirrefrel(x, in) {
         split irrefrel(y, in) \wedge tcset(x, in, y)
-        fold for tcm conclude tcm(x, y)
-        apply invoke tcm_implies_subset for x, y
+        apply invoke tcset_in_implies_subset for x, y
         connect irrefrel(y, in) \wedge subset(x, y)
         apply invoke subset_of_irrefrel_is_irrefrel for in, y, x
       }
@@ -33,8 +32,7 @@ theorem hwellfounded_is_wellfounded \forall x (hwellfounded(x, in) \to wellfound
     assume hwellfounded(x, in) {
       some y such hwellfounded(x, in) {
         split wellfounded(y, in) \wedge tcset(x, in, y)
-        fold for tcm conclude tcm(x, y)
-        apply invoke tcm_implies_subset for x, y
+        apply invoke tcset_in_implies_subset for x, y
         connect wellfounded(y, in) \wedge subset(x, y)
         apply invoke subset_of_wellfounded_is_wellfounded for in, y, x
       }
@@ -108,8 +106,7 @@ theorem regular_satisfies_axiom_of_extensionality \forall x \forall y (regular(x
 }
 
 theorem emptyset_is_regular regular(emptyset, in) {
-  assert emptyset_is_tcm_of_emptyset
-  expand tcm(emptyset, emptyset) for tcm
+  assert emptyset_is_tcset_in_of_emptyset
   assert emptyset_is_irrefrel
   connect irrefrel(emptyset, in) \wedge tcset(emptyset, in, emptyset)
   lift for emptyset conclude hirrefrel(emptyset, in)
@@ -192,7 +189,6 @@ theorem regular_satisfies_axiom_of_separation \forall^P \phi[1] \forall x (regul
               }
             }
             connect tcset(y, in, q)
-            fold for tcm conclude tcm(y, q)
             any z {
               assume in(z, q) {
                 apply invoke rightward \forall z (in(z, q) \leftrightarrow in(z, p) \wedge \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s))) for z
@@ -263,7 +259,7 @@ theorem regular_satisfies_axiom_of_foundation \forall x (regular(x, in) \to (neq
   }
 }
 
-theorem regular_implies_tcm_is_regular \forall x \forall t (regular(x, in) \wedge tcset(x, in, t) \to regular(t, in)) {
+theorem regular_implies_tcset_in_is_regular \forall x \forall t (regular(x, in) \wedge tcset(x, in, t) \to regular(t, in)) {
   any x, t {
     assume regular(x, in) \wedge tcset(x, in, t) {
       split regular(x, in) \wedge tcset(x, in, t)

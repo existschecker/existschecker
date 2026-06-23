@@ -5,8 +5,7 @@ theorem hfcore_is_finite \forall x (hfcore(x, in) \to finite(x)) {
     assume hfcore(x, in) {
       some t such hfcore(x, in) {
         split finite(t) \wedge tcset(x, in, t)
-        fold for tcm conclude tcm(x, t)
-        apply invoke tcm_implies_subset for x, t
+        apply invoke tcset_in_implies_subset for x, t
         connect finite(t) \wedge subset(x, t)
         apply invoke subset_of_finite_is_finite for t, x
       }
@@ -79,8 +78,7 @@ theorem hf_satisfies_axiom_of_extensionality \forall x \forall y (hf(x, in) \wed
 
 theorem emptyset_is_hf hf(emptyset, in) {
   assert emptyset_is_regular
-  assert emptyset_is_tcm_of_emptyset
-  expand tcm(emptyset, emptyset) for tcm
+  assert emptyset_is_tcset_in_of_emptyset
   assert emptyset_is_finite
   connect finite(emptyset) \wedge tcset(emptyset, in, emptyset)
   lift for emptyset conclude hfcore(emptyset, in)
@@ -448,21 +446,19 @@ theorem hf_satisfies_axiom_of_foundation \forall x (hf(x, in) \to (neq(x, emptys
   }
 }
 
-theorem hf_implies_tcm_is_hf \forall x \forall y (hf(x, in) \wedge tcm(x, y) \to hf(y, in)) {
+theorem hf_implies_tcset_in_is_hf \forall x \forall y (hf(x, in) \wedge tcset(x, in, y) \to hf(y, in)) {
   any x, y {
-    assume hf(x, in) \wedge tcm(x, y) {
-      split hf(x, in) \wedge tcm(x, y)
+    assume hf(x, in) \wedge tcset(x, in, y) {
+      split hf(x, in) \wedge tcset(x, in, y)
       apply invoke rightward hf_iff_existence_of_irrefrel_wellfounded_finite_tcset for x, in
       some y' such \exists y' (irrefrel(y', in) \wedge wellfounded(y', in) \wedge finite(y') \wedge tcset(x, in, y')) {
         split irrefrel(y', in) \wedge wellfounded(y', in) \wedge finite(y') \wedge tcset(x, in, y')
-        fold for tcm conclude tcm(x, y')
-        connect tcm(x, y) \wedge tcm(x, y')
-        apply invoke tcm_is_unique for x, y, y'
+        connect tcset(x, in, y) \wedge tcset(x, in, y')
+        apply invoke tcset_is_unique for x, in, y, y'
         substitute irrefrel(y', in) for y': y
         substitute wellfounded(y', in) for y': y
         substitute finite(y') for y': y
-        apply invoke tcm_is_tcm_of_itself for x, y
-        expand tcm(y, y) for tcm
+        apply invoke tcset_in_is_tcset_in_of_itself for x, y
         connect irrefrel(y, in) \wedge wellfounded(y, in) \wedge finite(y) \wedge tcset(y, in, y)
         lift for y conclude \exists y (irrefrel(y, in) \wedge wellfounded(y, in) \wedge finite(y) \wedge tcset(y, in, y))
         apply invoke leftward hf_iff_existence_of_irrefrel_wellfounded_finite_tcset for y, in

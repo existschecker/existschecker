@@ -1,36 +1,26 @@
 include "zfc_powerset.proof"
 
-definition predicate tcm(X, Y) as tcset(X, in, Y)
-
-theorem tcm_is_unique \forall X \forall Y \forall Y' (tcm(X, Y) \wedge tcm(X, Y') \to equal(Y, Y')) {
-  any X, Y, Y' {
-    assume tcm(X, Y) \wedge tcm(X, Y') {
-      expand tcm(X, Y) \wedge tcm(X, Y') for tcm
-      apply invoke tcset_is_unique for X, in, Y, Y'
-    }
+theorem tcset_is_functional \forall^P \psi[2] (functional(\lambda^P x, t. tcset(x, \psi, t))) {
+  any predicate \psi[2] {
+    apply tcset_is_unique for _, \psi, _, _
+    fold for functional conclude functional(\lambda^P x, t. tcset(x, \psi, t))
   }
 }
 
-theorem tcm_is_functional functional(tcm) {
-  assert tcm_is_unique
-  fold for functional conclude functional(tcm)
-}
-
-theorem tcm_implies_subset \forall X \forall Y (tcm(X, Y) \to subset(X, Y)) {
+theorem tcset_in_implies_subset \forall X \forall Y (tcset(X, in, Y) \to subset(X, Y)) {
   any x, t {
-    assume tcm(x, t) {
-      expand tcm(x, t) for tcm
+    assume tcset(x, in, t) {
       split 2 tcset(x, in, t)
       fold for subset conclude subset(x, t)
     }
   }
 }
 
-theorem tcm_irrefrel_implies_not_contain_itself \forall X \forall Y (tcm(X, Y) \wedge irrefrel(Y, in) \to notin(X, X)) {
+theorem tcset_in_irrefrel_implies_not_contain_itself \forall X \forall Y (tcset(X, in, Y) \wedge irrefrel(Y, in) \to notin(X, X)) {
   any X, Y {
-    assume tcm(X, Y) \wedge irrefrel(Y, in) {
-      split tcm(X, Y) \wedge irrefrel(Y, in)
-      apply invoke tcm_implies_subset for X, Y
+    assume tcset(X, in, Y) \wedge irrefrel(Y, in) {
+      split tcset(X, in, Y) \wedge irrefrel(Y, in)
+      apply invoke tcset_in_implies_subset for X, Y
       deny in(X, X) {
         apply invoke subset(X, Y) for X
         apply invoke irrefrel(Y, in) for X
@@ -40,10 +30,9 @@ theorem tcm_irrefrel_implies_not_contain_itself \forall X \forall Y (tcm(X, Y) \
   }
 }
 
-theorem tcm_is_trans \forall X \forall Y (tcm(X, Y) \to trans(Y)) {
+theorem tcset_in_is_trans \forall X \forall Y (tcset(X, in, Y) \to trans(Y)) {
   any X, Y {
-    assume tcm(X, Y) {
-      expand tcm(X, Y) for tcm
+    assume tcset(X, in, Y) {
       split 1 tcset(X, in, Y)
       apply invoke leftward trans_iff_closed_in for Y
     }
@@ -64,7 +53,7 @@ theorem emptyset_is_closed \forall^P \psi[2] (closed(emptyset, \psi)) {
   }
 }
 
-theorem emptyset_is_tcm_of_emptyset tcm(emptyset, emptyset) {
+theorem emptyset_is_tcset_in_of_emptyset tcset(emptyset, in, emptyset) {
   apply emptyset_is_closed for in
   any y {
     assume in(y, emptyset) {}
@@ -75,27 +64,22 @@ theorem emptyset_is_tcm_of_emptyset tcm(emptyset, emptyset) {
     }
   }
   connect tcset(emptyset, in, emptyset)
-  fold for tcm conclude tcm(emptyset, emptyset)
 }
 
-theorem tcm_is_tcm_of_itself \forall X \forall Y (tcm(X, Y) \to tcm(Y, Y)) {
+theorem tcset_in_is_tcset_in_of_itself \forall X \forall Y (tcset(X, in, Y) \to tcset(Y, in, Y)) {
   any X, Y {
-    assume tcm(X, Y) {
-      expand tcm(X, Y) for tcm
-      split tcset(X, in, Y)
+    assume tcset(X, in, Y) {
+      split 1 tcset(X, in, Y)
       apply invoke rightward closed_in_iff_tcset_of_itself for Y
-      fold for tcm conclude tcm(Y, Y)
     }
   }
 }
 
-theorem tcm_adjunction \forall x \forall y \forall p \forall q \forall r (tcm(x, p) \wedge tcm(y, q) \wedge cup(p, q, r) \to tcm(adj(x, y), adj(r, y))) {
+theorem tcset_in_adjunction \forall x \forall y \forall p \forall q \forall r (tcset(x, in, p) \wedge tcset(y, in, q) \wedge cup(p, q, r) \to tcset(adj(x, y), in, adj(r, y))) {
   any x, y, p, q, r {
-    assume tcm(x, p) \wedge tcm(y, q) \wedge cup(p, q, r) {
-      split tcm(x, p) \wedge tcm(y, q) \wedge cup(p, q, r)
-      expand tcm(x, p) for tcm
+    assume tcset(x, in, p) \wedge tcset(y, in, q) \wedge cup(p, q, r) {
+      split tcset(x, in, p) \wedge tcset(y, in, q) \wedge cup(p, q, r)
       split tcset(x, in, p)
-      expand tcm(y, q) for tcm
       split tcset(y, in, q)
       any z, w {
         assume in(z, adj(r, y)) \wedge in(w, z) {
@@ -120,7 +104,7 @@ theorem tcm_adjunction \forall x \forall y \forall p \forall q \forall r (tcm(x,
             }
             case equal(z, y) {
               substitute in(w, z) for z: y
-              apply invoke tcm_implies_subset for y, q
+              apply invoke tcset_in_implies_subset for y, q
               apply invoke subset(y, q) for w
               pad in(w, q) conclude in(w, p) \vee in(w, q)
               apply invoke leftward cup(p, q, r) for w
@@ -135,7 +119,7 @@ theorem tcm_adjunction \forall x \forall y \forall p \forall q \forall r (tcm(x,
           apply invoke rightward adj_existence for x, y, z
           divide in(z, x) \vee equal(z, y)
             case in(z, x) {
-              apply invoke tcm_implies_subset for x, p
+              apply invoke tcset_in_implies_subset for x, p
               apply invoke subset(x, p) for z
               pad in(z, p) conclude in(z, p) \vee in(z, q)
               apply invoke leftward cup(p, q, r) for z
@@ -190,7 +174,6 @@ theorem tcm_adjunction \forall x \forall y \forall p \forall q \forall r (tcm(x,
         }
       }
       connect tcset(adj(x, y), in, adj(r, y))
-      fold for tcm conclude tcm(adj(x, y), adj(r, y))
     }
   }
 }
