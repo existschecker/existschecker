@@ -30,26 +30,11 @@ theorem tcset_in_irrefrel_implies_not_contain_itself \forall X \forall Y (tcset(
   }
 }
 
-theorem tcset_in_is_trans \forall X \forall Y (tcset(X, in, Y) \to trans(Y)) {
+theorem tcset_in_is_closed_in \forall X \forall Y (tcset(X, in, Y) \to closed(Y, in)) {
   any X, Y {
     assume tcset(X, in, Y) {
       split 1 tcset(X, in, Y)
-      apply invoke leftward trans_iff_closed_in for Y
     }
-  }
-}
-
-theorem emptyset_is_closed \forall^P \psi[2] (closed(emptyset, \psi)) {
-  any predicate \psi[2] {
-    any x, y {
-      assume in(x, emptyset) \wedge \psi(y, x) {
-        split 1 in(x, emptyset) \wedge \psi(y, x)
-        apply emptyset_existence for x
-        contradict in(x, emptyset)
-        explode in(y, emptyset)
-      }
-    }
-    fold for closed conclude closed(emptyset, \psi)
   }
 }
 

@@ -92,7 +92,7 @@ theorem element_of_natural_is_natural \forall n \forall m (in(m, n) \wedge natur
                   connect in(l, m) \wedge in(m, n)
                   apply invoke natural_is_ordinal for n
                   split 1 ordinal(n)
-                  apply invoke trans(n) for m, l
+                  apply invoke closed(n, in) for m, l
                   apply invoke \forall m (in(m, n) \to equal(m, emptyset) \vee sucordinal(m)) for l
                 }
               }

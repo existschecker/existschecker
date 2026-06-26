@@ -42,10 +42,10 @@ theorem subset_of_cup_right \forall X \forall Y \forall Z (cup(X, Y, Z) \to subs
   }
 }
 
-theorem cup_of_trans_is_trans \forall X \forall Y \forall Z (trans(X) \wedge trans(Y) \wedge cup(X, Y, Z) \to trans(Z)) {
+theorem cup_of_closed_is_closed \forall X \forall Y \forall Z (closed(X, in) \wedge closed(Y, in) \wedge cup(X, Y, Z) \to closed(Z, in)) {
   any X, Y, Z {
-    assume trans(X) \wedge trans(Y) \wedge cup(X, Y, Z) {
-      split trans(X) \wedge trans(Y) \wedge cup(X, Y, Z)
+    assume closed(X, in) \wedge closed(Y, in) \wedge cup(X, Y, Z) {
+      split closed(X, in) \wedge closed(Y, in) \wedge cup(X, Y, Z)
       any p, q {
         assume in(p, Z) \wedge in(q, p) {
           split in(p, Z) \wedge in(q, p)
@@ -53,18 +53,18 @@ theorem cup_of_trans_is_trans \forall X \forall Y \forall Z (trans(X) \wedge tra
           divide in(p, X) \vee in(p, Y)
             case in(p, X) {
               connect in(p, X) \wedge in(q, p)
-              apply invoke trans(X) for p, q
+              apply invoke closed(X, in) for p, q
               pad in(q, X) conclude in(q, X) \vee in(q, Y)
             }
             case in(p, Y) {
               connect in(p, Y) \wedge in(q, p)
-              apply invoke trans(Y) for p, q
+              apply invoke closed(Y, in) for p, q
               pad in(q, Y) conclude in(q, X) \vee in(q, Y)
             }
           apply invoke leftward cup(X, Y, Z) for q
         }
       }
-      fold for trans conclude trans(Z)
+      fold for closed conclude closed(Z, in)
     }
   }
 }
@@ -115,10 +115,10 @@ theorem subset_of_cup_disjoint_left_is_subset_of_right \forall X \forall Y \fora
   }
 }
 
-theorem cup_of_trans_wellfounded_is_wellfounded_left \forall X \forall Y \forall Z (trans(X) \wedge wellfounded(X, in) \wedge wellfounded(Y, in) \wedge cup(X, Y, Z) \to wellfounded(Z, in)) {
+theorem cup_of_closed_wellfounded_is_wellfounded_left \forall X \forall Y \forall Z (closed(X, in) \wedge wellfounded(X, in) \wedge wellfounded(Y, in) \wedge cup(X, Y, Z) \to wellfounded(Z, in)) {
   any X, Y, Z {
-    assume trans(X) \wedge wellfounded(X, in) \wedge wellfounded(Y, in) \wedge cup(X, Y, Z) {
-      split trans(X) \wedge wellfounded(X, in) \wedge wellfounded(Y, in) \wedge cup(X, Y, Z)
+    assume closed(X, in) \wedge wellfounded(X, in) \wedge wellfounded(Y, in) \wedge cup(X, Y, Z) {
+      split closed(X, in) \wedge wellfounded(X, in) \wedge wellfounded(Y, in) \wedge cup(X, Y, Z)
       any A {
         assume subset(A, Z) \wedge neq(A, emptyset) {
           split subset(A, Z) \wedge neq(A, emptyset)
@@ -143,7 +143,7 @@ theorem cup_of_trans_wellfounded_is_wellfounded_left \forall X \forall Y \forall
                     split in(x, A) \wedge neq(x, a)
                     deny in(x, a) {
                       connect in(a, X) \wedge in(x, a)
-                      apply invoke trans(X) for a, x
+                      apply invoke closed(X, in) for a, x
                       connect in(x, A) \wedge in(x, X)
                       apply invoke leftward cap_characterization for A, X, x
                       connect in(x, cap(A, X)) \wedge neq(x, a)

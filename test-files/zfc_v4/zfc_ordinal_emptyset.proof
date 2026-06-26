@@ -1,15 +1,17 @@
 include "zfc_ordinal_trichotomy.proof"
 
-theorem emptyset_is_trans trans(emptyset) {
-  any n, m {
-    assume in(m, n) \wedge in(n, emptyset) {
-      split 2 in(m, n) \wedge in(n, emptyset)
-      apply emptyset_existence for n
-      contradict in(n, emptyset)
-      explode in(m, emptyset)
+theorem emptyset_is_closed \forall^P \psi[2] (closed(emptyset, \psi)) {
+  any predicate \psi[2] {
+    any x, y {
+      assume in(x, emptyset) \wedge \psi(y, x) {
+        split 1 in(x, emptyset) \wedge \psi(y, x)
+        apply emptyset_existence for x
+        contradict in(x, emptyset)
+        explode in(y, emptyset)
+      }
     }
+    fold for closed conclude closed(emptyset, \psi)
   }
-  fold for trans conclude trans(emptyset)
 }
 
 theorem emptyset_is_irrefrel irrefrel(emptyset, in) {
@@ -75,7 +77,7 @@ theorem emptyset_is_wellorder wellorder(emptyset, in) {
 }
 
 theorem emptyset_is_ordinal ordinal(emptyset) {
-  assert emptyset_is_trans
+  apply emptyset_is_closed for in
   assert emptyset_is_irrefrel
   assert emptyset_is_wellorder
   connect ordinal(emptyset)

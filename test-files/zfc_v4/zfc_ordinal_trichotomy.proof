@@ -1,19 +1,6 @@
 include "zfc_ordinal.proof"
 
-theorem cap_of_trans_is_trans \forall x \forall y (trans(x) \wedge trans(y) \to trans(cap(x, y))) {
-  any x, y {
-    assume trans(x) \wedge trans(y) {
-      split trans(x) \wedge trans(y)
-      apply invoke rightward trans_iff_closed_in for x
-      apply invoke rightward trans_iff_closed_in for y
-      connect closed(x, in) \wedge closed(y, in)
-      apply invoke cap_of_closed_is_closed for x, y, in
-      apply invoke leftward trans_iff_closed_in for cap(x, y)
-    }
-  }
-}
-
-theorem element_of_ordinal_is_trans \forall \alpha \forall \beta (ordinal(\alpha) \wedge in(\beta, \alpha) \to trans(\beta)) {
+theorem element_of_ordinal_is_closed \forall \alpha \forall \beta (ordinal(\alpha) \wedge in(\beta, \alpha) \to closed(\beta, in)) {
   any \alpha, \beta {
     assume ordinal(\alpha) \wedge in(\beta, \alpha) {
       split ordinal(\alpha) \wedge in(\beta, \alpha)
@@ -22,9 +9,9 @@ theorem element_of_ordinal_is_trans \forall \alpha \forall \beta (ordinal(\alpha
           split in(\gamma, \beta) \wedge in(\delta, \gamma)
           split ordinal(\alpha)
           connect in(\beta, \alpha) \wedge in(\gamma, \beta)
-          apply invoke trans(\alpha) for \beta, \gamma
+          apply invoke closed(\alpha, in) for \beta, \gamma
           connect in(\gamma, \alpha) \wedge in(\delta, \gamma)
-          apply invoke trans(\alpha) for \gamma, \delta
+          apply invoke closed(\alpha, in) for \gamma, \delta
           connect in(\delta, \alpha) \wedge in(\gamma, \alpha) \wedge in(\beta, \alpha) \wedge in(\delta, \gamma) \wedge in(\gamma, \beta)
           split 2 wellorder(\alpha, in)
           split 1 linorder(\alpha, in)
@@ -32,7 +19,7 @@ theorem element_of_ordinal_is_trans \forall \alpha \forall \beta (ordinal(\alpha
           apply invoke transrel(\alpha, in) for \delta, \gamma, \beta
         }
       }
-      fold for trans conclude trans(\beta)
+      fold for closed conclude closed(\beta, in)
     }
   }
 }
@@ -41,15 +28,15 @@ theorem element_of_ordinal_is_ordinal \forall \alpha \forall \beta (ordinal(\alp
   any \alpha, \beta {
     assume ordinal(\alpha) \wedge in(\beta, \alpha) {
       split ordinal(\alpha) \wedge in(\beta, \alpha)
-      apply invoke element_of_ordinal_is_trans for \alpha, \beta
+      apply invoke element_of_ordinal_is_closed for \alpha, \beta
       split ordinal(\alpha)
-      apply invoke rightward trans_iff_element_is_subset for \alpha
+      apply invoke rightward closed_in_iff_element_is_subset for \alpha
       apply invoke \forall \beta (in(\beta, \alpha) \to subset(\beta, \alpha)) for \beta
       connect irrefrel(\alpha, in)\wedge subset(\beta, \alpha)
       apply invoke subset_of_irrefrel_is_irrefrel for in, \alpha, \beta
       connect wellorder(\alpha, in)\wedge subset(\beta, \alpha)
       apply invoke subset_of_wellorder_is_wellorder for in, \alpha, \beta
-      connect trans(\beta) \wedge irrefrel(\beta, in) \wedge wellorder(\beta, in)
+      connect closed(\beta, in) \wedge irrefrel(\beta, in) \wedge wellorder(\beta, in)
       fold for ordinal conclude ordinal(\beta)
     }
   }
@@ -84,7 +71,7 @@ theorem ordinal_subsetneq_of_ordinal_is_element \forall \alpha \forall \beta (or
           assume in(\delta, \gamma) {
             deny notin(\delta, \beta) {
               connect in(\gamma,\alpha) \wedge in(\delta, \gamma)
-              apply invoke trans(\alpha) for \gamma, \delta
+              apply invoke closed(\alpha, in) for \gamma, \delta
               deny equal(\delta,\gamma) {
                 substitute in(\delta, \gamma) for \delta: \gamma
                 apply invoke irrefrel(\alpha, in) for \gamma
@@ -113,7 +100,7 @@ theorem ordinal_subsetneq_of_ordinal_is_element \forall \alpha \forall \beta (or
               case in(\gamma, \delta) {
                 connect in(\gamma, \delta)\wedge in(\delta, \beta)
                 split 1 ordinal(\beta)
-                apply invoke trans(\beta) for \delta, \gamma
+                apply invoke closed(\beta, in) for \delta, \gamma
                 contradict in(\gamma, \beta)
                 explode in(\delta, \gamma)
               }
@@ -133,7 +120,7 @@ theorem ordinal_in_iff_subsetneq \forall \alpha \forall \beta (ordinal(\alpha) \
       split ordinal(\alpha) \wedge ordinal(\beta)
       assume in(\alpha, \beta) {
         split 1 ordinal(\beta)
-        apply invoke rightward trans_iff_element_is_subset for \beta
+        apply invoke rightward closed_in_iff_element_is_subset for \beta
         apply invoke \forall y (in(y, \beta) \to subset(y, \beta)) for \alpha
         deny equal(\alpha, \beta) {
           substitute in(\alpha, \beta) for \beta: \alpha
@@ -189,14 +176,14 @@ theorem cap_of_ordinal_is_ordinal \forall \alpha \forall \beta (ordinal(\alpha) 
       split ordinal(\alpha)\wedge ordinal(\beta)
       split ordinal(\alpha)
       split ordinal(\beta)
-      connect trans(\alpha) \wedge trans(\beta)
-      apply invoke cap_of_trans_is_trans for \alpha, \beta
+      connect closed(\alpha, in) \wedge closed(\beta, in)
+      apply invoke cap_of_closed_is_closed for \alpha, \beta, in
       apply cap_is_subset_left for \alpha, \beta
       connect irrefrel(\alpha, in) \wedge subset(cap(\alpha, \beta), \alpha)
       apply invoke subset_of_irrefrel_is_irrefrel for in, \alpha, cap(\alpha, \beta)
       connect wellorder(\alpha, in)\wedge subset(cap(\alpha, \beta), \alpha)
       apply invoke subset_of_wellorder_is_wellorder for in, \alpha, cap(\alpha, \beta)
-      connect trans(cap(\alpha, \beta)) \wedge irrefrel(cap(\alpha, \beta), in) \wedge wellorder(cap(\alpha, \beta), in)
+      connect closed(cap(\alpha, \beta), in) \wedge irrefrel(cap(\alpha, \beta), in) \wedge wellorder(cap(\alpha, \beta), in)
       fold for ordinal conclude ordinal(cap(\alpha, \beta))
     }
   }

@@ -16,13 +16,13 @@ theorem powerset_is_functional functional(powerset) {
   fold for functional conclude functional(powerset)
 }
 
-theorem trans_implies_subset_of_powerset \forall X \forall Y (trans(X) \wedge powerset(X, Y) \to subset(X, Y)) {
+theorem closed_in_implies_subset_of_powerset \forall X \forall Y (closed(X, in) \wedge powerset(X, Y) \to subset(X, Y)) {
   any X, Y {
-    assume trans(X) \wedge powerset(X, Y) {
-      split trans(X) \wedge powerset(X, Y)
+    assume closed(X, in) \wedge powerset(X, Y) {
+      split closed(X, in) \wedge powerset(X, Y)
       any x {
         assume in(x, X) {
-          apply invoke rightward trans_iff_element_is_subset for X
+          apply invoke rightward closed_in_iff_element_is_subset for X
           apply invoke \forall x (in(x, X) \to subset(x, X)) for x
           apply invoke leftward powerset(X, Y) for x
         }
@@ -32,21 +32,21 @@ theorem trans_implies_subset_of_powerset \forall X \forall Y (trans(X) \wedge po
   }
 }
 
-theorem trans_implies_powerset_trans \forall X \forall Y (trans(X) \wedge powerset(X, Y) \to trans(Y)) {
+theorem closed_in_implies_powerset_closed_in \forall X \forall Y (closed(X, in) \wedge powerset(X, Y) \to closed(Y, in)) {
   any X, Y {
-    assume trans(X) \wedge powerset(X, Y) {
-      split trans(X) \wedge powerset(X, Y)
+    assume closed(X, in) \wedge powerset(X, Y) {
+      split closed(X, in) \wedge powerset(X, Y)
       any p, q {
         assume in(p, Y) \wedge in(q, p) {
           split in(p, Y) \wedge in(q, p)
           apply invoke rightward powerset(X, Y) for p
           apply invoke subset(p, X) for q
-          apply invoke rightward trans_iff_element_is_subset for X
+          apply invoke rightward closed_in_iff_element_is_subset for X
           apply invoke \forall x (in(x, X) \to subset(x, X)) for q
           apply invoke leftward powerset(X, Y) for q
         }
       }
-      fold for trans conclude trans(Y)
+      fold for closed conclude closed(Y, in)
     }
   }
 }

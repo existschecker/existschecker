@@ -41,7 +41,7 @@ theorem ordinal_is_pwellfounded pwellfounded(ordinal, in) {
                 case notin(\gamma, suc(\alpha)) {
                   deny in(\gamma, \beta) {
                     connect in(\gamma, \beta) \wedge in(\beta, suc(\alpha))
-                    apply invoke trans(suc(\alpha)) for \beta, \gamma
+                    apply invoke closed(suc(\alpha), in) for \beta, \gamma
                     contradict in(\gamma, suc(\alpha))
                   }
                 }
@@ -70,7 +70,6 @@ theorem ordinal_is_tcset_of_itself \forall \alpha (ordinal(\alpha) \to tcset(\al
   any \alpha {
     assume ordinal(\alpha) {
       split 1 ordinal(\alpha)
-      apply invoke rightward trans_iff_closed_in for \alpha
       apply invoke rightward closed_in_iff_tcset_of_itself for \alpha
     }
   }

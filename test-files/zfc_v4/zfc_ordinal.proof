@@ -1,7 +1,5 @@
 include "zfc_wellfounded.proof"
 
-definition predicate trans(x) as \forall y \forall z (in(z, y) \wedge in(y, x) \to in(z, x))
-
 definition predicate transrel(X, predicate \psi[2]) as \forall x \forall y \forall z (in(x, X) \wedge in(y, X) \wedge in(z, X) \wedge \psi(x, y) \wedge \psi(y, z) \to \psi(x, z))
 
 definition predicate antisymrel(X, predicate \psi[2]) as \forall x \forall y (in(x, X) \wedge in(y, X) \wedge \psi(x, y) \wedge \psi(y, x) \to equal(x, y))
@@ -14,17 +12,17 @@ definition predicate linorder(X, predicate \psi[2]) as order(X, \psi) \wedge lin
 
 definition predicate wellorder(X, predicate \psi[2]) as wellfounded(X, \psi) \wedge linorder(X, \psi)
 
-definition predicate ordinal(\alpha) as trans(\alpha) \wedge irrefrel(\alpha, in) \wedge wellorder(\alpha, in)
+definition predicate ordinal(\alpha) as closed(\alpha, in) \wedge irrefrel(\alpha, in) \wedge wellorder(\alpha, in)
 
-theorem trans_iff_element_is_subset \forall x (trans(x) \leftrightarrow \forall y (in(y, x) \to subset(y, x))) {
+theorem closed_in_iff_element_is_subset \forall x (closed(x, in) \leftrightarrow \forall y (in(y, x) \to subset(y, x))) {
   any x {
-    assume trans(x) {
+    assume closed(x, in) {
       any y {
         assume in(y, x) {
           any z {
             assume in(z, y) {
               connect in(y, x) \wedge in(z, y)
-              apply invoke trans(x) for y, z
+              apply invoke closed(x, in) for y, z
             }
           }
           fold for subset conclude subset(y, x)
@@ -39,9 +37,9 @@ theorem trans_iff_element_is_subset \forall x (trans(x) \leftrightarrow \forall 
           apply invoke subset(y, x) for z
         }
       }
-      fold for trans conclude trans(x)
+      fold for closed conclude closed(x, in)
     }
-    connect trans(x) \leftrightarrow \forall y (in(y, x) \to subset(y, x))
+    connect closed(x, in) \leftrightarrow \forall y (in(y, x) \to subset(y, x))
   }
 }
 
@@ -74,10 +72,10 @@ theorem irrefrel_and_transrel_implies_order \forall X \forall^P \psi[2] (irrefre
   }
 }
 
-theorem trans_irrefrel_wellfounded_not_emptyset_contains_emptyset \forall x (trans(x) \wedge irrefrel(x, in) \wedge wellfounded(x, in) \wedge neq(x, emptyset) \to in(emptyset, x)) {
+theorem closed_irrefrel_wellfounded_not_emptyset_contains_emptyset \forall x (closed(x, in) \wedge irrefrel(x, in) \wedge wellfounded(x, in) \wedge neq(x, emptyset) \to in(emptyset, x)) {
   any x {
-    assume trans(x) \wedge irrefrel(x, in) \wedge wellfounded(x, in) \wedge neq(x, emptyset) {
-      split trans(x) \wedge irrefrel(x, in) \wedge wellfounded(x, in) \wedge neq(x, emptyset)
+    assume closed(x, in) \wedge irrefrel(x, in) \wedge wellfounded(x, in) \wedge neq(x, emptyset) {
+      split closed(x, in) \wedge irrefrel(x, in) \wedge wellfounded(x, in) \wedge neq(x, emptyset)
       apply subset_reflexivity for x
       connect subset(x, x) \wedge neq(x, emptyset)
       apply invoke wellfounded(x, in) for x
@@ -92,7 +90,7 @@ theorem trans_irrefrel_wellfounded_not_emptyset_contains_emptyset \forall x (tra
               contradict in(b, a)
             }
             connect in(b, a) \wedge in(a, x)
-            apply invoke trans(x) for a, b
+            apply invoke closed(x, in) for a, b
             connect in(b, x) \wedge neq(b, a)
             apply invoke minimal_core(in, x, a) for b
             contradict in(b, a)
@@ -110,8 +108,8 @@ theorem ordinal_not_emptyset_contains_emptyset \forall \alpha (ordinal(\alpha) \
       split ordinal(\alpha) \wedge neq(\alpha, emptyset)
       split ordinal(\alpha)
       split wellorder(\alpha, in)
-      connect trans(\alpha) \wedge irrefrel(\alpha, in) \wedge wellfounded(\alpha, in) \wedge neq(\alpha, emptyset)
-      apply invoke trans_irrefrel_wellfounded_not_emptyset_contains_emptyset for \alpha
+      connect closed(\alpha, in) \wedge irrefrel(\alpha, in) \wedge wellfounded(\alpha, in) \wedge neq(\alpha, emptyset)
+      apply invoke closed_irrefrel_wellfounded_not_emptyset_contains_emptyset for \alpha
     }
   }
 }
@@ -205,41 +203,19 @@ theorem subset_of_wellorder_is_wellorder \forall^P \phi[2] \forall x \forall y (
   }
 }
 
-theorem element_of_trans_irrefrel_is_irrefrel \forall x \forall y (trans(x) \wedge irrefrel(x, in) \wedge in(y, x) \to irrefrel(y, in)) {
+theorem element_of_closed_irrefrel_is_irrefrel \forall x \forall y (closed(x, in) \wedge irrefrel(x, in) \wedge in(y, x) \to irrefrel(y, in)) {
   any x, y {
-    assume trans(x) \wedge irrefrel(x, in) \wedge in(y, x) {
-      split trans(x) \wedge irrefrel(x, in) \wedge in(y, x)
+    assume closed(x, in) \wedge irrefrel(x, in) \wedge in(y, x) {
+      split closed(x, in) \wedge irrefrel(x, in) \wedge in(y, x)
       any z {
         assume in(z, y) {
           connect in(y, x) \wedge in(z, y)
-          apply invoke trans(x) for y, z
+          apply invoke closed(x, in) for y, z
           apply invoke irrefrel(x, in) for z
         }
       }
       fold for irrefrel conclude irrefrel(y, in)
     }
-  }
-}
-
-theorem trans_iff_closed_in \forall x (trans(x) \leftrightarrow closed(x, in)) {
-  any x {
-    assume trans(x) {
-      any y, z {
-        assume in(y, x) \wedge in(z, y) {
-          apply invoke trans(x) for y, z
-        }
-      }
-      fold for closed conclude closed(x, in)
-    }
-    assume closed(x, in) {
-      any y, z {
-        assume in(y, x) \wedge in(z, y) {
-          apply invoke closed(x, in) for y, z
-        }
-      }
-      fold for trans conclude trans(x)
-    }
-    connect trans(x) \leftrightarrow closed(x, in)
   }
 }
 
@@ -264,11 +240,10 @@ theorem closed_in_iff_tcset_of_itself \forall x (closed(x, in) \leftrightarrow t
   }
 }
 
-theorem wellfounded_induction_in \forall^P \chi[1] \forall X (trans(X) \wedge irrefrel(X, in) \wedge wellfounded(X, in) \wedge \forall x (in(x, X) \to (\forall y (in(y, x) \to \chi(y)) \to \chi(x))) \to \forall x (in(x, X) \to \chi(x))) {
+theorem wellfounded_induction_in \forall^P \chi[1] \forall X (closed(X, in) \wedge irrefrel(X, in) \wedge wellfounded(X, in) \wedge \forall x (in(x, X) \to (\forall y (in(y, x) \to \chi(y)) \to \chi(x))) \to \forall x (in(x, X) \to \chi(x))) {
   any predicate \chi[1], X {
-    assume trans(X) \wedge irrefrel(X, in) \wedge wellfounded(X, in) \wedge \forall x (in(x, X) \to (\forall y (in(y, x) \to \chi(y)) \to \chi(x))) {
-      split trans(X) \wedge irrefrel(X, in) \wedge wellfounded(X, in) \wedge \forall x (in(x, X) \to (\forall y (in(y, x) \to \chi(y)) \to \chi(x)))
-      apply invoke rightward trans_iff_closed_in for X
+    assume closed(X, in) \wedge irrefrel(X, in) \wedge wellfounded(X, in) \wedge \forall x (in(x, X) \to (\forall y (in(y, x) \to \chi(y)) \to \chi(x))) {
+      split closed(X, in) \wedge irrefrel(X, in) \wedge wellfounded(X, in) \wedge \forall x (in(x, X) \to (\forall y (in(y, x) \to \chi(y)) \to \chi(x)))
       connect closed(X, in) \wedge irrefrel(X, in) \wedge wellfounded(X, in) \wedge \forall x (in(x, X) \to (\forall y (in(y, x) \to \chi(y)) \to \chi(x)))
       apply invoke wellfounded_induction for in, \chi, X
     }
