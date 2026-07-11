@@ -1,20 +1,15 @@
 include "zfc_separation.proof"
 
-definition function rem(x, y) as sep(x, \lambda^P z. neq(z, y)) 
-
-theorem rem_existence \forall x \forall y \forall w (in(w, rem(x, y)) \leftrightarrow in(w, x) \wedge neq(w, y)) {
-  any x, y, w {
-    assume in(w, rem(x, y)) {
-      expand in(w, rem(x, y)) for rem
-      apply invoke rightward sep_existence for x, \lambda^P z. neq(z, y), w
-    }
-    assume in(w, x) \wedge neq(w, y) {
-      apply invoke leftward sep_existence for x, \lambda^P z. neq(z, y), w
-      fold for rem conclude in(w, rem(x, y))
-    }
-    connect in(w, rem(x, y)) \leftrightarrow in(w, x) \wedge neq(w, y)
+theorem removal_exists_uniquely \forall x \forall y \exists! z \forall w (in(w, z) \leftrightarrow in(w, x) \wedge neq(w, y)) {
+  any x, y {
+    apply separation_exists_uniquely for x, \lambda^P w. neq(w, y)
+    expand \exists! z (sep(x, \lambda^P w. neq(w, y), z)) for sep
   }
 }
+
+definition function rem by removal_exists_uniquely
+existence rem_existence \forall x \forall y \forall w (in(w, rem(x, y)) \leftrightarrow in(w, x) \wedge neq(w, y)) by rem
+uniqueness rem_uniqueness \forall x \forall y \forall z (\forall w (in(w, z) \leftrightarrow in(w, x) \wedge neq(w, y)) \to equal(z, rem(x, y))) by rem
 
 theorem rem_emptyset_implies_singleton \forall x \forall y (equal(rem(x, y), emptyset) \wedge neq(x, emptyset) \to equal(x, singleton(y))) {
   any x, y {

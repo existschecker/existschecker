@@ -135,13 +135,13 @@ theorem regular_satisfies_axiom_of_separation \forall^P \phi[1] \forall x (regul
         split irrefrel(p, in) \wedge wellfounded(p, in) \wedge tcset(x, in, p)
         split tcset(x, in, p)
         apply axiom_of_separation for x, \phi
-        some y such \exists y \forall z (in(z, y) \leftrightarrow in(z, x) \wedge \phi(z)) {
+        some y such \exists y (sep(x, \phi, y)) {
           apply axiom_of_separation for p, \lambda^P z. \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s))
-          some q such \exists q \forall z (in(z, q) \leftrightarrow in(z, p) \wedge \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s))) {
+          some q such \exists q (sep(p, \lambda^P z. \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s)), q)) {
             any u, v {
               assume in(u, q) \wedge in(v, u) {
                 split in(u, q) \wedge in(v, u)
-                apply invoke rightward \forall z (in(z, q) \leftrightarrow in(z, p) \wedge \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s))) for u
+                apply invoke rightward sep(p, \lambda^P z. \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s)), q) for u
                 split in(u, p) \wedge \forall s (closed(s, in) \wedge subset(y, s) \to in(u, s))
                 connect in(u, p) \wedge in(v, u)
                 apply invoke closed(p, in) for u, v
@@ -154,13 +154,13 @@ theorem regular_satisfies_axiom_of_separation \forall^P \phi[1] \forall x (regul
                   }
                 }
                 connect in(v, p) \wedge \forall s (closed(s, in) \wedge subset(y, s) \to in(v, s))
-                apply invoke leftward \forall z (in(z, q) \leftrightarrow in(z, p) \wedge \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s))) for v
+                apply invoke leftward sep(p, \lambda^P z. \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s)), q) for v
               }
             }
             fold for closed conclude closed(q, in)
             any w {
               assume in(w, y) {
-                apply invoke rightward \forall z (in(z, y) \leftrightarrow in(z, x) \wedge \phi(z)) for w
+                apply invoke rightward sep(x, \phi, y) for w
                 split in(w, x) \wedge \phi(w)
                 apply invoke \forall w (in(w, x) \to in(w, p)) for w
                 any s {
@@ -170,7 +170,7 @@ theorem regular_satisfies_axiom_of_separation \forall^P \phi[1] \forall x (regul
                   }
                 }
                 connect in(w, p) \wedge \forall s (closed(s, in) \wedge subset(y, s) \to in(w, s))
-                apply invoke leftward \forall z (in(z, q) \leftrightarrow in(z, p) \wedge \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s))) for w
+                apply invoke leftward sep(p, \lambda^P z. \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s)), q) for w
               }
             }
             any s {
@@ -180,7 +180,7 @@ theorem regular_satisfies_axiom_of_separation \forall^P \phi[1] \forall x (regul
                 connect closed(s, in) \wedge subset(y, s)
                 any z {
                   assume in(z, q) {
-                    apply invoke rightward \forall z (in(z, q) \leftrightarrow in(z, p) \wedge \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s))) for z
+                    apply invoke rightward sep(p, \lambda^P z. \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s)), q) for z
                     split in(z, p) \wedge \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s))
                     apply invoke \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s)) for s
                   }
@@ -191,7 +191,7 @@ theorem regular_satisfies_axiom_of_separation \forall^P \phi[1] \forall x (regul
             connect tcset(y, in, q)
             any z {
               assume in(z, q) {
-                apply invoke rightward \forall z (in(z, q) \leftrightarrow in(z, p) \wedge \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s))) for z
+                apply invoke rightward sep(p, \lambda^P z. \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s)), q) for z
                 split 1 in(z, p) \wedge \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s))
               }
             }
@@ -206,7 +206,7 @@ theorem regular_satisfies_axiom_of_separation \forall^P \phi[1] \forall x (regul
           apply invoke leftward regular_iff_existence_of_irrefrel_wellfounded_tcset for y, in
           any z {
             assume regular(z, in) {
-              apply \forall z (in(z, y) \leftrightarrow in(z, x) \wedge \phi(z)) for z
+              apply sep(x, \phi, y) for z
             }
           }
           connect regular(y, in) \wedge \forall z (regular(z, in) \to (in(z, y) \leftrightarrow in(z, x) \wedge \phi(z)))

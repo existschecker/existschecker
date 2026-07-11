@@ -1,20 +1,15 @@
 include "zfc_cap.proof"
 
-definition function setminus(x, y) as sep(x, \lambda^P z. notin(z, y)) tex infix "\setminus"
-
-theorem setminus_characterization \forall x \forall y \forall z (in(z, setminus(x, y)) \leftrightarrow in(z, x) \wedge notin(z, y)) {
-  any x, y, z {
-    assume in(z, setminus(x, y)) {
-      expand in(z, setminus(x, y)) for setminus
-      apply invoke rightward sep_existence for x, \lambda^P z. notin(z, y), z
-    }
-    assume in(z, x) \wedge notin(z, y) {
-      apply invoke leftward sep_existence for x, \lambda^P z. notin(z, y), z
-      fold for setminus conclude in(z, setminus(x, y))
-    }
-    connect in(z, setminus(x, y)) \leftrightarrow in(z, x) \wedge notin(z, y)
+theorem setminus_exists_uniquely \forall x \forall y \exists! z \forall w (in(w, z) \leftrightarrow in(w, x) \wedge notin(w, y)) {
+  any x, y {
+    apply separation_exists_uniquely for x, \lambda^P w. notin(w, y)
+    expand \exists! z (sep(x, \lambda^P w. notin(w, y), z)) for sep
   }
 }
+
+definition function setminus by setminus_exists_uniquely tex infix "\setminus"
+existence setminus_characterization \forall x \forall y \forall w (in(w, setminus(x, y)) \leftrightarrow in(w, x) \wedge notin(w, y)) by setminus
+uniqueness setminus_uniqueness \forall x \forall y \forall z (\forall w (in(w, z) \leftrightarrow in(w, x) \wedge notin(w, y)) \to equal(z, setminus(x, y))) by setminus
 
 theorem setminus_is_subset \forall x \forall y (subset(setminus(x, y), x)) {
   any x, y {

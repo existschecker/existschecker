@@ -176,26 +176,29 @@ theorem hf_satisfies_axiom_of_separation \forall^P \phi[1] \forall x (hf(x, in) 
     assume hf(x, in) {
       apply invoke hf_is_irrefrel_wellfounded_finite for x
       split 3 irrefrel(x, in) \wedge wellfounded(x, in) \wedge finite(x)
-      apply sep_is_subset for x, \phi
-      connect finite(x) \wedge subset(sep(x, \phi), x)
-      apply invoke subset_of_finite_is_finite for x, sep(x, \phi)
-      any p {
-        assume in(p, sep(x, \phi)) {
-          apply invoke rightward sep_existence for x, \phi, p
-          split 1 in(p, x) \wedge \phi(p)
-          connect hf(x, in) \wedge in(p, x)
-          apply invoke element_of_hf_is_hf for x, in, p
+      apply separation_exists_uniquely for x, \phi
+      some y such \exists! y (sep(x, \phi, y)) {
+        apply invoke sep_is_subset for x, \phi, y
+        connect finite(x) \wedge subset(y, x)
+        apply invoke subset_of_finite_is_finite for x, y
+        any p {
+          assume in(p, y) {
+            apply invoke rightward sep(x, \phi, y) for p
+            split 1 in(p, x) \wedge \phi(p)
+            connect hf(x, in) \wedge in(p, x)
+            apply invoke element_of_hf_is_hf for x, in, p
+          }
         }
-      }
-      connect finite(sep(x, \phi)) \wedge \forall p (in(p, sep(x, \phi)) \to hf(p, in))
-      apply invoke finite_set_of_hf_is_hf for sep(x, \phi)
-      any z {
-        assume hf(z, in) {
-          apply sep_existence for x, \phi, z
+        connect finite(y) \wedge \forall p (in(p, y) \to hf(p, in))
+        apply invoke finite_set_of_hf_is_hf for y
+        any z {
+          assume hf(z, in) {
+            apply sep(x, \phi, y) for z
+          }
         }
+        connect hf(y, in) \wedge \forall z (hf(z, in) \to (in(z, y) \leftrightarrow in(z, x) \wedge \phi(z)))
+        lift for y conclude \exists y (hf(y, in) \wedge \forall z (hf(z, in) \to (in(z, y) \leftrightarrow in(z, x) \wedge \phi(z))))
       }
-      connect hf(sep(x, \phi), in) \wedge \forall z (hf(z, in) \to (in(z, sep(x, \phi)) \leftrightarrow in(z, x) \wedge \phi(z)))
-      lift for sep(x, \phi) conclude \exists y (hf(y, in) \wedge \forall z (hf(z, in) \to (in(z, y) \leftrightarrow in(z, x) \wedge \phi(z))))
     }
   }
 }

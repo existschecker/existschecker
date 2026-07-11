@@ -100,18 +100,18 @@ theorem tcset_implies_tcsetacc \forall X \forall^P \psi[2] \forall Y (tcset(X, \
       any y {
         assume in(y, Y) {
           apply axiom_of_separation for Y, \lambda^P z. tc(\lambda^P p, q. \psi(q, p), X, z)
-          some s such \exists s \forall z (in(z, s) \leftrightarrow in(z, Y) \wedge tc(\lambda^P p, q. \psi(q, p), X, z)) {
+          some s such \exists s (sep(Y, \lambda^P z. tc(\lambda^P p, q. \psi(q, p), X, z), s)) {
             any u, v {
               assume in(u, s) \wedge \psi(v, u) {
                 split in(u, s) \wedge \psi(v, u)
-                apply invoke rightward \forall z (in(z, s) \leftrightarrow in(z, Y) \wedge tc(\lambda^P p, q. \psi(q, p), X, z)) for u
+                apply invoke rightward sep(Y, \lambda^P z. tc(\lambda^P p, q. \psi(q, p), X, z), s) for u
                 split in(u, Y) \wedge tc(\lambda^P p, q. \psi(q, p), X, u)
                 connect in(u, Y) \wedge \psi(v, u)
                 apply invoke closed(Y, \psi) for u, v
                 connect tc(\lambda^P p, q. \psi(q, p), X, u) \wedge \psi(v, u)
                 apply invoke tc_add_last for \lambda^P p, q. \psi(q, p), X, u, v
                 connect in(v, Y) \wedge tc(\lambda^P p, q. \psi(q, p), X, v)
-                apply invoke leftward \forall z (in(z, s) \leftrightarrow in(z, Y) \wedge tc(\lambda^P p, q. \psi(q, p), X, z)) for v
+                apply invoke leftward sep(Y, \lambda^P z. tc(\lambda^P p, q. \psi(q, p), X, z), s) for v
               }
             }
             fold for closed conclude closed(s, \psi)
@@ -120,13 +120,13 @@ theorem tcset_implies_tcsetacc \forall X \forall^P \psi[2] \forall Y (tcset(X, \
                 apply invoke \forall x (\psi(x, X) \to in(x, Y)) for x
                 apply invoke tc_one_step for \lambda^P p, q. \psi(q, p), X, x
                 connect in(x, Y) \wedge tc(\lambda^P p, q. \psi(q, p), X, x)
-                apply invoke leftward \forall z (in(z, s) \leftrightarrow in(z, Y) \wedge tc(\lambda^P p, q. \psi(q, p), X, z)) for x
+                apply invoke leftward sep(Y, \lambda^P z. tc(\lambda^P p, q. \psi(q, p), X, z), s) for x
               }
             }
             connect closed(s, \psi) \wedge \forall x (\psi(x, X) \to in(x, s))
             apply invoke \forall s (closed(s, \psi) \wedge \forall x (\psi(x, X) \to in(x, s)) \to subset(Y, s)) for s
             apply invoke subset(Y, s) for y
-            apply invoke rightward \forall z (in(z, s) \leftrightarrow in(z, Y) \wedge tc(\lambda^P p, q. \psi(q, p), X, z)) for y
+            apply invoke rightward sep(Y, \lambda^P z. tc(\lambda^P p, q. \psi(q, p), X, z), s) for y
             split 2 in(y, Y) \wedge tc(\lambda^P p, q. \psi(q, p), X, y)
           }
         }

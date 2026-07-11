@@ -1,20 +1,15 @@
 include "zfc_removal.proof"
 
-definition function cap(x, y) as sep(x, \lambda^P z. in(z, y)) tex infix "\cap"
-
-theorem cap_characterization \forall x \forall y \forall z (in(z, cap(x, y)) \leftrightarrow in(z, x) \wedge in(z, y)) {
-  any x, y, z {
-    assume in(z, cap(x, y)) {
-      expand in(z, cap(x, y)) for cap
-      apply invoke rightward sep_existence for x, \lambda^P z. in(z, y), z
-    }
-    assume in(z, x) \wedge in(z, y) {
-      apply invoke leftward sep_existence for x, \lambda^P z. in(z, y), z
-      fold for cap conclude in(z, cap(x, y))
-    }
-    connect in(z, cap(x, y)) \leftrightarrow in(z, x) \wedge in(z, y)
+theorem cap_exists_uniquely \forall x \forall y \exists! z \forall w (in(w, z) \leftrightarrow in(w, x) \wedge in(w, y)) {
+  any x, y {
+    apply separation_exists_uniquely for x, \lambda^P w. in(w, y)
+    expand \exists! z (sep(x, \lambda^P w. in(w, y), z)) for sep
   }
 }
+
+definition function cap by cap_exists_uniquely tex infix "\cap"
+existence cap_characterization \forall x \forall y \forall w (in(w, cap(x, y)) \leftrightarrow in(w, x) \wedge in(w, y)) by cap
+uniqueness cap_uniqueness \forall x \forall y \forall z (\forall w (in(w, z) \leftrightarrow in(w, x) \wedge in(w, y)) \to equal(z, cap(x, y))) by cap
 
 theorem cap_is_subset_left \forall x \forall y (subset(cap(x, y), x)) {
   any x, y {

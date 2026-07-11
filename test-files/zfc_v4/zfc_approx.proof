@@ -1,28 +1,22 @@
 include "zfc_function.proof"
 
-definition function res(R, X) as sep(R, \lambda^P z. \exists x \exists y (in(x, X) \wedge equal(z, op(x, y))))
-
-theorem res_characterization \forall R \forall X \forall z (in(z, res(R, X)) \leftrightarrow in(z, R) \wedge \exists x \exists y (in(x, X) \wedge equal(z, op(x, y)))) {
-  any R, X, z {
-    assume in(z, res(R, X)) {
-      expand in(z, res(R, X)) for res
-      apply invoke rightward sep_existence for R, \lambda^P z. \exists x \exists y (in(x, X) \wedge equal(z, op(x, y))), z
-    }
-    assume in(z, R) \wedge \exists x \exists y (in(x, X) \wedge equal(z, op(x, y))) {
-      apply invoke leftward sep_existence for R, \lambda^P z. \exists x \exists y (in(x, X) \wedge equal(z, op(x, y))), z
-      fold for res conclude in(z, res(R, X))
-    }
-    connect in(z, res(R, X)) \leftrightarrow in(z, R) \wedge \exists x \exists y (in(x, X) \wedge equal(z, op(x, y)))
+theorem res_exists_uniquely \forall R \forall X \exists! S \forall z (in(z, S) \leftrightarrow in(z, R) \wedge \exists x \exists y (in(x, X) \wedge equal(z, op(x, y)))) {
+  any R, X {
+    apply separation_exists_uniquely for R, \lambda^P z. \exists x \exists y (in(x, X) \wedge equal(z, op(x, y)))
+    expand \exists! S (sep(R, \lambda^P z. \exists x \exists y (in(x, X) \wedge equal(z, op(x, y))), S)) for sep
   }
 }
+
+definition function res by res_exists_uniquely
+existence res_characterization \forall R \forall X \forall z (in(z, res(R, X)) \leftrightarrow in(z, R) \wedge \exists x \exists y (in(x, X) \wedge equal(z, op(x, y)))) by res
+uniqueness res_uniqueness \forall R \forall X \forall S (\forall z (in(z, S) \leftrightarrow in(z, R) \wedge \exists x \exists y (in(x, X) \wedge equal(z, op(x, y)))) \to equal(S, res(R, X))) by res
 
 theorem adding_op_res \forall R \forall X \forall x \forall y (notin(x, X) \to equal(res(adj(R, op(x, y)), X), res(R, X))) {
   any R, X, x, y {
     assume notin(x, X) {
       any z {
         assume in(z, res(adj(R, op(x, y)), X)) {
-          expand in(z, res(adj(R, op(x, y)), X)) for res
-          apply invoke rightward sep_existence for adj(R, op(x, y)), \lambda^P z'. \exists x' \exists y' (in(x', X) \wedge equal(z', op(x', y'))), z
+          apply invoke rightward res_characterization for adj(R, op(x, y)), X, z
           split in(z, adj(R, op(x, y))) \wedge \exists x' \exists y' (in(x', X) \wedge equal(z, op(x', y')))
           some x', y' such \exists x' \exists y' (in(x', X) \wedge equal(z, op(x', y'))) {
             split in(x', X) \wedge equal(z, op(x', y'))
@@ -38,18 +32,15 @@ theorem adding_op_res \forall R \forall X \forall x \forall y (notin(x, X) \to e
                 explode in(z, R)
               }
             connect in(z, R) \wedge \exists x' \exists y' (in(x', X) \wedge equal(z, op(x', y')))
-            apply invoke leftward sep_existence for R, \lambda^P z'. \exists x' \exists y' (in(x', X) \wedge equal(z', op(x', y'))), z
-            fold for res conclude in(z, res(R, X))
+            apply invoke leftward res_characterization for R, X, z
           }
         }
         assume in(z, res(R, X)) {
-          expand in(z, res(R, X)) for res
-          apply invoke rightward sep_existence for R, \lambda^P z'. \exists x' \exists y' (in(x', X) \wedge equal(z', op(x', y'))), z
+          apply invoke rightward res_characterization for R, X, z
           split in(z, R) \wedge \exists x' \exists y' (in(x', X) \wedge equal(z, op(x', y')))
           apply invoke adj_cor1 for R, op(x, y), z
           connect in(z, adj(R, op(x, y))) \wedge \exists x' \exists y' (in(x', X) \wedge equal(z, op(x', y')))
-          apply invoke leftward sep_existence for adj(R, op(x, y)), \lambda^P z'. \exists x' \exists y' (in(x', X) \wedge equal(z', op(x', y'))), z
-          fold for res conclude in(z, res(adj(R, op(x, y)), X))
+          apply invoke leftward res_characterization for adj(R, op(x, y)), X, z
         }
         connect in(z, res(adj(R, op(x, y)), X)) \leftrightarrow in(z, res(R, X))
       }
@@ -131,154 +122,153 @@ theorem approx_is_unique \forall X \forall^P \psi[2] \forall^P \phi[2] (closed(X
               apply invoke subset_of_irrefrel_is_irrefrel for \psi, X, cap(r, t)
               connect wellfounded(X, \psi) \wedge subset(cap(r, t), X)
               apply invoke subset_of_wellfounded_is_wellfounded for \psi, X, cap(r, t)
-              apply sep_is_subset for cap(r, t), \lambda^P u. \exists v \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v'))
-              connect subset(sep(cap(r, t), \lambda^P u. \exists v \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v'))), cap(r, t)) \wedge subset(cap(r, t), X)
-              apply invoke subset_transivity for sep(cap(r, t), \lambda^P u. \exists v \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v'))), cap(r, t), X
-              deny \exists u \exists v \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v')) {
-                some u, v, v' such \exists u \exists v \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v')) {
-                  split in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v')
-                  lift for v conclude \exists v (in(op(u, v), g))
-                  apply invoke leftward dom(g, r) for u
-                  apply invoke subset(r, X) for u
-                  lift for v' conclude \exists v' (in(op(u, v'), h))
-                  apply invoke leftward dom(h, t) for u
-                  connect in(u, r) \wedge in(u, t)
-                  apply invoke leftward cap_characterization for r, t, u
-                  lift for v, v' conclude \exists v \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v'))
-                  connect in(u, cap(r, t)) \wedge \exists v \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v'))
-                  apply invoke leftward sep_existence for cap(r, t), \lambda^P u. \exists v \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v')), u
-                  lift for u conclude \exists u (in(u, sep(cap(r, t), \lambda^P u'. \exists v \exists v' (in(op(u', v), g) \wedge in(op(u', v'), h) \wedge neq(v, v')))))
-                }
-                apply invoke has_a_member_not_emptyset for sep(cap(r, t), \lambda^P u. \exists v \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v')))
-                connect subset(sep(cap(r, t), \lambda^P u. \exists v \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v'))), X) \wedge neq(sep(cap(r, t), \lambda^P u. \exists v \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v'))), emptyset)
-                apply invoke wellfounded(X, \psi) for sep(cap(r, t), \lambda^P u. \exists v \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v')))
-                some a such \exists a (minimal(\psi, sep(cap(r, t), \lambda^P u. \exists v \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v'))), a)) {
-                  split minimal(\psi, sep(cap(r, t), \lambda^P u. \exists v \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v'))), a)
-                  apply invoke rightward sep_existence for cap(r, t), \lambda^P u. \exists v \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v')), a
-                  split in(a, cap(r, t)) \wedge \exists v \exists v' (in(op(a, v), g) \wedge in(op(a, v'), h) \wedge neq(v, v'))
-                  some v, v' such \exists v \exists v' (in(op(a, v), g) \wedge in(op(a, v'), h) \wedge neq(v, v')) {
-                    split in(op(a, v), g) \wedge in(op(a, v'), h) \wedge neq(v, v')
-                    any z {
-                      assume \psi(z, a) {
-                        connect in(a, cap(r, t)) \wedge \psi(z, a)
-                        apply invoke closed(cap(r, t), \psi) for a, z
-                        apply invoke rightward cap_characterization for r, t, z
-                        split in(z, r) \wedge in(z, t)
-                        apply invoke rightward dom(g, r) for z
-                        some w such \exists w (in(op(z, w), g)) {
-                          apply invoke rightward dom(h, t) for z
-                          some w' such \exists w' (in(op(z, w'), h)) {
-                            deny \exists v \exists v' (in(op(z, v), g) \wedge in(op(z, v'), h) \wedge neq(v, v')) {
-                              connect in(a, cap(r, t)) \wedge \psi(z, a)
-                              apply invoke closed(cap(r, t), \psi) for a, z
-                              connect in(z, cap(r, t)) \wedge \exists v \exists v' (in(op(z, v), g) \wedge in(op(z, v'), h) \wedge neq(v, v'))
-                              apply invoke leftward sep_existence for cap(r, t), \lambda^P u. \exists v \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v')), z
-                              deny equal(z, a) {
-                                substitute \psi(z, a) for z: a
-                                apply invoke irrefrel(cap(r, t), \psi) for a
-                                contradict \psi(a, a)
+              apply separation_exists_uniquely for cap(r, t), \lambda^P u. \exists v \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v'))
+              some q such \exists! q (sep(cap(r, t), \lambda^P u. \exists v \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v')), q)) {
+                apply invoke sep_is_subset for cap(r, t), \lambda^P u. \exists v \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v')), q
+                connect subset(q, cap(r, t)) \wedge subset(cap(r, t), X)
+                apply invoke subset_transivity for q, cap(r, t), X
+                deny \exists u \exists v \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v')) {
+                  some u, v, v' such \exists u \exists v \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v')) {
+                    split in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v')
+                    lift for v conclude \exists v (in(op(u, v), g))
+                    apply invoke leftward dom(g, r) for u
+                    apply invoke subset(r, X) for u
+                    lift for v' conclude \exists v' (in(op(u, v'), h))
+                    apply invoke leftward dom(h, t) for u
+                    connect in(u, r) \wedge in(u, t)
+                    apply invoke leftward cap_characterization for r, t, u
+                    lift for v, v' conclude \exists v \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v'))
+                    connect in(u, cap(r, t)) \wedge \exists v \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v'))
+                    apply invoke leftward sep(cap(r, t), \lambda^P u. \exists v \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v')), q) for u
+                    lift for u conclude \exists u (in(u, q))
+                  }
+                  apply invoke has_a_member_not_emptyset for q
+                  connect subset(q, X) \wedge neq(q, emptyset)
+                  apply invoke wellfounded(X, \psi) for q
+                  some a such \exists a (minimal(\psi, q, a)) {
+                    split minimal(\psi, q, a)
+                    apply invoke rightward sep(cap(r, t), \lambda^P u. \exists v \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v')), q) for a
+                    split in(a, cap(r, t)) \wedge \exists v \exists v' (in(op(a, v), g) \wedge in(op(a, v'), h) \wedge neq(v, v'))
+                    some v, v' such \exists v \exists v' (in(op(a, v), g) \wedge in(op(a, v'), h) \wedge neq(v, v')) {
+                      split in(op(a, v), g) \wedge in(op(a, v'), h) \wedge neq(v, v')
+                      any z {
+                        assume \psi(z, a) {
+                          connect in(a, cap(r, t)) \wedge \psi(z, a)
+                          apply invoke closed(cap(r, t), \psi) for a, z
+                          apply invoke rightward cap_characterization for r, t, z
+                          split in(z, r) \wedge in(z, t)
+                          apply invoke rightward dom(g, r) for z
+                          some w such \exists w (in(op(z, w), g)) {
+                            apply invoke rightward dom(h, t) for z
+                            some w' such \exists w' (in(op(z, w'), h)) {
+                              deny \exists v \exists v' (in(op(z, v), g) \wedge in(op(z, v'), h) \wedge neq(v, v')) {
+                                connect in(a, cap(r, t)) \wedge \psi(z, a)
+                                apply invoke closed(cap(r, t), \psi) for a, z
+                                connect in(z, cap(r, t)) \wedge \exists v \exists v' (in(op(z, v), g) \wedge in(op(z, v'), h) \wedge neq(v, v'))
+                                apply invoke leftward sep(cap(r, t), \lambda^P u. \exists v \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v')), q) for z
+                                deny equal(z, a) {
+                                  substitute \psi(z, a) for z: a
+                                  apply invoke irrefrel(cap(r, t), \psi) for a
+                                  contradict \psi(a, a)
+                                }
+                                connect in(z, q) \wedge neq(z, a)
+                                apply invoke minimal_core(\psi, q, a) for z
+                                contradict \psi(z, a)
                               }
-                              connect in(z, sep(cap(r, t), \lambda^P u. \exists v \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v')))) \wedge neq(z, a)
-                              apply invoke minimal_core(\psi, sep(cap(r, t), \lambda^P u. \exists v \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v'))), a) for z
-                              contradict \psi(z, a)
-                            }
-                            apply invoke rightward neg_exist_leftrightarrow_forall_neg for \lambda^P v. \exists v' (in(op(z, v), g) \wedge in(op(z, v'), h) \wedge neq(v, v'))
-                            apply \forall v (\neg(\exists v' (in(op(z, v), g) \wedge in(op(z, v'), h) \wedge neq(v, v')))) for w
-                            apply invoke rightward neg_exist_leftrightarrow_forall_neg for \lambda^P v'. in(op(z, w), g) \wedge in(op(z, v'), h) \wedge neq(w, v')
-                            apply \forall v' (\neg(in(op(z, w), g) \wedge in(op(z, v'), h) \wedge neq(w, v'))) for w'
-                            deny neq(w, w') {
-                              connect in(op(z, w), g) \wedge in(op(z, w'), h) \wedge neq(w, w')
-                              contradict in(op(z, w), g) \wedge in(op(z, w'), h) \wedge neq(w, w')
-                            }
-                            substitute in(op(z, w'), h) for w': w
-                          }
-                          connect in(op(z, w), g) \wedge in(op(z, w), h)
-                          lift for w conclude \exists w (in(op(z, w), g) \wedge in(op(z, w), h))
-                        }
-                      }
-                    }
-                    apply invoke rightward \forall u \forall v (in(op(u, v), g) \leftrightarrow in(u, r) \wedge \exists s (seg(u, \psi, s) \wedge \phi(op(u, res(g, s)), v))) for a, v
-                    split in(a, r) \wedge \exists s (seg(a, \psi, s) \wedge \phi(op(a, res(g, s)), v))
-                    some s such \exists s (seg(a, \psi, s) \wedge \phi(op(a, res(g, s)), v)) {
-                      split seg(a, \psi, s) \wedge \phi(op(a, res(g, s)), v)
-                      apply invoke rightward \forall u \forall v (in(op(u, v), h) \leftrightarrow in(u, t) \wedge \exists s (seg(u, \psi, s) \wedge \phi(op(u, res(h, s)), v))) for a, v'
-                      split in(a, t) \wedge \exists s (seg(a, \psi, s) \wedge \phi(op(a, res(h, s)), v'))
-                      some s' such \exists s' (seg(a, \psi, s') \wedge \phi(op(a, res(h, s')), v')) {
-                        split seg(a, \psi, s') \wedge \phi(op(a, res(h, s')), v')
-                        connect seg(a, \psi, s) \wedge seg(a, \psi, s')
-                        apply invoke seg_is_unique for a, \psi, s, s'
-                        substitute \phi(op(a, res(h, s')), v') for s': s
-                      }
-                      any p {
-                        assume in(p, res(g, s)) {
-                          expand in(p, res(g, s)) for res
-                          apply invoke rightward sep_existence for g, \lambda^P z. \exists x \exists y (in(x, s) \wedge equal(z, op(x, y))), p
-                          split in(p, g) \wedge \exists x \exists y (in(x, s) \wedge equal(p, op(x, y)))
-                          some z, w such \exists x \exists y (in(x, s) \wedge equal(p, op(x, y))) {
-                            split in(z, s) \wedge equal(p, op(z, w))
-                            substitute in(p, g) for p: op(z, w)
-                            apply invoke rightward seg(a, \psi, s) for z
-                            apply invoke \forall z (\psi(z, a) \to \exists w (in(op(z, w), g) \wedge in(op(z, w), h))) for z
-                            some w' such \exists w' (in(op(z, w'), g) \wedge in(op(z, w'), h)) {
-                              split in(op(z, w'), g) \wedge in(op(z, w'), h)
-                              connect in(op(z, w), g) \wedge in(op(z, w'), g)
-                              split fun(g)
-                              apply invoke \forall x \forall y \forall y' (in(op(x, y), g) \wedge in(op(x, y'), g) \to equal(y, y')) for z, w, w'
+                              apply invoke rightward neg_exist_leftrightarrow_forall_neg for \lambda^P v. \exists v' (in(op(z, v), g) \wedge in(op(z, v'), h) \wedge neq(v, v'))
+                              apply \forall v (\neg(\exists v' (in(op(z, v), g) \wedge in(op(z, v'), h) \wedge neq(v, v')))) for w
+                              apply invoke rightward neg_exist_leftrightarrow_forall_neg for \lambda^P v'. in(op(z, w), g) \wedge in(op(z, v'), h) \wedge neq(w, v')
+                              apply \forall v' (\neg(in(op(z, w), g) \wedge in(op(z, v'), h) \wedge neq(w, v'))) for w'
+                              deny neq(w, w') {
+                                connect in(op(z, w), g) \wedge in(op(z, w'), h) \wedge neq(w, w')
+                                contradict in(op(z, w), g) \wedge in(op(z, w'), h) \wedge neq(w, w')
+                              }
                               substitute in(op(z, w'), h) for w': w
                             }
-                            substitute in(op(z, w), h) for op(z, w): p
+                            connect in(op(z, w), g) \wedge in(op(z, w), h)
+                            lift for w conclude \exists w (in(op(z, w), g) \wedge in(op(z, w), h))
                           }
-                          connect in(p, h) \wedge \exists x \exists y (in(x, s) \wedge equal(p, op(x, y)))
-                          apply invoke leftward sep_existence for h, \lambda^P z. \exists x \exists y (in(x, s) \wedge equal(z, op(x, y))), p
-                          fold for res conclude in(p, res(h, s))
                         }
-                        assume in(p, res(h, s)) {
-                          expand in(p, res(h, s)) for res
-                          apply invoke rightward sep_existence for h, \lambda^P z. \exists x \exists y (in(x, s) \wedge equal(z, op(x, y))), p
-                          split in(p, h) \wedge \exists x \exists y (in(x, s) \wedge equal(p, op(x, y)))
-                          some z, w such \exists x \exists y (in(x, s) \wedge equal(p, op(x, y))) {
-                            split in(z, s) \wedge equal(p, op(z, w))
-                            substitute in(p, h) for p: op(z, w)
-                            apply invoke rightward seg(a, \psi, s) for z
-                            apply invoke \forall z (\psi(z, a) \to \exists w (in(op(z, w), g) \wedge in(op(z, w), h))) for z
-                            some w' such \exists w' (in(op(z, w'), g) \wedge in(op(z, w'), h)) {
-                              split in(op(z, w'), g) \wedge in(op(z, w'), h)
-                              connect in(op(z, w), h) \wedge in(op(z, w'), h)
-                              split fun(h)
-                              apply invoke \forall x \forall y \forall y' (in(op(x, y), h) \wedge in(op(x, y'), h) \to equal(y, y')) for z, w, w'
-                              substitute in(op(z, w'), g) for w': w
-                            }
-                            substitute in(op(z, w), g) for op(z, w): p
-                          }
-                          connect in(p, g) \wedge \exists x \exists y (in(x, s) \wedge equal(p, op(x, y)))
-                          apply invoke leftward sep_existence for g, \lambda^P z. \exists x \exists y (in(x, s) \wedge equal(z, op(x, y))), p
-                          fold for res conclude in(p, res(g, s))
-                        }
-                        connect in(p, res(g, s)) \leftrightarrow in(p, res(h, s))
                       }
-                      apply invoke axiom_of_extensionality for res(g, s), res(h, s)
-                      substitute \phi(op(a, res(h, s)), v') for res(h, s): res(g, s)
-                      connect \phi(op(a, res(g, s)), v) \wedge \phi(op(a, res(g, s)), v')
-                      apply invoke functional(\phi) for op(a, res(g, s)), v, v'
+                      apply invoke rightward \forall u \forall v (in(op(u, v), g) \leftrightarrow in(u, r) \wedge \exists s (seg(u, \psi, s) \wedge \phi(op(u, res(g, s)), v))) for a, v
+                      split in(a, r) \wedge \exists s (seg(a, \psi, s) \wedge \phi(op(a, res(g, s)), v))
+                      some s such \exists s (seg(a, \psi, s) \wedge \phi(op(a, res(g, s)), v)) {
+                        split seg(a, \psi, s) \wedge \phi(op(a, res(g, s)), v)
+                        apply invoke rightward \forall u \forall v (in(op(u, v), h) \leftrightarrow in(u, t) \wedge \exists s (seg(u, \psi, s) \wedge \phi(op(u, res(h, s)), v))) for a, v'
+                        split in(a, t) \wedge \exists s (seg(a, \psi, s) \wedge \phi(op(a, res(h, s)), v'))
+                        some s' such \exists s' (seg(a, \psi, s') \wedge \phi(op(a, res(h, s')), v')) {
+                          split seg(a, \psi, s') \wedge \phi(op(a, res(h, s')), v')
+                          connect seg(a, \psi, s) \wedge seg(a, \psi, s')
+                          apply invoke seg_is_unique for a, \psi, s, s'
+                          substitute \phi(op(a, res(h, s')), v') for s': s
+                        }
+                        any p {
+                          assume in(p, res(g, s)) {
+                            apply invoke rightward res_characterization for g, s, p
+                            split in(p, g) \wedge \exists x \exists y (in(x, s) \wedge equal(p, op(x, y)))
+                            some z, w such \exists x \exists y (in(x, s) \wedge equal(p, op(x, y))) {
+                              split in(z, s) \wedge equal(p, op(z, w))
+                              substitute in(p, g) for p: op(z, w)
+                              apply invoke rightward seg(a, \psi, s) for z
+                              apply invoke \forall z (\psi(z, a) \to \exists w (in(op(z, w), g) \wedge in(op(z, w), h))) for z
+                              some w' such \exists w' (in(op(z, w'), g) \wedge in(op(z, w'), h)) {
+                                split in(op(z, w'), g) \wedge in(op(z, w'), h)
+                                connect in(op(z, w), g) \wedge in(op(z, w'), g)
+                                split fun(g)
+                                apply invoke \forall x \forall y \forall y' (in(op(x, y), g) \wedge in(op(x, y'), g) \to equal(y, y')) for z, w, w'
+                                substitute in(op(z, w'), h) for w': w
+                              }
+                              substitute in(op(z, w), h) for op(z, w): p
+                            }
+                            connect in(p, h) \wedge \exists x \exists y (in(x, s) \wedge equal(p, op(x, y)))
+                            apply invoke leftward res_characterization for h, s, p
+                          }
+                          assume in(p, res(h, s)) {
+                            apply invoke rightward res_characterization for h, s, p
+                            split in(p, h) \wedge \exists x \exists y (in(x, s) \wedge equal(p, op(x, y)))
+                            some z, w such \exists x \exists y (in(x, s) \wedge equal(p, op(x, y))) {
+                              split in(z, s) \wedge equal(p, op(z, w))
+                              substitute in(p, h) for p: op(z, w)
+                              apply invoke rightward seg(a, \psi, s) for z
+                              apply invoke \forall z (\psi(z, a) \to \exists w (in(op(z, w), g) \wedge in(op(z, w), h))) for z
+                              some w' such \exists w' (in(op(z, w'), g) \wedge in(op(z, w'), h)) {
+                                split in(op(z, w'), g) \wedge in(op(z, w'), h)
+                                connect in(op(z, w), h) \wedge in(op(z, w'), h)
+                                split fun(h)
+                                apply invoke \forall x \forall y \forall y' (in(op(x, y), h) \wedge in(op(x, y'), h) \to equal(y, y')) for z, w, w'
+                                substitute in(op(z, w'), g) for w': w
+                              }
+                              substitute in(op(z, w), g) for op(z, w): p
+                            }
+                            connect in(p, g) \wedge \exists x \exists y (in(x, s) \wedge equal(p, op(x, y)))
+                            apply invoke leftward res_characterization for g, s, p
+                          }
+                          connect in(p, res(g, s)) \leftrightarrow in(p, res(h, s))
+                        }
+                        apply invoke axiom_of_extensionality for res(g, s), res(h, s)
+                        substitute \phi(op(a, res(h, s)), v') for res(h, s): res(g, s)
+                        connect \phi(op(a, res(g, s)), v) \wedge \phi(op(a, res(g, s)), v')
+                        apply invoke functional(\phi) for op(a, res(g, s)), v, v'
+                      }
+                      contradict equal(v, v')
                     }
-                    contradict equal(v, v')
                   }
                 }
-              }
-              apply invoke rightward neg_exist_leftrightarrow_forall_neg for \lambda^P u. \exists v \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v'))
-              any u {
-                apply \forall u (\neg(\exists v \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v')))) for u
-                apply invoke rightward neg_exist_leftrightarrow_forall_neg for \lambda^P v. \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v'))
-                any v {
-                  apply \forall v (\neg(\exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v')))) for v
-                  apply invoke rightward neg_exist_leftrightarrow_forall_neg for \lambda^P v'. (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v'))
-                  any v' {
-                    apply \forall v' (\neg(in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v'))) for v'
-                    assume in(op(u, v), g) \wedge in(op(u, v'), h) {
-                      split in(op(u, v), g) \wedge in(op(u, v'), h)
-                      deny neq(v, v') {
-                        connect in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v')
-                        contradict in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v')
+                apply invoke rightward neg_exist_leftrightarrow_forall_neg for \lambda^P u. \exists v \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v'))
+                any u {
+                  apply \forall u (\neg(\exists v \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v')))) for u
+                  apply invoke rightward neg_exist_leftrightarrow_forall_neg for \lambda^P v. \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v'))
+                  any v {
+                    apply \forall v (\neg(\exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v')))) for v
+                    apply invoke rightward neg_exist_leftrightarrow_forall_neg for \lambda^P v'. (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v'))
+                    any v' {
+                      apply \forall v' (\neg(in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v'))) for v'
+                      assume in(op(u, v), g) \wedge in(op(u, v'), h) {
+                        split in(op(u, v), g) \wedge in(op(u, v'), h)
+                        deny neq(v, v') {
+                          connect in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v')
+                          contradict in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v')
+                        }
                       }
                     }
                   }

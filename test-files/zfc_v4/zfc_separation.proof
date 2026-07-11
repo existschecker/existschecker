@@ -1,37 +1,38 @@
 include "zfc_op.proof"
 
-axiom axiom_of_separation \forall x \forall^P \phi[1] \exists y \forall z (in(z, y) \leftrightarrow in(z, x) \wedge \phi(z))
+definition predicate sep(x, predicate \phi[1], y) as \forall z (in(z, y) \leftrightarrow in(z, x) \wedge \phi(z))
 
-theorem separation_exists_uniquely \forall x \forall^P \phi[1] \exists! y \forall z (in(z, y) \leftrightarrow in(z, x) \wedge \phi(z)) {
+axiom axiom_of_separation \forall x \forall^P \phi[1] \exists y (sep(x, \phi, y))
+
+theorem separation_exists_uniquely \forall x \forall^P \phi[1] \exists! y (sep(x, \phi, y)) {
   any x, predicate \phi[1] {
     apply axiom_of_separation for x, \phi
+    expand \exists y (sep(x, \phi, y)) for sep
     apply invoke set_exists_implies_set_exists_uniquely for \lambda^P z. in(z, x) \wedge \phi(z)
+    fold for sep conclude \exists! y (sep(x, \phi, y))
   }
 }
 
-definition function sep by separation_exists_uniquely
-existence sep_existence \forall x \forall^P \phi[1] \forall z (in(z, sep(x, \phi)) \leftrightarrow in(z, x) \wedge \phi(z)) by sep
-uniqueness sep_uniqueness \forall x \forall^P \phi[1] \forall y (\forall z (in(z, y) \leftrightarrow in(z, x) \wedge \phi(z)) \to equal(y, sep(x, \phi))) by sep
-
-theorem sep_is_subset \forall x \forall^P \phi[1] (subset(sep(x, \phi), x)) {
-  any x, predicate \phi[1] {
-    any z {
-      assume in(z, sep(x, \phi)) {
-        apply invoke rightward sep_existence for x, \phi, z
-        split 1 in(z, x) \wedge \phi(z)
+theorem sep_is_subset \forall x \forall^P \phi[1] \forall y (sep(x, \phi, y) \to subset(y, x)) {
+  any x, predicate \phi[1], y {
+    assume sep(x, \phi, y) {
+      any z {
+        assume in(z, y) {
+          apply invoke rightward sep(x, \phi, y) for z
+          split 1 in(z, x) \wedge \phi(z)
+        }
       }
+      fold for subset conclude subset(y, x)
     }
-    fold for subset conclude subset(sep(x, \phi), x)
   }
 }
 
-theorem sep_satisfies_predicate \forall x \forall^P \phi[1] \forall y (in(y, sep(x, \phi)) \to \phi(y)) {
-  any x, predicate \phi[1] {
-    any y {
-      assume in(y, sep(x, \phi)) {
-        apply invoke rightward sep_existence for x, \phi, y
-        split 2 in(y, x) \wedge \phi(y)
-      }
+theorem sep_satisfies_predicate \forall x \forall^P \phi[1] \forall y \forall z (sep(x, \phi, y) \wedge in(z, y) \to \phi(z)) {
+  any x, predicate \phi[1], y, z {
+    assume sep(x, \phi, y) \wedge in(z, y) {
+      split sep(x, \phi, y) \wedge in(z, y)
+      apply invoke rightward sep(x, \phi, y) for z
+      split 2 in(z, x) \wedge \phi(z)
     }
   }
 }
