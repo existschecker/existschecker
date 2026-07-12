@@ -1,0 +1,214 @@
+include "zfc_ordinal_emptyset.proof"
+
+theorem subset_closed_in_implies_closed_adj_in \forall x \forall t (subset(x, t) \wedge closed(t, in) \to closed(adj(t, x), in)) {
+  any x, t {
+    assume subset(x, t) \wedge closed(t, in) {
+      split subset(x, t) \wedge closed(t, in)
+      any y {
+        assume in(y, x) {
+          apply invoke subset(x, t) for y
+        }
+      }
+      connect closed(t, in) \wedge \forall y(in(y, x) \to in(y, t))
+      apply invoke adj_of_closed_is_closed for x, t, in
+    }
+  }
+}
+
+theorem suc_of_closed_is_closed \forall x (closed(x, in) \to closed(suc(x), in)) {
+  any x {
+    assume closed(x, in) {
+      any y, z {
+        assume in(z, y) \wedge in(y, suc(x)) {
+          split in(z, y) \wedge in(y, suc(x))
+          apply invoke rightward suc_characterization for x, y
+          divide in(y, x) \vee equal(y, x)
+            case in(y, x) {
+              connect in(z, y) \wedge in(y, x)
+              apply invoke closed(x, in) for y, z
+              pad in(z, x) conclude in(z, x) \vee equal(z, x)
+              apply invoke leftward suc_characterization for x, z
+            }
+            case equal(y, x) {
+              substitute in(z, y) for y: x
+              pad in(z, x) conclude in(z, x) \vee equal(z, x)
+              apply invoke leftward suc_characterization for x, z
+            }
+        }
+      }
+      fold for closed conclude closed(suc(x), in)
+    }
+  }
+}
+
+theorem suc_of_irrefrel_is_irrefrel \forall x (irrefrel(x, in) \to irrefrel(suc(x), in)) {
+  any x {
+    assume irrefrel(x, in) {
+      apply invoke irrefrel_not_contain_itself for x
+      connect irrefrel(x, in) \wedge notin(x, x)
+      apply invoke adj_of_irrefrel_is_irrefrel for x, x, in
+      fold for suc conclude irrefrel(suc(x), in)
+    }
+  }
+}
+
+theorem suc_of_closed_wellfounded_is_wellfounded \forall \alpha (closed(\alpha, in) \wedge wellfounded(\alpha, in) \to wellfounded(suc(\alpha), in)) {
+  any \alpha {
+    assume closed(\alpha, in) \wedge wellfounded(\alpha, in) {
+      split closed(\alpha, in) \wedge wellfounded(\alpha, in)
+      apply invoke adj_of_closed_wellfounded_is_wellfounded for \alpha, \alpha, in
+      fold for suc conclude wellfounded(suc(\alpha), in)
+    }
+  }
+}
+
+theorem suc_of_closed_transrel_is_transrel \forall x (closed(x, in) \wedge transrel(x, in) \to transrel(suc(x), in)) {
+  any x {
+    assume closed(x, in) \wedge transrel(x, in) {
+      split closed(x, in) \wedge transrel(x, in)
+      any y, z, w {
+        assume in(y, suc(x)) \wedge in(z, suc(x)) \wedge in(w, suc(x)) \wedge in(y, z) \wedge in(z, w) {
+          split in(y, suc(x)) \wedge in(z, suc(x)) \wedge in(w, suc(x)) \wedge in(y, z) \wedge in(z, w)
+          apply invoke rightward suc_characterization for x, w
+          divide in(w, x) \vee equal(w, x)
+            case in(w, x) {
+              connect in(z, w) \wedge in(w, x)
+              apply invoke closed(x, in) for w, z
+              connect in(y, z) \wedge in(z, x)
+              apply invoke closed(x, in) for z, y
+              connect in(y, x) \wedge in(z, x) \wedge in(w, x) \wedge in(y, z) \wedge in(z, w)
+              apply invoke transrel(x, in) for y, z, w
+            }
+            case equal(w, x) {
+              substitute in(z, w) for w: x
+              connect in(y, z) \wedge in(z, x)
+              apply invoke closed(x, in) for z, y
+              substitute in(y, x) for x: w
+            }
+        }
+      }
+      fold for transrel conclude transrel(suc(x), in)
+    }
+  }
+}
+
+theorem suc_of_closed_irrefrel_order_is_order \forall x (closed(x, in) \wedge irrefrel(x, in) \wedge order(x, in) \to order(suc(x), in)) {
+  any x {
+    assume closed(x, in) \wedge irrefrel(x, in) \wedge order(x, in) {
+      split closed(x, in) \wedge irrefrel(x, in) \wedge order(x, in)
+      apply invoke suc_of_irrefrel_is_irrefrel for x
+      split order(x, in)
+      connect closed(x, in) \wedge transrel(x, in)
+      apply invoke suc_of_closed_transrel_is_transrel for x
+      connect irrefrel(suc(x), in) \wedge transrel(suc(x), in)
+      apply invoke irrefrel_and_transrel_implies_order for suc(x), in
+    }
+  }
+}
+
+theorem suc_of_closed_irrefrel_linorder_is_linorder \forall \alpha (closed(\alpha, in) \wedge irrefrel(\alpha, in) \wedge linorder(\alpha, in) \to linorder(suc(\alpha), in)) {
+  any \alpha {
+    assume closed(\alpha, in) \wedge irrefrel(\alpha, in) \wedge linorder(\alpha, in) {
+      split closed(\alpha, in) \wedge irrefrel(\alpha, in) \wedge linorder(\alpha, in)
+      split linorder(\alpha, in)
+      connect closed(\alpha, in) \wedge irrefrel(\alpha, in) \wedge order(\alpha, in)
+      apply invoke suc_of_closed_irrefrel_order_is_order for \alpha
+      any \beta, \gamma {
+        assume in(\beta, suc(\alpha)) \wedge in(\gamma, suc(\alpha)) {
+          split in(\beta, suc(\alpha)) \wedge in(\gamma, suc(\alpha))
+          apply invoke rightward suc_characterization for \alpha, \beta
+          apply invoke rightward suc_characterization for \alpha, \gamma
+          divide in(\beta, \alpha) \vee equal(\beta, \alpha)
+            case in(\beta, \alpha) {
+              divide in(\gamma, \alpha) \vee equal(\gamma, \alpha)
+                case in(\gamma, \alpha) {
+                  connect in(\beta, \alpha) \wedge in(\gamma, \alpha)
+                  apply invoke linorder_core(\alpha, in) for \beta, \gamma
+                }
+                case equal(\gamma, \alpha) {
+                  substitute in(\beta, \alpha) for \alpha: \gamma
+                  pad in(\beta, \gamma) conclude in(\beta, \gamma) \vee equal(\beta, \gamma) \vee in(\gamma, \beta)
+                }
+            }
+            case equal(\beta, \alpha) {
+              divide in(\gamma, \alpha) \vee equal(\gamma, \alpha)
+                case in(\gamma, \alpha) {
+                  substitute in(\gamma, \alpha) for \alpha: \beta
+                  pad in(\gamma, \beta) conclude in(\beta, \gamma) \vee equal(\beta, \gamma) \vee in(\gamma, \beta)
+                }
+                case equal(\gamma, \alpha) {
+                  substitute equal(\gamma, \alpha) for \alpha: \beta
+                  pad equal(\beta, \gamma) conclude in(\beta, \gamma) \vee equal(\beta, \gamma) \vee in(\gamma, \beta)
+                }
+            }
+        }
+      }
+      fold for linorder_core conclude linorder_core(suc(\alpha), in)
+      connect linorder(suc(\alpha), in)
+    }
+  }
+}
+
+theorem suc_of_ordinal_is_wellorder \forall \alpha (ordinal(\alpha) \to wellorder(suc(\alpha), in)) {
+  any \alpha {
+    assume ordinal(\alpha) {
+      split ordinal(\alpha)
+      split wellorder(\alpha, in)
+      connect closed(\alpha, in) \wedge wellfounded(\alpha, in)
+      apply invoke suc_of_closed_wellfounded_is_wellfounded for \alpha
+      connect closed(\alpha, in) \wedge irrefrel(\alpha, in) \wedge linorder(\alpha, in)
+      apply invoke suc_of_closed_irrefrel_linorder_is_linorder for \alpha
+      connect wellorder(suc(\alpha), in)
+    }
+  }
+}
+
+theorem suc_of_ordinal_is_ordinal \forall \alpha (ordinal(\alpha) \to ordinal(suc(\alpha))) {
+  any \alpha {
+    assume ordinal(\alpha) {
+      split ordinal(\alpha)
+      apply invoke suc_of_closed_is_closed for \alpha
+      apply invoke suc_of_irrefrel_is_irrefrel for \alpha
+      apply invoke suc_of_ordinal_is_wellorder for \alpha
+      connect ordinal(suc(\alpha))
+    }
+  }
+}
+
+theorem closed_irrefrel_implies_suc_is_injection \forall x \forall y (closed(x, in) \wedge irrefrel(x, in) \wedge equal(suc(x), suc(y)) \to equal(x, y)) {
+  any x, y {
+    assume closed(x, in) \wedge irrefrel(x, in) \wedge equal(suc(x), suc(y)) {
+      split closed(x, in) \wedge irrefrel(x, in) \wedge equal(suc(x), suc(y))
+      apply in_suc for x
+      substitute in(x, suc(x)) for suc(x): suc(y)
+      apply invoke rightward suc_characterization for y, x
+      apply in_suc for y
+      substitute in(y, suc(y)) for suc(y): suc(x)
+      apply invoke rightward suc_characterization for x, y
+      divide in(x, y) \vee equal(x, y)
+        case in(x, y) {
+          divide in(y, x) \vee equal(y, x)
+            case in(y, x) {
+              connect in(x, y) \wedge in(y, x)
+              apply invoke closed(x, in) for y, x
+              apply invoke irrefrel_not_contain_itself for x
+              contradict in(x, x)
+              explode equal(x, y)
+            }
+            case equal(y, x) {}
+        }
+        case equal(x, y) {}
+    }
+  }
+}
+
+theorem ordinal_implies_suc_is_injection \forall \alpha \forall \beta (ordinal(\alpha) \wedge equal(suc(\alpha), suc(\beta)) \to equal(\alpha, \beta)) {
+  any \alpha, \beta {
+    assume ordinal(\alpha) \wedge equal(suc(\alpha), suc(\beta)) {
+      split ordinal(\alpha) \wedge equal(suc(\alpha), suc(\beta))
+      split ordinal(\alpha)
+      connect closed(\alpha, in) \wedge irrefrel(\alpha, in) \wedge equal(suc(\alpha), suc(\beta))
+      apply invoke closed_irrefrel_implies_suc_is_injection for \alpha, \beta
+    }
+  }
+}

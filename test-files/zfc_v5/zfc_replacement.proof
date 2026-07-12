@@ -1,0 +1,12 @@
+include "zfc_bigcup.proof"
+
+definition predicate replacement(X, predicate \psi[2], Y) as \forall y (in(y, Y) \leftrightarrow \exists x (in(x, X) \wedge \psi(x, y)))
+
+theorem replacement_is_unique \forall X \forall^P \psi[2] \forall Y \forall Y' (replacement(X, \psi, Y) \wedge replacement(X, \psi, Y')  \to equal(Y, Y')) {
+  any X, predicate \psi[2], Y, Y' {
+    assume replacement(X, \psi, Y) \wedge replacement(X, \psi, Y') {
+      expand replacement(X, \psi, Y) \wedge replacement(X, \psi, Y') for replacement
+      apply invoke set_is_unique_for_predicate for \lambda^P y. \exists x (in(x, X) \wedge \psi(x, y)), Y, Y'
+    }
+  }
+}

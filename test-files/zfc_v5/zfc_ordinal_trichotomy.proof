@@ -1,0 +1,265 @@
+include "zfc_ordinal.proof"
+
+theorem element_of_ordinal_is_closed \forall \alpha \forall \beta (ordinal(\alpha) \wedge in(\beta, \alpha) \to closed(\beta, in)) {
+  any \alpha, \beta {
+    assume ordinal(\alpha) \wedge in(\beta, \alpha) {
+      split ordinal(\alpha) \wedge in(\beta, \alpha)
+      any \gamma, \delta {
+        assume in(\gamma, \beta) \wedge in(\delta, \gamma) {
+          split in(\gamma, \beta) \wedge in(\delta, \gamma)
+          split ordinal(\alpha)
+          connect in(\beta, \alpha) \wedge in(\gamma, \beta)
+          apply invoke closed(\alpha, in) for \beta, \gamma
+          connect in(\gamma, \alpha) \wedge in(\delta, \gamma)
+          apply invoke closed(\alpha, in) for \gamma, \delta
+          connect in(\delta, \alpha) \wedge in(\gamma, \alpha) \wedge in(\beta, \alpha) \wedge in(\delta, \gamma) \wedge in(\gamma, \beta)
+          split 2 wellorder(\alpha, in)
+          split 1 linorder(\alpha, in)
+          split 1 order(\alpha, in)
+          apply invoke transrel(\alpha, in) for \delta, \gamma, \beta
+        }
+      }
+      fold for closed conclude closed(\beta, in)
+    }
+  }
+}
+
+theorem element_of_ordinal_is_ordinal \forall \alpha \forall \beta (ordinal(\alpha) \wedge in(\beta, \alpha) \to ordinal(\beta)) {
+  any \alpha, \beta {
+    assume ordinal(\alpha) \wedge in(\beta, \alpha) {
+      split ordinal(\alpha) \wedge in(\beta, \alpha)
+      apply invoke element_of_ordinal_is_closed for \alpha, \beta
+      split ordinal(\alpha)
+      apply invoke rightward closed_in_iff_element_is_subset for \alpha
+      apply invoke \forall \beta (in(\beta, \alpha) \to subset(\beta, \alpha)) for \beta
+      connect irrefrel(\alpha, in)\wedge subset(\beta, \alpha)
+      apply invoke subset_of_irrefrel_is_irrefrel for in, \alpha, \beta
+      connect wellorder(\alpha, in)\wedge subset(\beta, \alpha)
+      apply invoke subset_of_wellorder_is_wellorder for in, \alpha, \beta
+      connect closed(\beta, in) \wedge irrefrel(\beta, in) \wedge wellorder(\beta, in)
+      fold for ordinal conclude ordinal(\beta)
+    }
+  }
+}
+
+theorem ordinal_not_contain_itself \forall \alpha (ordinal(\alpha) \to notin(\alpha, \alpha)) {
+  any \alpha {
+    assume ordinal(\alpha) {
+      split 2 ordinal(\alpha)
+      apply invoke irrefrel_not_contain_itself for \alpha
+    }
+  }
+}
+
+theorem ordinal_subsetneq_of_ordinal_is_element \forall \alpha \forall \beta (ordinal(\alpha) \wedge ordinal(\beta) \wedge subsetneq(\beta, \alpha) \to in(\beta, \alpha)) {
+  any \alpha, \beta {
+    assume ordinal(\alpha) \wedge ordinal(\beta) \wedge subsetneq(\beta, \alpha) {
+      split ordinal(\alpha) \wedge ordinal(\beta) \wedge subsetneq(\beta, \alpha)
+      apply setminus_is_subset for \alpha, \beta
+      apply invoke setminus_of_subsetneq_is_not_emptyset for \alpha, \beta
+      connect subset(setminus(\alpha, \beta), \alpha) \wedge neq(setminus(\alpha, \beta), emptyset)
+      split ordinal(\alpha)
+      split wellorder(\alpha, in)
+      split linorder(\alpha, in)
+      split order(\alpha, in)
+      apply invoke wellfounded(\alpha, in) for setminus(\alpha, \beta)
+      some \gamma such \exists \gamma (minimal(in, setminus(\alpha, \beta), \gamma)) {
+        split minimal(in, setminus(\alpha, \beta), \gamma)
+        apply invoke rightward setminus_characterization for \alpha, \beta, \gamma
+        split in(\gamma, \alpha) \wedge notin(\gamma, \beta)
+        any \delta {
+          assume in(\delta, \gamma) {
+            deny notin(\delta, \beta) {
+              connect in(\gamma,\alpha) \wedge in(\delta, \gamma)
+              apply invoke closed(\alpha, in) for \gamma, \delta
+              deny equal(\delta,\gamma) {
+                substitute in(\delta, \gamma) for \delta: \gamma
+                apply invoke irrefrel(\alpha, in) for \gamma
+                contradict in(\gamma, \gamma)
+              }
+              connect in(\delta, \alpha) \wedge notin(\delta, \beta)
+              apply invoke leftward setminus_characterization for \alpha, \beta, \delta
+              connect in(\delta, setminus(\alpha, \beta)) \wedge neq(\delta, \gamma)
+              apply invoke minimal_core(in, setminus(\alpha, \beta), \gamma) for \delta
+              contradict in(\delta, \gamma)
+            }
+          }
+          assume in(\delta, \beta) {
+            split 1 subsetneq(\beta, \alpha)
+            connect in(\delta, \beta)\wedge subset(\beta, \alpha)
+            apply invoke subset(\beta, \alpha) for \delta
+            connect in(\delta, \alpha)\wedge in(\gamma, \alpha)
+            apply invoke linorder_core(\alpha,in) for \delta, \gamma
+            divide in(\delta, \gamma)\vee equal(\delta, \gamma)\vee in(\gamma, \delta)
+              case in(\delta, \gamma) {}
+              case equal(\delta, \gamma) {
+                substitute in(\delta, \beta) for \delta: \gamma
+                contradict in(\gamma, \beta)
+                explode in(\delta, \gamma)
+              }
+              case in(\gamma, \delta) {
+                connect in(\gamma, \delta)\wedge in(\delta, \beta)
+                split 1 ordinal(\beta)
+                apply invoke closed(\beta, in) for \delta, \gamma
+                contradict in(\gamma, \beta)
+                explode in(\delta, \gamma)
+              }
+          }
+          connect in(\delta, \gamma) \leftrightarrow in(\delta, \beta)
+        }
+        apply invoke axiom_of_extensionality for \gamma, \beta
+        substitute in(\gamma, \alpha) for \gamma: \beta
+      }
+    }
+  }
+}
+
+theorem ordinal_in_iff_subsetneq \forall \alpha \forall \beta (ordinal(\alpha) \wedge ordinal(\beta) \to (in(\alpha, \beta) \leftrightarrow subsetneq(\alpha, \beta))) {
+  any \alpha,\beta {
+    assume ordinal(\alpha) \wedge ordinal(\beta) {
+      split ordinal(\alpha) \wedge ordinal(\beta)
+      assume in(\alpha, \beta) {
+        split 1 ordinal(\beta)
+        apply invoke rightward closed_in_iff_element_is_subset for \beta
+        apply invoke \forall y (in(y, \beta) \to subset(y, \beta)) for \alpha
+        deny equal(\alpha, \beta) {
+          substitute in(\alpha, \beta) for \beta: \alpha
+          apply invoke ordinal_not_contain_itself for \alpha
+          contradict in(\alpha, \alpha)
+        }
+        connect subset(\alpha, \beta)\wedge neq(\alpha, \beta)
+        fold for subsetneq conclude subsetneq(\alpha, \beta)
+      }
+      assume subsetneq(\alpha, \beta) {
+        connect ordinal(\alpha) \wedge ordinal(\beta) \wedge subsetneq(\alpha, \beta)
+        apply invoke ordinal_subsetneq_of_ordinal_is_element for \beta, \alpha
+      }
+      connect in(\alpha, \beta) \leftrightarrow subsetneq(\alpha, \beta)
+    }
+  }
+}
+
+theorem ordinal_subset_iff_in_or_equal \forall \alpha \forall \beta (ordinal(\alpha) \wedge ordinal(\beta) \to (subset(\alpha, \beta) \leftrightarrow in(\alpha, \beta) \vee equal(\alpha, \beta))) {
+  any \alpha, \beta {
+    assume ordinal(\alpha) \wedge ordinal(\beta) {
+      apply invoke ordinal_in_iff_subsetneq for \alpha, \beta
+      assume subset(\alpha, \beta) {
+        apply invoke rightward subset_iff_subsetneq_vee_equal for \alpha, \beta
+        divide subsetneq(\alpha, \beta) \vee equal(\alpha, \beta)
+          case subsetneq(\alpha, \beta) {
+            invoke leftward in(\alpha, \beta) \leftrightarrow subsetneq(\alpha, \beta)
+            pad in(\alpha, \beta) conclude in(\alpha, \beta) \vee equal(\alpha, \beta)
+          }
+          case equal(\alpha, \beta) {
+            pad equal(\alpha, \beta) conclude in(\alpha, \beta) \vee equal(\alpha, \beta)
+          }
+      }
+      assume in(\alpha, \beta) \vee equal(\alpha, \beta) {
+        divide in(\alpha, \beta) \vee equal(\alpha, \beta)
+          case in(\alpha, \beta) {
+            invoke rightward in(\alpha, \beta) \leftrightarrow subsetneq(\alpha, \beta)
+            split 1 subsetneq(\alpha, \beta)
+          }
+          case equal(\alpha, \beta) {
+            apply invoke equal_implies_subset for \alpha, \beta
+          }
+      }
+      connect subset(\alpha, \beta) \leftrightarrow in(\alpha, \beta) \vee equal(\alpha, \beta)
+    }
+  }
+}
+
+
+theorem cap_of_ordinal_is_ordinal \forall \alpha \forall \beta (ordinal(\alpha) \wedge ordinal(\beta) \to ordinal(cap(\alpha, \beta))) {
+  any \alpha, \beta {
+    assume ordinal(\alpha) \wedge ordinal(\beta) {
+      split ordinal(\alpha)\wedge ordinal(\beta)
+      split ordinal(\alpha)
+      split ordinal(\beta)
+      connect closed(\alpha, in) \wedge closed(\beta, in)
+      apply invoke cap_of_closed_is_closed for \alpha, \beta, in
+      apply cap_is_subset_left for \alpha, \beta
+      connect irrefrel(\alpha, in) \wedge subset(cap(\alpha, \beta), \alpha)
+      apply invoke subset_of_irrefrel_is_irrefrel for in, \alpha, cap(\alpha, \beta)
+      connect wellorder(\alpha, in)\wedge subset(cap(\alpha, \beta), \alpha)
+      apply invoke subset_of_wellorder_is_wellorder for in, \alpha, cap(\alpha, \beta)
+      connect closed(cap(\alpha, \beta), in) \wedge irrefrel(cap(\alpha, \beta), in) \wedge wellorder(cap(\alpha, \beta), in)
+      fold for ordinal conclude ordinal(cap(\alpha, \beta))
+    }
+  }
+}
+
+theorem ordinals_comparable_subset \forall \alpha \forall \beta (ordinal(\alpha) \wedge ordinal(\beta) \to subset(\alpha, \beta) \vee subset(\beta, \alpha)) {
+  any \alpha, \beta {
+    assume ordinal(\alpha) \wedge ordinal(\beta) {
+      split ordinal(\alpha) \wedge ordinal(\beta)
+      apply invoke cap_of_ordinal_is_ordinal for \alpha, \beta
+      apply cap_is_subset_left for \alpha, \beta
+      connect ordinal(cap(\alpha, \beta)) \wedge ordinal(\alpha)
+      apply invoke ordinal_subset_iff_in_or_equal for cap(\alpha, \beta), \alpha
+      invoke rightward subset(cap(\alpha, \beta), \alpha) \leftrightarrow in(cap(\alpha, \beta), \alpha) \vee equal(cap(\alpha, \beta), \alpha)
+      apply cap_is_subset_right for \alpha, \beta
+      connect ordinal(cap(\alpha, \beta)) \wedge ordinal(\beta)
+      apply invoke ordinal_subset_iff_in_or_equal for cap(\alpha, \beta), \beta
+      invoke rightward subset(cap(\alpha, \beta), \beta) \leftrightarrow in(cap(\alpha, \beta), \beta) \vee equal(cap(\alpha, \beta), \beta)
+      divide in(cap(\alpha, \beta), \alpha) \vee equal(cap(\alpha, \beta), \alpha)
+        case in(cap(\alpha, \beta), \alpha) {
+          divide in(cap(\alpha, \beta), \beta) \vee equal(cap(\alpha, \beta), \beta)
+            case in(cap(\alpha, \beta), \beta) {
+              connect in(cap(\alpha, \beta), \alpha) \wedge in(cap(\alpha, \beta), \beta)
+              apply invoke leftward cap_characterization for \alpha, \beta, cap(\alpha, \beta)
+              apply invoke ordinal_not_contain_itself for cap(\alpha, \beta)
+              contradict in(cap(\alpha, \beta), cap(\alpha, \beta))
+              explode subset(\alpha, \beta) \vee subset(\beta, \alpha)
+            }
+            case equal(cap(\alpha, \beta), \beta) {
+              substitute subset(cap(\alpha, \beta), \alpha) for cap(\alpha, \beta): \beta
+              pad subset(\beta, \alpha) conclude subset(\alpha, \beta) \vee subset(\beta, \alpha)
+            }
+        }
+        case equal(cap(\alpha, \beta), \alpha) {
+          substitute subset(cap(\alpha, \beta), \beta) for cap(\alpha, \beta): \alpha
+          pad subset(\alpha, \beta) conclude subset(\alpha, \beta) \vee subset(\beta, \alpha)
+        }
+    }
+  }
+}
+
+theorem ordinals_trichotomy_subset \forall \alpha \forall \beta (ordinal(\alpha) \wedge ordinal(\beta) \to subsetneq(\alpha, \beta) \vee equal(\alpha, \beta) \vee subsetneq(\beta, \alpha)) {
+  any \alpha, \beta {
+    assume ordinal(\alpha) \wedge ordinal(\beta) {
+      apply invoke ordinals_comparable_subset for \alpha, \beta
+      divide subset(\alpha, \beta) \vee subset(\beta, \alpha)
+        case subset(\alpha, \beta) {
+          apply invoke rightward subset_iff_subsetneq_vee_equal for \alpha, \beta
+          pad subsetneq(\alpha, \beta)\vee equal(\alpha, \beta) conclude subsetneq(\alpha, \beta)\vee equal(\alpha, \beta)\vee subsetneq(\beta, \alpha)
+        }
+        case subset(\beta,\alpha) {
+          apply invoke rightward subset_iff_subsetneq_vee_equal for \beta, \alpha
+          pad subsetneq(\beta, \alpha)\vee equal(\alpha, \beta) conclude subsetneq(\alpha, \beta)\vee equal(\alpha, \beta)\vee subsetneq(\beta, \alpha)
+        }
+    }
+  }
+}
+
+theorem ordinals_trichotomy_in \forall \alpha \forall \beta (ordinal(\alpha) \wedge ordinal(\beta) \to in(\alpha, \beta) \vee equal(\alpha, \beta) \vee in(\beta, \alpha)) {
+  any \alpha, \beta {
+    assume ordinal(\alpha) \wedge ordinal(\beta) {
+      apply invoke ordinals_trichotomy_subset for \alpha, \beta
+      divide subsetneq(\alpha, \beta) \vee equal(\alpha, \beta) \vee subsetneq(\beta, \alpha)
+        case subsetneq(\alpha, \beta) {
+          apply invoke ordinal_in_iff_subsetneq for \alpha, \beta
+          invoke leftward in(\alpha,\beta) \leftrightarrow subsetneq(\alpha, \beta)
+          pad in(\alpha, \beta) conclude in(\alpha, \beta) \vee equal(\alpha, \beta) \vee in(\beta, \alpha)
+        }
+        case equal(\alpha, \beta) {
+          pad equal(\alpha, \beta) conclude in(\alpha, \beta) \vee equal(\alpha, \beta) \vee in(\beta, \alpha)
+        }
+        case subsetneq(\beta, \alpha) {
+          apply invoke ordinal_in_iff_subsetneq for \beta, \alpha
+          invoke leftward in(\beta, \alpha) \leftrightarrow subsetneq(\beta, \alpha)
+          pad in(\beta, \alpha) conclude in(\alpha, \beta) \vee equal(\alpha, \beta) \vee in(\beta, \alpha)
+        }
+    }
+  }
+}

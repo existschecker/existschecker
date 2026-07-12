@@ -1,0 +1,427 @@
+include "zfc_tcset_in.proof"
+
+definition predicate hirrefrel(x, predicate \psi[2]) as \exists t (irrefrel(t, \psi) \wedge tcset(x, \psi, t))
+
+theorem element_of_hirrefrel_is_hirrefrel \forall x \forall^P \psi[2] \forall y (hirrefrel(x, \psi) \wedge \psi(y, x) \to hirrefrel(y, \psi)) {
+  any x, predicate \psi[2], y {
+    assume hirrefrel(x, \psi) \wedge \psi(y, x) {
+      split hirrefrel(x, \psi) \wedge \psi(y, x)
+      some t such hirrefrel(x, \psi) {
+        split irrefrel(t, \psi) \wedge tcset(x, \psi, t)
+        connect tcset(x, \psi, t) \wedge \psi(y, x)
+        apply invoke tcset_of_element_is_subset_of_tcset for x, \psi, t, y
+        some s such \exists s (subset(s, t) \wedge tcset(y, \psi, s)) {
+          split subset(s, t) \wedge tcset(y, \psi, s)
+          connect irrefrel(t, \psi) \wedge subset(s, t)
+          apply invoke subset_of_irrefrel_is_irrefrel for \psi, t, s
+          connect irrefrel(s, \psi) \wedge tcset(y, \psi, s)
+          lift for s conclude hirrefrel(y, \psi)
+        }
+      }
+    }
+  }
+}
+
+theorem generation_from_hirrefrel_is_hirrefrel \forall^P \psi[2] \forall Y (\forall y (\psi(y, Y) \to hirrefrel(y, \psi)) \wedge \exists S \exists Z \exists W \exists V (tcsetstep(\psi, Y, S, Z, W, V)) \to hirrefrel(Y, \psi)) {
+  any predicate \psi[2], Y {
+    assume \forall y (\psi(y, Y) \to hirrefrel(y, \psi)) \wedge \exists S \exists Z \exists W \exists V (tcsetstep(\psi, Y, S, Z, W, V)) {
+      split \forall y (\psi(y, Y) \to hirrefrel(y, \psi)) \wedge \exists S \exists Z \exists W \exists V (tcsetstep(\psi, Y, S, Z, W, V))
+      some S, Z, W, V such \exists S \exists Z \exists W \exists V (tcsetstep(\psi, Y, S, Z, W, V)) {
+        split tcsetstep(\psi, Y, S, Z, W, V)
+        apply invoke tcset_is_cup_of_itself_and_bigcup_of_tcset_of_element for \psi, Y, S, Z, W, V
+        any y {
+          assume in(y, S) {
+            apply invoke rightward seg(Y, \psi, S) for y
+            apply invoke \forall y (\psi(y, Y) \to hirrefrel(y, \psi)) for y
+            some z such hirrefrel(y, \psi) {
+              split irrefrel(z, \psi) \wedge tcset(y, \psi, z)
+              split tcset(y, \psi, z)
+              deny \psi(y, y) {
+                apply invoke \forall q (\psi(q, y) \to in(q, z)) for y
+                apply invoke irrefrel(z, \psi) for y
+                contradict \psi(y, y)
+              }
+            }
+          }
+        }
+        fold for irrefrel conclude irrefrel(S, \psi)
+        any w {
+          assume in(w, W) {
+            apply invoke rightward bigcup(Z, W) for w
+            some z such \exists z (in(w, z) \wedge in(z, Z)) {
+              split in(w, z) \wedge in(z, Z)
+              apply invoke rightward replacement(S, \lambda^P y, z. tcset(y, \psi, z), Z) for z
+              some y such \exists y (in(y, S) \wedge tcset(y, \psi, z)) {
+                split in(y, S) \wedge tcset(y, \psi, z)
+                apply invoke rightward seg(Y, \psi, S) for y
+                apply invoke \forall y (\psi(y, Y) \to hirrefrel(y, \psi)) for y
+                some z' such hirrefrel(y, \psi) {
+                  split irrefrel(z', \psi) \wedge tcset(y, \psi, z')
+                  connect tcset(y, \psi, z) \wedge tcset(y, \psi, z')
+                  apply invoke tcset_is_unique for y, \psi, z, z'
+                  substitute irrefrel(z', \psi) for z': z
+                  apply invoke irrefrel(z, \psi) for w
+                }
+              }
+            }
+          }
+        }
+        fold for irrefrel conclude irrefrel(W, \psi)
+        connect irrefrel(S, \psi) \wedge irrefrel(W, \psi) \wedge cup(S, W, V)
+        apply invoke cup_of_irrefrel_is_irrefrel for \psi, S, W, V
+        connect irrefrel(V, \psi) \wedge tcset(Y, \psi, V)
+        lift for V conclude hirrefrel(Y, \psi)
+      }
+    }
+  }
+}
+
+definition predicate hwellfounded(x, predicate \psi[2]) as \exists t (wellfounded(t, \psi) \wedge tcset(x, \psi, t))
+
+theorem element_of_hwellfounded_is_hwellfounded \forall x \forall^P \psi[2] \forall y (hwellfounded(x, \psi) \wedge \psi(y, x) \to hwellfounded(y, \psi)) {
+  any x, predicate \psi[2], y {
+    assume hwellfounded(x, \psi) \wedge \psi(y, x) {
+      split hwellfounded(x, \psi) \wedge \psi(y, x)
+      some t such hwellfounded(x, \psi) {
+        split wellfounded(t, \psi) \wedge tcset(x, \psi, t)
+        connect tcset(x, \psi, t) \wedge \psi(y, x)
+        apply invoke tcset_of_element_is_subset_of_tcset for x, \psi, t, y
+        some s such \exists s (subset(s, t) \wedge tcset(y, \psi, s)) {
+          split subset(s, t) \wedge tcset(y, \psi, s)
+          connect wellfounded(t, \psi) \wedge subset(s, t)
+          apply invoke subset_of_wellfounded_is_wellfounded for \psi, t, s
+          connect wellfounded(s, \psi) \wedge tcset(y, \psi, s)
+          lift for s conclude hwellfounded(y, \psi)
+        }
+      }
+    }
+  }
+}
+
+theorem generation_from_hwellfounded_is_hwellfounded \forall^P \psi[2] \forall Y (\forall y (\psi(y, Y) \to hwellfounded(y, \psi)) \wedge \exists S \exists Z \exists W \exists V (tcsetstep(\psi, Y, S, Z, W, V)) \to hwellfounded(Y, \psi)) {
+  any predicate \psi[2], Y {
+    assume \forall y (\psi(y, Y) \to hwellfounded(y, \psi)) \wedge \exists S \exists Z \exists W \exists V (tcsetstep(\psi, Y, S, Z, W, V)) {
+      split \forall y (\psi(y, Y) \to hwellfounded(y, \psi)) \wedge \exists S \exists Z \exists W \exists V (tcsetstep(\psi, Y, S, Z, W, V))
+      some S, Z, W, V such \exists S \exists Z \exists W \exists V (tcsetstep(\psi, Y, S, Z, W, V)) {
+        split tcsetstep(\psi, Y, S, Z, W, V)
+        apply invoke tcset_is_cup_of_itself_and_bigcup_of_tcset_of_element for \psi, Y, S, Z, W, V
+        any A {
+          assume subset(A, V) \wedge neq(A, emptyset) {
+            split subset(A, V) \wedge neq(A, emptyset)
+            apply law_of_excluded_middle for \lambda^P. \exists x (in(x, cap(A, W)))
+            divide \exists x (in(x, cap(A, W))) \vee \neg(\exists x (in(x, cap(A, W))))
+              case \exists x (in(x, cap(A, W))) {
+                some x such \exists x (in(x, cap(A, W))) {
+                  apply invoke rightward cap_characterization for A, W, x
+                  split in(x, A) \wedge in(x, W)
+                  apply invoke rightward bigcup(Z, W) for x
+                  some z such \exists z (in(x, z) \wedge in(z, Z)) {
+                    split in(x, z) \wedge in(z, Z)
+                    apply invoke rightward replacement(S, \lambda^P y, z. tcset(y, \psi, z), Z) for z
+                    some y such \exists y (in(y, S) \wedge tcset(y, \psi, z)) {
+                      split in(y, S) \wedge tcset(y, \psi, z)
+                      split tcset(y, \psi, z)
+                      apply invoke rightward seg(Y, \psi, S) for y
+                      apply invoke \forall y (\psi(y, Y) \to hwellfounded(y, \psi)) for y
+                      some z' such hwellfounded(y, \psi) {
+                        split wellfounded(z', \psi) \wedge tcset(y, \psi, z')
+                        connect tcset(y, \psi, z) \wedge tcset(y, \psi, z')
+                        apply invoke tcset_is_unique for y, \psi, z, z'
+                        substitute wellfounded(z', \psi) for z': z
+                      }
+                      apply cap_is_subset_right for A, z
+                      connect in(x, A) \wedge in(x, z)
+                      apply invoke leftward cap_characterization for A, z, x
+                      lift for x conclude \exists x (in(x, cap(A, z)))
+                      apply invoke has_a_member_not_emptyset for cap(A, z)
+                      connect subset(cap(A, z), z) \wedge neq(cap(A, z), emptyset)
+                      apply invoke wellfounded(z, \psi) for cap(A, z)
+                      some a such \exists a (minimal(\psi, cap(A, z), a)) {
+                        split minimal(\psi, cap(A, z), a)
+                        apply invoke rightward cap_characterization for A, z, a
+                        split in(a, A) \wedge in(a, z)
+                        any p {
+                          assume in(p, A) \wedge neq(p, a) {
+                            split in(p, A) \wedge neq(p, a)
+                            apply law_of_excluded_middle for \lambda^P. in(p, z)
+                            divide in(p, z) \vee notin(p, z)
+                              case in(p, z) {
+                                connect in(p, A) \wedge in(p, z)
+                                apply invoke leftward cap_characterization for A, z, p
+                                connect in(p, cap(A, z)) \wedge neq(p, a)
+                                apply invoke minimal_core(\psi, cap(A, z), a) for p
+                              }
+                              case notin(p, z) {
+                                deny \psi(p, a) {
+                                  connect in(a, z) \wedge \psi(p, a)
+                                  apply invoke closed(z, \psi) for a, p
+                                  contradict in(p, z)
+                                }
+                              }
+                          }
+                        }
+                        fold for minimal_core conclude minimal_core(\psi, A, a)
+                        connect minimal(\psi, A, a)
+                        lift for a conclude \exists a (minimal(\psi, A, a))
+                      }
+                    }
+                  }
+                }
+              }
+              case \neg(\exists x (in(x, cap(A, W)))) {
+                apply invoke not_emptyset_has_a_member for A
+                some y such \exists y (in(y, A)) {
+                  apply invoke subset(A, V) for y
+                  apply invoke rightward cup(S, W, V) for y
+                  divide in(y, S) \vee in(y, W)
+                    case in(y, S) {}
+                    case in(y, W) {
+                      connect in(y, A) \wedge in(y, W)
+                      apply invoke leftward cap_characterization for A, W, y
+                      lift for y conclude \exists y (in(y, cap(A, W)))
+                      contradict \exists y (in(y, cap(A, W)))
+                      explode in(y, S)
+                    }
+                  apply invoke rightward seg(Y, \psi, S) for y
+                  apply invoke \forall y (\psi(y, Y) \to hwellfounded(y, \psi)) for y
+                  some z such hwellfounded(y, \psi) {
+                    split wellfounded(z, \psi) \wedge tcset(y, \psi, z)
+                    connect in(y, S) \wedge tcset(y, \psi, z)
+                    lift for y conclude \exists y (in(y, S) \wedge tcset(y, \psi, z))
+                    apply invoke leftward replacement(S, \lambda^P y, z. tcset(y, \psi, z), Z) for z
+                    split tcset(y, \psi, z)
+                    any p {
+                      assume in(p, A) \wedge neq(p, y) {
+                        split in(p, A) \wedge neq(p, y)
+                        deny \psi(p, y) {
+                          apply invoke \forall p (\psi(p, y) \to in(p, z)) for p
+                          connect in(p, z) \wedge in(z, Z)
+                          lift for z conclude \exists z (in(p, z) \wedge in(z, Z))
+                          apply invoke leftward bigcup(Z, W) for p
+                          connect in(p, A) \wedge in(p, W)
+                          apply invoke leftward cap_characterization for A, W, p
+                          lift for p conclude \exists x (in(x, cap(A, W)))
+                          contradict \exists x (in(x, cap(A, W)))
+                        }
+                      }
+                    }
+                  }
+                  fold for minimal_core conclude minimal_core(\psi, A, y)
+                  connect minimal(\psi, A, y)
+                  lift for y conclude \exists a (minimal(\psi, A, a))
+                }
+              }
+          }
+        }
+        fold for wellfounded conclude wellfounded(V, \psi)
+        connect wellfounded(V, \psi) \wedge tcset(Y, \psi, V)
+        lift for V conclude hwellfounded(Y, \psi)
+      }
+    }
+  }
+}
+
+definition predicate regular(x, predicate \psi[2]) as hirrefrel(x, \psi) \wedge hwellfounded(x, \psi)
+
+theorem element_of_regular_is_regular \forall x \forall^P \psi[2] \forall y (regular(x, \psi) \wedge \psi(y, x) \to regular(y, \psi)) {
+  any x, predicate \psi[2], y {
+    assume regular(x, \psi) \wedge \psi(y, x) {
+      split regular(x, \psi) \wedge \psi(y, x)
+      split regular(x, \psi)
+      connect hirrefrel(x, \psi) \wedge \psi(y, x)
+      apply invoke element_of_hirrefrel_is_hirrefrel for x, \psi, y
+      connect hwellfounded(x, \psi) \wedge \psi(y, x)
+      apply invoke element_of_hwellfounded_is_hwellfounded for x, \psi, y
+      connect regular(y, \psi)
+    }
+  }
+}
+
+theorem generation_from_regular_is_regular \forall^P \psi[2] \forall Y (\forall y (\psi(y, Y) \to regular(y, \psi)) \wedge \exists S \exists Z \exists W \exists V (tcsetstep(\psi, Y, S, Z, W, V)) \to regular(Y, \psi)) {
+  any predicate \psi[2], Y {
+    assume \forall y (\psi(y, Y) \to regular(y, \psi)) \wedge \exists S \exists Z \exists W \exists V (tcsetstep(\psi, Y, S, Z, W, V)) {
+      split \forall y (\psi(y, Y) \to regular(y, \psi)) \wedge \exists S \exists Z \exists W \exists V (tcsetstep(\psi, Y, S, Z, W, V))
+      any y {
+        assume \psi(y, Y) {
+          apply invoke \forall y (\psi(y, Y) \to regular(y, \psi)) for y
+          split 1 regular(y, \psi)
+        }
+      }
+      connect \forall y (\psi(y, Y) \to hirrefrel(y, \psi)) \wedge \exists S \exists Z \exists W \exists V (tcsetstep(\psi, Y, S, Z, W, V))
+      apply invoke generation_from_hirrefrel_is_hirrefrel for \psi, Y
+      any y {
+        assume \psi(y, Y) {
+          apply invoke \forall y (\psi(y, Y) \to regular(y, \psi)) for y
+          split 2 regular(y, \psi)
+        }
+      }
+      connect \forall y (\psi(y, Y) \to hwellfounded(y, \psi)) \wedge \exists S \exists Z \exists W \exists V (tcsetstep(\psi, Y, S, Z, W, V))
+      apply invoke generation_from_hwellfounded_is_hwellfounded for \psi, Y
+      connect regular(Y, \psi)
+    }
+  }
+}
+
+theorem regular_iff_existence_of_irrefrel_wellfounded_tcset \forall x \forall^P \psi[2] (regular(x, \psi) \leftrightarrow \exists t (irrefrel(t, \psi) \wedge wellfounded(t, \psi) \wedge tcset(x, \psi, t))) {
+  any x, predicate \psi[2] {
+    assume regular(x, \psi) {
+      split regular(x, \psi)
+      some t such hirrefrel(x, \psi) {
+        split irrefrel(t, \psi) \wedge tcset(x, \psi, t)
+        some t' such hwellfounded(x, \psi) {
+          split wellfounded(t', \psi) \wedge tcset(x, \psi, t')
+          connect tcset(x, \psi, t) \wedge tcset(x, \psi, t')
+          apply invoke tcset_is_unique for x, \psi, t, t'
+          substitute wellfounded(t', \psi) for t': t
+          connect irrefrel(t, \psi) \wedge wellfounded(t, \psi) \wedge tcset(x, \psi, t)
+          lift for t conclude \exists t (irrefrel(t, \psi) \wedge wellfounded(t, \psi) \wedge tcset(x, \psi, t))
+        }
+      }
+    }
+    assume \exists t (irrefrel(t, \psi) \wedge wellfounded(t, \psi) \wedge tcset(x, \psi, t)) {
+      some t such \exists t (irrefrel(t, \psi) \wedge wellfounded(t, \psi) \wedge tcset(x, \psi, t)) {
+        split irrefrel(t, \psi) \wedge wellfounded(t, \psi) \wedge tcset(x, \psi, t)
+        connect irrefrel(t, \psi) \wedge tcset(x, \psi, t)
+        lift for t conclude hirrefrel(x, \psi)
+        connect wellfounded(t, \psi) \wedge tcset(x, \psi, t)
+        lift for t conclude hwellfounded(x, \psi)
+        connect regular(x, \psi)
+      }
+    }
+    connect regular(x, \psi) \leftrightarrow \exists t (irrefrel(t, \psi) \wedge wellfounded(t, \psi) \wedge tcset(x, \psi, t))
+  }
+}
+
+theorem regular_is_pirrefrel \forall^P \psi[2] (pirrefrel(\lambda^P x. regular(x, \psi), \psi)) {
+  any predicate \psi[2] {
+    any x {
+      assume regular(x, \psi) {
+        split regular(x, \psi)
+        some t such hirrefrel(x, \psi) {
+          split irrefrel(t, \psi) \wedge tcset(x, \psi, t)
+          split tcset(x, \psi, t)
+          deny \psi(x, x) {
+            apply invoke \forall y (\psi(y, x) \to in(y, t)) for x
+            apply invoke irrefrel(t, \psi) for x
+            contradict \psi(x, x)
+          }
+        }
+      }
+    }
+    fold for pirrefrel conclude pirrefrel(\lambda^P x. regular(x, \psi), \psi)
+  }
+}
+
+theorem regular_is_pwellfounded \forall^P \psi[2] (pwellfounded(\lambda^P x. regular(x, \psi), \psi)) {
+  any predicate \psi[2] {
+    any A {
+      assume \forall x (in(x, A) \to regular(x, \psi)) \wedge neq(A, emptyset) {
+        split \forall x (in(x, A) \to regular(x, \psi)) \wedge neq(A, emptyset)
+        apply invoke not_emptyset_has_a_member for A
+        some x such \exists x (in(x, A)) {
+          apply invoke \forall x (in(x, A) \to regular(x, \psi)) for x
+          apply invoke rightward regular_iff_existence_of_irrefrel_wellfounded_tcset for x, \psi
+          some t such \exists t (irrefrel(t, \psi) \wedge wellfounded(t, \psi) \wedge tcset(x, \psi, t)) {
+            split irrefrel(t, \psi) \wedge wellfounded(t, \psi) \wedge tcset(x, \psi, t)
+            split tcset(x, \psi, t)
+            apply law_of_excluded_middle for \lambda^P. \exists z (in(z, A) \wedge \psi(z, x))
+            divide \exists z (in(z, A) \wedge \psi(z, x)) \vee \neg(\exists z (in(z, A) \wedge \psi(z, x)))
+              case \exists z (in(z, A) \wedge \psi(z, x)) {
+                some z such \exists z (in(z, A) \wedge \psi(z, x)) {
+                  split in(z, A) \wedge \psi(z, x)
+                  apply invoke \forall y (\psi(y, x) \to in(y, t)) for z
+                  connect in(z, A) \wedge in(z, t)
+                  apply invoke leftward cap_characterization for A, t, z
+                  lift for z conclude \exists z (in(z, cap(A, t)))
+                  apply invoke has_a_member_not_emptyset for cap(A, t)
+                  apply cap_is_subset_right for A, t
+                  connect subset(cap(A, t), t) \wedge neq(cap(A, t), emptyset)
+                  apply invoke wellfounded(t, \psi) for cap(A, t)
+                  some a such \exists a (minimal(\psi, cap(A, t), a)) {
+                    split minimal(\psi, cap(A, t), a)
+                    apply invoke rightward cap_characterization for A, t, a
+                    split in(a, A) \wedge in(a, t)
+                    any w {
+                      assume in(w, A) \wedge neq(w, a) {
+                        split in(w, A) \wedge neq(w, a)
+                        deny \psi(w, a) {
+                          connect in(a, t) \wedge \psi(w, a)
+                          apply invoke closed(t, \psi) for a, w
+                          connect in(w, A) \wedge in(w, t)
+                          apply invoke leftward cap_characterization for A, t, w
+                          connect in(w, cap(A, t)) \wedge neq(w, a)
+                          apply invoke minimal_core(\psi, cap(A, t), a) for w
+                          contradict \psi(w, a)
+                        }
+                      }
+                    }
+                    fold for minimal_core conclude minimal_core(\psi, A, a)
+                    connect minimal(\psi, A, a)
+                    lift for a conclude \exists a (minimal(\psi, A, a))
+                  }
+                }
+              }
+              case \neg(\exists z (in(z, A) \wedge \psi(z, x))) {
+                any z {
+                  assume in(z, A) \wedge neq(z, x) {
+                    split in(z, A) \wedge neq(z, x)
+                    deny \psi(z, x) {
+                      connect in(z, A) \wedge \psi(z, x)
+                      lift for z conclude \exists z (in(z, A) \wedge \psi(z, x))
+                      contradict \exists z (in(z, A) \wedge \psi(z, x))
+                    }
+                  }
+                }
+                fold for minimal_core conclude minimal_core(\psi, A, x)
+                connect minimal(\psi, A, x)
+                lift for x conclude \exists a (minimal(\psi, A, a))
+              }
+          }
+        }
+      }
+    }
+    fold for pwellfounded conclude pwellfounded(\lambda^P x. regular(x, \psi), \psi)
+  }
+}
+
+theorem regular_is_pclosed \forall^P \psi[2] (pclosed(\lambda^P x. regular(x, \psi), \psi)) {
+  any predicate \psi[2] {
+    any x, y {
+      assume regular(x, \psi) \wedge \psi(y, x) {
+        apply invoke element_of_regular_is_regular for x, \psi, y
+      }
+    }
+    fold for pclosed conclude pclosed(\lambda^P x. regular(x, \psi), \psi)
+  }
+}
+
+theorem regular_is_tcsetlike \forall^P \psi[2] (tcsetlike(\lambda^P x. regular(x, \psi), \psi)) {
+  any predicate \psi[2] {
+    any x {
+      assume regular(x, \psi) {
+        apply invoke rightward regular_iff_existence_of_irrefrel_wellfounded_tcset for x, \psi
+        some t such \exists t (irrefrel(t, \psi) \wedge wellfounded(t, \psi) \wedge tcset(x, \psi, t)) {
+          split 3 irrefrel(t, \psi) \wedge wellfounded(t, \psi) \wedge tcset(x, \psi, t)
+          lift for t conclude \exists t (tcset(x, \psi, t))
+        }
+      }
+    }
+    fold for tcsetlike conclude tcsetlike(\lambda^P x. regular(x, \psi), \psi)
+  }
+}
+
+theorem regular_induction \forall^P \psi[2] \forall^P \chi[1] (\forall x (regular(x, \psi) \wedge \forall y (\psi(y, x) \to \chi(y)) \to \chi(x)) \to \forall x (regular(x, \psi) \to \chi(x))) {
+  any predicate \psi[2] {
+    apply regular_is_pirrefrel for \psi
+    apply regular_is_pwellfounded for \psi
+    apply regular_is_pclosed for \psi
+    apply regular_is_tcsetlike for \psi
+    apply invoke tcsetlike_implies_rtcsetlike for \lambda^P x. regular(x, \psi), \psi
+    any predicate \chi[1] {
+      assume \forall x (regular(x, \psi) \wedge \forall y (\psi(y, x) \to \chi(y)) \to \chi(x)) {
+        connect rtcsetlike(\lambda^P x. regular(x, \psi), \psi) \wedge pclosed(\lambda^P x. regular(x, \psi), \psi) \wedge pirrefrel(\lambda^P x. regular(x, \psi), \psi) \wedge pwellfounded(\lambda^P x. regular(x, \psi), \psi) \wedge \forall x (regular(x, \psi) \wedge \forall y (\psi(y, x) \to \chi(y)) \to \chi(x))
+        apply invoke pwellfounded_induction for \lambda^P x. regular(x, \psi), \psi, \chi
+      }
+    }
+  }
+}

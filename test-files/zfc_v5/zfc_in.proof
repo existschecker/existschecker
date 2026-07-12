@@ -1,0 +1,198 @@
+include "zfc_logic.proof"
+
+equality equal tex infix "="
+
+definition predicate autoexpand neq(x, y) as \neg(equal(x, y)) tex infix "\neq"
+
+primitive predicate in arity 2 tex infix "\in"
+
+definition predicate autoexpand notin(x, y) as \neg(in(x, y)) tex infix "\notin"
+
+axiom axiom_of_extensionality \forall x \forall y (\forall z (in(z, x) \leftrightarrow in(z, y)) \to equal(x, y))
+
+theorem set_is_unique_for_predicate \forall^P \phi[1] \forall x \forall x' (\forall y (in(y, x) \leftrightarrow \phi(y)) \wedge \forall y (in(y, x') \leftrightarrow \phi(y)) \to equal(x, x')) {
+  any predicate \phi[1], x, x' {
+    assume \forall y (in(y, x) \leftrightarrow \phi(y)) \wedge \forall y (in(y, x') \leftrightarrow \phi(y)) {
+      split \forall y (in(y, x) \leftrightarrow \phi(y)) \wedge \forall y (in(y, x') \leftrightarrow \phi(y))
+      any y {
+        assume in(y, x) {
+          apply invoke rightward \forall y (in(y, x) \leftrightarrow \phi(y)) for y
+          apply invoke leftward \forall y (in(y, x') \leftrightarrow \phi(y)) for y
+        }
+        assume in(y, x') {
+          apply invoke rightward \forall y (in(y, x') \leftrightarrow \phi(y)) for y
+          apply invoke leftward \forall y (in(y, x) \leftrightarrow \phi(y)) for y
+        }
+        connect in(y, x) \leftrightarrow in(y, x')
+      }
+      apply invoke axiom_of_extensionality for x, x'
+    }
+  }
+}
+
+theorem set_exists_implies_set_exists_uniquely \forall^P \phi[1] (\exists x \forall y (in(y, x) \leftrightarrow \phi(y)) \to \exists! x \forall y (in(y, x) \leftrightarrow \phi(y))) {
+  any predicate \phi[1] {
+    assume \exists x \forall y (in(y, x) \leftrightarrow \phi(y)) {
+      some x such \exists x \forall y (in(y, x) \leftrightarrow \phi(y)) {
+        any x' {
+          assume \forall y (in(y, x') \leftrightarrow \phi(y)) {
+            connect \forall y (in(y, x') \leftrightarrow \phi(y)) \wedge \forall y (in(y, x) \leftrightarrow \phi(y))
+            apply invoke set_is_unique_for_predicate for \phi, x', x
+          }
+        }
+        connect \forall y (in(y, x) \leftrightarrow \phi(y)) \wedge \forall x' (\forall y (in(y, x') \leftrightarrow \phi(y)) \to equal(x', x))
+        characterize for x conclude \exists! x \forall y (in(y, x) \leftrightarrow \phi(y))
+      }
+    }
+  }
+}
+
+theorem neg_equal \forall x \forall y (neq(x, y) \leftrightarrow \exists z ((in(z, x) \wedge notin(z, y)) \vee (notin(z, x) \wedge in(z, y)))) {
+  any x, y {
+    assume neq(x, y) {
+      deny \forall z (in(z, x) \leftrightarrow in(z, y)) {
+        apply invoke axiom_of_extensionality for x, y
+        contradict equal(x, y)
+      }
+      apply invoke leftward exist_neg_leftrightarrow_neg_forall for \lambda^P z. in(z, x) \leftrightarrow in(z, y)
+      some z such \exists z (\neg(in(z, x) \leftrightarrow in(z, y))) {
+        apply invoke rightward neg_iff for \lambda^P. in(z, x), \lambda^P. in(z, y)
+        lift for z conclude \exists z ((in(z, x) \wedge notin(z, y)) \vee (notin(z, x) \wedge in(z, y)))
+      }
+    }
+    assume \exists z ((in(z, x) \wedge notin(z, y)) \vee (notin(z, x) \wedge in(z, y))) {
+      some z such \exists z ((in(z, x) \wedge notin(z, y)) \vee (notin(z, x) \wedge in(z, y))) {
+        apply invoke leftward neg_iff for \lambda^P. in(z, x), \lambda^P. in(z, y)
+        lift for z conclude \exists z (\neg(in(z, x) \leftrightarrow in(z, y)))
+      }
+      apply invoke rightward exist_neg_leftrightarrow_neg_forall for \lambda^P z. in(z, x) \leftrightarrow in(z, y)
+      deny equal(x, y) {
+        any z {
+          assume in(z, x) {
+            substitute in(z, x) for x: y
+          }
+          assume in(z, y) {
+            substitute in(z, y) for y: x
+          }
+          connect in(z, x) \leftrightarrow in(z, y)
+        }
+        contradict \forall z (in(z, x) \leftrightarrow in(z, y))
+      }
+    }
+    connect neq(x, y) \leftrightarrow \exists z ((in(z, x) \wedge notin(z, y)) \vee (notin(z, x) \wedge in(z, y)))
+  }
+}
+
+definition predicate subset(x, y) as \forall z (in(z, x) \to in(z, y)) tex infix "\subset"
+
+theorem subset_reflexivity \forall x (subset(x, x)) {
+  any x {
+    any y {
+      assume in(y, x) {}
+    }
+    fold for subset conclude subset(x, x)
+  }
+}
+
+theorem subset_transivity \forall x \forall y \forall z (subset(x, y) \wedge subset(y, z) \to subset(x, z)) {
+  any x, y, z {
+    assume subset(x, y) \wedge subset(y, z) {
+      split subset(x, y) \wedge subset(y, z)
+      any w {
+        assume in(w, x) {
+          apply invoke subset(x, y) for w
+          apply invoke subset(y, z) for w
+        }
+      }
+      fold for subset conclude subset(x, z)
+    }
+  }
+}
+
+theorem subset_antisymmetry \forall x \forall y (subset(x, y) \wedge subset(y, x) \to equal(x, y)) {
+  any x, y {
+    assume subset(x, y) \wedge subset(y, x) {
+      split subset(x, y) \wedge subset(y, x)
+      any z {
+        assume in(z, x) {
+          apply invoke subset(x, y) for z
+        }
+        assume in(z, y) {
+          apply invoke subset(y, x) for z
+        }
+        connect in(z, x) \leftrightarrow in(z, y)
+      }
+      apply invoke axiom_of_extensionality for x, y
+    }
+  }
+}
+
+theorem equal_implies_subset \forall x \forall y (equal(x, y) \to subset(x, y)) {
+  any x, y {
+    assume equal(x, y) {
+      apply subset_reflexivity for x
+      substitute subset(x, x) for x[2]: y
+    }
+  }
+}
+
+theorem neg_subset \forall x \forall y (\neg(subset(x, y)) \leftrightarrow \exists z (in(z, x) \wedge notin(z, y))) {
+  any x, y {
+    assume \neg(subset(x, y)) {
+      deny \forall z (in(z, x) \to in(z, y)) {
+        fold for subset conclude subset(x, y)
+        contradict subset(x, y)
+      }
+      apply invoke leftward exist_neg_leftrightarrow_neg_forall for \lambda^P z. in(z, x) \to in(z, y)
+      some z such \exists z (\neg(in(z, x) \to in(z, y))) {
+        apply invoke rightward neg_implication for \lambda^P. in(z, x), \lambda^P. in(z, y)
+        lift for z conclude \exists z (in(z, x) \wedge notin(z, y))
+      }
+    }
+    assume \exists z (in(z, x) \wedge notin(z, y)) {
+      some z such \exists z (in(z, x) \wedge notin(z, y)) {
+        apply invoke leftward neg_implication for \lambda^P. in(z, x), \lambda^P. in(z, y)
+        lift for z conclude \exists z (\neg(in(z, x) \to in(z, y)))
+      }
+      apply invoke rightward exist_neg_leftrightarrow_neg_forall for \lambda^P z. in(z, x) \to in(z, y)
+      deny subset(x, y) {
+        any z {
+          assume in(z, x) {
+            apply invoke subset(x, y) for z
+          }
+        }
+        contradict \neg(\forall z (in(z, x) \to in(z, y)))
+      }
+    }
+    connect \neg(subset(x, y)) \leftrightarrow \exists z (in(z, x) \wedge notin(z, y))
+  }
+}
+
+definition predicate subsetneq(x, y) as subset(x, y) \wedge neq(x, y) tex infix "\subsetneq"
+
+theorem subset_iff_subsetneq_vee_equal \forall x \forall y (subset(x, y) \leftrightarrow subsetneq(x, y) \vee equal(x, y)) {
+  any x, y {
+    assume subset(x, y) {
+      apply law_of_excluded_middle for \lambda^P. equal(x, y)
+      divide equal(x, y) \vee neq(x, y)
+        case equal(x, y) {
+          pad equal(x, y) conclude subsetneq(x, y) \vee equal(x, y)
+        }
+        case neq(x, y) {
+          connect subsetneq(x, y)
+          pad subsetneq(x, y) conclude subsetneq(x, y) \vee equal(x, y)
+        }
+    }
+    assume subsetneq(x, y) \vee equal(x, y) {
+      divide subsetneq(x, y) \vee equal(x, y)
+        case subsetneq(x, y) {
+          split 1 subsetneq(x, y)
+        }
+        case equal(x, y) {
+          apply subset_reflexivity for x
+          substitute subset(x, x) for x[2]: y
+        }
+    }
+    connect subset(x, y) \leftrightarrow subsetneq(x, y) \vee equal(x, y)
+  }
+}

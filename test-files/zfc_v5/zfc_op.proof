@@ -1,0 +1,124 @@
+include "zfc_adjunction.proof"
+
+definition function pair(x, y) as adj(singleton(x), y) tex "\{", ",", "\}"
+
+theorem pair_characterization \forall x \forall y \forall z (in(z, pair(x, y)) \leftrightarrow equal(z, x) \vee equal(z, y)) {
+  any x, y, z {
+    assume in(z, pair(x, y)) {
+      expand in(z, pair(x, y)) for pair
+      apply invoke rightward adj_existence for singleton(x), y, z
+      divide in(z, singleton(x)) \vee equal(z, y)
+        case in(z, singleton(x)) {
+          apply invoke rightward singleton_characterization for x, z
+          pad equal(z, x) conclude equal(z, x) \vee equal(z, y)
+        }
+        case equal(z, y) {
+          pad equal(z, y) conclude equal(z, x) \vee equal(z, y)
+        }
+    }
+    assume equal(z, x) \vee equal(z, y) {
+      divide equal(z, x) \vee equal(z, y)
+        case equal(z, x) {
+          apply invoke leftward singleton_characterization for x, z
+          apply invoke adj_cor1 for singleton(x), y, z
+        }
+        case equal(z, y) {
+          apply invoke adj_cor2 for singleton(x), y, z
+        }
+      fold for pair conclude in(z, pair(x, y))
+    }
+    connect in(z, pair(x, y)) \leftrightarrow equal(z, x) \vee equal(z, y)
+  }
+}
+
+theorem pair_cor1 \forall x \forall y (in(x, pair(x, y))) {
+  any x, y {
+    pad equal(x, x) conclude equal(x, x) \vee equal(x, y)
+    apply invoke leftward pair_characterization for x, y, x
+  }
+}
+
+theorem pair_cor2 \forall x \forall y (in(y, pair(x, y))) {
+  any x, y {
+    pad equal(y, y) conclude equal(y, x) \vee equal(y, y)
+    apply invoke leftward pair_characterization for x, y, y
+  }
+}
+
+theorem pair_cor4 \forall x \forall y \forall z \forall w (equal(pair(x, y), pair(z, w)) \to equal(x, z) \vee equal(x, w)) {
+  any x, y, z, w {
+    assume equal(pair(x, y), pair(z, w)) {
+      apply pair_cor1 for x, y
+      substitute in(x, pair(x, y)) for pair(x, y): pair(z, w)
+      apply invoke rightward pair_characterization for z, w, x
+    }
+  }
+}
+
+theorem pair_cor5 \forall x \forall y \forall z \forall w (equal(pair(x, y), pair(z, w)) \to equal(y, z) \vee equal(y, w)) {
+  any x, y, z, w {
+    assume equal(pair(x, y), pair(z, w)) {
+      apply pair_cor2 for x, y
+      substitute in(y, pair(x, y)) for pair(x, y): pair(z, w)
+      apply invoke rightward pair_characterization for z, w, y
+    }
+  }
+}
+
+theorem pair_cor7 \forall x \forall y \forall z (equal(pair(x, x), pair(y, z)) \to equal(x, z)) {
+  any x, y, z {
+    assume equal(pair(x, x), pair(y, z)) {
+      apply invoke pair_cor5 for y, z, x, x
+      divide equal(z, x) \vee equal(z, x)
+        case equal(z, x) {}
+        case equal(z, x) {}
+    }
+  }
+}
+
+theorem pair_cor8 \forall x \forall y \forall z (equal(pair(x, y), pair(x, z)) \to equal(y, z)) {
+  any x, y, z {
+    assume equal(pair(x, y), pair(x, z)) {
+      apply invoke pair_cor5 for x, y, x, z
+      divide equal(y, x) \vee equal(y, z)
+        case equal(y, x) {
+          substitute equal(pair(x, y), pair(x, z)) for y: x
+          apply invoke pair_cor7 for x, x, z
+          substitute equal(y, x) for x: z
+        }
+        case equal(y, z) {}
+    }
+  }
+}
+
+theorem pair_singleton_cor1 \forall x \forall y \forall z (equal(singleton(x), pair(y,z)) \to equal(x, y)) {
+  any x,y,z {
+    assume equal(singleton(x), pair(y,z)) {
+      apply pair_cor1 for y, z
+      substitute in(y, pair(y, z)) for pair(y, z): singleton(x)
+      apply invoke rightward singleton_characterization for x, y
+    }
+  }
+}
+
+definition function op(x, y) as pair(singleton(x), pair(x, y)) tex "(", ",", ")"
+
+theorem op_characterization \forall x \forall y \forall x' \forall y' (equal(op(x, y), op(x', y')) \to equal(x, x') \wedge equal(y, y')) {
+  any x, y, x', y' {
+    assume equal(op(x, y), op(x', y')) {
+      expand equal(op(x, y), op(x', y')) for op
+      apply invoke pair_cor4 for singleton(x), pair(x, y), singleton(x'), pair(x', y')
+      divide equal(singleton(x), singleton(x')) \vee equal(singleton(x), pair(x',y'))
+        case equal(singleton(x), singleton(x')) {
+          apply invoke singleton_cor2 for x, x'
+        }
+        case equal(singleton(x), pair(x', y')) {
+          apply invoke pair_singleton_cor1 for x, x', y'
+        }
+      substitute equal(pair(singleton(x), pair(x, y)), pair(singleton(x'), pair(x', y'))) for x': x
+      apply invoke pair_cor8 for singleton(x), pair(x, y), pair(x, y')
+      apply invoke pair_cor8 for x, y, y'
+      connect equal(x, x') \wedge equal(y, y')
+    }
+  }
+}

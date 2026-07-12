@@ -1,0 +1,251 @@
+include "zfc_wellfounded.proof"
+
+definition predicate transrel(X, predicate \psi[2]) as \forall x \forall y \forall z (in(x, X) \wedge in(y, X) \wedge in(z, X) \wedge \psi(x, y) \wedge \psi(y, z) \to \psi(x, z))
+
+definition predicate antisymrel(X, predicate \psi[2]) as \forall x \forall y (in(x, X) \wedge in(y, X) \wedge \psi(x, y) \wedge \psi(y, x) \to equal(x, y))
+
+definition predicate order(X, predicate \psi[2]) as transrel(X, \psi) \wedge antisymrel(X, \psi)
+
+definition predicate linorder_core(X, predicate \psi[2]) as \forall x \forall y (in(x, X) \wedge in(y, X) \to \psi(x, y) \vee equal(x, y) \vee \psi(y, x))
+
+definition predicate linorder(X, predicate \psi[2]) as order(X, \psi) \wedge linorder_core(X, \psi)
+
+definition predicate wellorder(X, predicate \psi[2]) as wellfounded(X, \psi) \wedge linorder(X, \psi)
+
+definition predicate ordinal(\alpha) as closed(\alpha, in) \wedge irrefrel(\alpha, in) \wedge wellorder(\alpha, in)
+
+theorem closed_in_iff_element_is_subset \forall x (closed(x, in) \leftrightarrow \forall y (in(y, x) \to subset(y, x))) {
+  any x {
+    assume closed(x, in) {
+      any y {
+        assume in(y, x) {
+          any z {
+            assume in(z, y) {
+              connect in(y, x) \wedge in(z, y)
+              apply invoke closed(x, in) for y, z
+            }
+          }
+          fold for subset conclude subset(y, x)
+        }
+      }
+    }
+    assume \forall y (in(y, x) \to subset(y, x)) {
+      any y, z {
+        assume in(y, x) \wedge in(z, y) {
+          split in(y, x) \wedge in(z, y)
+          apply invoke \forall y (in(y, x) \to subset(y, x)) for y
+          apply invoke subset(y, x) for z
+        }
+      }
+      fold for closed conclude closed(x, in)
+    }
+    connect closed(x, in) \leftrightarrow \forall y (in(y, x) \to subset(y, x))
+  }
+}
+
+theorem irrefrel_and_transrel_implies_antisymrel \forall X \forall^P \psi[2] (irrefrel(X, \psi) \wedge transrel(X, \psi) \to antisymrel(X, \psi)) {
+  any X, predicate \psi[2] {
+    assume irrefrel(X, \psi) \wedge transrel(X, \psi) {
+      split irrefrel(X, \psi) \wedge transrel(X, \psi)
+      any x, y {
+        assume in(x, X) \wedge in(y, X) \wedge \psi(x, y) \wedge \psi(y, x) {
+          split in(x, X) \wedge in(y, X) \wedge \psi(x, y) \wedge \psi(y, x)
+          connect in(x, X) \wedge in(y, X) \wedge in(x, X) \wedge \psi(x, y) \wedge \psi(y, x)
+          apply invoke transrel(X, \psi) for x, y, x
+          apply invoke irrefrel(X, \psi) for x
+          contradict \psi(x, x)
+          explode equal(x, y)
+        }
+      }
+      fold for antisymrel conclude antisymrel(X, \psi)
+    }
+  }
+}
+
+theorem irrefrel_and_transrel_implies_order \forall X \forall^P \psi[2] (irrefrel(X, \psi)\wedge transrel(X, \psi)\to order(X, \psi)) {
+  any X, predicate \psi[2] {
+    assume irrefrel(X, \psi) \wedge transrel(X, \psi) {
+      split irrefrel(X, \psi) \wedge transrel(X, \psi)
+      apply invoke irrefrel_and_transrel_implies_antisymrel for X, \psi
+      connect order(X, \psi)
+    }
+  }
+}
+
+theorem closed_irrefrel_wellfounded_not_emptyset_contains_emptyset \forall x (closed(x, in) \wedge irrefrel(x, in) \wedge wellfounded(x, in) \wedge neq(x, emptyset) \to in(emptyset, x)) {
+  any x {
+    assume closed(x, in) \wedge irrefrel(x, in) \wedge wellfounded(x, in) \wedge neq(x, emptyset) {
+      split closed(x, in) \wedge irrefrel(x, in) \wedge wellfounded(x, in) \wedge neq(x, emptyset)
+      apply subset_reflexivity for x
+      connect subset(x, x) \wedge neq(x, emptyset)
+      apply invoke wellfounded(x, in) for x
+      some a such \exists a (minimal(in, x, a)) {
+        split minimal(in, x, a)
+        deny neq(a, emptyset) {
+          apply invoke not_emptyset_has_a_member for a
+          some b such \exists b (in(b, a)) {
+            deny equal(b, a) {
+              apply invoke irrefrel(x, in) for a
+              substitute notin(a, a) for a[1]: b
+              contradict in(b, a)
+            }
+            connect in(b, a) \wedge in(a, x)
+            apply invoke closed(x, in) for a, b
+            connect in(b, x) \wedge neq(b, a)
+            apply invoke minimal_core(in, x, a) for b
+            contradict in(b, a)
+          }
+        }
+        substitute in(a, x) for a: emptyset
+      }
+    }
+  }
+}
+
+theorem ordinal_not_emptyset_contains_emptyset \forall \alpha (ordinal(\alpha) \wedge neq(\alpha, emptyset) \to in(emptyset, \alpha)) {
+  any \alpha {
+    assume ordinal(\alpha) \wedge neq(\alpha, emptyset) {
+      split ordinal(\alpha) \wedge neq(\alpha, emptyset)
+      split ordinal(\alpha)
+      split wellorder(\alpha, in)
+      connect closed(\alpha, in) \wedge irrefrel(\alpha, in) \wedge wellfounded(\alpha, in) \wedge neq(\alpha, emptyset)
+      apply invoke closed_irrefrel_wellfounded_not_emptyset_contains_emptyset for \alpha
+    }
+  }
+}
+
+theorem subset_of_transrel_is_transrel \forall^P \phi[2] \forall x \forall y (transrel(x, \phi) \wedge subset(y, x) \to transrel(y, \phi)) {
+  any predicate \phi[2], x, y {
+    assume transrel(x, \phi) \wedge subset(y, x) {
+      split transrel(x, \phi) \wedge subset(y, x)
+      any p, q, r {
+        assume in(p, y) \wedge in(q, y) \wedge in(r, y) \wedge \phi(p, q) \wedge \phi(q, r) {
+          split in(p, y) \wedge in(q, y) \wedge in(r, y) \wedge \phi(p, q) \wedge \phi(q, r)
+          apply invoke subset(y, x) for p
+          apply invoke subset(y, x) for q
+          apply invoke subset(y, x) for r
+          connect in(p, x) \wedge in(q, x) \wedge in(r, x) \wedge \phi(p, q) \wedge \phi(q, r)
+          apply invoke transrel(x, \phi) for p, q, r
+        }
+      }
+      fold for transrel conclude transrel(y, \phi)
+    }
+  }
+}
+
+theorem subset_of_antisymrel_is_antisymrel \forall^P \phi[2] \forall x \forall y (antisymrel(x, \phi) \wedge subset(y, x) \to antisymrel(y, \phi)) {
+  any predicate \phi[2], x, y {
+    assume antisymrel(x, \phi) \wedge subset(y, x) {
+      split antisymrel(x, \phi) \wedge subset(y, x)
+      any p, q {
+        assume in(p, y) \wedge in(q, y) \wedge \phi(p, q) \wedge \phi(q, p) {
+          split in(p, y) \wedge in(q, y) \wedge \phi(p, q) \wedge \phi(q, p)
+          apply invoke subset(y, x) for p
+          apply invoke subset(y, x) for q
+          connect in(p, x) \wedge in(q, x) \wedge \phi(p, q) \wedge \phi(q, p)
+          apply invoke antisymrel(x, \phi) for p, q
+        }
+      }
+      fold for antisymrel conclude antisymrel(y, \phi)
+    }
+  }
+}
+
+
+theorem subset_of_order_is_order \forall^P \phi[2] \forall x \forall y (order(x, \phi) \wedge subset(y, x) \to order(y, \phi)) {
+  any predicate \phi[2], x, y {
+    assume order(x, \phi) \wedge subset(y, x) {
+      split order(x, \phi) \wedge subset(y, x)
+      split order(x, \phi)
+      connect transrel(x, \phi) \wedge subset(y, x)
+      apply invoke subset_of_transrel_is_transrel for \phi, x, y
+      connect antisymrel(x, \phi) \wedge subset(y, x)
+      apply invoke subset_of_antisymrel_is_antisymrel for \phi, x, y
+      connect order(y, \phi)
+    }
+  }
+}
+
+
+theorem subset_of_linorder_is_linorder \forall^P \phi[2] \forall x \forall y (linorder(x, \phi) \wedge subset(y, x) \to linorder(y, \phi)) {
+  any predicate \phi[2], x, y {
+    assume linorder(x, \phi) \wedge subset(y, x) {
+      split linorder(x, \phi) \wedge subset(y, x)
+      split linorder(x, \phi)
+      connect order(x, \phi) \wedge subset(y, x)
+      apply invoke subset_of_order_is_order for \phi, x, y
+      any p, q {
+        assume in(p, y) \wedge in(q, y) {
+          split in(p, y) \wedge in(q, y)
+          apply invoke subset(y, x) for p
+          apply invoke subset(y, x) for q
+          connect in(p, x) \wedge in(q, x)
+          apply invoke linorder_core(x, \phi) for p, q
+        }
+      }
+      fold for linorder_core conclude linorder_core(y, \phi)
+      connect linorder(y, \phi)
+    }
+  }
+}
+
+theorem subset_of_wellorder_is_wellorder \forall^P \phi[2] \forall x \forall y (wellorder(x, \phi) \wedge subset(y, x) \to wellorder(y, \phi)) {
+  any predicate \phi[2], x, y {
+    assume wellorder(x, \phi) \wedge subset(y, x) {
+      split wellorder(x, \phi) \wedge subset(y, x)
+      split wellorder(x, \phi)
+      connect wellfounded(x, \phi) \wedge subset(y, x)
+      apply invoke subset_of_wellfounded_is_wellfounded for \phi, x, y
+      connect linorder(x, \phi) \wedge subset(y, x)
+      apply invoke subset_of_linorder_is_linorder for \phi, x, y
+      connect wellorder(y, \phi)
+    }
+  }
+}
+
+theorem element_of_closed_irrefrel_is_irrefrel \forall x \forall y (closed(x, in) \wedge irrefrel(x, in) \wedge in(y, x) \to irrefrel(y, in)) {
+  any x, y {
+    assume closed(x, in) \wedge irrefrel(x, in) \wedge in(y, x) {
+      split closed(x, in) \wedge irrefrel(x, in) \wedge in(y, x)
+      any z {
+        assume in(z, y) {
+          connect in(y, x) \wedge in(z, y)
+          apply invoke closed(x, in) for y, z
+          apply invoke irrefrel(x, in) for z
+        }
+      }
+      fold for irrefrel conclude irrefrel(y, in)
+    }
+  }
+}
+
+theorem closed_in_iff_tcset_of_itself \forall x (closed(x, in) \leftrightarrow tcset(x, in, x)) {
+  any x {
+    assume closed(x, in) {
+      any y {
+        assume in(y, x) {}
+      }
+      any s {
+        assume closed(s, in) \wedge \forall y (in(y, x) \to in(y, s)) {
+          split 2 closed(s, in) \wedge \forall y (in(y, x) \to in(y, s))
+          fold for subset conclude subset(x, s)
+        }
+      }
+      connect tcset(x, in, x)
+    }
+    assume tcset(x, in, x) {
+      split 1 tcset(x, in, x)
+    }
+    connect closed(x, in) \leftrightarrow tcset(x, in, x)
+  }
+}
+
+theorem wellfounded_induction_in \forall^P \chi[1] \forall X (closed(X, in) \wedge irrefrel(X, in) \wedge wellfounded(X, in) \wedge \forall x (in(x, X) \to (\forall y (in(y, x) \to \chi(y)) \to \chi(x))) \to \forall x (in(x, X) \to \chi(x))) {
+  any predicate \chi[1], X {
+    assume closed(X, in) \wedge irrefrel(X, in) \wedge wellfounded(X, in) \wedge \forall x (in(x, X) \to (\forall y (in(y, x) \to \chi(y)) \to \chi(x))) {
+      split closed(X, in) \wedge irrefrel(X, in) \wedge wellfounded(X, in) \wedge \forall x (in(x, X) \to (\forall y (in(y, x) \to \chi(y)) \to \chi(x)))
+      connect closed(X, in) \wedge irrefrel(X, in) \wedge wellfounded(X, in) \wedge \forall x (in(x, X) \to (\forall y (in(y, x) \to \chi(y)) \to \chi(x)))
+      apply invoke wellfounded_induction for in, \chi, X
+    }
+  }
+}

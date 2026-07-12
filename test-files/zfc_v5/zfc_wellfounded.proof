@@ -1,0 +1,843 @@
+include "zfc_setminus.proof"
+
+definition predicate irrefrel(X, predicate \psi[2]) as \forall x (in(x, X) \to \neg(\psi(x, x)))
+
+theorem subset_of_irrefrel_is_irrefrel \forall^P \phi[2] \forall x \forall y (irrefrel(x, \phi) \wedge subset(y, x) \to irrefrel(y, \phi)) {
+  any predicate \phi[2], x, y {
+    assume irrefrel(x, \phi) \wedge subset(y, x) {
+      split irrefrel(x, \phi) \wedge subset(y, x)
+      any z {
+        assume in(z, y) {
+          apply invoke subset(y, x) for z
+          apply invoke irrefrel(x, \phi) for z
+        }
+      }
+      fold for irrefrel conclude irrefrel(y, \phi)
+    }
+  }
+}
+
+theorem irrefrel_not_contain_itself \forall x (irrefrel(x, in) \to notin(x, x)) {
+  any x {
+    assume irrefrel(x, in) {
+      deny in(x, x) {
+        apply invoke irrefrel(x, in) for x
+        contradict in(x, x)
+      }
+    }
+  }
+}
+
+theorem adj_of_irrefrel_is_irrefrel \forall x \forall y \forall^P \psi[2] (irrefrel(x, \psi) \wedge \neg(\psi(y, y)) \to irrefrel(adj(x, y), \psi)) {
+  any x, y, predicate \psi[2] {
+    assume irrefrel(x, \psi) \wedge \neg(\psi(y, y)) {
+      split irrefrel(x, \psi) \wedge \neg(\psi(y, y))
+      any z {
+        assume in(z, adj(x, y)) {
+          apply invoke rightward adj_existence for x, y, z
+          divide in(z, x) \vee equal(z, y)
+            case in(z, x) {
+              apply invoke irrefrel(x, \psi) for z
+            }
+            case equal(z, y) {
+              substitute \neg(\psi(y, y)) for y: z
+            }
+        }
+      }
+      fold for irrefrel conclude irrefrel(adj(x, y), \psi)
+    }
+  }
+}
+
+definition predicate minimal_core(predicate \psi[2], A, a) as \forall x (in(x, A) \wedge neq(x, a) \to \neg(\psi(x, a)))
+
+definition predicate minimal(predicate \psi[2], A, a) as in(a, A) \wedge minimal_core(\psi, A, a)
+
+theorem element_is_minimal_in_its_singleton \forall x \forall^P \psi[2] (minimal(\psi, singleton(x), x)) {
+  any x, predicate \psi[2] {
+    apply singleton_cor1 for x
+    any y {
+      assume in(y, singleton(x)) \wedge neq(y, x) {
+        split in(y, singleton(x)) \wedge neq(y, x)
+        apply invoke rightward singleton_characterization for x, y
+        contradict equal(y, x)
+        explode \neg(\psi(y, x))
+      }
+    }
+    fold for minimal_core conclude minimal_core(\psi, singleton(x), x)
+    connect minimal(\psi, singleton(x), x)
+  }
+}
+
+definition predicate wellfounded(X, predicate \psi[2]) as \forall A (subset(A, X) \wedge neq(A, emptyset) \to \exists a (minimal(\psi, A, a)))
+
+theorem subset_of_wellfounded_is_wellfounded \forall^P \phi[2] \forall x \forall y (wellfounded(x, \phi) \wedge subset(y, x) \to wellfounded(y, \phi)) {
+  any predicate \phi[2], x, y {
+    assume wellfounded(x, \phi) \wedge subset(y, x) {
+      split wellfounded(x, \phi) \wedge subset(y, x)
+      any A {
+        assume subset(A, y) \wedge neq(A, emptyset) {
+          split subset(A, y) \wedge neq(A, emptyset)
+          connect subset(A, y) \wedge subset(y, x)
+          apply invoke subset_transivity for A, y, x
+          connect subset(A, x) \wedge neq(A, emptyset)
+          apply invoke wellfounded(x, \phi) for A
+        }
+      }
+      fold for wellfounded conclude wellfounded(y, \phi)
+    }
+  }
+}
+
+definition predicate closed(X, predicate \psi[2]) as \forall x \forall y (in(x, X) \wedge \psi(y, x) \to in(y, X))
+
+theorem adj_of_closed_is_closed \forall x \forall t \forall^P \psi[2] (closed(t, \psi) \wedge \forall y (\psi(y, x) \to in(y, t)) \to closed(adj(t, x), \psi)) {
+  any x, t, predicate \psi[2] {
+    assume closed(t, \psi) \wedge \forall y (\psi(y, x) \to in(y, t)) {
+      split closed(t, \psi) \wedge \forall y (\psi(y, x) \to in(y, t))
+      any y, z {
+        assume in(y, adj(t, x)) \wedge \psi(z, y) {
+          split in(y, adj(t, x)) \wedge \psi(z, y)
+          apply invoke rightward adj_existence for t, x, y
+          divide in(y, t) \vee equal(y, x)
+            case in(y, t) {
+              connect in(y, t) \wedge \psi(z, y)
+              apply invoke closed(t, \psi) for y, z
+            }
+            case equal(y, x) {
+              substitute \psi(z, y) for y: x
+              apply invoke \forall y (\psi(y, x) \to in(y, t)) for z
+            }
+          apply invoke adj_cor1 for t, x, z
+        }
+      }
+      fold for closed conclude closed(adj(t, x), \psi)
+    }
+  }
+}
+
+theorem cap_of_closed_is_closed \forall X \forall Y \forall^P \psi[2] (closed(X, \psi) \wedge closed(Y, \psi) \to closed(cap(X, Y), \psi)) {
+  any X, Y, predicate \psi[2] {
+    assume closed(X, \psi) \wedge closed(Y, \psi) {
+      split closed(X, \psi) \wedge closed(Y, \psi)
+      any u, v {
+        assume in(u, cap(X, Y)) \wedge \psi(v, u) {
+          split in(u, cap(X, Y)) \wedge \psi(v, u)
+          apply invoke rightward cap_characterization for X, Y, u
+          split in(u, X) \wedge in(u, Y)
+          connect in(u, X) \wedge \psi(v, u)
+          apply invoke closed(X, \psi) for u, v
+          connect in(u, Y) \wedge \psi(v, u)
+          apply invoke closed(Y, \psi) for u, v
+          connect in(v, X) \wedge in(v, Y)
+          apply invoke leftward cap_characterization for X, Y, v
+        }
+      }
+      fold for closed conclude closed(cap(X, Y), \psi)
+    }
+  }
+}
+
+theorem adj_of_closed_wellfounded_is_wellfounded \forall x \forall y \forall^P \psi[2] (closed(x, \psi) \wedge wellfounded(x, \psi) \to wellfounded(adj(x, y), \psi)) {
+  any x, y, predicate \psi[2] {
+    assume closed(x, \psi) \wedge wellfounded(x, \psi) {
+      split closed(x, \psi) \wedge wellfounded(x, \psi)
+      apply law_of_excluded_middle for \lambda^P. in(y, x)
+      divide in(y, x) \vee notin(y, x)
+        case in(y, x) {
+          apply invoke adj_equal for x, y
+          substitute wellfounded(x, \psi) for x: adj(x, y)
+        }
+        case notin(y, x) {
+          any A {
+            assume subset(A, adj(x, y)) \wedge neq(A, emptyset) {
+              split subset(A, adj(x, y)) \wedge neq(A, emptyset)
+              apply law_of_excluded_middle for \lambda^P. equal(A, singleton(y))
+              divide equal(A, singleton(y)) \vee neq(A, singleton(y))
+                case equal(A, singleton(y)) {
+                  apply element_is_minimal_in_its_singleton for y, \psi
+                  substitute minimal(\psi, singleton(y), y) for singleton(y): A
+                  lift for y conclude \exists y (minimal(\psi, A, y))
+                }
+                case neq(A, singleton(y)) {
+                  apply invoke subset_adj_implies_subset_rem for A, x, y
+                  connect neq(A, singleton(y)) \wedge neq(A, emptyset)
+                  apply invoke neq_singleton_implies_rem_neq_emptyset for A, y
+                  connect subset(rem(A, y), x) \wedge neq(rem(A, y), emptyset)
+                  apply invoke wellfounded(x, \psi) for rem(A, y)
+                  some a such \exists a (minimal(\psi, rem(A, y), a)) {
+                    split minimal(\psi, rem(A, y), a)
+                    apply invoke rightward rem_existence for A, y, a
+                    split in(a, A) \wedge neq(a, y)
+                    deny \neg(minimal_core(\psi, A, a)) {
+                      expand \neg(minimal_core(\psi, A, a)) for minimal_core
+                      apply invoke leftward exist_neg_leftrightarrow_neg_forall for \lambda^P x. in(x, A) \wedge neq(x, a) \to \neg(\psi(x, a))                      some b such \exists x (\neg(in(x, A) \wedge neq(x, a) \to \neg(\psi(x, a)))) {
+                        apply invoke rightward neg_implication for \lambda^P. in(b, A) \wedge neq(b, a), \lambda^P. \neg(\psi(b, a))
+                        split in(b, A) \wedge neq(b, a) \wedge \psi(b, a)
+                        deny equal(b, y) {
+                          substitute \psi(b, a) for b: y
+                          apply invoke subset(rem(A, y), x) for a
+                          connect \psi(y, a) \wedge in(a, x)
+                          apply invoke closed(x, \psi) for a, y
+                          contradict in(y, x)
+                        }
+                        connect in(b, A) \wedge neq(b, y)
+                        apply invoke leftward rem_existence for A, y, b
+                        connect in(b, rem(A, y)) \wedge neq(b, a)
+                        apply invoke minimal_core(\psi, rem(A, y), a) for b
+                        contradict \psi(b, a)
+                      }
+                    }
+                    connect minimal(\psi, A, a)
+                    lift for a conclude \exists a (minimal(\psi, A, a))
+                  }
+              }
+            }
+          }
+          fold for wellfounded conclude wellfounded(adj(x, y), \psi)
+        }
+    }
+  }
+}
+
+theorem wellfounded_induction \forall^P \psi[2] \forall^P \chi[1] \forall X (closed(X, \psi) \wedge irrefrel(X, \psi) \wedge wellfounded(X, \psi) \wedge \forall x (in(x, X) \to (\forall y (\psi(y, x) \to \chi(y)) \to \chi(x))) \to \forall x (in(x, X) \to \chi(x))) {
+  any predicate \psi[2], predicate \chi[1], X {
+    assume closed(X, \psi) \wedge irrefrel(X, \psi) \wedge wellfounded(X, \psi) \wedge \forall x (in(x, X) \to (\forall y (\psi(y, x) \to \chi(y)) \to \chi(x))) {
+      split closed(X, \psi) \wedge irrefrel(X, \psi) \wedge wellfounded(X, \psi) \wedge \forall x (in(x, X) \to (\forall y (\psi(y, x) \to \chi(y)) \to \chi(x)))
+      deny \neg(\forall x (in(x, X) \to \chi(x))) {
+        apply invoke leftward exist_neg_leftrightarrow_neg_forall for \lambda^P x. in(x, X) \to \chi(x)
+        some x such \exists x (\neg(in(x, X) \to \chi(x))) {
+          apply invoke rightward neg_implication for \lambda^P. in(x, X), \lambda^P. \chi(x)
+          split in(x, X) \wedge \neg(\chi(x))
+          apply separation_exists_uniquely for X, \lambda^P y. \neg(\chi(y))
+          some Y such \exists! Y (sep(X, \lambda^P y. \neg(\chi(y)), Y)) {
+            apply invoke sep_is_subset for X, \lambda^P y. \neg(\chi(y)), Y
+            apply in_suc for x
+            connect in(x, suc(x)) \wedge \neg(\chi(x))
+            apply invoke leftward sep(X, \lambda^P y. \neg(\chi(y)), Y) for x
+            lift for x conclude \exists z (in(z, Y))
+            apply invoke has_a_member_not_emptyset for Y
+            connect subset(Y, X) \wedge neq(Y, emptyset)
+            apply invoke wellfounded(X, \psi) for Y
+            some z such \exists z (minimal(\psi, Y, z)) {
+              split minimal(\psi, Y, z)
+              apply invoke rightward sep(X, \lambda^P y. \neg(\chi(y)), Y) for z
+              split in(z, X) \wedge \neg(\chi(z))
+              any y {
+                assume \psi(y, z) {
+                  connect in(z, X) \wedge \psi(y, z)
+                  apply invoke closed(X, \psi) for z, y
+                  deny equal(y, z) {
+                    substitute \psi(y, z) for y: z
+                    apply invoke irrefrel(X, \psi) for z
+                    contradict \psi(z, z)
+                  }
+                  deny \neg(\chi(y)) {
+                    connect in(y, X) \wedge \neg(\chi(y))
+                    apply invoke leftward sep(X, \lambda^P m. \neg(\chi(m)), Y) for y
+                    connect in(y, Y) \wedge neq(y, z)
+                    apply invoke minimal_core(\psi, Y, z) for y
+                    contradict \psi(y, z)
+                  }
+                }
+              }
+              apply invoke \forall x (in(x, X) \to (\forall y (\psi(y, x) \to \chi(y)) \to \chi(x))) for z
+              invoke \forall y (\psi(y, z) \to \chi(y)) \to \chi(z)
+              contradict \neg(\chi(z))
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+definition predicate psubset(predicate \chi[1], predicate \phi[1]) as \forall x (\chi(x) \to \phi(x))
+
+definition predicate pirrefrel(predicate \phi[1], predicate \psi[2]) as \forall x (\phi(x) \to \neg(\psi(x, x)))
+
+theorem psubset_of_pirrefrel_is_pirrefrel \forall^P \phi[1] \forall^P \psi[2] \forall^P \chi[1] (pirrefrel(\phi, \psi) \wedge psubset(\chi, \phi) \to pirrefrel(\chi, \psi)) {
+  any predicate \phi[1], predicate \psi[2], predicate \chi[1] {
+    assume pirrefrel(\phi, \psi) \wedge psubset(\chi, \phi) {
+      split pirrefrel(\phi, \psi) \wedge psubset(\chi, \phi)
+      any x {
+        assume \chi(x) {
+          apply invoke psubset(\chi, \phi) for x
+          apply invoke pirrefrel(\phi, \psi) for x
+        }
+      }
+      fold for pirrefrel conclude pirrefrel(\chi, \psi)
+    }
+  }
+}
+
+definition predicate pwellfounded(predicate \phi[1], predicate \psi[2]) as \forall A ((\forall x (in(x, A) \to \phi(x))) \wedge neq(A, emptyset) \to \exists a (minimal(\psi, A, a)))
+
+theorem psubset_of_pwellfounded_is_pwellfounded \forall^P \phi[1] \forall^P \psi[2] \forall^P \chi[1] (pwellfounded(\phi, \psi) \wedge psubset(\chi, \phi) \to pwellfounded(\chi, \psi)) {
+  any predicate \phi[1], predicate \psi[2], predicate \chi[1] {
+    assume pwellfounded(\phi, \psi) \wedge psubset(\chi, \phi) {
+      split pwellfounded(\phi, \psi) \wedge psubset(\chi, \phi)
+      any A {
+        assume \forall x (in(x, A) \to \chi(x)) \wedge neq(A, emptyset) {
+          split \forall x (in(x, A) \to \chi(x)) \wedge neq(A, emptyset)
+          any x {
+            assume in(x, A) {
+              apply invoke \forall x (in(x, A) \to \chi(x)) for x
+              apply invoke psubset(\chi, \phi) for x
+            }
+          }
+          connect \forall x (in(x, A) \to \phi(x)) \wedge neq(A, emptyset)
+          apply invoke pwellfounded(\phi, \psi) for A
+        }
+      }
+      fold for pwellfounded conclude pwellfounded(\chi, \psi)
+    }
+  }
+}
+
+definition predicate pclosed(predicate \phi[1], predicate \psi[2]) as \forall x \forall y (\phi(x) \wedge \psi(y, x) \to \phi(y))
+
+definition predicate rtcset(x, predicate \psi[2], r) as closed(r, \psi) \wedge in(x, r) \wedge \forall s (closed(s, \psi) \wedge in(x, s) \to subset(r, s))
+
+theorem rtcset_is_unique \forall x \forall^P \psi[2] \forall r \forall r' (rtcset(x, \psi, r) \wedge rtcset(x, \psi, r') \to equal(r, r')) {
+  any x, predicate \psi[2], r, r' {
+    assume rtcset(x, \psi, r) \wedge rtcset(x, \psi, r') {
+      split rtcset(x, \psi, r) \wedge rtcset(x, \psi, r')
+      split rtcset(x, \psi, r)
+      split rtcset(x, \psi, r')
+      connect closed(r', \psi) \wedge in(x, r')
+      apply invoke \forall s (closed(s, \psi) \wedge in(x, s) \to subset(r, s)) for r'
+      connect closed(r, \psi) \wedge in(x, r)
+      apply invoke \forall s (closed(s, \psi) \wedge in(x, s) \to subset(r', s)) for r
+      connect subset(r, r') \wedge subset(r', r)
+      apply invoke subset_antisymmetry for r, r'
+    }
+  }
+}
+
+theorem closed_implies_rtcset_exists \forall X \forall^P \psi[2] \forall x (closed(X, \psi) \wedge in(x, X) \to \exists r (rtcset(x, \psi, r) \wedge subset(r, X))) {
+  any X, predicate \psi[2], x {
+    assume closed(X, \psi) \wedge in(x, X) {
+      split closed(X, \psi) \wedge in(x, X)
+      apply axiom_of_separation for X, \lambda^P y. \forall s (closed(s, \psi) \wedge in(x, s) \to in(y, s))
+      some r such \exists r (sep(X, \lambda^P y. \forall s (closed(s, \psi) \wedge in(x, s) \to in(y, s)), r)) {
+        any y, z {
+          assume in(y, r) \wedge \psi(z, y) {
+            split in(y, r) \wedge \psi(z, y)
+            apply invoke rightward sep(X, \lambda^P y. \forall s (closed(s, \psi) \wedge in(x, s) \to in(y, s)), r) for y
+            split in(y, X) \wedge \forall s (closed(s, \psi) \wedge in(x, s) \to in(y, s))
+            connect in(y, X) \wedge \psi(z, y)
+            apply invoke closed(X, \psi) for y, z
+            any s {
+              assume closed(s, \psi) \wedge in(x, s) {
+                split closed(s, \psi) \wedge in(x, s)
+                apply invoke \forall s (closed(s, \psi) \wedge in(x, s) \to in(y, s)) for s
+                connect in(y, s) \wedge \psi(z, y)
+                apply invoke closed(s, \psi) for y, z
+              }
+            }
+            connect in(z, X) \wedge \forall s (closed(s, \psi) \wedge in(x, s) \to in(z, s))
+            apply invoke leftward sep(X, \lambda^P y. \forall s (closed(s, \psi) \wedge in(x, s) \to in(y, s)), r) for z
+          }
+        }
+        fold for closed conclude closed(r, \psi)
+        any s {
+          assume closed(s, \psi) \wedge in(x, s) {
+            split 2 closed(s, \psi) \wedge in(x, s)
+          }
+        }
+        connect in(x, X) \wedge \forall s (closed(s, \psi) \wedge in(x, s) \to in(x, s))
+        apply invoke leftward sep(X, \lambda^P y. \forall s (closed(s, \psi) \wedge in(x, s) \to in(y, s)), r) for x
+        any s {
+          assume closed(s, \psi) \wedge in(x, s) {
+            any y {
+              assume in(y, r) {
+                apply invoke rightward sep(X, \lambda^P y. \forall s (closed(s, \psi) \wedge in(x, s) \to in(y, s)), r) for y
+                split in(y, X) \wedge \forall s (closed(s, \psi) \wedge in(x, s) \to in(y, s))
+                apply invoke \forall s (closed(s, \psi) \wedge in(x, s) \to in(y, s)) for s
+              }
+            }
+            fold for subset conclude subset(r, s)
+          }
+        }
+        connect rtcset(x, \psi, r)
+        any y {
+          assume in(y, r) {
+            apply invoke rightward sep(X, \lambda^P y. \forall s (closed(s, \psi) \wedge in(x, s) \to in(y, s)), r) for y
+            split 1 in(y, X) \wedge \forall s (closed(s, \psi) \wedge in(x, s) \to in(y, s))
+          }
+        }
+        fold for subset conclude subset(r, X)
+        connect rtcset(x, \psi, r) \wedge subset(r, X)
+        lift for r conclude \exists r (rtcset(x, \psi, r) \wedge subset(r, X))
+      }
+    }
+  }
+}
+
+theorem closed_implies_rtcset_is_subset \forall X \forall^P \psi[2] \forall x \forall r (closed(X, \psi) \wedge in(x, X) \wedge rtcset(x, \psi, r) \to subset(r, X)) {
+  any X, predicate \psi[2], x, r {
+    assume closed(X, \psi) \wedge in(x, X) \wedge rtcset(x, \psi, r) {
+      split closed(X, \psi) \wedge in(x, X) \wedge rtcset(x, \psi, r)
+      connect closed(X, \psi) \wedge in(x, X)
+      apply invoke closed_implies_rtcset_exists for X, \psi, x
+      some r' such \exists r' (rtcset(x, \psi, r') \wedge subset(r', X)) {
+        split rtcset(x, \psi, r') \wedge subset(r', X)
+        connect rtcset(x, \psi, r) \wedge rtcset(x, \psi, r')
+        apply invoke rtcset_is_unique for x, \psi, r, r'
+        substitute subset(r', X) for r': r
+      }
+    }
+  }
+}
+
+theorem rtcset_one_step \forall^P \psi[2] \forall z \forall r \forall x (rtcset(z, \psi, r) \wedge in(x, r) \to equal(x, z) \vee \exists y \exists t (\psi(y, z) \wedge rtcset(y, \psi, t) \wedge in(x, t))) {
+  any predicate \psi[2], z, r, x {
+    assume rtcset(z, \psi, r) \wedge in(x, r) {
+      split rtcset(z, \psi, r) \wedge in(x, r)
+      split rtcset(z, \psi, r)
+      apply separation_exists_uniquely for r, \lambda^P w. equal(w, z) \vee \exists y \exists t (\psi(y, z) \wedge rtcset(y, \psi, t) \wedge in(w, t))
+      some s such \exists! s (sep(r, \lambda^P w. equal(w, z) \vee \exists y \exists t (\psi(y, z) \wedge rtcset(y, \psi, t) \wedge in(w, t)), s)) {
+        any u, v {
+          assume in(u, s) \wedge \psi(v, u) {
+            split in(u, s) \wedge \psi(v, u)
+            apply invoke rightward sep(r, \lambda^P w. equal(w, z) \vee \exists y \exists t (\psi(y, z) \wedge rtcset(y, \psi, t) \wedge in(w, t)), s) for u
+            split in(u, r) \wedge (equal(u, z) \vee \exists y \exists t (\psi(y, z) \wedge rtcset(y, \psi, t) \wedge in(u, t)))
+            connect in(u, r) \wedge \psi(v, u)
+            apply invoke closed(r, \psi) for u, v
+            divide equal(u, z) \vee \exists y \exists t (\psi(y, z) \wedge rtcset(y, \psi, t) \wedge in(u, t))
+              case equal(u, z) {
+                substitute \psi(v, u) for u: z
+                connect closed(r, \psi) \wedge in(v, r)
+                apply invoke closed_implies_rtcset_exists for r, \psi, v
+                some t such \exists t (rtcset(v, \psi, t) \wedge subset(t, r)) {
+                  split rtcset(v, \psi, t) \wedge subset(t, r)
+                  split rtcset(v, \psi, t)
+                  connect \psi(v, z) \wedge rtcset(v, \psi, t) \wedge in(v, t)
+                  lift for v, t conclude \exists y \exists t (\psi(y, z) \wedge rtcset(y, \psi, t) \wedge in(v, t))
+                }
+              }
+              case \exists y \exists t (\psi(y, z) \wedge rtcset(y, \psi, t) \wedge in(u, t)) {
+                some y, t such \exists y \exists t (\psi(y, z) \wedge rtcset(y, \psi, t) \wedge in(u, t)) {
+                  split \psi(y, z) \wedge rtcset(y, \psi, t) \wedge in(u, t)
+                  split rtcset(y, \psi, t)
+                  connect in(u, t) \wedge \psi(v, u)
+                  apply invoke closed(t, \psi) for u, v
+                  connect \psi(y, z) \wedge rtcset(y, \psi, t) \wedge in(v, t)
+                  lift for y, t conclude \exists y \exists t (\psi(y, z) \wedge rtcset(y, \psi, t) \wedge in(v, t))
+                }
+              }
+            pad \exists y \exists t (\psi(y, z) \wedge rtcset(y, \psi, t) \wedge in(v, t)) conclude equal(v, z) \vee \exists y \exists t (\psi(y, z) \wedge rtcset(y, \psi, t) \wedge in(v, t))
+            connect in(v, r) \wedge (equal(v, z) \vee \exists y \exists t (\psi(y, z) \wedge rtcset(y, \psi, t) \wedge in(v, t)))
+            apply invoke leftward sep(r, \lambda^P w. equal(w, z) \vee \exists y \exists t (\psi(y, z) \wedge rtcset(y, \psi, t) \wedge in(w, t)), s) for v
+          }
+        }
+        fold for closed conclude closed(s, \psi)
+        pad equal(z, z) conclude equal(z, z) \vee \exists y \exists t (\psi(y, z) \wedge rtcset(y, \psi, t) \wedge in(z, t))
+        connect in(z, r) \wedge (equal(z, z) \vee \exists y \exists t (\psi(y, z) \wedge rtcset(y, \psi, t) \wedge in(z, t)))
+        apply invoke leftward sep(r, \lambda^P w. equal(w, z) \vee \exists y \exists t (\psi(y, z) \wedge rtcset(y, \psi, t) \wedge in(w, t)), s) for z
+        connect closed(s, \psi) \wedge in(z, s)
+        apply invoke \forall s (closed(s, \psi) \wedge in(z, s) \to subset(r, s)) for s
+        apply invoke subset(r, s) for x
+        connect sep(r, \lambda^P w. equal(w, z) \vee \exists y \exists t (\psi(y, z) \wedge rtcset(y, \psi, t) \wedge in(w, t)), s) \wedge in(x, s)
+        apply invoke sep_satisfies_predicate for r, \lambda^P w. equal(w, z) \vee \exists y \exists t (\psi(y, z) \wedge rtcset(y, \psi, t) \wedge in(w, t)), s, x
+      }
+    }
+  }
+}
+
+theorem rtcset_future_exclusion \forall X \forall^P \psi[2] (closed(X, \psi) \wedge irrefrel(X, \psi) \wedge wellfounded(X, \psi) \to \forall x \forall z \forall r (in(x, X) \wedge \psi(z, x) \wedge rtcset(z, \psi, r) \to notin(x, r))) {
+  any X, predicate \psi[2] {
+    assume closed(X, \psi) \wedge irrefrel(X, \psi) \wedge wellfounded(X, \psi) {
+      split closed(X, \psi) \wedge irrefrel(X, \psi) \wedge wellfounded(X, \psi)
+      any x {
+        assume in(x, X) {
+          assume \forall y (\psi(y, x) \to \forall z \forall r (\psi(z, y) \wedge rtcset(z, \psi, r) \to notin(y, r))) {
+            any z, r {
+              assume \psi(z, x) \wedge rtcset(z, \psi, r) {
+                split \psi(z, x) \wedge rtcset(z, \psi, r)
+                deny in(x, r) {
+                  connect rtcset(z, \psi, r) \wedge in(x, r)
+                  apply invoke rtcset_one_step for \psi, z, r, x
+                  divide equal(x, z) \vee \exists y \exists t (\psi(y, z) \wedge rtcset(y, \psi, t) \wedge in(x, t))
+                    case equal(x, z) {
+                      substitute \psi(z, x) for z: x
+                      apply invoke irrefrel(X, \psi) for x
+                      contradict \psi(x, x)
+                    }
+                    case \exists y \exists t (\psi(y, z) \wedge rtcset(y, \psi, t) \wedge in(x, t)) {
+                      some y, t such \exists y \exists t (\psi(y, z) \wedge rtcset(y, \psi, t) \wedge in(x, t)) {
+                        split \psi(y, z) \wedge rtcset(y, \psi, t) \wedge in(x, t)
+                        split rtcset(y, \psi, t)
+                        connect in(x, t) \wedge \psi(z, x)
+                        apply invoke closed(t, \psi) for x, z
+                        connect closed(t, \psi) \wedge in(z, t)
+                        connect in(x, X) \wedge \psi(z, x)
+                        apply invoke closed(X, \psi) for x, z
+                        connect \psi(y, z) \wedge rtcset(y, \psi, t)
+                        apply invoke \forall y (\psi(y, x) \to \forall z \forall r (\psi(z, y) \wedge rtcset(z, \psi, r) \to \neg(in(y, r)))) for z
+                        apply invoke \forall z' \forall r (\psi(z', z) \wedge rtcset(z', \psi, r) \to \neg(in(z, r))) for y, t
+                        contradict in(z, t)
+                      }
+                    }
+                }
+              }
+            }
+          }
+        }
+      }
+      connect closed(X, \psi) \wedge irrefrel(X, \psi) \wedge wellfounded(X, \psi) \wedge \forall x (in(x, X) \to (\forall y (\psi(y, x) \to \forall z \forall r (\psi(z, y) \wedge rtcset(z, \psi, r) \to notin(y, r))) \to \forall z \forall r (\psi(z, x) \wedge rtcset(z, \psi, r) \to \neg(in(x, r)))))
+      apply invoke wellfounded_induction for \psi, \lambda^P x. \forall z \forall r (\psi(z, x) \wedge rtcset(z, \psi, r) \to \neg(in(x, r))), X
+      any x, z, r {
+        assume in(x, X) \wedge \psi(z, x) \wedge rtcset(z, \psi, r) {
+          split in(x, X) \wedge \psi(z, x) \wedge rtcset(z, \psi, r)
+          apply invoke \forall x (in(x, X) \to \forall z \forall r (\psi(z, x) \wedge rtcset(z, \psi, r) \to notin(x, r))) for x
+          connect \psi(z, x) \wedge rtcset(z, \psi, r)
+          apply invoke \forall z \forall r (\psi(z, x) \wedge rtcset(z, \psi, r) \to notin(x, r)) for z, r
+        }
+      }
+    }
+  }
+}
+
+definition predicate tcset(x, predicate \psi[2], t) as closed(t, \psi) \wedge \forall y (\psi(y, x) \to in(y, t)) \wedge \forall s (closed(s, \psi) \wedge \forall y (\psi(y, x) \to in(y, s)) \to subset(t, s))
+
+theorem tcset_is_unique \forall x \forall^P \psi[2] \forall t \forall t' (tcset(x, \psi, t) \wedge tcset(x, \psi, t') \to equal(t, t')) {
+  any x, predicate \psi[2], t, t' {
+    assume tcset(x, \psi, t) \wedge tcset(x, \psi, t') {
+      split tcset(x, \psi, t) \wedge tcset(x, \psi, t')
+      split tcset(x, \psi, t)
+      split tcset(x, \psi, t')
+      connect closed(t', \psi) \wedge \forall y (\psi(y, x) \to in(y, t'))
+      apply invoke \forall s (closed(s, \psi) \wedge \forall y (\psi(y, x) \to in(y, s)) \to subset(t, s)) for t'
+      connect closed(t, \psi) \wedge \forall y (\psi(y, x) \to in(y, t))
+      apply invoke \forall s (closed(s, \psi) \wedge \forall y (\psi(y, x) \to in(y, s)) \to subset(t', s)) for t
+      connect subset(t, t') \wedge subset(t', t)
+      apply invoke subset_antisymmetry for t, t'
+    }
+  }
+}
+
+theorem tcset_of_element_is_subset_of_tcset \forall x \forall^P \psi[2] \forall t \forall y (tcset(x, \psi, t) \wedge \psi(y, x) \to \exists s (subset(s, t) \wedge tcset(y, \psi, s))) {
+  any x, predicate \psi[2], t, y {
+    assume tcset(x, \psi, t) \wedge \psi(y, x) {
+      split tcset(x, \psi, t) \wedge \psi(y, x)
+      split tcset(x, \psi, t)
+      apply invoke \forall y (\psi(y, x) \to in(y, t)) for y
+      apply separation_exists_uniquely for t, \lambda^P z. \forall u (closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u)) \to in(z, u))
+      some p such \exists! p (sep(t, \lambda^P z. \forall u (closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u)) \to in(z, u)), p)) {
+        apply invoke sep_is_subset for t, \lambda^P z. \forall u (closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u)) \to in(z, u)), p
+        any z, w {
+          assume in(z, p) \wedge \psi(w, z) {
+            split in(z, p) \wedge \psi(w, z)
+            apply invoke rightward sep(t, \lambda^P z. \forall u (closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u)) \to in(z, u)), p) for z
+            split in(z, t) \wedge \forall u (closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u)) \to in(z, u))
+            connect \psi(w, z) \wedge in(z, t)
+            apply invoke closed(t, \psi) for z, w
+            any u {
+              assume closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u)) {
+                split closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u))
+                apply invoke \forall u (closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u)) \to in(z, u)) for u
+                connect \psi(w, z) \wedge in(z, u)
+                apply invoke closed(u, \psi) for z, w
+              }
+            }
+            connect in(w, t) \wedge \forall u (closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u)) \to in(w, u))
+            apply invoke leftward sep(t, \lambda^P z. \forall u (closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u)) \to in(z, u)), p) for w
+          }
+        }
+        fold for closed[1] conclude closed(p, \psi)
+        any z {
+          assume \psi(z, y) {
+            connect \psi(z, y) \wedge in(y, t)
+            apply invoke closed(t, \psi) for y, z
+            any u {
+              assume closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u)) {
+                split closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u))
+                apply invoke \forall v (\psi(v, y) \to in(v, u)) for z
+              }
+            }
+            connect in(z, t) \wedge \forall u (closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u)) \to in(z, u))
+            apply invoke leftward sep(t, \lambda^P z. \forall u (closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u)) \to in(z, u)), p) for z
+          }
+        }
+        any s {
+          assume closed(s, \psi) \wedge \forall z (\psi(z, y) \to in(z, s)) {
+            split closed(s, \psi) \wedge \forall z (\psi(z, y) \to in(z, s))
+            any z {
+              assume in(z, p) {
+                connect sep(t, \lambda^P z. \forall u (closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u)) \to in(z, u)), p) \wedge in(z, p)
+                apply invoke sep_satisfies_predicate for t, \lambda^P z. \forall u (closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u)) \to in(z, u)), p, z
+                apply invoke \forall u (closed(u, \psi) \wedge \forall v (\psi(v, y) \to in(v, u)) \to in(z, u)) for s
+              }
+            }
+            fold for subset[1] conclude subset(p, s)
+          }
+        }
+        connect tcset(y, \psi, p)
+        connect subset(p, t) \wedge tcset(y, \psi, p)
+        lift for p conclude \exists s (subset(s, t) \wedge tcset(y, \psi, s))
+      }
+    }
+  }
+}
+
+theorem adj_of_tcset_is_rtcset \forall x \forall^P \psi[2] \forall t (tcset(x, \psi, t) \to rtcset(x, \psi, adj(t, x))) {
+  any x, predicate \psi[2], t {
+    assume tcset(x, \psi, t) {
+      split tcset(x, \psi, t)
+      connect closed(t, \psi) \wedge \forall y (\psi(y, x) \to in(y, t))
+      apply invoke adj_of_closed_is_closed for x, t, \psi
+      apply adj_cor3 for t, x
+      any s {
+        assume closed(s, \psi) \wedge in(x, s) {
+          split closed(s, \psi) \wedge in(x, s)
+          any y {
+            assume in(y, adj(t, x)) {
+              apply invoke rightward adj_existence for t, x, y
+              divide in(y, t) \vee equal(y, x)
+                case in(y, t) {
+                  any z {
+                    assume \psi(z, x) {
+                      connect in(x, s) \wedge \psi(z, x)
+                      apply invoke closed(s, \psi) for x, z
+                    }
+                  }
+                  connect closed(s, \psi) \wedge \forall z (\psi(z, x) \to in(z, s))
+                  apply invoke \forall s ((closed(s, \psi) \wedge \forall z (\psi(z, x) \to in(z, s))) \to subset(t, s)) for s
+                  apply invoke subset(t, s) for y
+                }
+                case equal(y, x) {
+                  substitute in(x, s) for x: y
+                }
+            }
+          }
+          fold for subset conclude subset(adj(t, x), s)
+        }
+      }
+      connect closed(adj(t, x), \psi) \wedge in(x, adj(t, x)) \wedge \forall s (closed(s, \psi) \wedge in(x, s) \to subset(adj(t, x), s))
+      fold for rtcset conclude rtcset(x, \psi, adj(t, x))
+    }
+  }
+}
+
+definition predicate rtcsetlike(predicate \phi[1], predicate \psi[2]) as \forall x (\phi(x) \to \exists r (rtcset(x, \psi, r)))
+
+definition predicate tcsetlike(predicate \phi[1], predicate \psi[2]) as \forall x (\phi(x) \to \exists t (tcset(x, \psi, t)))
+
+theorem tcsetlike_implies_rtcsetlike \forall^P \phi[1] \forall^P \psi[2] (tcsetlike(\phi, \psi) \to rtcsetlike(\phi, \psi)) {
+  any predicate \phi[1], predicate \psi[2] {
+    assume tcsetlike(\phi, \psi) {
+      any x {
+        assume \phi(x) {
+          apply invoke tcsetlike(\phi, \psi) for x
+          some t such \exists t (tcset(x, \psi, t)) {
+            apply invoke adj_of_tcset_is_rtcset for x, \psi, t
+            lift for adj(t, x) conclude \exists r (rtcset(x, \psi, r))
+          }
+        }
+      }
+      fold for rtcsetlike conclude rtcsetlike(\phi, \psi)
+    }
+  }
+}
+
+theorem psubset_of_rtcsetlike_is_rtcsetlike \forall^P \phi[1] \forall^P \psi[2] \forall^P \chi[1] (rtcsetlike(\phi, \psi) \wedge psubset(\chi, \phi) \to rtcsetlike(\chi, \psi)) {
+  any predicate \phi[1], predicate \psi[2], predicate \chi[1] {
+    assume rtcsetlike(\phi, \psi) \wedge psubset(\chi, \phi) {
+      split rtcsetlike(\phi, \psi) \wedge psubset(\chi, \phi)
+      any x {
+        assume \chi(x) {
+          apply invoke psubset(\chi, \phi) for x
+          apply invoke rtcsetlike(\phi, \psi) for x
+        }
+      }
+      fold for rtcsetlike conclude rtcsetlike(\chi, \psi)
+    }
+  }
+}
+
+theorem psubset_of_tcsetlike_is_tcsetlike \forall^P \phi[1] \forall^P \psi[2] \forall^P \chi[1] (tcsetlike(\phi, \psi) \wedge psubset(\chi, \phi) \to tcsetlike(\chi, \psi)) {
+  any predicate \phi[1], predicate \psi[2], predicate \chi[1] {
+    assume tcsetlike(\phi, \psi) \wedge psubset(\chi, \phi) {
+      split tcsetlike(\phi, \psi) \wedge psubset(\chi, \phi)
+      any x {
+        assume \chi(x) {
+          apply invoke psubset(\chi, \phi) for x
+          apply invoke tcsetlike(\phi, \psi) for x
+        }
+      }
+      fold for tcsetlike conclude tcsetlike(\chi, \psi)
+    }
+  }
+}
+
+theorem pwellfounded_induction \forall^P \phi[1] \forall^P \psi[2] \forall^P \chi[1] (rtcsetlike(\phi, \psi) \wedge pclosed(\phi, \psi) \wedge pirrefrel(\phi, \psi) \wedge pwellfounded(\phi, \psi) \wedge \forall x (\phi(x) \wedge \forall y (\psi(y, x) \to \chi(y)) \to \chi(x)) \to \forall x (\phi(x) \to \chi(x))) {
+  any predicate \phi[1], predicate \psi[2], predicate \chi[1] {
+    assume rtcsetlike(\phi, \psi) \wedge pclosed(\phi, \psi) \wedge pirrefrel(\phi, \psi) \wedge pwellfounded(\phi, \psi) \wedge \forall x (\phi(x) \wedge \forall y (\psi(y, x) \to \chi(y)) \to \chi(x)) {
+      split rtcsetlike(\phi, \psi) \wedge pclosed(\phi, \psi) \wedge pirrefrel(\phi, \psi) \wedge pwellfounded(\phi, \psi) \wedge \forall x (\phi(x) \wedge \forall y (\psi(y, x) \to \chi(y)) \to \chi(x))
+      deny \neg(\forall x (\phi(x) \to \chi(x))) {
+        apply invoke leftward exist_neg_leftrightarrow_neg_forall for \lambda^P x. \phi(x) \to \chi(x)
+        some x such \exists x (\neg(\phi(x) \to \chi(x))) {
+          apply invoke rightward neg_implication for \lambda^P. \phi(x), \lambda^P. \chi(x)
+          split \phi(x) \wedge \neg(\chi(x))
+          apply invoke rtcsetlike(\phi, \psi) for x
+          some r such \exists r (rtcset(x, \psi, r)) {
+            split rtcset(x, \psi, r)
+            apply separation_exists_uniquely for r, \lambda^P y. \phi(y) \wedge \neg(\chi(y))
+            some Y such \exists! Y (sep(r, \lambda^P y. \phi(y) \wedge \neg(\chi(y)), Y)) {
+              any y {
+                assume in(y, Y) {
+                  apply invoke rightward sep(r, \lambda^P y. \phi(y) \wedge \neg(\chi(y)), Y) for y
+                  split 2 in(y, r) \wedge \phi(y) \wedge \neg(\chi(y))
+                }
+              }
+              connect in(x, r) \wedge \phi(x) \wedge \neg(\chi(x))
+              apply invoke leftward sep(r, \lambda^P y. \phi(y) \wedge \neg(\chi(y)), Y) for x
+              lift for x conclude \exists z (in(z, Y))
+              apply invoke has_a_member_not_emptyset for Y
+              connect \forall y (in(y, Y) \to \phi(y)) \wedge neq(Y, emptyset)
+              apply invoke pwellfounded(\phi, \psi) for Y
+              some z such \exists z (minimal(\psi, Y, z)) {
+                split minimal(\psi, Y, z)
+                apply invoke rightward sep(r, \lambda^P y. \phi(y) \wedge \neg(\chi(y)), Y) for z
+                split in(z, r) \wedge \phi(z) \wedge \neg(\chi(z))
+                any y {
+                  assume \psi(y, z) {
+                    connect \phi(z) \wedge \psi(y, z)
+                    apply invoke pclosed(\phi, \psi) for z, y
+                    deny equal(y, z) {
+                      substitute \psi(y, z) for y: z
+                      apply invoke pirrefrel(\phi, \psi) for z
+                      contradict \psi(z, z)
+                    }
+                    deny \neg(\chi(y)) {
+                      connect in(z, r) \wedge \psi(y, z)
+                      apply invoke closed(r, \psi) for z, y
+                      connect in(y, r) \wedge \phi(y) \wedge \neg(\chi(y))
+                      apply invoke leftward sep(r, \lambda^P y. \phi(y) \wedge \neg(\chi(y)), Y) for y
+                      connect in(y, Y) \wedge neq(y, z)
+                      apply invoke minimal_core(\psi, Y, z) for y
+                      contradict \psi(y, z)
+                    }
+                  }
+                }
+                connect \phi(z) \wedge \forall y (\psi(y, z) \to \chi(y))
+                apply invoke \forall x (\phi(x) \wedge \forall y (\psi(y, x) \to \chi(y)) \to \chi(x)) for z
+                contradict \neg(\chi(z))
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+theorem pclosed_implies_rtcset_is_subset \forall^P \chi[1] \forall^P \psi[2] (pclosed(\chi, \psi) \wedge pirrefrel(\chi, \psi) \wedge pwellfounded(\chi, \psi) \wedge rtcsetlike(\chi, \psi) \to \forall x (\chi(x) \to \forall r \forall u (rtcset(x, \psi, r) \wedge in(u, r) \to \chi(u)))) {
+  any predicate \chi[1], predicate \psi[2] {
+    assume pclosed(\chi, \psi) \wedge pirrefrel(\chi, \psi) \wedge pwellfounded(\chi, \psi) \wedge rtcsetlike(\chi, \psi) {
+      split pclosed(\chi, \psi) \wedge pirrefrel(\chi, \psi) \wedge pwellfounded(\chi, \psi) \wedge rtcsetlike(\chi, \psi)
+      any x {
+        assume \chi(x) \wedge \forall y (\psi(y, x) \to \forall r \forall u (rtcset(y, \psi, r) \wedge in(u, r) \to \chi(u))) {
+          split \chi(x) \wedge \forall y (\psi(y, x) \to \forall r \forall u (rtcset(y, \psi, r) \wedge in(u, r) \to \chi(u)))
+          any r, u {
+            assume rtcset(x, \psi, r) \wedge in(u, r) {
+              split rtcset(x, \psi, r) \wedge in(u, r)
+              apply invoke rtcset_one_step for \psi, x, r, u
+              divide equal(u, x) \vee \exists y \exists t (\psi(y, x) \wedge rtcset(y, \psi, t) \wedge in(u, t))
+                case equal(u, x) {
+                  substitute \chi(x) for x: u
+                }
+                case \exists y \exists t (\psi(y, x) \wedge rtcset(y, \psi, t) \wedge in(u, t)) {
+                  some y, t such \exists y \exists t (\psi(y, x) \wedge rtcset(y, \psi, t) \wedge in(u, t)) {
+                    split \psi(y, x) \wedge rtcset(y, \psi, t) \wedge in(u, t)
+                    apply invoke \forall y (\psi(y, x) \to \forall r \forall u (rtcset(y, \psi, r) \wedge in(u, r) \to \chi(u))) for y
+                    connect rtcset(y, \psi, t) \wedge in(u, t)
+                    apply invoke \forall r \forall u (rtcset(y, \psi, r) \wedge in(u, r) \to \chi(u)) for t, u
+                  }
+                }
+            }
+          }
+        }
+      }
+      connect rtcsetlike(\chi, \psi) \wedge pclosed(\chi, \psi) \wedge pirrefrel(\chi, \psi) \wedge pwellfounded(\chi, \psi) \wedge \forall x (\chi(x) \wedge \forall y (\psi(y, x) \to \forall r \forall u (rtcset(y, \psi, r) \wedge in(u, r) \to \chi(u))) \to \forall r \forall u (rtcset(x, \psi, r) \wedge in(u, r) \to \chi(u)))
+      apply invoke pwellfounded_induction for \chi, \psi, \lambda^P x. \forall r \forall u (rtcset(x, \psi, r) \wedge in(u, r) \to \chi(u))
+    }
+  }
+}
+
+definition predicate seg(x, predicate \psi[2], s) as \forall y (in(y, s) \leftrightarrow \psi(y, x))
+
+theorem closed_implies_seg_is_subset \forall y \forall^P \psi[2] \forall t \forall u \forall s (closed(t, \psi) \wedge in(u, t) \wedge seg(u, \psi, s) \to subset(s, t)) {
+  any y, predicate \psi[2], t, u, s {
+    assume closed(t, \psi) \wedge in(u, t) \wedge seg(u, \psi, s) {
+      split closed(t, \psi) \wedge in(u, t) \wedge seg(u, \psi, s)
+      any w {
+        assume in(w, s) {
+          apply invoke rightward seg(u, \psi, s) for w
+          connect in(u, t) \wedge \psi(w, u)
+          apply invoke closed(t, \psi) for u, w
+        }
+      }
+      fold for subset conclude subset(s, t)
+    }
+  }
+}
+
+theorem closed_implies_seg_exists \forall X \forall^P \psi[2] \forall x (closed(X, \psi) \wedge in(x, X) \to \exists Y (seg(x, \psi, Y) \wedge sep(X, \lambda^P y. \psi(y, x), Y))) {
+  any X, predicate \psi[2], x {
+    assume closed(X, \psi) \wedge in(x, X) {
+      split closed(X, \psi) \wedge in(x, X)
+      apply separation_exists_uniquely for X, \lambda^P y. \psi(y, x)
+      some Y such \exists! Y (sep(X, \lambda^P y. \psi(y, x), Y)) {
+        any y {
+          assume in(y, Y) {
+            apply invoke rightward sep(X, \lambda^P y. \psi(y, x), Y) for y
+            split 2 in(y, X) \wedge \psi(y, x)
+          }
+          assume \psi(y, x) {
+            connect in(x, X) \wedge \psi(y, x)
+            apply invoke closed(X, \psi) for x, y
+            connect in(y, X) \wedge \psi(y, x)
+            apply invoke leftward sep(X, \lambda^P y. \psi(y, x), Y) for y
+          }
+          connect in(y, Y) \leftrightarrow \psi(y, x)
+        }
+        fold for seg conclude seg(x, \psi, Y)
+        connect seg(x, \psi, Y) \wedge sep(X, \lambda^P y. \psi(y, x), Y)
+        lift for Y conclude \exists Y (seg(x, \psi, Y) \wedge sep(X, \lambda^P y. \psi(y, x), Y))
+      }
+    }
+  }
+}
+
+theorem seg_is_unique \forall x \forall^P \psi[2] \forall s \forall s' (seg(x, \psi, s) \wedge seg(x, \psi, s') \to equal(s, s')) {
+  any x, predicate \psi[2], s, s' {
+    assume seg(x, \psi, s) \wedge seg(x, \psi, s') {
+      split seg(x, \psi, s) \wedge seg(x, \psi, s')
+      any y {
+        assume in(y, s) {
+          apply invoke rightward seg(x, \psi, s) for y
+          apply invoke leftward seg(x, \psi, s') for y
+        }
+        assume in(y, s') {
+          apply invoke rightward seg(x, \psi, s') for y
+          apply invoke leftward seg(x, \psi, s ) for y
+        }
+        connect in(y, s) \leftrightarrow in(y, s')
+      }
+      apply invoke axiom_of_extensionality for s, s'
+    }
+  }
+}
+
+theorem seg_for_in_is_iself \forall x (seg(x, in, x)) {
+  any x {
+    any y {
+      assume in(y, x) {}
+      connect in(y, x) \leftrightarrow in(y, x)
+    }
+    fold for seg conclude seg(x, in, x)
+  }
+}

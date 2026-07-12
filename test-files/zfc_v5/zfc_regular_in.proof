@@ -1,0 +1,281 @@
+include "zfc_regular.proof"
+
+theorem hirrefrel_is_irrefrel \forall x (hirrefrel(x, in) \to irrefrel(x, in)) {
+  any x {
+    assume hirrefrel(x, in) {
+      some y such hirrefrel(x, in) {
+        split irrefrel(y, in) \wedge tcset(x, in, y)
+        apply invoke tcset_in_implies_subset for x, y
+        connect irrefrel(y, in) \wedge subset(x, y)
+        apply invoke subset_of_irrefrel_is_irrefrel for in, y, x
+      }
+    }
+  }
+}
+
+theorem set_of_hirrefrel_is_hirrefrel \forall Y (\forall y (in(y, Y) \to hirrefrel(y, in)) \wedge \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V)) \to hirrefrel(Y, in)) {
+  any Y {
+    assume \forall y (in(y, Y) \to hirrefrel(y, in)) \wedge \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V)) {
+      split \forall y (in(y, Y) \to hirrefrel(y, in)) \wedge \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V))
+      some Z, W, V such \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V)) {
+        apply invoke tcsetinstep_implies_tcsetstep for Y, Z, W, V
+        lift for Y, Z, W, V conclude \exists S \exists Z \exists W \exists V (tcsetstep(in, Y, S, Z, W, V))
+      }
+      connect \forall y (in(y, Y) \to hirrefrel(y, in)) \wedge \exists S \exists Z \exists W \exists V (tcsetstep(in, Y, S, Z, W, V))
+      apply invoke generation_from_hirrefrel_is_hirrefrel for in, Y
+    }
+  }
+}
+
+theorem hwellfounded_is_wellfounded \forall x (hwellfounded(x, in) \to wellfounded(x, in)) {
+  any x {
+    assume hwellfounded(x, in) {
+      some y such hwellfounded(x, in) {
+        split wellfounded(y, in) \wedge tcset(x, in, y)
+        apply invoke tcset_in_implies_subset for x, y
+        connect wellfounded(y, in) \wedge subset(x, y)
+        apply invoke subset_of_wellfounded_is_wellfounded for in, y, x
+      }
+    }
+  }
+}
+
+theorem set_of_hwellfounded_is_hwellfounded \forall Y (\forall y (in(y, Y) \to hwellfounded(y, in)) \wedge \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V)) \to hwellfounded(Y, in)) {
+  any Y {
+    assume \forall y (in(y, Y) \to hwellfounded(y, in)) \wedge \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V)) {
+      split \forall y (in(y, Y) \to hwellfounded(y, in)) \wedge \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V))
+      some Z, W, V such \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V)) {
+        apply invoke tcsetinstep_implies_tcsetstep for Y, Z, W, V
+        lift for Y, Z, W, V conclude \exists S \exists Z \exists W \exists V (tcsetstep(in, Y, S, Z, W, V))
+      }
+      connect \forall y (in(y, Y) \to hwellfounded(y, in)) \wedge \exists S \exists Z \exists W \exists V (tcsetstep(in, Y, S, Z, W, V))
+      apply invoke generation_from_hwellfounded_is_hwellfounded for in, Y
+    }
+  }
+}
+
+theorem regular_is_irrefrel_wellfounded \forall x (regular(x, in) \to irrefrel(x, in) \wedge wellfounded(x, in)) {
+  any x {
+    assume regular(x, in) {
+      split regular(x, in)
+      apply invoke hirrefrel_is_irrefrel for x
+      apply invoke hwellfounded_is_wellfounded for x
+      connect irrefrel(x, in) \wedge wellfounded(x, in)
+    }
+  }
+}
+
+theorem set_of_regular_is_regular \forall Y (\forall y (in(y, Y) \to regular(y, in)) \wedge \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V)) \to regular(Y, in)) {
+  any Y {
+    assume \forall y (in(y, Y) \to regular(y, in)) \wedge \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V)) {
+      split \forall y (in(y, Y) \to regular(y, in)) \wedge \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V))
+      some Z, W, V such \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V)) {
+        apply invoke tcsetinstep_implies_tcsetstep for Y, Z, W, V
+        lift for Y, Z, W, V conclude \exists S \exists Z \exists W \exists V (tcsetstep(in, Y, S, Z, W, V))
+      }
+      connect \forall y (in(y, Y) \to regular(y, in)) \wedge \exists S \exists Z \exists W \exists V (tcsetstep(in, Y, S, Z, W, V))
+      apply invoke generation_from_regular_is_regular for in, Y
+    }
+  }
+}
+
+theorem regular_satisfies_axiom_of_extensionality \forall x \forall y (regular(x, in) \wedge regular(y, in) \to (\forall z (regular(z, in) \to (in(z, x) \leftrightarrow in(z, y))) \to equal(x, y))) {
+  any x, y {
+    assume regular(x, in) \wedge regular(y, in) {
+      split regular(x, in) \wedge regular(y, in)
+      assume \forall z (regular(z, in) \to (in(z, x) \leftrightarrow in(z, y))) {
+        any z {
+          assume in(z, x) {
+            connect regular(x, in) \wedge in(z, x)
+            apply invoke element_of_regular_is_regular for x, in, z
+            apply invoke \forall z (regular(z, in) \to (in(z, x) \leftrightarrow in(z, y))) for z
+            invoke rightward in(z, x) \leftrightarrow in(z, y)
+          }
+          assume in(z, y) {
+            connect regular(y, in) \wedge in(z, y)
+            apply invoke element_of_regular_is_regular for y, in, z
+            apply invoke \forall z (regular(z, in) \to (in(z, x) \leftrightarrow in(z, y))) for z
+            invoke leftward in(z, x) \leftrightarrow in(z, y)
+          }
+          connect in(z, x) \leftrightarrow in(z, y)
+        }
+        apply invoke axiom_of_extensionality for x, y
+      }
+    }
+  }
+}
+
+theorem emptyset_is_regular regular(emptyset, in) {
+  assert emptyset_is_tcset_in_of_emptyset
+  assert emptyset_is_irrefrel
+  connect irrefrel(emptyset, in) \wedge tcset(emptyset, in, emptyset)
+  lift for emptyset conclude hirrefrel(emptyset, in)
+  assert emptyset_is_wellfounded
+  connect wellfounded(emptyset, in) \wedge tcset(emptyset, in, emptyset)
+  lift for emptyset conclude hwellfounded(emptyset, in)
+  connect regular(emptyset, in)
+}
+
+theorem regular_satisfies_axiom_of_emptyset \exists x (regular(x, in) \wedge \forall y (regular(y, in) \to notin(y, x))) {
+  assert emptyset_is_regular
+  any y {
+    assume regular(y, in) {
+      apply emptyset_existence for y
+    }
+  }
+  connect regular(emptyset, in) \wedge \forall y (regular(y, in) \to notin(y, emptyset))
+  lift for emptyset conclude \exists x (regular(x, in) \wedge \forall y (regular(y, in) \to notin(y, x)))
+}
+
+theorem regular_satisfies_axiom_of_separation \forall^P \phi[1] \forall x (regular(x, in) \to \exists y (regular(y, in) \wedge \forall z (regular(z, in) \to (in(z, y) \leftrightarrow in(z, x) \wedge \phi(z))))) {
+  any predicate \phi[1], x {
+    assume regular(x, in) {
+      apply invoke rightward regular_iff_existence_of_irrefrel_wellfounded_tcset for x, in
+      some p such \exists p (irrefrel(p, in) \wedge wellfounded(p, in) \wedge tcset(x, in, p)) {
+        split irrefrel(p, in) \wedge wellfounded(p, in) \wedge tcset(x, in, p)
+        split tcset(x, in, p)
+        apply axiom_of_separation for x, \phi
+        some y such \exists y (sep(x, \phi, y)) {
+          apply axiom_of_separation for p, \lambda^P z. \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s))
+          some q such \exists q (sep(p, \lambda^P z. \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s)), q)) {
+            any u, v {
+              assume in(u, q) \wedge in(v, u) {
+                split in(u, q) \wedge in(v, u)
+                apply invoke rightward sep(p, \lambda^P z. \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s)), q) for u
+                split in(u, p) \wedge \forall s (closed(s, in) \wedge subset(y, s) \to in(u, s))
+                connect in(u, p) \wedge in(v, u)
+                apply invoke closed(p, in) for u, v
+                any s {
+                  assume closed(s, in) \wedge subset(y, s) {
+                    split closed(s, in) \wedge subset(y, s)
+                    apply invoke \forall s (closed(s, in) \wedge subset(y, s) \to in(u, s)) for s
+                    connect in(u, s) \wedge in(v, u)
+                    apply invoke closed(s, in) for u, v
+                  }
+                }
+                connect in(v, p) \wedge \forall s (closed(s, in) \wedge subset(y, s) \to in(v, s))
+                apply invoke leftward sep(p, \lambda^P z. \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s)), q) for v
+              }
+            }
+            fold for closed conclude closed(q, in)
+            any w {
+              assume in(w, y) {
+                apply invoke rightward sep(x, \phi, y) for w
+                split in(w, x) \wedge \phi(w)
+                apply invoke \forall w (in(w, x) \to in(w, p)) for w
+                any s {
+                  assume closed(s, in) \wedge subset(y, s) {
+                    split 2 closed(s, in) \wedge subset(y, s)
+                    apply invoke subset(y, s) for w
+                  }
+                }
+                connect in(w, p) \wedge \forall s (closed(s, in) \wedge subset(y, s) \to in(w, s))
+                apply invoke leftward sep(p, \lambda^P z. \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s)), q) for w
+              }
+            }
+            any s {
+              assume closed(s, in) \wedge \forall z (in(z, y) \to in(z, s)) {
+                split closed(s, in) \wedge \forall z (in(z, y) \to in(z, s))
+                fold for subset conclude subset(y, s)
+                connect closed(s, in) \wedge subset(y, s)
+                any z {
+                  assume in(z, q) {
+                    apply invoke rightward sep(p, \lambda^P z. \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s)), q) for z
+                    split in(z, p) \wedge \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s))
+                    apply invoke \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s)) for s
+                  }
+                }
+                fold for subset conclude subset(q, s)
+              }
+            }
+            connect tcset(y, in, q)
+            any z {
+              assume in(z, q) {
+                apply invoke rightward sep(p, \lambda^P z. \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s)), q) for z
+                split 1 in(z, p) \wedge \forall s (closed(s, in) \wedge subset(y, s) \to in(z, s))
+              }
+            }
+            fold for subset conclude subset(q, p)
+            connect irrefrel(p, in) \wedge subset(q, p)
+            apply invoke subset_of_irrefrel_is_irrefrel for in, p, q
+            connect wellfounded(p, in) \wedge subset(q, p)
+            apply invoke subset_of_wellfounded_is_wellfounded for in, p, q
+            connect irrefrel(q, in) \wedge wellfounded(q, in) \wedge tcset(y, in, q)
+            lift for q conclude \exists q (irrefrel(q, in) \wedge wellfounded(q, in) \wedge tcset(y, in, q))
+          }
+          apply invoke leftward regular_iff_existence_of_irrefrel_wellfounded_tcset for y, in
+          any z {
+            assume regular(z, in) {
+              apply sep(x, \phi, y) for z
+            }
+          }
+          connect regular(y, in) \wedge \forall z (regular(z, in) \to (in(z, y) \leftrightarrow in(z, x) \wedge \phi(z)))
+          lift for y conclude \exists y (regular(y, in) \wedge \forall z (regular(z, in) \to (in(z, y) \leftrightarrow in(z, x) \wedge \phi(z))))
+        }
+      }
+    }
+  }
+}
+
+theorem regular_satisfies_axiom_of_foundation \forall x (regular(x, in) \to (neq(x, emptyset) \to \exists y (regular(y, in) \wedge in(y, x) \wedge \forall z (regular(z, in) \to (in(z, y) \to notin(z, x)))))) {
+  any A {
+    assume regular(A, in) {
+      assume neq(A, emptyset) {
+        split regular(A, in)
+        apply invoke hirrefrel_is_irrefrel for A
+        apply invoke hwellfounded_is_wellfounded for A
+        apply subset_reflexivity for A
+        connect subset(A, A) \wedge neq(A, emptyset)
+        apply invoke wellfounded(A, in) for A
+        some y such \exists y (minimal(in, A, y)) {
+          split minimal(in, A, y)
+          connect regular(A, in) \wedge in(y, A)
+          apply invoke element_of_regular_is_regular for A, in, y
+          any z {
+            assume regular(z, in) {
+              assume in(z, y) {
+                deny in(z, A) {
+                  apply law_of_excluded_middle for \lambda^P. equal(z, y)
+                  divide equal(z, y) \vee neq(z, y)
+                    case equal(z, y) {
+                      substitute in(z, y) for z: y
+                      apply invoke irrefrel(A, in) for y
+                      contradict in(y, y)
+                    }
+                    case neq(z, y) {
+                      connect in(z, A) \wedge neq(z, y)
+                      apply invoke minimal_core(in, A, y) for z
+                      contradict in(z, y)
+                    }
+                }
+              }
+            }
+          }
+          connect regular(y, in) \wedge in(y, A) \wedge \forall z (regular(z, in) \to (in(z, y) \to notin(z, A)))
+          lift for y conclude \exists y (regular(y, in) \wedge in(y, A) \wedge \forall z (regular(z, in) \to (in(z, y) \to notin(z, A))))
+        }
+      }
+    }
+  }
+}
+
+theorem regular_implies_tcset_in_is_regular \forall x \forall t (regular(x, in) \wedge tcset(x, in, t) \to regular(t, in)) {
+  any x, t {
+    assume regular(x, in) \wedge tcset(x, in, t) {
+      split regular(x, in) \wedge tcset(x, in, t)
+      apply invoke rightward regular_iff_existence_of_irrefrel_wellfounded_tcset for x, in
+      some t' such \exists t' (irrefrel(t', in) \wedge wellfounded(t', in) \wedge tcset(x, in, t')) {
+        split irrefrel(t', in) \wedge wellfounded(t', in) \wedge tcset(x, in, t')
+        connect tcset(x, in, t) \wedge tcset(x, in, t')
+        apply invoke tcset_is_unique for x, in, t, t'
+        substitute irrefrel(t', in) for t': t
+        substitute wellfounded(t', in) for t': t
+        split tcset(x, in, t)
+        apply invoke rightward closed_in_iff_tcset_of_itself for t
+        connect irrefrel(t, in) \wedge wellfounded(t, in) \wedge tcset(t, in, t)
+        lift for t conclude \exists t' (irrefrel(t', in) \wedge wellfounded(t', in) \wedge tcset(t, in, t'))
+      }
+      apply invoke leftward regular_iff_existence_of_irrefrel_wellfounded_tcset for t, in
+    }
+  }
+}

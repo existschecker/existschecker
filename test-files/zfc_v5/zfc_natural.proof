@@ -1,0 +1,209 @@
+include "zfc_regular_in.proof"
+
+definition predicate sucordinal(\alpha) as ordinal(\alpha) \wedge \exists \beta (equal(\alpha, suc(\beta)))
+
+definition predicate pnatural(n) as sucordinal(n) \wedge \forall m (in(m, n) \to equal(m, emptyset) \vee sucordinal(m))
+
+definition predicate natural(n) as equal(n, emptyset) \vee pnatural(n)
+
+theorem natural_is_ordinal \forall n (natural(n) \to ordinal(n)) {
+  any n {
+    assume natural(n) {
+      divide natural(n)
+        case equal(n, emptyset) {
+          substitute emptyset_is_ordinal for emptyset: n
+        }
+        case pnatural(n) {
+          split 1 pnatural(n)
+          split 1 sucordinal(n)
+        }
+    }
+  }
+}
+
+theorem emptyset_is_natural natural(emptyset) {
+  pad equal(emptyset, emptyset) conclude natural(emptyset)
+}
+
+theorem suc_of_natural_is_natural \forall n (natural(n) \to natural(suc(n))) {
+  any n {
+    assume natural(n) {
+      apply invoke natural_is_ordinal for n
+      apply invoke suc_of_ordinal_is_ordinal for n
+      lift for n conclude \exists n (equal(suc(n), suc(n)))
+      connect sucordinal(suc(n))
+      any m {
+        assume in(m, suc(n)) {
+          apply invoke rightward suc_characterization for n, m
+          divide in(m, n) \vee equal(m, n)
+            case in(m, n) {
+              divide natural(n)
+                case equal(n, emptyset) {
+                  apply emptyset_existence for m
+                  substitute in(m, n) for n: emptyset
+                  contradict in(m, emptyset)
+                  explode equal(m, emptyset) \vee sucordinal(m)
+                }
+                case pnatural(n) {
+                  split 2 pnatural(n)
+                  apply invoke \forall m (in(m, n) \to equal(m, emptyset) \vee sucordinal(m)) for m
+                }
+            }
+            case equal(m, n) {
+              substitute natural(n) for n: m
+              divide natural(m)
+                case equal(m, emptyset) {
+                  pad equal(m, emptyset) conclude equal(m, emptyset) \vee sucordinal(m)
+                }
+                case pnatural(m) {
+                  split 1 pnatural(m)
+                  pad sucordinal(m) conclude equal(m, emptyset) \vee sucordinal(m)
+                }
+            }
+        }
+      }
+      connect pnatural(suc(n))
+      pad pnatural(suc(n)) conclude natural(suc(n))
+    }
+  }
+}
+
+theorem element_of_natural_is_natural \forall n \forall m (in(m, n) \wedge natural(n) \to natural(m)) {
+  any n, m {
+    assume in(m, n) \wedge natural(n) {
+      split in(m, n) \wedge natural(n)
+      divide natural(n)
+        case equal(n, emptyset) {
+          apply emptyset_existence for m
+          substitute notin(m, emptyset) for emptyset: n
+          contradict in(m, n)
+          explode natural(m)
+        }
+        case pnatural(n) {
+          split pnatural(n)
+          apply invoke \forall m (in(m, n) \to equal(m, emptyset) \vee sucordinal(m)) for m
+          divide equal(m, emptyset) \vee sucordinal(m)
+            case equal(m, emptyset) {
+              substitute emptyset_is_natural for emptyset: m
+            }
+            case sucordinal(m) {
+              any l {
+                assume in (l, m) {
+                  connect in(l, m) \wedge in(m, n)
+                  apply invoke natural_is_ordinal for n
+                  split 1 ordinal(n)
+                  apply invoke closed(n, in) for m, l
+                  apply invoke \forall m (in(m, n) \to equal(m, emptyset) \vee sucordinal(m)) for l
+                }
+              }
+              connect pnatural(m)
+              pad pnatural(m) conclude natural(m)
+            }
+        }
+    }
+  }
+}
+
+theorem natural_implies_suc_is_injection \forall n \forall m (natural(n) \wedge equal(suc(n), suc(m)) \to equal(n, m)) {
+  any n, m {
+    assume natural(n) \wedge equal(suc(n), suc(m)) {
+      split natural(n) \wedge equal(suc(n), suc(m))
+      apply invoke natural_is_ordinal for n
+      connect ordinal(n) \wedge equal(suc(n), suc(m))
+      apply invoke ordinal_implies_suc_is_injection for n, m
+    }
+  }
+}
+
+theorem natural_implies_suc_is_injection_contrapositive \forall n \forall m (natural(n) \wedge neq(n, m) \to neq(suc(n), suc(m))) {
+  any n, m {
+    assume natural(n) \wedge neq(n, m) {
+      split natural(n) \wedge neq(n, m)
+      deny equal(suc(n), suc(m)) {
+        connect natural(n) \wedge equal(suc(n), suc(m))
+        apply invoke natural_implies_suc_is_injection for n, m
+        contradict equal(n, m)
+      }
+    }
+  }
+}
+
+theorem pnatural_is_not_emptyset \forall n (pnatural(n) \to neq(n, emptyset)) {
+  any n {
+    assume pnatural(n) {
+      split pnatural(n)
+      split sucordinal(n)
+      some m such \exists m (equal(n, suc(m))) {
+        apply suc_is_not_emptyset for m
+        substitute neq(suc(m), emptyset) for suc(m): n
+      }
+    }
+  }
+}
+
+theorem pnatural_is_suc_of_natural_element \forall n (pnatural(n) \to \exists m (equal(n, suc(m)) \wedge in(m, n) \wedge natural(m))) {
+  any n {
+    assume pnatural(n) {
+      split pnatural(n)
+      split sucordinal(n)
+      some m such \exists m (equal(n, suc(m))) {
+        apply in_suc for m
+        substitute in(m, suc(m)) for suc(m): n
+        pad pnatural(n) conclude natural(n)
+        connect in(m, n) \wedge natural(n)
+        apply invoke element_of_natural_is_natural for n, m
+        connect equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)
+        lift for m conclude \exists m (equal(n, suc(m)) \wedge in(m, n) \wedge natural(m))
+      }
+    }
+  }
+}
+
+theorem natural_and_neq_emptyset_implies_pnatural \forall n (natural(n) \wedge neq(n, emptyset) \to pnatural(n)) {
+  any n {
+    assume natural(n) \wedge neq(n, emptyset) {
+      split natural(n) \wedge neq(n, emptyset)
+      divide natural(n)
+        case equal(n, emptyset) {
+          contradict equal(n, emptyset)
+          explode pnatural(n)
+        }
+        case pnatural(n) {}
+    }
+  }
+}
+
+theorem pnatural_contains_emptyset \forall n (pnatural(n) \to in(emptyset, n)) {
+  any n {
+    assume pnatural(n) {
+      pad pnatural(n) conclude natural(n)
+      apply invoke natural_is_ordinal for n
+      apply invoke pnatural_is_not_emptyset for n
+      connect ordinal(n) \wedge neq(n, emptyset)
+      apply invoke ordinal_not_emptyset_contains_emptyset for n
+    }
+  }
+}
+
+theorem suc_of_natural_is_pnatural \forall n (natural(n) \to pnatural(suc(n))) {
+  any n {
+    assume natural(n) {
+      apply invoke suc_of_natural_is_natural for n
+      apply suc_is_not_emptyset for n
+      connect natural(suc(n)) \wedge neq(suc(n), emptyset)
+      apply invoke natural_and_neq_emptyset_implies_pnatural for suc(n)
+    }
+  }
+}
+
+theorem natural_trichotomy_in \forall m \forall n (natural(m) \wedge natural(n) \to in(m, n) \vee equal(m, n) \vee in(n, m)) {
+  any m, n {
+    assume natural(m) \wedge natural(n) {
+      split natural(m) \wedge natural(n)
+      apply invoke natural_is_ordinal for m
+      apply invoke natural_is_ordinal for n
+      connect ordinal(m) \wedge ordinal(n)
+      apply invoke ordinals_trichotomy_in for m, n
+    }
+  }
+}

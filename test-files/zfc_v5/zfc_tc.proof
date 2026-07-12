@@ -1,0 +1,246 @@
+include "zfc_operation.proof"
+
+definition predicate tc(predicate \phi[2], x, y) as \exists n (pnatural(n) \wedge piterate(\phi, n, x, y))
+
+definition predicate rtc(predicate \phi[2], x, y) as \exists n (natural(n) \wedge piterate(\phi, n, x, y))
+
+theorem tc_implies_rtc \forall^P \phi[2] \forall x \forall y (tc(\phi, x, y) \to rtc(\phi, x, y)) {
+  any predicate \phi[2], x, y {
+    assume tc(\phi, x, y) {
+      some n such tc(\phi, x, y) {
+        split pnatural(n) \wedge piterate(\phi, n, x, y)
+        pad pnatural(n) conclude natural(n)
+        connect natural(n) \wedge piterate(\phi, n, x, y)
+        lift for n conclude rtc(\phi, x, y)
+      }
+    }
+  }
+}
+
+theorem rtc_base_step \forall^P \phi[2] \forall x (rtc(\phi, x, x)) {
+  any predicate \phi[2], x {
+    apply piterate_base_step for \phi, x
+    assert emptyset_is_natural
+    connect natural(emptyset) \wedge piterate(\phi, emptyset, x, x)
+    lift for emptyset conclude rtc(\phi, x, x)
+  }
+}
+
+theorem tc_one_step \forall^P \phi[2] \forall x \forall y (\phi(x, y) \to tc(\phi, x, y)) {
+  any predicate \phi[2], x, y {
+    assume \phi(x, y) {
+      apply invoke piterate_one_step for \phi, x, y
+      assert emptyset_is_natural
+      apply invoke suc_of_natural_is_natural for emptyset
+      apply suc_is_not_emptyset for emptyset
+      connect natural(suc(emptyset)) \wedge neq(suc(emptyset), emptyset)
+      apply invoke natural_and_neq_emptyset_implies_pnatural for suc(emptyset)
+      connect pnatural(suc(emptyset)) \wedge piterate(\phi, suc(emptyset), x, y)
+      lift for suc(emptyset) conclude \exists n (pnatural(n) \wedge piterate(\phi, n, x, y))
+      fold for tc conclude tc(\phi, x, y)
+    }
+  }
+}
+
+theorem rtc_one_step \forall^P \phi[2] \forall x \forall y (\phi(x, y) \to rtc(\phi, x, y)) {
+  any predicate \phi[2], x, y {
+    assume \phi(x, y) {
+      apply invoke tc_one_step for \phi, x, y
+      apply invoke tc_implies_rtc for \phi, x, y
+    }
+  }
+}
+
+theorem piterate_addition \forall^P \phi[2] \forall m \forall n \forall l \forall x \forall y \forall z (natural(m) \wedge natural(n) \wedge add(m, n, l) \wedge piterate(\phi, m, x, y) \wedge piterate(\phi, n, y, z) \to piterate(\phi, l, x, z)) {
+  any predicate \phi[2], m, l, x, y, z {
+    assume natural(m) \wedge add(m, emptyset, l) \wedge piterate(\phi, m, x, y) \wedge piterate(\phi, emptyset, y, z) {
+      split natural(m) \wedge add(m, emptyset, l) \wedge piterate(\phi, m, x, y) \wedge piterate(\phi, emptyset, y, z)
+      apply invoke piterate_is_unique_base_step for \phi, y, z
+      apply invoke add_base_step_unique for m, l
+      substitute piterate(\phi, m, x, y) for m: l, y: z
+    }
+  }
+  any n {
+    assume natural(n) {
+      assume \forall^P \phi[2] \forall m \forall l \forall x \forall y \forall z (natural(m) \wedge add(m, n, l) \wedge piterate(\phi, m, x, y) \wedge piterate(\phi, n, y, z) \to piterate(\phi, l, x, z)) {
+        any predicate \phi[2], m, l, x, y, z {
+          assume natural(m) \wedge add(m, suc(n), l) \wedge piterate(\phi, m, x, y) \wedge piterate(\phi, suc(n), y, z) {
+            split natural(m) \wedge add(m, suc(n), l) \wedge piterate(\phi, m, x, y) \wedge piterate(\phi, suc(n), y, z)
+            connect natural(n) \wedge add(m, suc(n), l)
+            apply invoke add_last_step for m, n, l
+            some k such \exists k (add(m, n, k) \wedge equal(l, suc(k))) {
+              split add(m, n, k) \wedge equal(l, suc(k))
+              connect natural(n) \wedge piterate(\phi, suc(n), y, z)
+              apply invoke piterate_last_step for \phi, n, y, z
+              some w such \exists w (piterate(\phi, n, y, w) \wedge \phi(w, z)) {
+                split piterate(\phi, n, y, w) \wedge \phi(w, z)
+                connect natural(m) \wedge add(m, n, k) \wedge piterate(\phi, m, x, y) \wedge piterate(\phi, n, y, w)
+                apply invoke \forall^P \phi[2] \forall m \forall l \forall x \forall y \forall z (natural(m) \wedge add(m, n, l) \wedge piterate(\phi, m, x, y) \wedge piterate(\phi, n, y, z) \to piterate(\phi, l, x, z)) for \phi, m, k, x, y, w
+                connect natural(m) \wedge natural(n) \wedge add(m, n, k)
+                apply invoke addition_of_natural_is_natural for m, n, k
+                connect natural(k) \wedge piterate(\phi, k, x, w) \wedge \phi(w, z)
+                apply invoke piterate_induction_step for \phi, k, x, w, z
+                substitute piterate(\phi, suc(k), x, z) for suc(k): l
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  connect \forall^P \phi[2] \forall m \forall l \forall x \forall y \forall z (natural(m) \wedge add(m, emptyset, l) \wedge piterate(\phi, m, x, y) \wedge piterate(\phi, emptyset, y, z) \to piterate(\phi, l, x, z)) \wedge \forall n (natural(n) \to (\forall^P \phi[2] \forall m \forall l \forall x \forall y \forall z (natural(m) \wedge add(m, n, l) \wedge piterate(\phi, m, x, y) \wedge piterate(\phi, n, y, z) \to piterate(\phi, l, x, z)) \to \forall^P \phi[2] \forall m \forall l \forall x \forall y \forall z (natural(m) \wedge add(m, suc(n), l) \wedge piterate(\phi, m, x, y) \wedge piterate(\phi, suc(n), y, z) \to piterate(\phi, l, x, z))))
+  apply invoke natural_induction for \lambda^P n. \forall^P \phi[2] \forall m \forall l \forall x \forall y \forall z (natural(m) \wedge add(m, n, l) \wedge piterate(\phi, m, x, y) \wedge piterate(\phi, n, y, z) \to piterate(\phi, l, x, z))
+  any predicate \phi[2], m, l, n, x, y, z {
+    assume natural(m) \wedge natural(n) \wedge add(m, n, l) \wedge piterate(\phi, m, x, y) \wedge piterate(\phi, n, y, z) {
+      split natural(m) \wedge natural(n) \wedge add(m, n, l) \wedge piterate(\phi, m, x, y) \wedge piterate(\phi, n, y, z)
+      apply invoke \forall n (natural(n) \to \forall^P \phi[2] \forall m \forall l \forall x \forall y \forall z (natural(m) \wedge add(m, n, l) \wedge piterate(\phi, m, x, y) \wedge piterate(\phi, n, y, z) \to piterate(\phi, l, x, z))) for n
+      connect natural(m) \wedge add(m, n, l) \wedge piterate(\phi, m, x, y) \wedge piterate(\phi, n, y, z)
+      apply invoke \forall^P \phi[2] \forall m \forall l \forall x \forall y \forall z (natural(m) \wedge add(m, n, l) \wedge piterate(\phi, m, x, y) \wedge piterate(\phi, n, y, z) \to piterate(\phi, l, x, z)) for \phi, m, l, x, y, z
+    }
+  }
+}
+
+theorem tc_is_transitive \forall^P \phi[2] \forall x \forall y \forall z (tc(\phi, x, y) \wedge tc(\phi, y, z) \to tc(\phi, x, z)) {
+  any predicate \phi[2], x, y, z {
+    assume tc(\phi, x, y) \wedge tc(\phi, y, z) {
+      split tc(\phi, x, y) \wedge tc(\phi, y, z)
+      some m such tc(\phi, x, y) {
+        split pnatural(m) \wedge piterate(\phi, m, x, y)
+        some n such tc(\phi, y, z) {
+          split pnatural(n) \wedge piterate(\phi, n, y, z)
+          connect pnatural(m) \wedge pnatural(n)
+          apply invoke pnatural_pnatural_add_exists for m, n
+          some l such \exists l (pnatural(l) \wedge add(m, n, l)) {
+            split pnatural(l) \wedge add(m, n, l)
+            pad pnatural(m) conclude natural(m)
+            pad pnatural(n) conclude natural(n)
+            connect natural(m) \wedge natural(n) \wedge add(m, n, l) \wedge piterate(\phi, m, x, y) \wedge piterate(\phi, n, y, z)
+            apply invoke piterate_addition for \phi, m, n, l, x, y, z
+            connect pnatural(l) \wedge piterate(\phi, l, x, z)
+            lift for l conclude \exists l (pnatural(l) \wedge piterate(\phi, l, x, z))
+          }
+        }
+      }
+      fold for tc conclude tc(\phi, x, z)
+    }
+  }
+}
+
+theorem tc_rtc_transitive \forall^P \phi[2] \forall x \forall y \forall z (tc(\phi, x, y) \wedge rtc(\phi, y, z) \to tc(\phi, x, z)) {
+  any predicate \phi[2], x, y, z {
+    assume tc(\phi, x, y) \wedge rtc(\phi, y, z) {
+      split tc(\phi, x, y) \wedge rtc(\phi, y, z)
+      some m such tc(\phi, x, y) {
+        split pnatural(m) \wedge piterate(\phi, m, x, y)
+        some n such rtc(\phi, y, z) {
+          split natural(n) \wedge piterate(\phi, n, y, z)
+          connect pnatural(m) \wedge natural(n)
+          apply invoke pnatural_natural_add_exists for m, n
+          some l such \exists l (pnatural(l) \wedge add(m, n, l)) {
+            split pnatural(l) \wedge add(m, n, l)
+            pad pnatural(m) conclude natural(m)
+            connect natural(m) \wedge natural(n) \wedge add(m, n, l) \wedge piterate(\phi, m, x, y) \wedge piterate(\phi, n, y, z)
+            apply invoke piterate_addition for \phi, m, n, l, x, y, z
+            connect pnatural(l) \wedge piterate(\phi, l, x, z)
+            lift for l conclude \exists l (pnatural(l) \wedge piterate(\phi, l, x, z))
+          }
+        }
+      }
+      fold for tc conclude tc(\phi, x, z)
+    }
+  }
+}
+
+theorem rtc_is_transitive \forall^P \phi[2] \forall x \forall y \forall z (rtc(\phi, x, y) \wedge rtc(\phi, y, z) \to rtc(\phi, x, z)) {
+  any predicate \phi[2], x, y, z {
+    assume rtc(\phi, x, y) \wedge rtc(\phi, y, z) {
+      split rtc(\phi, x, y) \wedge rtc(\phi, y, z)
+      some m such rtc(\phi, x, y) {
+        split natural(m) \wedge piterate(\phi, m, x, y)
+        some n such rtc(\phi, y, z) {
+          split natural(n) \wedge piterate(\phi, n, y, z)
+          connect natural(m) \wedge natural(n)
+          apply invoke natural_add_exists for m, n
+          some l such \exists l (natural(l) \wedge add(m, n, l)) {
+            split natural(l) \wedge add(m, n, l)
+            connect natural(m) \wedge natural(n) \wedge add(m, n, l) \wedge piterate(\phi, m, x, y) \wedge piterate(\phi, n, y, z)
+            apply invoke piterate_addition for \phi, m, n, l, x, y, z
+            connect natural(m) \wedge natural(n) \wedge add(m, n, l)
+            apply invoke addition_of_natural_is_natural for m, n, l
+            connect natural(l) \wedge piterate(\phi, l, x, z)
+            lift for l conclude \exists l (natural(l) \wedge piterate(\phi, l, x, z))
+          }
+        }
+      }
+      fold for rtc conclude rtc(\phi, x, z)
+    }
+  }
+}
+
+theorem one_step_rtc_transitive \forall^P \phi[2] \forall x \forall y \forall z (\phi(x, y) \wedge rtc(\phi, y, z) \to tc(\phi, x, z)) {
+  any predicate \phi[2], x, y, z {
+    assume \phi(x, y) \wedge rtc(\phi, y, z) {
+      split \phi(x, y) \wedge rtc(\phi, y, z)
+      apply invoke tc_one_step for \phi, x, y
+      connect tc(\phi, x, y) \wedge rtc(\phi, y, z)
+      apply invoke tc_rtc_transitive for \phi, x, y, z
+    }
+  }
+}
+
+theorem tc_add_first \forall^P \phi[2] \forall x \forall y \forall z (\phi(x, y) \wedge tc(\phi, y, z) \to tc(\phi, x, z)) {
+  any predicate \phi[2], x, y, z {
+    assume \phi(x, y) \wedge tc(\phi, y, z) {
+      split \phi(x, y) \wedge tc(\phi, y, z)
+      apply invoke tc_one_step for \phi, x, y
+      connect tc(\phi, x, y) \wedge tc(\phi, y, z)
+      apply invoke tc_is_transitive for \phi, x, y, z
+    }
+  }
+}
+
+theorem tc_add_last \forall^P \phi[2] \forall x \forall y \forall z (tc(\phi, x, y) \wedge \phi(y, z) \to tc(\phi, x, z)) {
+  any predicate \phi[2], x, y, z {
+    assume tc(\phi, x, y) \wedge \phi(y, z) {
+      split tc(\phi, x, y) \wedge \phi(y, z)
+      apply invoke tc_one_step for \phi, y, z
+      connect tc(\phi, x, y) \wedge tc(\phi, y, z)
+      apply invoke tc_is_transitive for \phi, x, y, z
+    }
+  }
+}
+
+theorem rtc_add_last \forall^P \phi[2] \forall x \forall y \forall z (rtc(\phi, x, y) \wedge \phi(y, z) \to rtc(\phi, x, z)) {
+  any predicate \phi[2], x, y, z {
+    assume rtc(\phi, x, y) \wedge \phi(y, z) {
+      split rtc(\phi, x, y) \wedge \phi(y, z)
+      apply invoke rtc_one_step for \phi, y, z
+      connect rtc(\phi, x, y) \wedge rtc(\phi, y, z)
+      apply invoke rtc_is_transitive for \phi, x, y, z
+    }
+  }
+}
+
+theorem tc_first_step \forall^P \phi[2] \forall x \forall y (tc(\phi, x, y) \to \exists z (\phi(x, z) \wedge rtc(\phi, z, y))) {
+  any predicate  \phi[2], x, y {
+    assume tc(\phi, x, y) {
+      some n such tc(\phi, x, y) {
+        split pnatural(n) \wedge piterate(\phi, n, x, y)
+        apply invoke pnatural_is_suc_of_natural_element for n
+        some m such \exists m (equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)) {
+          split equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)
+          substitute piterate(\phi, n, x, y) for n: suc(m)
+          connect natural(m) \wedge piterate(\phi, suc(m), x, y)
+          apply invoke piterate_first_step for \phi, m, x, y
+          some z such \exists z (\phi(x, z) \wedge piterate(\phi, m, z, y)) {
+            split \phi(x, z) \wedge piterate(\phi, m, z, y)
+            connect natural(m) \wedge piterate(\phi, m, z, y)
+            lift for m conclude rtc(\phi, z, y)
+            connect \phi(x, z) \wedge rtc(\phi, z, y)
+            lift for z conclude \exists z (\phi(x, z) \wedge rtc(\phi, z, y))
+          }
+        }
+      }
+    }
+  }
+}

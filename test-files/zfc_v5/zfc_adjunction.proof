@@ -1,0 +1,229 @@
+include "zfc_emptyset.proof"
+
+axiom axiom_of_adjunction \forall x \forall y \exists z \forall w (in(w, z) \leftrightarrow in(w, x) \vee equal(w, y))
+
+theorem adjunction_exists_uniquely \forall x \forall y \exists! z \forall w (in(w, z) \leftrightarrow in(w, x) \vee equal(w, y)) {
+  any x, y {
+    apply axiom_of_adjunction for x, y
+    apply invoke set_exists_implies_set_exists_uniquely for \lambda^P w. in(w, x) \vee equal(w, y)
+  }
+}
+
+definition function adj by adjunction_exists_uniquely
+existence adj_existence \forall x \forall y \forall w (in(w, adj(x, y)) \leftrightarrow in(w, x) \vee equal(w, y)) by adj
+uniqueness adj_uniqueness \forall x \forall y \forall z (\forall w (in(w, z) \leftrightarrow in(w, x) \vee equal(w, y)) \to equal(z, adj(x, y))) by adj
+
+theorem adj_cor1 \forall x \forall y \forall z (in(z, x) \to in(z, adj(x, y))) {
+  any x, y, z {
+    assume in(z, x) {
+      pad in(z, x) conclude in(z, x) \vee equal(z, y)
+      apply invoke leftward adj_existence for x, y, z
+    }
+  }
+}
+
+theorem adj_cor2 \forall x \forall y \forall z (equal(z, y) \to in(z, adj(x, y))) {
+  any x, y, z {
+    assume equal(z, y) {
+      pad equal(z, y) conclude in(z, x) \vee equal(z, y)
+      apply invoke leftward adj_existence for x, y, z
+    }
+  }
+}
+
+theorem adj_cor3 \forall x \forall y (in(y, adj(x, y))) {
+  any x, y {
+    apply invoke adj_cor2 for x, y, y
+  }
+}
+
+theorem adj_equal \forall x \forall y (in(y, x) \to equal(adj(x, y), x)) {
+  any x, y {
+    assume in(y, x) {
+      any z {
+        assume in(z, adj(x, y)) {
+          apply invoke rightward adj_existence for x, y, z
+          divide in(z, x) \vee equal(z, y)
+            case in(z, x) {}
+            case equal(z, y) {
+              substitute in(y, x) for y: z
+            }
+        }
+        assume in(z, x) {
+          apply invoke adj_cor1 for x, y, z
+        }
+        connect in(z, adj(x, y)) \leftrightarrow in(z, x)
+      }
+      apply invoke axiom_of_extensionality for adj(x, y), x
+    }
+  }
+}
+
+definition function suc(x) as adj(x, x)
+
+theorem suc_characterization \forall x \forall y (in(y, suc(x)) \leftrightarrow in(y, x) \vee equal(y, x)) {
+  any x, y {
+    assume in(y, suc(x)) {
+      expand in(y, suc(x)) for suc
+      apply invoke rightward adj_existence for x, x, y
+    }
+    assume in(y, x) \vee equal(y, x) {
+      apply invoke leftward adj_existence for x, x, y
+      fold for suc conclude in(y, suc(x))
+    }
+    connect in(y, suc(x)) \leftrightarrow in(y, x) \vee equal(y, x)
+  }
+}
+
+theorem in_suc \forall x (in(x, suc(x))) {
+  any x {
+    pad equal(x, x) conclude in(x, x) \vee equal(x, x)
+    apply invoke leftward suc_characterization for x, x
+  }
+}
+
+definition function singleton(x) as adj(emptyset, x) tex "\{", "\}"
+
+theorem singleton_characterization \forall x \forall y (in(y, singleton(x)) \leftrightarrow equal(y, x)) {
+  any x, y {
+    assume in(y, singleton(x)) {
+      expand in(y, singleton(x)) for singleton
+      apply invoke rightward adj_existence for emptyset, x, y
+      divide in(y, emptyset) \vee equal(y, x)
+        case in(y, emptyset) {
+          apply emptyset_existence for y
+          contradict in(y, emptyset)
+          explode equal(y, x)
+        }
+        case equal(y, x) {}
+    }
+    assume equal(y, x) {
+      apply invoke adj_cor2 for emptyset, x, y
+      fold for singleton conclude in(y, singleton(x))
+    }
+    connect in(y, singleton(x)) \leftrightarrow equal(y, x)
+  }
+}
+
+theorem singleton_uniqueness \forall x \forall y (\forall z (in(z, y) \leftrightarrow equal(z, x)) \to equal(y, singleton(x))) {
+  any x, y {
+    assume \forall z (in(z, y) \leftrightarrow equal(z, x)) {
+      any z {
+        assume in(z, y) {
+          apply invoke rightward \forall z (in(z, y) \leftrightarrow equal(z, x)) for z
+          apply invoke leftward singleton_characterization for x, z
+        }
+        assume in(z, singleton(x)) {
+          apply invoke rightward singleton_characterization for x, z
+          apply invoke leftward \forall z (in(z, y) \leftrightarrow equal(z, x)) for z
+        }
+        connect in(z, y) \leftrightarrow in(z, singleton(x))
+      }
+      apply invoke axiom_of_extensionality for y, singleton(x)
+    }
+  }
+}
+
+theorem singleton_cor1 \forall x (in(x, singleton(x))) {
+  any x {
+    apply invoke leftward singleton_characterization for x, x
+  }
+}
+
+theorem singleton_cor2 \forall x \forall y (equal(singleton(x), singleton(y)) \to equal(x, y)) {
+  any x, y {
+    assume equal(singleton(x), singleton(y)) {
+      apply singleton_cor1 for x
+      substitute in(x, singleton(x)) for singleton(x): singleton(y)
+      apply invoke rightward singleton_characterization for y, x
+    }
+  }
+}
+
+theorem suc_is_not_emptyset \forall x (neq(suc(x), emptyset)) {
+  any x {
+    deny equal(suc(x), emptyset) {
+      apply in_suc for x
+      substitute in(x, suc(x)) for suc(x): emptyset
+      apply emptyset_existence for x
+      contradict in(x, emptyset) 
+    }
+  }
+}
+
+theorem suc_emptyset_is_singleton_emptyset equal(suc(emptyset), singleton(emptyset)) {
+  any x {
+    assume in(x, suc(emptyset)) {
+      apply invoke rightward suc_characterization for emptyset, x
+      divide in(x, emptyset) \vee equal(x, emptyset)
+        case in(x, emptyset) {
+          apply emptyset_existence for x
+          contradict in(x, emptyset)
+          explode equal(x, emptyset)
+        }
+        case equal(x, emptyset) {}
+      apply invoke leftward singleton_characterization for emptyset, x
+    }
+    assume in(x, singleton(emptyset)) {
+      apply invoke rightward singleton_characterization for emptyset, x
+      pad equal(x, emptyset) conclude in(x, emptyset) \vee equal(x, emptyset)
+      apply invoke leftward suc_characterization for emptyset, x
+    }
+    connect in(x, suc(emptyset)) \leftrightarrow in(x, singleton(emptyset))
+  }
+  apply invoke axiom_of_extensionality for suc(emptyset), singleton(emptyset)
+}
+
+theorem subset_adj \forall x \forall y (subset(x, adj(x, y))) {
+  any x, y {
+    any z {
+      assume in(z, x) {
+        apply invoke adj_cor1 for x, y, z
+      }
+    }
+    fold for subset conclude subset(x, adj(x, y))
+  }
+}
+
+theorem subset_adj_notin \forall x \forall z \forall y (notin(z, y) \wedge subset(y, adj(x, z)) \to subset(y, x)) {
+  any x, z, y {
+    assume notin(z, y) \wedge subset(y, adj(x, z)) {
+      split notin(z, y) \wedge subset(y, adj(x, z))
+      any w {
+        assume in(w, y) {
+          apply invoke subset(y, adj(x, z)) for w
+          apply invoke rightward adj_existence for x, z, w
+          divide in(w, x) \vee equal(w, z)
+            case in(w, x) {}
+            case equal(w, z) {
+              substitute in(w, y) for w: z
+              contradict in(z, y)
+              explode in(w, x)
+            }
+        }
+      }
+      fold for subset conclude subset(y, x)
+    }
+  }
+}
+
+theorem subset_implies_subset_adj \forall x \forall y \forall z (subset(x, y) \to subset(adj(x, z), adj(y, z))) {
+  any x, y, z {
+    assume subset(x, y) {
+      any w {
+        assume in(w, adj(x, z)) {
+          apply invoke rightward adj_existence for x, z, w
+          divide in(w, x) \vee equal(w, z)
+            case in(w, x) {
+              apply invoke subset(x, y) for w
+              apply invoke adj_cor1 for y, z, w
+            }
+            case equal(w, z) {
+              apply invoke adj_cor2 for y, z, w
+            }
+        }
+      }
+      fold for subset conclude subset(adj(x, z), adj(y, z))
+    }
+  }
+}

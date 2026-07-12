@@ -1,0 +1,438 @@
+include "zfc_tcsetbigcup.proof"
+
+definition predicate adjstep(X, Y) as \forall r (in(r, Y) \leftrightarrow in(r, X) \vee \exists p \exists q (in(p, X) \wedge in(q, X) \wedge equal(r, adj(p, q))))
+
+theorem adjstep_is_unique \forall X \forall Y \forall Y' (adjstep(X, Y) \wedge adjstep(X, Y') \to equal(Y, Y')) {
+  any X, Y, Y' {
+    assume adjstep(X, Y) \wedge adjstep(X, Y') {
+      expand adjstep(X, Y) \wedge adjstep(X, Y') for adjstep
+      apply invoke set_is_unique_for_predicate for \lambda^P r. in(r, X) \vee \exists p \exists q (in(p, X) \wedge in(q, X) \wedge equal(r, adj(p, q))), Y, Y'
+    }
+  }
+}
+
+theorem adjstep_is_functional functional(adjstep) {
+  assert adjstep_is_unique
+  fold for functional conclude functional(adjstep)
+}
+
+theorem adjstep_piterate_is_unique \forall n \forall X \forall X' (natural(n) \wedge piterate(adjstep, n, singleton(emptyset), X) \wedge piterate(adjstep, n, singleton(emptyset), X') \to equal(X, X')) {
+  any n, X, X' {
+    assume natural(n) \wedge piterate(adjstep, n, singleton(emptyset), X) \wedge piterate(adjstep, n, singleton(emptyset), X') {
+      split natural(n) \wedge piterate(adjstep, n, singleton(emptyset), X) \wedge piterate(adjstep, n, singleton(emptyset), X')
+      assert adjstep_is_functional
+      connect natural(n) \wedge functional(adjstep) \wedge piterate(adjstep, n, singleton(emptyset), X) \wedge piterate(adjstep, n, singleton(emptyset), X')
+      apply invoke piterate_is_unique for adjstep, n, singleton(emptyset), X, X'
+    }
+  }
+}
+
+theorem finite_adjstep_exists \forall X (finite(X) \to \exists Y (finite(Y) \wedge adjstep(X, Y))) {
+  any X {
+    assume finite(X) {
+      connect finite(X) \wedge finite(X)
+      apply invoke finite_times_exists_uniquely for X, X
+      some Z such \exists! Z (finite(Z) \wedge times(X, X, Z)) {
+        split finite(Z) \wedge times(X, X, Z)
+        any z, w, w' {
+          assume \exists p \exists q (equal(z, op(p, q)) \wedge equal(w, adj(p, q))) \wedge \exists p \exists q (equal(z, op(p, q)) \wedge equal(w', adj(p, q))) {
+            split \exists p \exists q (equal(z, op(p, q)) \wedge equal(w, adj(p, q))) \wedge \exists p \exists q (equal(z, op(p, q)) \wedge equal(w', adj(p, q)))
+            some p, q such \exists p \exists q (equal(z, op(p, q)) \wedge equal(w, adj(p, q))) {
+              split equal(z, op(p, q)) \wedge equal(w, adj(p, q))
+              some p', q' such \exists p \exists q (equal(z, op(p, q)) \wedge equal(w', adj(p, q))) {
+                split equal(z, op(p', q')) \wedge equal(w', adj(p', q'))
+                substitute equal(z, op(p', q')) for z: op(p, q)
+                apply invoke op_characterization for p, q, p', q'
+                split equal(p, p') \wedge equal(q, q')
+                substitute equal(w', adj(p', q')) for p': p, q': q
+                substitute equal(w, adj(p, q)) for adj(p, q): w'
+              }
+            }
+          }
+        }
+        fold for functional conclude functional(\lambda^P z, w. \exists p \exists q (equal(z, op(p, q)) \wedge equal(w, adj(p, q))))
+        connect finite(Z) \wedge functional(\lambda^P z, w. \exists p \exists q (equal(z, op(p, q)) \wedge equal(w, adj(p, q))))
+        apply invoke finite_replacement_exists_uniquely for Z, \lambda^P z, w. \exists p \exists q (equal(z, op(p, q)) \wedge equal(w, adj(p, q)))
+        some W such \exists! W (finite(W) \wedge replacement(Z, \lambda^P z, w. \exists p \exists q (equal(z, op(p, q)) \wedge equal(w, adj(p, q))), W)) {
+          split finite(W) \wedge replacement(Z, \lambda^P z, w. \exists p \exists q (equal(z, op(p, q)) \wedge equal(w, adj(p, q))), W)
+          connect finite(X) \wedge finite(W)
+          apply invoke finite_cup_exists_uniquely for X, W
+          some Y such \exists! Y (finite(Y) \wedge cup(X, W, Y)) {
+            split finite(Y) \wedge cup(X, W, Y)
+            any r {
+              assume in(r, Y) {
+                apply invoke rightward cup(X, W, Y) for r
+                divide in(r, X) \vee in(r, W)
+                  case in(r, X) {
+                    pad in(r, X) conclude in(r, X) \vee \exists p \exists q (in(p, X) \wedge in(q, X) \wedge equal(r, adj(p, q)))
+                  }
+                  case in(r, W) {
+                    apply invoke rightward replacement(Z, \lambda^P z, w. \exists p \exists q (equal(z, op(p, q)) \wedge equal(w, adj(p, q))), W) for r
+                    some z such \exists z (in(z, Z) \wedge \exists p \exists q (equal(z, op(p, q)) \wedge equal(r, adj(p, q)))) {
+                      split in(z, Z) \wedge \exists p \exists q (equal(z, op(p, q)) \wedge equal(r, adj(p, q)))
+                      apply invoke rightward times(X, X, Z) for z
+                      some x, y such \exists x \exists y (in(x, X) \wedge in(y, X) \wedge equal(z, op(x, y))) {
+                        split in(x, X) \wedge in(y, X) \wedge equal(z, op(x, y))
+                        some p, q such \exists p \exists q (equal(z, op(p, q)) \wedge equal(r, adj(p, q))) {
+                          split equal(z, op(p, q)) \wedge equal(r, adj(p, q))
+                          substitute equal(z, op(p, q)) for z: op(x, y)
+                          apply invoke op_characterization for x, y, p, q
+                          split equal(x, p) \wedge equal(y, q)
+                          substitute in(x, X) for x: p
+                          substitute in(y, X) for y: q
+                          connect in(p, X) \wedge in(q, X) \wedge equal(r, adj(p, q))
+                          lift for p, q conclude \exists p \exists q (in(p, X) \wedge in(q, X) \wedge equal(r, adj(p, q)))
+                        }
+                      }
+                    }
+                    pad \exists p \exists q (in(p, X) \wedge in(q, X) \wedge equal(r, adj(p, q))) conclude in(r, X) \vee \exists p \exists q (in(p, X) \wedge in(q, X) \wedge equal(r, adj(p, q)))
+                  }
+              }
+              assume in(r, X) \vee \exists p \exists q (in(p, X) \wedge in(q, X) \wedge equal(r, adj(p, q))) {
+                divide in(r, X) \vee \exists p \exists q (in(p, X) \wedge in(q, X) \wedge equal(r, adj(p, q)))
+                  case in(r, X) {
+                    pad in(r, X) conclude in(r, X) \vee in(r, W)
+                    apply invoke leftward cup(X, W, Y) for r
+                  }
+                  case \exists p \exists q (in(p, X) \wedge in(q, X) \wedge equal(r, adj(p, q))) {
+                    some p, q such \exists p \exists q (in(p, X) \wedge in(q, X) \wedge equal(r, adj(p, q))) {
+                      split in(p, X) \wedge in(q, X) \wedge equal(r, adj(p, q))
+                      connect times(X, X, Z) \wedge in(p, X) \wedge in(q, X)
+                      apply invoke op_in_times for X, X, Z, p, q
+                      connect equal(op(p, q), op(p, q)) \wedge equal(r, adj(p, q))
+                      lift for p, q conclude \exists p \exists q (equal(op(p, q), op(p, q)) \wedge equal(r, adj(p, q)))
+                      connect in(op(p, q), Z) \wedge \exists p \exists q (equal(op(p, q), op(p, q)) \wedge equal(r, adj(p, q)))
+                      lift for op(p, q) conclude \exists z (in(z, Z) \wedge \exists p \exists q (equal(z, op(p, q)) \wedge equal(r, adj(p, q))))
+                    }
+                    apply invoke leftward replacement(Z, \lambda^P z, w. \exists p \exists q (equal(z, op(p, q)) \wedge equal(w, adj(p, q))), W) for r
+                    pad in(r, W) conclude in(r, X) \vee in(r, W)
+                    apply invoke leftward cup(X, W, Y) for r
+                  }
+              }
+              connect in(r, Y) \leftrightarrow in(r, X) \vee \exists p \exists q (in(p, X) \wedge in(q, X) \wedge equal(r, adj(p, q)))
+            }
+            fold for adjstep conclude adjstep(X, Y)
+            connect finite(Y) \wedge adjstep(X, Y)
+            lift for Y conclude \exists Y (finite(Y) \wedge adjstep(X, Y))
+          }
+        }
+      }
+    }
+  }
+}
+
+theorem adjstep_is_total_on_finite total(adjstep, finite) {
+  assert finite_adjstep_exists
+  fold for total conclude total(adjstep, finite)
+}
+
+theorem adjstep_piterate_exists_uniquely \forall n (natural(n) \to \exists x (finite(x) \wedge piterate(adjstep, n, singleton(emptyset), x) \wedge \forall x' (piterate(adjstep, n, singleton(emptyset), x') \to equal(x', x)))) {
+  assert adjstep_is_functional
+  assert adjstep_is_total_on_finite
+  assert singleton_emptyset_is_finite
+  connect functional(adjstep) \wedge total(adjstep, finite) \wedge finite(singleton(emptyset))
+  apply invoke piterate_exists_uniquely for adjstep, finite, singleton(emptyset)
+}
+
+theorem adjstep_implies_subset \forall X \forall Y (adjstep(X, Y) \to subset(X, Y)) {
+  any X, Y {
+    assume adjstep(X, Y) {
+      any r {
+        assume in(r, X) {
+          pad in(r, X) conclude in(r, X) \vee \exists p \exists q (in(p, X) \wedge in(q, X) \wedge equal(r, adj(p, q)))
+          apply invoke leftward adjstep(X, Y) for r
+        }
+      }
+      fold for subset conclude subset(X, Y)
+    }
+  }
+}
+
+theorem adjstep_expanding \forall X \forall Y \forall m \forall n (natural(m) \wedge natural(n) \wedge piterate(adjstep, m, singleton(emptyset), X) \wedge piterate(adjstep, n, singleton(emptyset), Y) \wedge in(m, n) \to subset(X, Y)) {
+  any X, Y, m {
+    assume natural(m) \wedge piterate(adjstep, m, singleton(emptyset), X) \wedge piterate(adjstep, emptyset, singleton(emptyset), Y) \wedge in(m, emptyset) {
+      split natural(m) \wedge piterate(adjstep, m, singleton(emptyset), X) \wedge piterate(adjstep, emptyset, singleton(emptyset), Y) \wedge in(m, emptyset)
+      apply emptyset_existence for m
+      contradict in(m, emptyset)
+      explode subset(X, Y)
+    }
+  }
+  any n {
+    assume natural(n) {
+      assume \forall X \forall Y \forall m (natural(m) \wedge piterate(adjstep, m, singleton(emptyset), X) \wedge piterate(adjstep, n, singleton(emptyset), Y) \wedge in(m, n) \to subset(X, Y)) {
+        any X, Y, m {
+          assume natural(m) \wedge piterate(adjstep, m, singleton(emptyset), X) \wedge piterate(adjstep, suc(n), singleton(emptyset), Y) \wedge in(m, suc(n)) {
+            split natural(m) \wedge piterate(adjstep, m, singleton(emptyset), X) \wedge piterate(adjstep, suc(n), singleton(emptyset), Y) \wedge in(m, suc(n))
+            connect natural(n) \wedge piterate(adjstep, suc(n), singleton(emptyset), Y)
+            apply invoke piterate_last_step for adjstep, n, singleton(emptyset), Y
+            some Z such \exists Z (piterate(adjstep, n, singleton(emptyset), Z) \wedge adjstep(Z, Y)) {
+              split piterate(adjstep, n, singleton(emptyset), Z) \wedge adjstep(Z, Y)
+              apply invoke adjstep_implies_subset for Z, Y
+              apply invoke rightward suc_characterization for n, m
+              divide in(m, n) \vee equal(m, n)
+                case in(m, n) {
+                  connect natural(m) \wedge piterate(adjstep, m, singleton(emptyset), X) \wedge piterate(adjstep, n, singleton(emptyset), Z) \wedge in(m, n)
+                  apply invoke \forall X \forall Y \forall m (natural(m) \wedge piterate(adjstep, m, singleton(emptyset), X) \wedge piterate(adjstep, n, singleton(emptyset), Y) \wedge in(m, n) \to subset(X, Y)) for X, Z, m
+                  connect subset(X, Z) \wedge subset(Z, Y)
+                  apply invoke subset_transivity for X, Z, Y
+                }
+                case equal(m, n) {
+                  substitute piterate(adjstep, m, singleton(emptyset), X) for m: n
+                  connect natural(n) \wedge piterate(adjstep, n, singleton(emptyset), X) \wedge piterate(adjstep, n, singleton(emptyset), Z)
+                  apply invoke adjstep_piterate_is_unique for n, X, Z
+                  substitute subset(Z, Y) for Z: X
+                }
+            }
+          }
+        }
+      }
+    }
+  }
+  connect \forall X \forall Y \forall m (natural(m) \wedge piterate(adjstep, m, singleton(emptyset), X) \wedge piterate(adjstep, emptyset, singleton(emptyset), Y) \wedge in(m, emptyset) \to subset(X, Y)) \wedge \forall n (natural(n) \to (\forall X \forall Y \forall m (natural(m) \wedge piterate(adjstep, m, singleton(emptyset), X) \wedge piterate(adjstep, n, singleton(emptyset), Y) \wedge in(m, n) \to subset(X, Y)) \to \forall X \forall Y \forall m (natural(m) \wedge piterate(adjstep, m, singleton(emptyset), X) \wedge piterate(adjstep, suc(n), singleton(emptyset), Y) \wedge in(m, suc(n)) \to subset(X, Y))))
+  apply invoke natural_induction for \lambda^P n. \forall X \forall Y \forall m (natural(m) \wedge piterate(adjstep, m, singleton(emptyset), X) \wedge piterate(adjstep, n, singleton(emptyset), Y) \wedge in(m, n) \to subset(X, Y))
+  any X, Y, m, n {
+    assume natural(m) \wedge natural(n) \wedge piterate(adjstep, m, singleton(emptyset), X) \wedge piterate(adjstep, n, singleton(emptyset), Y) \wedge in(m, n) {
+      split natural(m) \wedge natural(n) \wedge piterate(adjstep, m, singleton(emptyset), X) \wedge piterate(adjstep, n, singleton(emptyset), Y) \wedge in(m, n)
+      apply invoke \forall n (natural(n) \to \forall X \forall Y \forall m (natural(m) \wedge piterate(adjstep, m, singleton(emptyset), X) \wedge piterate(adjstep, n, singleton(emptyset), Y) \wedge in(m, n) \to subset(X, Y))) for n
+      connect natural(m) \wedge piterate(adjstep, m, singleton(emptyset), X) \wedge piterate(adjstep, n, singleton(emptyset), Y) \wedge in(m, n)
+      apply invoke \forall X \forall Y \forall m (natural(m) \wedge piterate(adjstep, m, singleton(emptyset), X) \wedge piterate(adjstep, n, singleton(emptyset), Y) \wedge in(m, n) \to subset(X, Y)) for X, Y, m
+    }
+  }
+}
+
+theorem adj_in_adjstep \forall X \forall Y \forall p \forall q (adjstep(X, Y) \wedge in(p, X) \wedge in(q, X) \to in(adj(p, q), Y)) {
+  any X, Y, p, q {
+    assume adjstep(X, Y) \wedge in(p, X) \wedge in(q, X) {
+      split adjstep(X, Y) \wedge in(p, X) \wedge in(q, X)
+      connect in(p, X) \wedge in(q, X) \wedge equal(adj(p, q), adj(p, q))
+      lift for p, q conclude \exists p \exists q (in(p, X) \wedge in(q, X) \wedge equal(adj(p, q), adj(p, q)))
+      pad \exists p \exists q (in(p, X) \wedge in(q, X) \wedge equal(adj(p, q), adj(p, q))) conclude in(adj(p, q), X) \vee \exists p \exists q (in(p, X) \wedge in(q, X) \wedge equal(adj(p, q), adj(p, q)))
+      apply invoke leftward adjstep(X, Y) for adj(p, q)
+    }
+  }
+}
+
+definition predicate hfadj(x) as \exists X (in(x, X) \wedge rtc(adjstep, singleton(emptyset), X))
+
+theorem hfadj_implies_hf \forall x (hfadj(x) \to hf(x, in)) {
+  any x {
+    assume \exists X (in(x, X) \wedge piterate(adjstep, emptyset, singleton(emptyset), X)) {
+      some X such \exists X (in(x, X) \wedge piterate(adjstep, emptyset, singleton(emptyset), X)) {
+        split in(x, X) \wedge piterate(adjstep, emptyset, singleton(emptyset), X)
+        apply invoke piterate_is_unique_base_step for adjstep, singleton(emptyset), X
+        substitute in(x, X) for X: singleton(emptyset)
+        apply invoke rightward singleton_characterization for emptyset, x
+        assert emptyset_is_hf
+        substitute hf(emptyset, in) for emptyset: x
+      }
+    }
+  }
+  any n {
+    assume natural(n) {
+      assume \forall x (\exists X (in(x, X) \wedge piterate(adjstep, n, singleton(emptyset), X)) \to hf(x, in)) {
+        any y {
+          assume \exists Y (in(y, Y) \wedge piterate(adjstep, suc(n), singleton(emptyset), Y)) {
+            some Y such \exists Y (in(y, Y) \wedge piterate(adjstep, suc(n), singleton(emptyset), Y)) {
+              split in(y, Y) \wedge piterate(adjstep, suc(n), singleton(emptyset), Y)
+              connect natural(n) \wedge piterate(adjstep, suc(n), singleton(emptyset), Y)
+              apply invoke piterate_last_step for adjstep, n, singleton(emptyset), Y
+              some X such \exists X (piterate(adjstep, n, singleton(emptyset), X) \wedge adjstep(X, Y)) {
+                split piterate(adjstep, n, singleton(emptyset), X) \wedge adjstep(X, Y)
+                apply invoke rightward adjstep(X, Y) for y
+                divide in(y, X) \vee \exists p \exists q (in(p, X) \wedge in(q, X) \wedge equal(y, adj(p, q)))
+                  case in(y, X) {
+                    connect in(y, X) \wedge piterate(adjstep, n, singleton(emptyset), X)
+                    lift for X conclude \exists X (in(y, X) \wedge piterate(adjstep, n, singleton(emptyset), X))
+                    apply invoke \forall x (\exists X (in(x, X) \wedge piterate(adjstep, n, singleton(emptyset), X)) \to hf(x, in)) for y
+                  }
+                  case \exists p \exists q (in(p, X) \wedge in(q, X) \wedge equal(y, adj(p, q))) {
+                    some p, q such \exists p \exists q (in(p, X) \wedge in(q, X) \wedge equal(y, adj(p, q))) {
+                      split in(p, X) \wedge in(q, X) \wedge equal(y, adj(p, q))
+                      connect in(p, X) \wedge piterate(adjstep, n, singleton(emptyset), X)
+                      lift for X conclude \exists X (in(p, X) \wedge piterate(adjstep, n, singleton(emptyset), X))
+                      apply invoke \forall x (\exists X (in(x, X) \wedge piterate(adjstep, n, singleton(emptyset), X)) \to hf(x, in)) for p
+                      connect in(q, X) \wedge piterate(adjstep, n, singleton(emptyset), X)
+                      lift for X conclude \exists X (in(q, X) \wedge piterate(adjstep, n, singleton(emptyset), X))
+                      apply invoke \forall x (\exists X (in(x, X) \wedge piterate(adjstep, n, singleton(emptyset), X)) \to hf(x, in)) for q
+                      connect hf(p, in) \wedge hf(q, in)
+                      apply invoke adj_of_hf_is_hf for p, q
+                      substitute hf(adj(p, q), in) for adj(p, q): y
+                    }
+                  }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  connect \forall x (\exists X (in(x, X) \wedge piterate(adjstep, emptyset, singleton(emptyset), X)) \to hf(x, in)) \wedge \forall n (natural(n) \to ((\forall x (\exists X (in(x, X) \wedge piterate(adjstep, n, singleton(emptyset), X)) \to hf(x, in))) \to (\forall x (\exists X (in(x, X) \wedge piterate(adjstep, suc(n), singleton(emptyset), X)) \to hf(x, in)))))
+  apply invoke natural_induction for \lambda^P n. \forall x (\exists X (in(x, X) \wedge piterate(adjstep, n, singleton(emptyset), X)) \to hf(x, in))
+  any x {
+    assume hfadj(x) {
+      some X such hfadj(x) {
+        split in(x, X) \wedge rtc(adjstep, singleton(emptyset), X)
+        some n such rtc(adjstep, singleton(emptyset), X) {
+          split natural(n) \wedge piterate(adjstep, n, singleton(emptyset), X)
+          connect in(x, X) \wedge piterate(adjstep, n, singleton(emptyset), X)
+          lift for X conclude \exists X (in(x, X) \wedge piterate(adjstep, n, singleton(emptyset), X))
+          apply invoke \forall n (natural(n) \to \forall x (\exists X (in(x, X) \wedge piterate(adjstep, n, singleton(emptyset), X)) \to hf(x, in))) for n
+          apply invoke \forall x (\exists X (in(x, X) \wedge piterate(adjstep, n, singleton(emptyset), X)) \to hf(x, in)) for x
+        }
+      }
+    }
+  }
+}
+
+theorem adj_of_hfadj_is_hfadj \forall x \forall y (hfadj(x) \wedge hfadj(y) \to hfadj(adj(x, y))) {
+  any x, y {
+    assume hfadj(x) \wedge hfadj(y) {
+      split hfadj(x) \wedge hfadj(y)
+      some X such hfadj(x) {
+        split in(x, X) \wedge rtc(adjstep, singleton(emptyset), X)
+        some m such rtc(adjstep, singleton(emptyset), X) {
+          split natural(m) \wedge piterate(adjstep, m, singleton(emptyset), X)
+          apply invoke adjstep_piterate_exists_uniquely for m
+          some X' such \exists X' (finite(X') \wedge piterate(adjstep, m, singleton(emptyset), X') \wedge \forall X'' (piterate(adjstep, m, singleton(emptyset), X'') \to equal(X'', X'))) {
+            split finite(X') \wedge piterate(adjstep, m, singleton(emptyset), X') \wedge \forall X'' (piterate(adjstep, m, singleton(emptyset), X'') \to equal(X'', X'))
+            apply invoke \forall X'' (piterate(adjstep, m, singleton(emptyset), X'') \to equal(X'', X')) for X
+            substitute finite(X') for X': X
+          }
+          some Y such hfadj(y) {
+            split in(y, Y) \wedge rtc(adjstep, singleton(emptyset), Y)
+            some n such rtc(adjstep, singleton(emptyset), Y) {
+              split natural(n) \wedge piterate(adjstep, n, singleton(emptyset), Y)
+              apply invoke adjstep_piterate_exists_uniquely for n
+              some Y' such \exists Y' (finite(Y') \wedge piterate(adjstep, n, singleton(emptyset), Y') \wedge \forall Y'' (piterate(adjstep, n, singleton(emptyset), Y'') \to equal(Y'', Y'))) {
+                split finite(Y') \wedge piterate(adjstep, n, singleton(emptyset), Y') \wedge \forall Y'' (piterate(adjstep, n, singleton(emptyset), Y'') \to equal(Y'', Y'))
+                apply invoke \forall Y'' (piterate(adjstep, n, singleton(emptyset), Y'') \to equal(Y'', Y')) for Y
+                substitute finite(Y') for Y': Y
+              }
+              connect natural(m) \wedge natural(n)
+              apply invoke natural_trichotomy_in for m, n
+              divide in(m, n) \vee equal(m, n) \vee in(n, m)
+                case in(m, n) {
+                  connect natural(m) \wedge natural(n) \wedge piterate(adjstep, m, singleton(emptyset), X) \wedge piterate(adjstep, n, singleton(emptyset), Y) \wedge in(m, n)
+                  apply invoke adjstep_expanding for X, Y, m, n
+                  connect in(x, X) \wedge subset(X, Y)
+                  apply invoke subset(X, Y) for x
+                  connect in(x, Y) \wedge in(y, Y)
+                  apply invoke finite_adjstep_exists for Y
+                  some Z such \exists Z (finite(Z) \wedge adjstep(Y, Z)) {
+                    split finite(Z) \wedge adjstep(Y, Z)
+                    connect adjstep(Y, Z) \wedge in(x, Y) \wedge in(y, Y)
+                    apply invoke adj_in_adjstep for Y, Z, x, y
+                    connect rtc(adjstep, singleton(emptyset), Y) \wedge adjstep(Y, Z)
+                    apply invoke rtc_add_last for adjstep, singleton(emptyset), Y, Z
+                    connect in(adj(x, y), Z) \wedge rtc(adjstep, singleton(emptyset), Z)
+                    lift for Z conclude hfadj(adj(x, y))
+                  }
+                }
+                case equal(m, n) {
+                  substitute piterate(adjstep, m, singleton(emptyset), X) for m: n
+                  connect natural(n) \wedge piterate(adjstep, n, singleton(emptyset), X) \wedge piterate(adjstep, n, singleton(emptyset), Y)
+                  apply invoke adjstep_piterate_is_unique for n, X, Y
+                  substitute in(x, X) for X: Y
+                  connect in(x, Y) \wedge in(y, Y)
+                  apply invoke finite_adjstep_exists for Y
+                  some Z such \exists Z (finite(Z) \wedge adjstep(Y, Z)) {
+                    split finite(Z) \wedge adjstep(Y, Z)
+                    connect adjstep(Y, Z) \wedge in(x, Y) \wedge in(y, Y)
+                    apply invoke adj_in_adjstep for Y, Z, x, y
+                    connect rtc(adjstep, singleton(emptyset), Y) \wedge adjstep(Y, Z)
+                    apply invoke rtc_add_last for adjstep, singleton(emptyset), Y, Z
+                    connect in(adj(x, y), Z) \wedge rtc(adjstep, singleton(emptyset), Z)
+                    lift for Z conclude hfadj(adj(x, y))
+                  }
+                }
+                case in(n, m) {
+                  connect natural(n) \wedge natural(m) \wedge piterate(adjstep, n, singleton(emptyset), Y) \wedge piterate(adjstep, m, singleton(emptyset), X) \wedge in(n, m)
+                  apply invoke adjstep_expanding for Y, X, n, m
+                  connect in(y, Y) \wedge subset(Y, X)
+                  apply invoke subset(Y, X) for y
+                  connect in(y, X) \wedge in(y, Y)
+                  apply invoke finite_adjstep_exists for X
+                  some Z such \exists Z (finite(Z) \wedge adjstep(X, Z)) {
+                    split finite(Z) \wedge adjstep(X, Z)
+                    connect adjstep(X, Z) \wedge in(x, X) \wedge in(y, X)
+                    apply invoke adj_in_adjstep for X, Z, x, y
+                    connect rtc(adjstep, singleton(emptyset), X) \wedge adjstep(X, Z)
+                    apply invoke rtc_add_last for adjstep, singleton(emptyset), X, Z
+                    connect in(adj(x, y), Z) \wedge rtc(adjstep, singleton(emptyset), Z)
+                    lift for Z conclude hfadj(adj(x, y))
+                  }
+                }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+theorem hf_implies_hfadj \forall x (hf(x, in) \to hfadj(x)) {
+  any p {
+    assume hf(p, in) \wedge \forall q (in(q, p) \to hfadj(q)) {
+      split hf(p, in) \wedge \forall q (in(q, p) \to hfadj(q))
+      any x {
+        assume subset(x, p) \wedge size(x, emptyset) {
+          split subset(x, p) \wedge size(x, emptyset)
+          apply invoke size_emptyset_implies_set_emptyset for x
+          apply singleton_cor1 for emptyset
+          apply rtc_base_step for adjstep, singleton(emptyset)
+          connect in(emptyset, singleton(emptyset)) \wedge rtc(adjstep, singleton(emptyset), singleton(emptyset))
+          lift for singleton(emptyset) conclude hfadj(emptyset)
+          substitute hfadj(emptyset) for emptyset: x
+        }
+      }
+      any n {
+        assume natural(n) {
+          assume \forall x (subset(x, p) \wedge size(x, n) \to hfadj(x)) {
+            any x {
+              assume subset(x, p) \wedge size(x, suc(n)) {
+                split subset(x, p) \wedge size(x, suc(n))
+                apply invoke size_suc_decomposition for x, n
+                some y, z such \exists y \exists z (size(y, n) \wedge notin(z, y) \wedge equal(x, adj(y, z))) {
+                  split size(y, n) \wedge notin(z, y) \wedge equal(x, adj(y, z))
+                  apply subset_adj for y, z
+                  substitute subset(y, adj(y, z)) for adj(y, z): x
+                  connect subset(y, x) \wedge subset(x, p)
+                  apply invoke subset_transivity for y, x, p
+                  connect subset(y, p) \wedge size(y, n)
+                  apply invoke \forall x (subset(x, p) \wedge size(x, n) \to hfadj(x)) for y
+                  apply adj_cor3 for y, z
+                  substitute in(z, adj(y, z)) for adj(y, z): x
+                  apply invoke subset(x, p) for z
+                  apply invoke \forall q (in(q, p) \to hfadj(q)) for z
+                  connect hfadj(y) \wedge hfadj(z)
+                  apply invoke adj_of_hfadj_is_hfadj for y, z
+                  substitute hfadj(adj(y, z)) for adj(y, z): x
+                }
+              }
+            }
+          }
+        }
+      }
+      connect \forall x (subset(x, p) \wedge size(x, emptyset) \to hfadj(x)) \wedge \forall n (natural(n) \to (\forall x (subset(x, p) \wedge size(x, n) \to hfadj(x)) \to \forall x (subset(x, p) \wedge size(x, suc(n)) \to hfadj(x))))
+      apply invoke natural_induction for \lambda^P n. \forall x (subset(x, p) \wedge size(x, n) \to hfadj(x))
+      split 2 hf(p, in)
+      apply invoke hfcore_is_finite for p
+      some n such finite(p) {
+        split 1 size(p, n)
+        apply invoke \forall n (natural(n) \to \forall x (subset(x, p) \wedge size(x, n) \to hfadj(x))) for n
+        apply subset_reflexivity for p
+        connect subset(p, p) \wedge size(p, n)
+        apply invoke \forall x (subset(x, p) \wedge size(x, n) \to hfadj(x)) for p
+      }
+    }
+  }
+  apply invoke hf_induction for in, hfadj
+}
+
+theorem hf_iff_hfadj \forall x (hf(x, in) \leftrightarrow hfadj(x)) {
+  any x {
+    apply hf_implies_hfadj for x
+    apply hfadj_implies_hf for x
+    connect hf(x, in) \leftrightarrow hfadj(x)
+  }
+}

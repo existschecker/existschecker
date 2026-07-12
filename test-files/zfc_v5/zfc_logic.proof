@@ -1,0 +1,196 @@
+theorem neg_exist_leftrightarrow_forall_neg \forall^P\phi[1](\neg(\exists x(\phi(x)))\leftrightarrow\forall x(\neg(\phi(x)))) {
+  any predicate \phi[1] {
+    assume \neg(\exists x(\phi(x))) {
+      any x {
+        deny \phi(x) {
+          lift for x conclude \exists x(\phi(x))
+          contradict \exists x(\phi(x))
+        }
+      }
+    }
+    assume \forall x(\neg(\phi(x))) {
+      deny \exists x(\phi(x)) {
+        some x such \exists x(\phi(x)) {
+          apply \forall x(\neg(\phi(x))) for x
+          contradict \phi(x)
+        }
+      }
+    }
+    connect \neg(\exists x(\phi(x)))\leftrightarrow\forall x(\neg(\phi(x)))
+  }
+}
+
+theorem neg_exist_neg_leftrightarrow_forall \forall^P\phi[1](\neg(\exists x(\neg(\phi(x))))\leftrightarrow\forall x(\phi(x))) {
+  any predicate \phi[1] {
+    apply neg_exist_leftrightarrow_forall_neg for \lambda^P x.\neg(\phi(x))
+  }
+}
+
+theorem exist_neg_leftrightarrow_neg_forall \forall^P\phi[1](\exists x(\neg(\phi(x)))\leftrightarrow\neg(\forall x(\phi(x)))) {
+  any predicate \phi[1] {
+    assume \exists x(\neg(\phi(x))) {
+      some x such \exists x(\neg(\phi(x))) {
+        deny \forall x(\phi(x)) {
+          apply \forall x(\phi(x)) for x
+          contradict \phi(x)
+        } 
+      }
+    }
+    assume \neg(\forall x(\phi(x))) {
+      deny \neg(\exists x(\neg(\phi(x)))) {
+        apply invoke rightward neg_exist_neg_leftrightarrow_forall for \phi
+        contradict \forall x(\phi(x))
+      }
+    }
+    connect \exists x(\neg(\phi(x)))\leftrightarrow\neg(\forall x(\phi(x)))
+  }
+}
+
+theorem neg_implication \forall^P\phi[0]\forall^P\psi[0](\neg(\phi\to\psi)\leftrightarrow(\phi\wedge\neg(\psi))) {
+  any predicate \phi[0], predicate \psi[0] {
+    assume \neg(\phi\to\psi) {
+      deny \neg(\phi) {
+        assume \phi {
+          contradict \phi
+          explode \psi
+        }
+        contradict \phi\to\psi
+      }
+      deny \psi {
+        assume \phi {
+          assert \psi
+        }
+        contradict \phi\to\psi
+      }
+      connect \phi\wedge\neg(\psi)
+    }
+    assume \phi\wedge\neg(\psi) {
+      deny \phi\to\psi {
+        split \phi\wedge\neg(\psi)
+        invoke \phi\to\psi
+        contradict \psi
+      }
+    }
+    connect \neg(\phi\to\psi)\leftrightarrow\phi\wedge\neg(\psi)
+  }
+}
+
+theorem neg_or \forall^P\phi[0]\forall^P\psi[0](\neg(\phi\vee\psi)\leftrightarrow\neg(\phi)\wedge\neg(\psi)) {
+  any predicate \phi[0], predicate \psi[0] {
+    assume \neg(\phi\vee\psi) {
+      deny \phi {
+        pad \phi conclude \phi\vee\psi
+        contradict \phi\vee\psi
+      }
+      deny \psi {
+        pad \psi conclude \phi\vee\psi
+        contradict \phi\vee\psi
+      }
+      connect \neg(\phi)\wedge\neg(\psi)
+    }
+    assume \neg(\phi)\wedge\neg(\psi) {
+      split \neg(\phi)\wedge\neg(\psi)
+      deny \phi\vee\psi {
+        divide \phi\vee\psi
+          case \phi {
+            contradict \phi
+          }
+          case \psi {
+            contradict \psi
+          }
+      }
+    }
+    connect \neg(\phi\vee\psi)\leftrightarrow\neg(\phi)\wedge\neg(\psi)
+  }
+}
+
+theorem law_of_excluded_middle \forall^P\phi[0](\phi\vee\neg(\phi)) {
+  any predicate \phi[0] {
+    deny \neg(\phi\vee\neg(\phi)) {
+      apply invoke rightward neg_or for \lambda^P.\phi,\lambda^P.\neg(\phi)
+      split 2 \neg(\phi)\wedge\phi
+      pad \phi conclude \phi\vee\neg(\phi)
+      contradict \phi\vee\neg(\phi)
+    }
+  }
+}
+
+theorem contrapositive_is_equivalent \forall^P\phi[0]\forall^P\psi[0]((\phi\to\psi)\to(\neg(\psi)\to\neg(\phi))) {
+  any predicate \phi[0], predicate \psi[0] {
+    assume \phi\to\psi {
+      assume \neg(\psi) {
+        deny \phi {
+          invoke \phi\to\psi
+          contradict \psi
+        }
+      }
+    }
+  }
+}
+
+theorem contrapositive_is_equivalent_iff \forall^P\phi[0]\forall^P\psi[0]((\phi\leftrightarrow\psi)\to(\neg(\phi)\leftrightarrow\neg(\psi))) {
+  any predicate \phi[0], predicate \psi[0] {
+    assume \phi\leftrightarrow\psi {
+      split \phi\leftrightarrow\psi
+      apply invoke contrapositive_is_equivalent for \phi,\psi
+      apply invoke contrapositive_is_equivalent for \psi,\phi
+      connect \neg(\phi)\leftrightarrow\neg(\psi)
+    }
+  }
+}
+
+theorem neg_iff \forall^P \phi[0] \forall^P \psi[0] (\neg(\phi \leftrightarrow \psi) \leftrightarrow (\phi \wedge \neg(\psi)) \vee (\neg(\phi) \wedge \psi)) {
+  any predicate \phi[0], predicate \psi[0] {
+    assume \neg(\phi \leftrightarrow \psi) {
+      apply law_of_excluded_middle for \phi
+      divide \phi \vee \neg(\phi)
+        case \phi {
+          deny \psi {
+            assume \phi {
+              assert \psi
+            }
+            assume \psi {
+              assert \phi
+            }
+            connect \phi \leftrightarrow \psi
+            contradict \phi \leftrightarrow \psi
+          }
+          connect \phi \wedge \neg(\psi)
+          pad \phi \wedge \neg(\psi) conclude (\phi \wedge \neg(\psi)) \vee (\neg(\phi) \wedge \psi)
+        }
+        case \neg(\phi) {
+          deny \neg(\psi) {
+            assume \neg(\phi) {
+              assert \neg(\psi)
+            }
+            assume \neg(\psi) {
+              assert \neg(\phi)
+            }
+            connect \neg(\phi) \leftrightarrow \neg(\psi)
+            apply invoke contrapositive_is_equivalent_iff for \lambda^P. \neg(\phi), \lambda^P. \neg(\psi)
+            contradict \phi \leftrightarrow \psi
+          }
+          connect \neg(\phi) \wedge \psi
+          pad \neg(\phi) \wedge \psi conclude (\phi \wedge \neg(\psi)) \vee (\neg(\phi) \wedge \psi)
+        }
+    }
+    assume (\phi \wedge \neg(\psi)) \vee (\neg(\phi) \wedge \psi) {
+      divide (\phi \wedge \neg(\psi)) \vee (\neg(\phi) \wedge \psi)
+        case \phi \wedge \neg(\psi) {
+          split \phi \wedge \neg(\psi)
+          deny \phi \leftrightarrow \psi {
+            invoke rightward \phi \leftrightarrow \psi
+            contradict \psi
+          }
+        }
+        case \neg(\phi) \wedge \psi {
+          split \neg(\phi) \wedge \psi
+          deny \phi \leftrightarrow \psi {
+            invoke leftward \phi \leftrightarrow \psi
+            contradict \phi
+          }
+        }
+    }
+    connect \neg(\phi \leftrightarrow \psi) \leftrightarrow (\phi \wedge \neg(\psi)) \vee (\neg(\phi) \wedge \psi)
+  }
+}

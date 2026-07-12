@@ -1,0 +1,78 @@
+include "zfc_natural.proof"
+
+theorem natural_is_psubset_of_ordinal psubset(natural, ordinal) {
+  assert natural_is_ordinal
+  fold for psubset conclude psubset(natural, ordinal)
+}
+
+theorem natural_is_pirrefrel pirrefrel(natural, in) {
+  assert ordinal_is_pirrefrel
+  assert natural_is_psubset_of_ordinal
+  connect pirrefrel(ordinal, in) \wedge psubset(natural, ordinal)
+  apply invoke psubset_of_pirrefrel_is_pirrefrel for ordinal, in, natural
+}
+
+theorem natural_is_pwellfounded pwellfounded(natural, in) {
+  assert ordinal_is_pwellfounded
+  assert natural_is_psubset_of_ordinal
+  connect pwellfounded(ordinal, in) \wedge psubset(natural, ordinal)
+  apply invoke psubset_of_pwellfounded_is_pwellfounded for ordinal, in, natural
+}
+
+theorem natural_is_closed_under_in pclosed(natural, in) {
+  any n, m {
+    assume natural(n) \wedge in(m, n) {
+      apply invoke element_of_natural_is_natural for n, m
+    }
+  }
+  fold for pclosed conclude pclosed(natural, in)
+}
+
+theorem natural_is_tcsetlike tcsetlike(natural, in) {
+  assert ordinal_is_tcsetlike
+  assert natural_is_psubset_of_ordinal
+  connect tcsetlike(ordinal, in) \wedge psubset(natural, ordinal)
+  apply invoke psubset_of_tcsetlike_is_tcsetlike for ordinal, in, natural
+}
+
+theorem natural_wellfounded_induction \forall^P \chi[1] (\forall n (natural(n) \wedge \forall m (in(m, n) \to \chi(m)) \to \chi(n)) \to \forall n (natural(n) \to \chi(n))) {
+  assert natural_is_pirrefrel
+  assert natural_is_pwellfounded
+  assert natural_is_closed_under_in
+  assert natural_is_tcsetlike
+  apply invoke tcsetlike_implies_rtcsetlike for natural, in
+  any predicate \chi[1] {
+    assume \forall n (natural(n) \wedge \forall m (in(m, n) \to \chi(m)) \to \chi(n)) {
+      connect rtcsetlike(natural, in) \wedge pclosed(natural, in) \wedge pirrefrel(natural, in) \wedge pwellfounded(natural, in) \wedge \forall n (natural(n) \wedge \forall m (in(m, n) \to \chi(m)) \to \chi(n))
+      apply invoke pwellfounded_induction for natural, in, \chi
+    }
+  }
+}
+
+theorem natural_induction \forall^P \chi[1] (\chi(emptyset) \wedge \forall n (natural(n) \to (\chi(n) \to \chi(suc(n)))) \to \forall n (natural(n) \to \chi(n))) {
+  any predicate \chi[1] {
+    assume \chi(emptyset) \wedge \forall n (natural(n) \to (\chi(n) \to \chi(suc(n)))) {
+      split \chi(emptyset) \wedge \forall n (natural(n) \to (\chi(n) \to \chi(suc(n))))
+      any n {
+        assume natural(n) \wedge \forall m (in(m, n) \to \chi(m)) {
+          split natural(n) \wedge \forall m (in(m, n) \to \chi(m))
+          divide natural(n)
+            case equal(n, emptyset) {
+              substitute \chi(emptyset) for emptyset: n
+            }
+            case pnatural(n) {
+              apply invoke pnatural_is_suc_of_natural_element for n
+              some m such \exists m (equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)) {
+                split equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)
+                apply invoke \forall m (in(m, n) \to \chi(m)) for m
+                apply invoke \forall n (natural(n) \to (\chi(n) \to \chi(suc(n)))) for m
+                invoke \chi(m) \to \chi(suc(m))
+                substitute \chi(suc(m)) for suc(m): n
+              }
+            }
+        }
+      }
+      apply invoke natural_wellfounded_induction for \chi
+    }
+  }
+}

@@ -1,0 +1,45 @@
+include "zfc_replacement.proof"
+
+definition predicate times(X, Y, Z) as \forall z (in(z, Z) \leftrightarrow \exists x \exists y (in(x, X) \wedge in(y, Y) \wedge equal(z, op(x, y))))
+
+theorem times_is_unique \forall X \forall Y \forall Z \forall Z' (times(X, Y, Z) \wedge times(X, Y, Z') \to equal(Z, Z')) {
+  any X, Y, Z, Z' {
+    assume times(X, Y, Z) \wedge times(X, Y, Z') {
+      expand times(X, Y, Z) \wedge times(X, Y, Z') for times
+      apply invoke set_is_unique_for_predicate for \lambda^P z. \exists x \exists y (in(x, X) \wedge in(y, Y) \wedge equal(z, op(x, y))), Z, Z'
+    }
+  }
+}
+
+theorem op_in_times \forall X \forall Y \forall Z \forall x \forall y (times(X, Y, Z) \wedge in(x, X) \wedge in(y, Y) \to in(op(x, y), Z)) {
+  any X, Y, Z, x, y {
+    assume times(X, Y, Z) \wedge in(x, X) \wedge in(y, Y) {
+      split times(X, Y, Z) \wedge in(x, X) \wedge in(y, Y)
+      connect in(x, X) \wedge in(y, Y) \wedge equal(op(x, y), op(x, y))
+      lift for x, y conclude \exists x \exists y (in(x, X) \wedge in(y, Y) \wedge equal(op(x, y), op(x, y)))
+      apply invoke leftward times(X, Y, Z) for op(x, y)
+    }
+  }
+}
+
+theorem any_set_times_emptyset_is_emptyset \forall X (times(X, emptyset, emptyset)) {
+  any X {
+    any z {
+      assume in(z, emptyset) {
+        apply emptyset_existence for z
+        contradict in(z, emptyset)
+        explode \exists x \exists y (in(x, X) \wedge in(y, emptyset) \wedge equal(z, op(x, y)))
+      }
+      assume \exists x \exists y (in(x, X) \wedge in(y, emptyset) \wedge equal(z, op(x, y))) {
+        some x, y such \exists x \exists y ((in(x, X) \wedge in(y, emptyset) \wedge equal(z, op(x, y)))) {
+          split 2 in(x, X) \wedge in(y, emptyset) \wedge equal(z, op(x, y))
+          apply emptyset_existence for y
+          contradict in(y, emptyset)
+          explode in(z, emptyset)
+        }
+      }
+      connect in(z, emptyset) \leftrightarrow \exists x \exists y (in(x, X) \wedge in(y, emptyset) \wedge equal(z, op(x, y)))
+    }
+    fold for times conclude times(X, emptyset, emptyset)
+  }
+}

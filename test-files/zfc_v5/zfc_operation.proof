@@ -1,0 +1,306 @@
+include "zfc_piterate.proof"
+
+definition predicate autoexpand issuc(x, y) as equal(y, suc(x))
+
+theorem issuc_is_functional functional(issuc) {
+  any x, y, y' {
+    assume issuc(x, y) \wedge issuc(x, y') {
+      expand issuc(x, y) \wedge issuc(x, y') for issuc
+      split equal(y, suc(x)) \wedge equal(y', suc(x))
+      substitute equal(y, suc(x)) for suc(x): y'
+    }
+  }
+  fold for functional conclude functional(issuc)
+}
+
+theorem issuc_is_total_on_natural total(issuc, natural) {
+  any m {
+    assume natural(m) {
+      apply invoke suc_of_natural_is_natural for m
+      connect natural(suc(m)) \wedge equal(suc(m), suc(m))
+      lift for suc(m) conclude \exists l (natural(l) \wedge equal(l, suc(m)))
+    }
+  }
+  fold for total conclude total(issuc, natural)
+}
+
+definition predicate add(x, n, y) as piterate(issuc, n, x, y)
+
+theorem add_is_unique \forall x \forall n \forall y \forall y' (natural(n) \wedge add(x, n, y) \wedge add(x, n, y') \to equal(y, y')) {
+  any x, n, y, y' {
+    assume natural(n) \wedge add(x, n, y) \wedge add(x, n, y') {
+      split natural(n) \wedge add(x, n, y) \wedge add(x, n, y')
+      expand add(x, n, y) for add
+      expand add(x, n, y') for add
+      assert issuc_is_functional
+      connect natural(n) \wedge functional(issuc) \wedge piterate(issuc, n, x, y) \wedge piterate(issuc, n, x, y')
+      apply invoke piterate_is_unique for issuc, n, x, y, y'
+    }
+  }
+}
+
+theorem natural_add_exists \forall m \forall n (natural(m) \wedge natural(n) \to \exists l (natural(l) \wedge add(m, n, l))) {
+  any m, n {
+    assume natural(m) \wedge natural(n) {
+      split natural(m) \wedge natural(n)
+      assert issuc_is_total_on_natural
+      connect total(issuc, natural) \wedge natural(m)
+      apply invoke piterate_exists for issuc, natural, m
+      apply invoke \forall n (natural(n) \to \exists l (natural(l) \wedge piterate(issuc, n, m, l))) for n
+      fold for add conclude \exists l (natural(l) \wedge add(m, n, l))
+    }
+  }
+}
+
+theorem add_base_step \forall x (add(x, emptyset, x)) {
+  any x {
+    apply piterate_base_step for issuc, x
+    fold for add conclude add(x, emptyset, x)
+  }
+}
+
+theorem add_base_step_unique \forall x \forall y (add(x, emptyset, y) \to equal(x, y)) {
+  any x, y {
+    assume add(x, emptyset, y) {
+      apply add_base_step for x
+      assert emptyset_is_natural
+      connect natural(emptyset) \wedge add(x, emptyset, x) \wedge add(x, emptyset, y)
+      apply invoke add_is_unique for x, emptyset, x, y
+    }
+  }
+}
+
+theorem add_induction_step \forall x \forall n \forall y (natural(n) \wedge add(x, n, y) \to add(x, suc(n), suc(y))) {
+  any x, n, y {
+    assume natural(n) \wedge add(x, n, y) {
+      split natural(n) \wedge add(x, n, y)
+      expand add(x, n, y) for add
+      connect natural(n) \wedge piterate(issuc, n, x, y) \wedge equal(suc(y), suc(y))
+      apply invoke piterate_induction_step for issuc, n, x, y, suc(y)
+      fold for add conclude add(x, suc(n), suc(y))
+    }
+  }
+}
+
+theorem add_base_step_left \forall n (natural(n) \to add(emptyset, n, n)) {
+  apply add_base_step for emptyset
+  any n {
+    assume natural(n) {
+      assume add(emptyset, n, n) {
+        connect natural(n) \wedge add(emptyset, n, n)
+        apply invoke add_induction_step for emptyset, n, n
+      }
+    }
+  }
+  connect add(emptyset, emptyset, emptyset) \wedge \forall n (natural(n) \to (add(emptyset, n, n) \to add(emptyset, suc(n), suc(n))))
+  apply invoke natural_induction for \lambda^P n. add(emptyset, n, n)
+}
+
+theorem add_last_step \forall x \forall n \forall y (natural(n) \wedge add(x, suc(n), y) \to \exists z (add(x, n, z) \wedge equal(y, suc(z)))) {
+  any x, n, y {
+    assume natural(n) \wedge add(x, suc(n), y) {
+      split natural(n) \wedge add(x, suc(n), y)
+      expand add(x, suc(n), y) for add
+      connect natural(n) \wedge piterate(issuc, suc(n), x, y)
+      apply invoke piterate_last_step for issuc, n, x, y
+      some z such \exists z (piterate(issuc, n, x, z) \wedge equal(y, suc(z))) {
+        split piterate(issuc, n, x, z) \wedge equal(y, suc(z))
+        fold for add conclude add(x, n, z)
+        connect add(x, n, z) \wedge equal(y, suc(z))
+        lift for z conclude \exists z (add(x, n, z) \wedge equal(y, suc(z)))
+      }
+    }
+  }
+}
+
+theorem add_induction_step_left \forall x \forall n \forall y (natural(n) \wedge add(x, n, y) \to add(suc(x), n, suc(y))) {
+  any x, y {
+    assume add(x, emptyset, y) {
+      apply invoke add_base_step_unique for x, y
+      apply add_base_step for suc(x)
+      substitute add(suc(x), emptyset, suc(x)) for x[2]: y
+    }
+  }
+  any n {
+    assume natural(n) {
+      assume \forall x \forall y (add(x, n, y) \to add(suc(x), n, suc(y))) {
+        any x, y {
+          assume add(x, suc(n), y) {
+            connect natural(n) \wedge add(x, suc(n), y)
+            apply invoke add_last_step for x, n, y
+            some z such \exists z (add(x, n, z) \wedge equal(y, suc(z))) {
+              split add(x, n, z) \wedge equal(y, suc(z))
+              apply invoke \forall x \forall y (add(x, n, y) \to add(suc(x), n, suc(y))) for x, z
+              substitute add(suc(x), n, suc(z)) for suc(z): y
+              connect natural(n) \wedge add(suc(x), n, y)
+              apply invoke add_induction_step for suc(x), n, y
+            }
+          }
+        }
+      }
+    }
+  }
+  connect \forall x \forall y (add(x, emptyset, y) \to add(suc(x), emptyset, suc(y))) \wedge \forall n (natural(n) \to (\forall x \forall y (add(x, n, y) \to add(suc(x), n, suc(y))) \to \forall x \forall y (add(x, suc(n), y) \to add(suc(x), suc(n), suc(y)))))
+  apply invoke natural_induction for \lambda^P n. \forall x \forall y (add(x, n, y) \to add(suc(x), n, suc(y)))
+  any x, n, y {
+    assume natural(n) \wedge add(x, n, y) {
+      split natural(n) \wedge add(x, n, y)
+      apply invoke \forall n (natural(n) \to \forall x \forall y (add(x, n, y) \to add(suc(x), n, suc(y)))) for n
+      apply invoke \forall x \forall y (add(x, n, y) \to add(suc(x), n, suc(y))) for x, y
+    }
+  }
+}
+
+theorem add_one_step_left \forall n (natural(n) \to add(suc(emptyset), n, suc(n))) {
+  any n {
+    assume natural(n) {
+      apply invoke add_base_step_left for n
+      connect natural(n) \wedge add(emptyset, n, n)
+      apply invoke add_induction_step_left for emptyset, n, n
+    }
+  }
+}
+
+theorem addition_of_natural_is_natural \forall m \forall n \forall l (natural(m) \wedge natural(n) \wedge add(m, n, l) \to natural(l)) {
+  any m, n, l {
+    assume natural(m) \wedge natural(n) \wedge add(m, n, l) {
+      split natural(m) \wedge natural(n) \wedge add(m, n, l)
+      connect natural(m) \wedge natural(n)
+      apply invoke natural_add_exists for m, n
+      some l' such \exists l' (natural(l') \wedge add(m, n, l')) {
+        split natural(l') \wedge add(m, n, l')
+        connect natural(n) \wedge add(m, n, l) \wedge add(m, n, l')
+        apply invoke add_is_unique for m, n, l, l'
+        substitute natural(l') for l': l
+      }
+    }
+  }
+}
+
+theorem adding_pnatural_is_not_emptyset \forall x \forall n \forall y (pnatural(n) \wedge add(x, n, y) \to neq(y, emptyset)) {
+  any x, n, y {
+    assume pnatural(n) \wedge add(x, n, y) {
+      split pnatural(n) \wedge add(x, n, y)
+      apply invoke pnatural_is_suc_of_natural_element for n
+      some m such \exists m (equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)) {
+        split equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)
+        substitute add(x, n, y) for n: suc(m)
+        connect natural(m) \wedge add(x, suc(m), y)
+        apply invoke add_last_step for x, m, y
+        some z such \exists z (add(x, m, z) \wedge equal(y, suc(z))) {
+          split add(x, m, z) \wedge equal(y, suc(z))
+          apply suc_is_not_emptyset for z
+          substitute neq(suc(z), emptyset) for suc(z): y
+        }
+      }
+    }
+  }
+}
+
+theorem addition_of_natural_and_pnatural_is_pnatural \forall m \forall n \forall l (natural(m) \wedge pnatural(n) \wedge add(m, n, l) \to pnatural(l)) {
+  any m, n, l {
+    assume natural(m) \wedge pnatural(n) \wedge add(m, n, l) {
+      split natural(m) \wedge pnatural(n) \wedge add(m, n, l)
+      pad pnatural(n) conclude natural(n)
+      connect natural(m) \wedge natural(n) \wedge add(m, n, l)
+      apply invoke addition_of_natural_is_natural for m, n, l
+      connect pnatural(n) \wedge add(m, n, l)
+      apply invoke adding_pnatural_is_not_emptyset for m, n, l
+      connect natural(l) \wedge neq(l, emptyset)
+      apply invoke natural_and_neq_emptyset_implies_pnatural for l
+    }
+  }
+}
+
+theorem natural_pnatural_add_exists \forall m \forall n (natural(m) \wedge pnatural(n) \to \exists l (pnatural(l) \wedge add(m, n, l))) {
+  any m, n {
+    assume natural(m) \wedge pnatural(n) {
+      split natural(m) \wedge pnatural(n)
+      pad pnatural(n) conclude natural(n)
+      connect natural(m) \wedge natural(n)
+      apply invoke natural_add_exists for m, n
+      some l such \exists l (natural(l) \wedge add(m, n, l)) {
+        split natural(l) \wedge add(m, n, l)
+        connect natural(m) \wedge pnatural(n) \wedge add(m, n, l)
+        apply invoke addition_of_natural_and_pnatural_is_pnatural for m, n, l
+        connect pnatural(l) \wedge add(m, n, l)
+        lift for l conclude \exists l (pnatural(l) \wedge add(m, n, l))
+      }
+    }
+  }
+}
+
+theorem adding_to_not_emptyset_is_not_emptyset \forall x \forall n \forall y (neq(x, emptyset) \wedge natural(n) \wedge add(x, n, y) \to neq(y, emptyset)) {
+  any x, n, y {
+    assume neq(x, emptyset) \wedge natural(n) \wedge add(x, n, y) {
+      split neq(x, emptyset) \wedge natural(n) \wedge add(x, n, y)
+      divide natural(n)
+        case equal(n, emptyset) {
+          apply add_base_step for x
+          substitute add(x, emptyset, x) for emptyset: n
+          connect natural(n) \wedge add(x, n, x) \wedge add(x, n, y)
+          apply invoke add_is_unique for x, n, x, y
+          substitute neq(x, emptyset) for x: y
+        }
+        case pnatural(n) {
+          apply invoke pnatural_is_suc_of_natural_element for n
+          some m such \exists m (equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)) {
+            split equal(n, suc(m)) \wedge in(m, n) \wedge natural(m)
+            substitute add(x, n, y) for n: suc(m)
+            connect natural(m) \wedge add(x, suc(m), y)
+            apply invoke add_last_step for x, m, y
+            some z such \exists z (add(x, m, z) \wedge equal(y, suc(z))) {
+              split add(x, m, z) \wedge equal(y, suc(z))
+              apply suc_is_not_emptyset for z
+              substitute neq(suc(z), emptyset) for suc(z): y
+            }
+          }
+        }
+    }
+  }
+}
+
+theorem addition_of_pnatural_and_natural_is_pnatural \forall m \forall n \forall l (pnatural(m) \wedge natural(n) \wedge add(m, n, l) \to pnatural(l)) {
+  any m, n, l {
+    assume pnatural(m) \wedge natural(n) \wedge add(m, n, l) {
+      split pnatural(m) \wedge natural(n) \wedge add(m, n, l)
+      pad pnatural(m) conclude natural(m)
+      connect natural(m) \wedge natural(n) \wedge add(m, n, l)
+      apply invoke addition_of_natural_is_natural for m, n, l
+      apply invoke pnatural_is_not_emptyset for m
+      connect neq(m, emptyset) \wedge natural(n) \wedge add(m, n, l)
+      apply invoke adding_to_not_emptyset_is_not_emptyset for m, n, l
+      connect natural(l) \wedge neq(l, emptyset)
+      apply invoke natural_and_neq_emptyset_implies_pnatural for l
+    }
+  }
+}
+
+theorem pnatural_natural_add_exists \forall m \forall n (pnatural(m) \wedge natural(n) \to \exists l (pnatural(l) \wedge add(m, n, l))) {
+  any m, n {
+    assume pnatural(m) \wedge natural(n) {
+      split pnatural(m) \wedge natural(n)
+      pad pnatural(m) conclude natural(m)
+      connect natural(m) \wedge natural(n)
+      apply invoke natural_add_exists for m, n
+      some l such \exists l (natural(l) \wedge add(m, n, l)) {
+        split natural(l) \wedge add(m, n, l)
+        connect pnatural(m) \wedge natural(n) \wedge add(m, n, l)
+        apply invoke addition_of_pnatural_and_natural_is_pnatural for m, n, l
+        connect pnatural(l) \wedge add(m, n, l)
+        lift for l conclude \exists l (pnatural(l) \wedge add(m, n, l))
+      }
+    }
+  }
+}
+
+theorem pnatural_pnatural_add_exists \forall m \forall n (pnatural(m) \wedge pnatural(n) \to \exists l (pnatural(l) \wedge add(m, n, l))) {
+  any m, n {
+    assume pnatural(m) \wedge pnatural(n) {
+      split pnatural(m) \wedge pnatural(n)
+      pad pnatural(m) conclude natural(m)
+      connect natural(m) \wedge pnatural(n)
+      apply invoke natural_pnatural_add_exists for m, n
+    }
+  }
+}

@@ -1,0 +1,100 @@
+include "zfc_ordinal_suc.proof"
+
+theorem ordinal_is_pirrefrel pirrefrel(ordinal, in) {
+  assert ordinal_not_contain_itself
+  fold for pirrefrel conclude pirrefrel(ordinal, in)
+}
+
+theorem ordinal_is_pwellfounded pwellfounded(ordinal, in) {
+  any A {
+    assume \forall \alpha (in(\alpha, A) \to ordinal(\alpha)) \wedge neq(A, emptyset) {
+      split \forall \alpha (in(\alpha, A) \to ordinal(\alpha)) \wedge neq(A, emptyset)
+      apply invoke not_emptyset_has_a_member for A
+      some \alpha such \exists \alpha (in(\alpha, A)) {
+        apply invoke \forall \alpha (in(\alpha, A) \to ordinal(\alpha)) for \alpha
+        apply invoke suc_of_ordinal_is_ordinal for \alpha
+        split ordinal(suc(\alpha))
+        split wellorder(suc(\alpha), in)
+        apply cap_is_subset_right for A, suc(\alpha)
+        apply in_suc for \alpha
+        connect in(\alpha, A) \wedge in(\alpha, suc(\alpha))
+        apply invoke leftward cap_characterization for A, suc(\alpha), \alpha
+        lift for \alpha conclude \exists \beta (in(\beta, cap(A, suc(\alpha))))
+        apply invoke has_a_member_not_emptyset for cap(A, suc(\alpha))
+        connect subset(cap(A, suc(\alpha)), suc(\alpha)) \wedge neq(cap(A, suc(\alpha)), emptyset)
+        apply invoke wellfounded(suc(\alpha), in) for cap(A, suc(\alpha))
+        some \beta such \exists \beta (minimal(in, cap(A, suc(\alpha)), \beta)) {
+          split minimal(in, cap(A, suc(\alpha)), \beta)
+          apply invoke rightward cap_characterization for A, suc(\alpha), \beta
+          split in(\beta, A) \wedge in(\beta, suc(\alpha))
+          any \gamma {
+            assume in(\gamma, A) \wedge neq(\gamma, \beta) {
+              split in(\gamma, A) \wedge neq(\gamma, \beta)
+              apply law_of_excluded_middle for \lambda^P. in(\gamma, suc(\alpha))
+              divide in(\gamma, suc(\alpha)) \vee notin(\gamma, suc(\alpha))
+                case in(\gamma, suc(\alpha)) {
+                  connect in(\gamma, A) \wedge in(\gamma, suc(\alpha))
+                  apply invoke leftward cap_characterization for A, suc(\alpha), \gamma
+                  connect in(\gamma, cap(A, suc(\alpha))) \wedge neq(\gamma, \beta)
+                  apply invoke minimal_core(in, cap(A, suc(\alpha)), \beta) for \gamma
+                }
+                case notin(\gamma, suc(\alpha)) {
+                  deny in(\gamma, \beta) {
+                    connect in(\gamma, \beta) \wedge in(\beta, suc(\alpha))
+                    apply invoke closed(suc(\alpha), in) for \beta, \gamma
+                    contradict in(\gamma, suc(\alpha))
+                  }
+                }
+            }
+          }
+          fold for minimal_core conclude minimal_core(in, A, \beta)
+          connect minimal(in, A, \beta)
+          lift for \beta conclude \exists \beta (minimal(in, A, \beta))
+        }
+      }
+    }
+  }
+  fold for pwellfounded conclude pwellfounded(ordinal, in)
+}
+
+theorem ordinal_is_closed_under_in pclosed(ordinal, in) {
+  any \alpha, \beta {
+    assume ordinal(\alpha) \wedge in(\beta, \alpha) {
+      apply invoke element_of_ordinal_is_ordinal for \alpha, \beta
+    }
+  }
+  fold for pclosed conclude pclosed(ordinal, in)
+}
+
+theorem ordinal_is_tcset_of_itself \forall \alpha (ordinal(\alpha) \to tcset(\alpha, in, \alpha)) {
+  any \alpha {
+    assume ordinal(\alpha) {
+      split 1 ordinal(\alpha)
+      apply invoke rightward closed_in_iff_tcset_of_itself for \alpha
+    }
+  }
+}
+
+theorem ordinal_is_tcsetlike tcsetlike(ordinal, in) {
+  any \alpha {
+    assume ordinal(\alpha) {
+      apply invoke ordinal_is_tcset_of_itself for \alpha
+      lift for \alpha conclude \exists \beta (tcset(\alpha, in, \beta))
+    }
+  }
+  fold for tcsetlike conclude tcsetlike(ordinal, in)
+}
+
+theorem ordinal_induction \forall^P \chi[1] (\forall \alpha (ordinal(\alpha) \wedge \forall \beta (in(\beta, \alpha) \to \chi(\beta)) \to \chi(\alpha)) \to \forall \alpha (ordinal(\alpha) \to \chi(\alpha))) {
+  assert ordinal_is_pirrefrel
+  assert ordinal_is_pwellfounded
+  assert ordinal_is_closed_under_in
+  assert ordinal_is_tcsetlike
+  apply invoke tcsetlike_implies_rtcsetlike for ordinal, in
+  any predicate \chi[1] {
+    assume \forall \alpha (ordinal(\alpha) \wedge \forall \beta (in(\beta, \alpha) \to \chi(\beta)) \to \chi(\alpha)) {
+      connect rtcsetlike(ordinal, in) \wedge pclosed(ordinal, in) \wedge pirrefrel(ordinal, in) \wedge pwellfounded(ordinal, in) \wedge \forall \alpha (ordinal(\alpha) \wedge \forall \beta (in(\beta, \alpha) \to \chi(\beta)) \to \chi(\alpha))
+      apply invoke pwellfounded_induction for ordinal, in, \chi
+    }
+  }
+}
