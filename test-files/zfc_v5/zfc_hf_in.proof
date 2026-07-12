@@ -4,8 +4,8 @@ theorem hfcore_is_finite \forall x (hfcore(x, in) \to finite(x)) {
   any x {
     assume hfcore(x, in) {
       some t such hfcore(x, in) {
-        split finite(t) \wedge tcset(x, in, t)
-        apply invoke tcset_in_implies_subset for x, t
+        split finite(t) \wedge rtcset(x, in, t)
+        apply invoke rtcset_in_implies_subset for x, t
         connect finite(t) \wedge subset(x, t)
         apply invoke subset_of_finite_is_finite for t, x
       }
@@ -13,7 +13,7 @@ theorem hfcore_is_finite \forall x (hfcore(x, in) \to finite(x)) {
   }
 }
 
-theorem finite_set_of_hfcore_is_hfcore \forall Y (finite(Y) \wedge \forall y (in(y, Y) \to hfcore(y, in)) \to hfcore(Y, in) \wedge \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V))) {
+theorem finite_set_of_hfcore_is_hfcore \forall Y (finite(Y) \wedge \forall y (in(y, Y) \to hfcore(y, in)) \to hfcore(Y, in) \wedge \exists Z \exists W \exists V (rtcsetinstep(Y, Z, W, V))) {
   any Y {
     assume finite(Y) \wedge \forall y (in(y, Y) \to hfcore(y, in)) {
       split finite(Y) \wedge \forall y (in(y, Y) \to hfcore(y, in))
@@ -22,17 +22,16 @@ theorem finite_set_of_hfcore_is_hfcore \forall Y (finite(Y) \wedge \forall y (in
       lift for Y conclude \exists S (finite(S) \wedge seg(Y, in, S))
       connect \exists S (finite(S) \wedge seg(Y, in, S)) \wedge \forall y (in(y, Y) \to hfcore(y, in))
       apply invoke finite_generation_of_hfcore_is_hfcore for in, Y
-      split hfcore(Y, in) \wedge \exists S \exists Z \exists W \exists V (tcsetstep(in, Y, S, Z, W, V))
-      some S, Z, W, V such \exists S \exists Z \exists W \exists V (tcsetstep(in, Y, S, Z, W, V)) {
-        split tcsetstep(in, Y, S, Z, W, V)
+      split hfcore(Y, in) \wedge \exists S \exists Z \exists W \exists V (rtcsetstep(in, Y, S, Z, W, V))
+      some S, Z, W, V such \exists S \exists Z \exists W \exists V (rtcsetstep(in, Y, S, Z, W, V)) {
+        split rtcsetstep(in, Y, S, Z, W, V)
         connect seg(Y, in, S) \wedge seg(Y, in, Y)
         apply invoke seg_is_unique for Y, in, S, Y
-        substitute replacement(S, \lambda^P y, z. tcset(y, in, z), Z) for S: Y
-        substitute cup(S, W, V) for S: Y
-        connect tcsetinstep(Y, Z, W, V)
-        lift for Z, W, V conclude \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V))
+        substitute replacement(S, \lambda^P y, z. rtcset(y, in, z), Z) for S: Y
+        connect rtcsetinstep(Y, Z, W, V)
+        lift for Z, W, V conclude \exists Z \exists W \exists V (rtcsetinstep(Y, Z, W, V))
       }
-      connect hfcore(Y, in) \wedge \exists Z \exists W \exists V (tcsetinstep(Y, Z, W, V))
+      connect hfcore(Y, in) \wedge \exists Z \exists W \exists V (rtcsetinstep(Y, Z, W, V))
     }
   }
 }
@@ -78,10 +77,14 @@ theorem hf_satisfies_axiom_of_extensionality \forall x \forall y (hf(x, in) \wed
 
 theorem emptyset_is_hf hf(emptyset, in) {
   assert emptyset_is_regular
-  assert emptyset_is_tcset_in_of_emptyset
   assert emptyset_is_finite
-  connect finite(emptyset) \wedge tcset(emptyset, in, emptyset)
-  lift for emptyset conclude hfcore(emptyset, in)
+  apply invoke finite_adj for emptyset, emptyset
+  fold for suc conclude finite(suc(emptyset))
+  assert suc_emptyset_is_singleton_emptyset
+  substitute finite(suc(emptyset)) for suc(emptyset): singleton(emptyset)
+  assert singleton_emptyset_is_rtcset_in_of_emptyset
+  connect finite(singleton(emptyset)) \wedge rtcset(emptyset, in, singleton(emptyset))
+  lift for singleton(emptyset) conclude hfcore(emptyset, in)
   connect hf(emptyset, in)
 }
 
@@ -449,22 +452,28 @@ theorem hf_satisfies_axiom_of_foundation \forall x (hf(x, in) \to (neq(x, emptys
   }
 }
 
-theorem hf_implies_tcset_in_is_hf \forall x \forall y (hf(x, in) \wedge tcset(x, in, y) \to hf(y, in)) {
+theorem hf_implies_rtcset_in_is_hf \forall x \forall y (hf(x, in) \wedge rtcset(x, in, y) \to hf(y, in)) {
   any x, y {
-    assume hf(x, in) \wedge tcset(x, in, y) {
-      split hf(x, in) \wedge tcset(x, in, y)
-      apply invoke rightward hf_iff_existence_of_irrefrel_wellfounded_finite_tcset for x, in
-      some y' such \exists y' (irrefrel(y', in) \wedge wellfounded(y', in) \wedge finite(y') \wedge tcset(x, in, y')) {
-        split irrefrel(y', in) \wedge wellfounded(y', in) \wedge finite(y') \wedge tcset(x, in, y')
-        connect tcset(x, in, y) \wedge tcset(x, in, y')
-        apply invoke tcset_is_unique for x, in, y, y'
+    assume hf(x, in) \wedge rtcset(x, in, y) {
+      split hf(x, in) \wedge rtcset(x, in, y)
+      split rtcset(x, in, y)
+      apply invoke rightward hf_iff_existence_of_irrefrel_wellfounded_finite_rtcset for x, in
+      some y' such \exists y' (irrefrel(y', in) \wedge wellfounded(y', in) \wedge finite(y') \wedge rtcset(x, in, y')) {
+        split irrefrel(y', in) \wedge wellfounded(y', in) \wedge finite(y') \wedge rtcset(x, in, y')
+        connect rtcset(x, in, y) \wedge rtcset(x, in, y')
+        apply invoke rtcset_is_unique for x, in, y, y'
         substitute irrefrel(y', in) for y': y
+        apply invoke suc_of_irrefrel_is_irrefrel for y
         substitute wellfounded(y', in) for y': y
+        connect closed(y, in) \wedge wellfounded(y, in)
+        apply invoke suc_of_closed_wellfounded_is_wellfounded for y
         substitute finite(y') for y': y
-        apply invoke tcset_in_is_tcset_in_of_itself for x, y
-        connect irrefrel(y, in) \wedge wellfounded(y, in) \wedge finite(y) \wedge tcset(y, in, y)
-        lift for y conclude \exists y (irrefrel(y, in) \wedge wellfounded(y, in) \wedge finite(y) \wedge tcset(y, in, y))
-        apply invoke leftward hf_iff_existence_of_irrefrel_wellfounded_finite_tcset for y, in
+        apply invoke finite_adj for y, y
+        fold for suc conclude finite(suc(y))
+        apply invoke closed_in_implies_suc_is_rtcset for y
+        connect irrefrel(suc(y), in) \wedge wellfounded(suc(y), in) \wedge finite(suc(y)) \wedge rtcset(y, in, suc(y))
+        lift for suc(y) conclude \exists r (irrefrel(r, in) \wedge wellfounded(r, in) \wedge finite(r) \wedge rtcset(y, in, r))
+        apply invoke leftward hf_iff_existence_of_irrefrel_wellfounded_finite_rtcset for y, in
       }
     }
   }

@@ -219,6 +219,40 @@ theorem element_of_closed_irrefrel_is_irrefrel \forall x \forall y (closed(x, in
   }
 }
 
+theorem closed_in_implies_suc_is_rtcset \forall x (closed(x, in) \to rtcset(x, in, suc(x))) {
+  any x {
+    assume closed(x, in) {
+      any y {
+        assume in(y, x) {}
+      }
+      connect closed(x, in) \wedge \forall y (in(y, x) \to in(y, x))
+      apply invoke adj_of_closed_is_closed for x, x, in
+      fold for suc conclude closed(suc(x), in)
+      apply in_suc for x
+      any s {
+        assume closed(s, in) \wedge in(x, s) {
+          split closed(s, in) \wedge in(x, s)
+          any y {
+            assume in(y, suc(x)) {
+              apply invoke rightward suc_characterization for x, y
+              divide in(y, x) \vee equal(y, x)
+                case in(y, x) {
+                  connect in(y, x) \wedge in(x, s)
+                  apply invoke closed(s, in) for x, y
+                }
+                case equal(y, x) {
+                  substitute in(x, s) for x: y
+                }
+            }
+          }
+          fold for subset conclude subset(suc(x), s)
+        }
+      }
+      connect rtcset(x, in, suc(x))
+    }
+  }
+}
+
 theorem closed_in_iff_tcset_of_itself \forall x (closed(x, in) \leftrightarrow tcset(x, in, x)) {
   any x {
     assume closed(x, in) {

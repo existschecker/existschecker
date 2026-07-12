@@ -7,6 +7,21 @@ theorem tcset_is_functional \forall^P \psi[2] (functional(\lambda^P x, t. tcset(
   }
 }
 
+theorem rtcset_in_implies_subset \forall X \forall Y (rtcset(X, in, Y) \to subset(X, Y)) {
+  any x, r {
+    assume rtcset(x, in, r) {
+      split rtcset(x, in, r)
+      any y {
+        assume in(y, x) {
+          connect in(y, x) \wedge in(x, r)
+          apply invoke closed(r, in) for x, y
+        }
+      }
+      fold for subset conclude subset(x, r)
+    }
+  }
+}
+
 theorem tcset_in_implies_subset \forall X \forall Y (tcset(X, in, Y) \to subset(X, Y)) {
   any x, t {
     assume tcset(x, in, t) {
@@ -36,6 +51,34 @@ theorem tcset_in_is_closed_in \forall X \forall Y (tcset(X, in, Y) \to closed(Y,
       split 1 tcset(X, in, Y)
     }
   }
+}
+
+theorem singleton_emptyset_is_rtcset_in_of_emptyset rtcset(emptyset, in, singleton(emptyset)) {
+  any x, y {
+    assume in(x, singleton(emptyset)) \wedge in(y, x) {
+      split in(x, singleton(emptyset)) \wedge in(y, x)
+      apply invoke rightward singleton_characterization for emptyset, x
+      substitute in(y, x) for x: emptyset
+      apply emptyset_existence for y
+      contradict in(y, emptyset)
+      explode in(y, singleton(emptyset))
+    }
+  }
+  fold for closed conclude closed(singleton(emptyset), in)
+  apply singleton_cor1 for emptyset
+  any s {
+    assume closed(s, in) \wedge in(emptyset, s) {
+      split closed(s, in) \wedge in(emptyset, s)
+      any x {
+        assume in(x, singleton(emptyset)) {
+          apply invoke rightward singleton_characterization for emptyset, x
+          substitute in(emptyset, s) for emptyset: x
+        }
+      }
+      fold for subset conclude subset(singleton(emptyset), s)
+    }
+  }
+  connect rtcset(emptyset, in, singleton(emptyset))
 }
 
 theorem emptyset_is_tcset_in_of_emptyset tcset(emptyset, in, emptyset) {
@@ -163,6 +206,95 @@ theorem tcset_in_adjunction \forall x \forall y \forall p \forall q \forall r (t
   }
 }
 
+definition predicate rtcsetstep(predicate \psi[2], Y, S, Z, W, V) as seg(Y, \psi, S) \wedge \forall y (\psi(y, Y) \to \exists z (rtcset(y, \psi, z))) \wedge replacement(S, \lambda^P y, z. rtcset(y, \psi, z), Z) \wedge bigcup(Z, W) \wedge equal(V, adj(W, Y))
+
+theorem rtcset_is_cup_of_itself_and_bigcup_of_rtcset_of_element \forall^P \psi[2] \forall Y \forall S \forall Z \forall W \forall V (rtcsetstep(\psi, Y, S, Z, W, V) \to rtcset(Y, \psi, V)) {
+  any predicate \psi[2], Y, S, Z, W, V {
+    assume rtcsetstep(\psi, Y, S, Z, W, V) {
+      split rtcsetstep(\psi, Y, S, Z, W, V)
+      any p, q {
+        assume in(p, V) \wedge \psi(q, p) {
+          split in(p, V) \wedge \psi(q, p)
+          substitute in(p, V) for V: adj(W, Y)
+          apply invoke rightward adj_existence for W, Y, p
+          divide equal(p, Y) \vee in(p, W)
+            case equal(p, Y) {
+              substitute seg(Y, \psi, S) for Y: p
+              apply invoke leftward seg(p, \psi, S) for q
+              substitute \forall y (\psi(y, Y) \to \exists z (rtcset(y, \psi, z))) for Y: p
+              apply invoke \forall y (\psi(y, p) \to \exists z (rtcset(y, \psi, z))) for q
+              some z such \exists z (rtcset(q, \psi, z)) {
+                connect in(q, S) \wedge rtcset(q, \psi, z)
+                lift for q conclude \exists q (in(q, S) \wedge rtcset(q, \psi, z))
+                apply invoke leftward replacement(S, \lambda^P y, z. rtcset(y, \psi, z), Z) for z
+                split rtcset(q, \psi, z)
+                connect in(q, z) \wedge in(z, Z)
+                lift for z conclude \exists z (in(q, z) \wedge in(z, Z))
+                apply invoke leftward bigcup(Z, W) for q
+              }
+            }
+            case in(p, W) {
+              apply invoke rightward bigcup(Z, W) for p
+              some z such \exists z (in(p, z) \wedge in(z, Z)) {
+                split in(p, z) \wedge in(z, Z)
+                apply invoke rightward replacement(S, \lambda^P y, z. rtcset(y, \psi, z), Z) for z
+                some y such \exists y (in(y, S) \wedge rtcset(y, \psi, z)) {
+                  split in(y, S) \wedge rtcset(y, \psi, z)
+                  split 1 rtcset(y, \psi, z)
+                  connect in(p, z) \wedge \psi(q, p)
+                  apply invoke closed(z, \psi) for p, q
+                  connect in(q, z) \wedge in(z, Z)
+                  lift for z conclude \exists z (in(q, z) \wedge in(z, Z))
+                }
+              }
+              apply invoke leftward bigcup(Z, W) for q
+            }
+          pad in(q, W) conclude in(q, S) \vee in(q, W)
+          apply invoke adj_cor1 for W, Y, q
+          substitute in(q, adj(W, Y)) for adj(W, Y): V
+        }
+      }
+      fold for closed conclude closed(V, \psi)
+      apply adj_cor3 for W, Y
+      substitute in(Y, adj(W, Y)) for adj(W, Y): V
+      any s {
+        assume closed(s, \psi) \wedge in(Y, s) {
+          split closed(s, \psi) \wedge in(Y, s)
+          any v {
+            assume in(v, V) {
+              substitute in(v, V) for V: adj(W, Y)
+              apply invoke rightward adj_existence for W, Y, v
+              divide equal(v, Y) \vee in(v, W)
+                case equal(v, Y) {
+                  substitute in(Y, s) for Y: v
+                }
+                case in(v, W) {
+                  apply invoke rightward bigcup(Z, W) for v
+                  some z such \exists z (in(v, z) \wedge in(z, Z)) {
+                    split in(v, z) \wedge in(z, Z)
+                    apply invoke rightward replacement(S, \lambda^P y, z. rtcset(y, \psi, z), Z) for z
+                    some y such \exists y (in(y, S) \wedge rtcset(y, \psi, z)) {
+                      split in(y, S) \wedge rtcset(y, \psi, z)
+                      split rtcset(y, \psi, z)
+                      apply invoke rightward seg(Y, \psi, S) for y
+                      connect in(Y, s) \wedge \psi(y, Y)
+                      apply invoke closed(s, \psi) for Y, y
+                      connect closed(s, \psi) \wedge in(y, s)
+                      apply invoke \forall s (closed(s, \psi) \wedge in(y, s) \to subset(z, s)) for s
+                      apply invoke subset(z, s) for v
+                    }
+                  }
+                }
+            }
+          }
+          fold for subset conclude subset(V, s)
+        }
+      }
+      connect rtcset(Y, \psi, V)
+    }
+  }
+}
+
 definition predicate tcsetstep(predicate \psi[2], Y, S, Z, W, V) as seg(Y, \psi, S) \wedge \forall y (\psi(y, Y) \to \exists z (tcset(y, \psi, z))) \wedge replacement(S, \lambda^P y, z. tcset(y, \psi, z), Z) \wedge bigcup(Z, W) \wedge cup(S, W, V)
 
 theorem tcset_is_cup_of_itself_and_bigcup_of_tcset_of_element \forall^P \psi[2] \forall Y \forall S \forall Z \forall W \forall V (tcsetstep(\psi, Y, S, Z, W, V) \to tcset(Y, \psi, V)) {
@@ -257,6 +389,18 @@ theorem tcset_is_cup_of_itself_and_bigcup_of_tcset_of_element \forall^P \psi[2] 
         }
       }
       connect tcset(Y, \psi, V)
+    }
+  }
+}
+
+definition predicate rtcsetinstep(Y, Z, W, V) as \forall y (in(y, Y) \to \exists z (rtcset(y, in, z))) \wedge replacement(Y, \lambda^P y, z. rtcset(y, in, z), Z) \wedge bigcup(Z, W) \wedge equal(V, adj(W, Y))
+
+theorem rtcsetinstep_implies_rtcsetstep \forall Y \forall Z \forall W \forall V (rtcsetinstep(Y, Z, W, V) \to rtcsetstep(in, Y, Y, Z, W, V)) {
+  any Y, Z, W, V {
+    apply seg_for_in_is_iself for Y
+    assume rtcsetinstep(Y, Z, W, V) {
+      split rtcsetinstep(Y, Z, W, V)
+      connect rtcsetstep(in, Y, Y, Z, W, V)
     }
   }
 }
