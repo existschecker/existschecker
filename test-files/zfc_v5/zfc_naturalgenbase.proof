@@ -1,0 +1,278 @@
+include "zfc_finitesetlike.proof"
+
+definition predicate naturalgenbase(n) as regulargenbase(n, issuc, \lambda^P e. equal(e, emptyset))
+
+theorem emptyset_is_base_for_issuc \neg(\exists y (issuc(y, emptyset))) {
+  deny \exists y (issuc(y, emptyset)) {
+    some y such \exists y (issuc(y, emptyset)) {
+      apply in_suc for y
+      substitute in(y, suc(y)) for suc(y): emptyset
+      apply emptyset_existence for y
+      contradict in(y, emptyset)
+    }
+  }
+}
+
+theorem singleton_emptyset_is_rtcset_issuc_of_emptyset rtcset(emptyset, issuc, singleton(emptyset)) {
+  assert emptyset_is_base_for_issuc
+  apply invoke base_implies_rtcset_is_singleton for emptyset, issuc
+}
+
+theorem emptyset_is_naturalgenbase naturalgenbase(emptyset) {
+  assert emptyset_is_base_for_issuc
+  connect equal(emptyset, emptyset) \wedge \neg(\exists y (issuc(y, emptyset)))
+  apply invoke base_satisfies_regulargenbase for emptyset, issuc, \lambda^P e. equal(e, emptyset)
+  fold for naturalgenbase conclude naturalgenbase(emptyset)
+}
+
+theorem element_of_naturalgenbase_is_naturalgenbase \forall n \forall m (naturalgenbase(n) \wedge issuc(m, n) \to naturalgenbase(m)) {
+  any n, m {
+    assume naturalgenbase(n) \wedge issuc(m, n) {
+      split naturalgenbase(n) \wedge issuc(m, n)
+      expand naturalgenbase(n) for naturalgenbase
+      connect regulargenbase(n, issuc, \lambda^P e. equal(e, emptyset)) \wedge issuc(m, n)
+      apply invoke element_of_regulargenbase_is_regulargenbase for issuc, \lambda^P e. equal(e, emptyset), n, m
+      fold for naturalgenbase conclude naturalgenbase(m)
+    }
+  }
+}
+
+theorem naturalgenbase_wellfounded_induction \forall^P \chi[1] (\forall n (naturalgenbase(n) \wedge \forall m (issuc(m, n) \to \chi(m)) \to \chi(n)) \to \forall n (naturalgenbase(n) \to \chi(n))) {
+  any predicate \chi[1] {
+    assume \forall n (naturalgenbase(n) \wedge \forall m (issuc(m, n) \to \chi(m)) \to \chi(n)) {
+      any n {
+        assume regulargenbase(n, issuc, \lambda^P e. equal(e, emptyset)) \wedge \forall m (issuc(m, n) \to \chi(m)) {
+          split regulargenbase(n, issuc, \lambda^P e. equal(e, emptyset)) \wedge \forall m (issuc(m, n) \to \chi(m))
+          fold for naturalgenbase conclude naturalgenbase(n)
+          connect naturalgenbase(n) \wedge \forall m (issuc(m, n) \to \chi(m))
+          apply invoke \forall n (naturalgenbase(n) \wedge \forall m (issuc(m, n) \to \chi(m)) \to \chi(n)) for n
+        }
+      }
+      apply invoke regulargenbase_wellfounded_induction for issuc, \lambda^P e. equal(e, emptyset), \chi
+      any n {
+        assume naturalgenbase(n) {
+          expand naturalgenbase(n) for naturalgenbase
+          apply invoke \forall n (regulargenbase(n, issuc, \lambda^P e. equal(e, emptyset)) \to \chi(n)) for n
+        }
+      }
+    }
+  }
+}
+
+theorem naturalgenbase_induction \forall^P \chi[1] (\chi(emptyset) \wedge \forall n (naturalgenbase(n) \to (\chi(n) \to \chi(suc(n)))) \to \forall n (naturalgenbase(n) \to \chi(n))) {
+  any predicate \chi[1] {
+    assume \chi(emptyset) \wedge \forall n (naturalgenbase(n) \to (\chi(n) \to \chi(suc(n)))) {
+      split \chi(emptyset) \wedge \forall n (naturalgenbase(n) \to (\chi(n) \to \chi(suc(n))))
+      any n {
+        assume equal(n, emptyset) {
+          substitute \chi(emptyset) for emptyset: n
+        }
+      }
+      any n {
+        assume regulargenbase(n, issuc, \lambda^P e. equal(e, emptyset)) {
+          fold for naturalgenbase conclude naturalgenbase(n)
+          apply invoke \forall n (naturalgenbase(n) \to (\chi(n) \to \chi(suc(n)))) for n
+          assume \chi(n) {
+            invoke \chi(n) \to \chi(suc(n))
+            any m {
+              assume issuc(n, m) {
+                substitute \chi(suc(n)) for suc(n): m
+              }
+            }
+          }
+        }
+      }
+      connect \forall n (equal(n, emptyset) \to \chi(n)) \wedge \forall n (regulargenbase(n, issuc, \lambda^P e. equal(e, emptyset)) \to (\chi(n) \to \forall m (issuc(n, m) \to \chi(m))))
+      apply invoke regulargenbase_induction for issuc, \lambda^P e. equal(e, emptyset), \chi
+      fold for naturalgenbase conclude \forall n (naturalgenbase(n) \to \chi(n))
+    }
+  }
+}
+
+theorem naturalgenbase_is_closed \forall n (naturalgenbase(n) \to closed(n, in)) {
+  apply emptyset_is_closed for in
+  any n {
+    assume naturalgenbase(n) {
+      assume closed(n, in) {
+        apply invoke suc_of_closed_is_closed for n
+      }
+    }
+  }
+  connect closed(emptyset, in) \wedge \forall n (naturalgenbase(n) \to (closed(n, in) \to closed(suc(n), in)))
+  apply invoke naturalgenbase_induction for \lambda^P n. closed(n, in)
+}
+
+theorem naturalgenbase_is_irrefrel \forall n (naturalgenbase(n) \to irrefrel(n, in)) {
+  assert emptyset_is_irrefrel
+  any n {
+    assume naturalgenbase(n) {
+      assume irrefrel(n, in) {
+        apply invoke suc_of_irrefrel_is_irrefrel for n
+      }
+    }
+  }
+  connect irrefrel(emptyset, in) \wedge \forall n (naturalgenbase(n) \to (irrefrel(n, in) \to irrefrel(suc(n), in)))
+  apply invoke naturalgenbase_induction for \lambda^P n. irrefrel(n, in)
+}
+
+theorem naturalgenbase_implies_suc_is_injection \forall n \forall m (naturalgenbase(n) \wedge equal(suc(n), suc(m)) \to equal(n, m)) {
+  any n, m {
+    assume naturalgenbase(n) \wedge equal(suc(n), suc(m)) {
+      split naturalgenbase(n) \wedge equal(suc(n), suc(m))
+      apply invoke naturalgenbase_is_closed for n
+      apply invoke naturalgenbase_is_irrefrel for n
+      connect closed(n, in) \wedge irrefrel(n, in) \wedge equal(suc(n), suc(m))
+      apply invoke closed_irrefrel_implies_suc_is_injection for n, m
+    }
+  }
+}
+
+theorem seg_of_suc_about_issuc_is_singleton \forall n (naturalgenbase(n) \to seg(suc(n), issuc, singleton(n))) {
+  any n {
+    assume naturalgenbase(n) {
+      any n' {
+        assume in(n', singleton(n)) {
+          apply invoke rightward singleton_characterization for n, n'
+          fold for issuc conclude issuc(n, suc(n))
+          substitute issuc(n, suc(n)) for n[1]: n'
+        }
+        assume issuc(n', suc(n)) {
+          connect naturalgenbase(n) \wedge equal(suc(n), suc(n'))
+          apply invoke naturalgenbase_implies_suc_is_injection for n, n'
+          apply singleton_cor1 for n
+          substitute in(n, singleton(n)) for n[1]: n'
+        }
+        connect in(n', singleton(n)) \leftrightarrow issuc(n', suc(n))
+      }
+      fold for seg conclude seg(suc(n), issuc, singleton(n))
+    }
+  }
+}
+
+theorem issuc_is_finitesetlike_on_naturalgenbase finitesetlike(issuc, naturalgenbase) {
+  any n {
+    assume naturalgenbase(n) {
+      expand naturalgenbase(n) for naturalgenbase
+      split 2 regulargenbase(n, issuc, \lambda^P e. equal(e, emptyset))
+      some r such genbase(n, issuc, \lambda^P e. equal(e, emptyset)) {
+        split rtcset(n, issuc, r) \wedge \forall m (in(m, r) \to equal(m, emptyset) \vee \exists l (issuc(l, m)))
+        split 2 rtcset(n, issuc, r)
+        apply invoke \forall m (in(m, r) \to equal(m, emptyset) \vee \exists l (issuc(l, m))) for n
+        divide equal(n, emptyset) \vee \exists m (issuc(m, n))
+          case equal(n, emptyset) {
+            any m {
+              assume in(m, emptyset) {
+                apply emptyset_existence for m
+                contradict in(m, emptyset)
+                explode issuc(m, n)
+              }
+              assume issuc(m, n) {
+                substitute issuc(m, n) for n: emptyset
+                apply in_suc for m
+                substitute in(m, suc(m)) for suc(m): emptyset
+                apply emptyset_existence for m
+                contradict in(m, emptyset)
+                explode in(m, emptyset)
+              }
+              connect in(m, emptyset) \leftrightarrow issuc(m, n)
+            }
+            fold for seg conclude seg(n, issuc, emptyset)
+            assert emptyset_is_finite
+            connect finite(emptyset) \wedge seg(n, issuc, emptyset)
+            lift for emptyset conclude \exists s (finite(s) \wedge seg(n, issuc, s))
+          }
+          case \exists m (issuc(m, n)) {
+            some m such \exists m (issuc(m, n)) {
+              connect naturalgenbase(n) \wedge issuc(m, n)
+              apply invoke element_of_naturalgenbase_is_naturalgenbase for n, m
+              apply invoke naturalgenbase_is_closed for m
+              apply invoke naturalgenbase_is_irrefrel for m
+              connect closed(m, in) \wedge irrefrel(m, in)
+              apply invoke seg_of_suc_about_issuc_is_singleton for m
+              substitute seg(suc(m), issuc, singleton(m)) for suc(m): n
+              assert emptyset_is_finite
+              apply invoke finite_adj for emptyset, m
+              fold for singleton conclude finite(singleton(m))
+              connect finite(singleton(m)) \wedge seg(n, issuc, singleton(m))
+              lift for singleton(m) conclude \exists s (finite(s) \wedge seg(n, issuc, s))
+            }
+          }
+      }
+    }
+  }
+  fold for finitesetlike conclude finitesetlike(issuc, naturalgenbase)
+}
+
+theorem suc_of_naturalgenbase_is_naturalgenbase \forall n (naturalgenbase(n) \to naturalgenbase(suc(n))) {
+  assert issuc_is_finitesetlike_on_naturalgenbase
+  any m {
+    assume regulargenbase(m, issuc, \lambda^P e. equal(e, emptyset)) {
+      fold for naturalgenbase conclude naturalgenbase(m)
+      apply invoke finitesetlike(issuc, naturalgenbase) for m
+    }
+  }
+  fold for finitesetlike conclude finitesetlike(issuc, \lambda^P m. regulargenbase(m, issuc, \lambda^P e. equal(e, emptyset)))
+  apply invoke finitesetlike_implies_regulargenbase_is_hfgenbase for issuc, \lambda^P e. equal(e, emptyset)
+  any n {
+    assume naturalgenbase(n) {
+      expand naturalgenbase(n) for naturalgenbase
+      apply invoke \forall n (regulargenbase(n, issuc, \lambda^P e. equal(e, emptyset)) \to hfgenbase(n, issuc, \lambda^P e. equal(e, emptyset))) for n
+      apply invoke seg_of_suc_about_issuc_is_singleton for n
+      assert emptyset_is_finite
+      apply invoke finite_adj for emptyset, n
+      fold for singleton conclude finite(singleton(n))
+      connect finite(singleton(n)) \wedge seg(suc(n), issuc, singleton(n))
+      lift for singleton(n) conclude \exists s (finite(s) \wedge seg(suc(n), issuc, s))
+      any n' {
+        assume issuc(n', suc(n)) {
+          connect naturalgenbase(n) \wedge equal(suc(n), suc(n'))
+          apply invoke naturalgenbase_implies_suc_is_injection for n, n'
+          substitute hfgenbase(n, issuc, \lambda^P e. equal(e, emptyset)) for n: n'
+        }
+      }
+      fold for issuc conclude issuc(n, suc(n))
+      lift for n conclude \exists u (issuc(u, suc(n)))
+      pad \exists u (issuc(u, suc(n))) conclude equal(suc(n), emptyset) \vee \exists u (issuc(u, suc(n)))
+      connect \exists s (finite(s) \wedge seg(suc(n), issuc, s)) \wedge (equal(suc(n), emptyset) \vee \exists u (issuc(u, suc(n)))) \wedge \forall n' (issuc(n', suc(n)) \to hfgenbase(n', issuc, \lambda^P e. equal(e, emptyset)))
+      apply invoke finite_generation_from_hfgenbase_is_hfgenbase for issuc, \lambda^P e. equal(e, emptyset), suc(n)
+      split hfgenbase(suc(n), issuc, \lambda^P e. equal(e, emptyset))
+      split hf(suc(n), issuc)
+      connect regulargenbase(suc(n), issuc, \lambda^P e. equal(e, emptyset))
+      fold for naturalgenbase conclude naturalgenbase(suc(n))
+    }
+  }
+}
+
+theorem naturalgenbase_is_natural \forall n (naturalgenbase(n) \to natural(n)) {
+  assert emptyset_is_natural
+  any n {
+    assume naturalgenbase(n) {
+      assume natural(n) {
+        apply invoke suc_of_natural_is_natural for n
+      }
+    }
+  }
+  connect natural(emptyset) \wedge \forall n (naturalgenbase(n) \to (natural(n) \to natural(suc(n))))
+  apply invoke naturalgenbase_induction for \lambda^P n. natural(n)
+}
+
+theorem natural_is_naturalgenbase \forall n (natural(n) \to naturalgenbase(n)) {
+  assert emptyset_is_naturalgenbase
+  any n {
+    assume natural(n) {
+      assume naturalgenbase(n) {
+        apply invoke suc_of_naturalgenbase_is_naturalgenbase for n
+      }
+    }
+  }
+  connect naturalgenbase(emptyset) \wedge \forall n (natural(n) \to (naturalgenbase(n) \to naturalgenbase(suc(n))))
+  apply invoke natural_induction for naturalgenbase
+}
+
+theorem natural_iff_naturalgenbase \forall n (natural(n) \leftrightarrow naturalgenbase(n)) {
+  any n {
+    apply natural_is_naturalgenbase for n
+    apply naturalgenbase_is_natural for n
+    connect natural(n) \leftrightarrow naturalgenbase(n)
+  }
+}

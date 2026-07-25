@@ -1,0 +1,402 @@
+include "zfc_hfpower.proof"
+
+theorem base_implies_rtcset_is_singleton \forall x \forall^P \psi[2] (\neg(\exists y (\psi(y, x))) \to rtcset(x, \psi, singleton(x))) {
+  any x, predicate \psi[2] {
+    assume \neg(\exists y (\psi(y, x))) {
+      any x', y {
+        assume in(x', singleton(x)) \wedge \psi(y, x') {
+          split in(x', singleton(x)) \wedge \psi(y, x')
+          apply invoke rightward singleton_characterization for x, x'
+          substitute \psi(y, x') for x': x
+          lift for y conclude \exists y (\psi(y, x))
+          contradict \exists y (\psi(y, x))
+          explode in(y, singleton(x))
+        }
+      }
+      fold for closed conclude closed(singleton(x), \psi)
+      apply singleton_cor1 for x
+      any s {
+        assume closed(s, \psi) \wedge in(x, s) {
+          split 2 closed(s, \psi) \wedge in(x, s)
+          any x' {
+            assume in(x', singleton(x)) {
+              apply invoke rightward singleton_characterization for x, x'
+              substitute in(x, s) for x: x'
+            }
+          }
+          fold for subset conclude subset(singleton(x), s)
+        }
+      }
+      connect rtcset(x, \psi, singleton(x))
+    }
+  }
+}
+
+theorem base_satisfies_regular \forall x \forall^P \psi[2] (\neg(\exists y (\psi(y, x))) \to regular(x, \psi)) {
+  any x, predicate \psi[2] {
+    assume \neg(\exists y (\psi(y, x))) {
+      apply invoke base_implies_rtcset_is_singleton for x, \psi
+      any x' {
+        assume in(x', singleton(x)) {
+          apply invoke rightward singleton_characterization for x, x'
+          deny \psi(x', x') {
+            substitute \psi(x', x') for x': x
+            lift for x conclude \exists y (\psi(y, x))
+            contradict \exists y (\psi(y, x))
+          }
+        }
+      }
+      fold for irrefrel conclude irrefrel(singleton(x), \psi)
+      connect rtcset(x, \psi, singleton(x)) \wedge irrefrel(singleton(x), \psi)
+      lift for singleton(x) conclude hirrefrel(x, \psi)
+      any A {
+        assume subset(A, singleton(x)) \wedge neq(A, emptyset) {
+          split subset(A, singleton(x)) \wedge neq(A, emptyset)
+          apply invoke not_emptyset_has_a_member for A
+          some x' such \exists x' (in(x', A)) {
+            apply invoke subset(A, singleton(x)) for x'
+            apply invoke rightward singleton_characterization for x, x'
+            substitute in(x', A) for x': x
+          }
+          any x' {
+            assume in(x', singleton(x)) {
+              apply invoke rightward singleton_characterization for x, x'
+              substitute in(x, A) for x: x'
+            }
+          }
+          fold for subset conclude subset(singleton(x), A)
+          connect subset(A, singleton(x)) \wedge  subset(singleton(x), A)
+          apply invoke subset_antisymmetry for A, singleton(x)
+          apply element_is_minimal_in_its_singleton for x, \psi
+          substitute minimal(\psi, singleton(x), x) for singleton(x): A
+          lift for x conclude \exists x (minimal(\psi, A, x))
+        }
+      }
+      fold for wellfounded conclude wellfounded(singleton(x), \psi)
+      connect rtcset(x, \psi, singleton(x)) \wedge wellfounded(singleton(x), \psi)
+      lift for singleton(x) conclude hwellfounded(x, \psi)
+      connect regular(x, \psi)
+    }
+  }
+}
+
+theorem regular_internal_induction \forall^P \psi[2] \forall^P \chi[1] \forall x (regular(x, \psi) \to \exists r (rtcset(x, \psi, r) \wedge (\forall y (in(y, r) \wedge \forall z (\psi(z, y) \to \chi(z)) \to \chi(y)) \to \forall y (in(y, r) \to \chi(y))))) {
+  any predicate \psi[2], predicate \chi[1], x {
+    assume regular(x, \psi) {
+      apply invoke rightward regular_iff_existence_of_irrefrel_wellfounded_rtcset for x, \psi
+      some r such \exists r (irrefrel(r, \psi) \wedge wellfounded(r, \psi) \wedge rtcset(x, \psi, r)) {
+        split irrefrel(r, \psi) \wedge wellfounded(r, \psi) \wedge rtcset(x, \psi, r)
+        split 1 rtcset(x, \psi, r)
+        assume \forall y (in(y, r) \wedge \forall z (\psi(z, y) \to \chi(z)) \to \chi(y)) {
+          any y {
+            assume in(y, r) {
+              assume \forall z (\psi(z, y) \to \chi(z)) {
+                connect in(y, r) \wedge \forall z (\psi(z, y) \to \chi(z))
+                apply invoke \forall y (in(y, r) \wedge \forall z (\psi(z, y) \to \chi(z)) \to \chi(y)) for y
+              }
+            }
+          }
+          connect closed(r, \psi) \wedge irrefrel(r, \psi) \wedge wellfounded(r, \psi) \wedge \forall y (in(y, r) \to (\forall z (\psi(z, y) \to \chi(z)) \to \chi(y)))
+          apply invoke wellfounded_induction for \psi, \chi, r
+        }
+        connect rtcset(x, \psi, r) \wedge (\forall y (in(y, r) \wedge \forall z (\psi(z, y) \to \chi(z)) \to \chi(y)) \to \forall y (in(y, r) \to \chi(y)))
+        lift for r conclude \exists r (rtcset(x, \psi, r) \wedge (\forall y (in(y, r) \wedge \forall z (\psi(z, y) \to \chi(z)) \to \chi(y)) \to \forall y (in(y, r) \to \chi(y))))
+      }
+    }
+  }
+}
+
+definition predicate genbase(x, predicate \psi[2], predicate \phi[1]) as \exists r (rtcset(x, \psi, r) \wedge \forall y (in(y, r) \to \phi(y) \vee \exists z (\psi(z, y))))
+
+theorem base_satisfies_genbase \forall x \forall^P \psi[2] \forall^P \phi[1] (\phi(x) \wedge \neg(\exists y (\psi(y, x))) \to genbase(x, \psi, \phi)) {
+  any x, predicate \psi[2], predicate \phi[1] {
+    assume \phi(x) \wedge \neg(\exists y (\psi(y, x))) {
+      split \phi(x) \wedge \neg(\exists y (\psi(y, x)))
+      apply invoke base_implies_rtcset_is_singleton for x, \psi
+      any x' {
+        assume in(x', singleton(x)) {
+          apply invoke rightward singleton_characterization for x, x'
+          substitute \phi(x) for x: x'
+          pad \phi(x') conclude \phi(x') \vee \exists y (\psi(y, x'))
+        }
+      }
+      connect rtcset(x, \psi, singleton(x)) \wedge \forall x' (in(x', singleton(x)) \to \phi(x') \vee \exists y (\psi(y, x')))
+      lift for singleton(x) conclude genbase(x, \psi, \phi)
+    }
+  }
+}
+
+theorem element_of_genbase_is_genbase \forall^P \psi[2] \forall^P \phi[1] \forall x \forall y (genbase(x, \psi, \phi) \wedge \psi(y, x) \to genbase(y, \psi, \phi)) {
+  any predicate \psi[2], predicate \phi[1], x, y {
+    assume genbase(x, \psi, \phi) \wedge \psi(y, x) {
+      split genbase(x, \psi, \phi) \wedge \psi(y, x)
+      some r such genbase(x, \psi, \phi) {
+        split rtcset(x, \psi, r) \wedge \forall a (in(a, r) \to \phi(a) \vee \exists b (\psi(b, a)))
+        split rtcset(x, \psi, r)
+        apply axiom_of_separation for r, \lambda^P z. \forall s (closed(s, \psi) \wedge in(y, s) \to in(z, s))
+        some q such \exists q (sep(r, \lambda^P z. \forall s (closed(s, \psi) \wedge in(y, s) \to in(z, s)), q)) {
+          any u, v {
+            assume in(u, q) \wedge \psi(v, u) {
+              split in(u, q) \wedge \psi(v, u)
+              apply invoke rightward sep(r, \lambda^P z. \forall s (closed(s, \psi) \wedge in(y, s) \to in(z, s)), q) for u
+              split in(u, r) \wedge \forall s (closed(s, \psi) \wedge in(y, s) \to in(u, s))
+              connect in(u, r) \wedge \psi(v, u)
+              apply invoke closed(r, \psi) for u, v
+              any s {
+                assume closed(s, \psi) \wedge in(y, s) {
+                  split 1 closed(s, \psi) \wedge in(y, s)
+                  apply invoke \forall s (closed(s, \psi) \wedge in(y, s) \to in(u, s)) for s
+                  connect in(u, s) \wedge \psi(v, u)
+                  apply invoke closed(s, \psi) for u, v
+                }
+              }
+              connect in(v, r) \wedge \forall s (closed(s, \psi) \wedge in(y, s) \to in(v, s))
+              apply invoke leftward sep(r, \lambda^P z. \forall s (closed(s, \psi) \wedge in(y, s) \to in(z, s)), q) for v
+            }
+          }
+          fold for closed conclude closed(q, \psi)
+          connect in(x, r) \wedge \psi(y, x)
+          apply invoke closed(r, \psi) for x, y
+          any s {
+            assume closed(s, \psi) \wedge in(y, s) {
+              split 2 closed(s, \psi) \wedge in(y, s)
+            }
+          }
+          connect in(y, r) \wedge \forall s (closed(s, \psi) \wedge in(y, s) \to in(y, s))
+          apply invoke leftward sep(r, \lambda^P z. \forall s (closed(s, \psi) \wedge in(y, s) \to in(z, s)), q) for y
+          any s {
+            assume closed(s, \psi) \wedge in(y, s) {
+              any u {
+                assume in(u, q) {
+                  apply invoke rightward sep(r, \lambda^P z. \forall s (closed(s, \psi) \wedge in(y, s) \to in(z, s)), q) for u
+                  split in(u, r) \wedge \forall s (closed(s, \psi) \wedge in(y, s) \to in(u, s))
+                  apply invoke \forall s (closed(s, \psi) \wedge in(y, s) \to in(u, s)) for s
+                }
+              }
+              fold for subset conclude subset(q, s)
+            }
+          }
+          connect rtcset(y, \psi, q)
+          apply invoke sep_is_subset for r, \lambda^P z. \forall s (closed(s, \psi) \wedge in(y, s) \to in(z, s)), q
+          any a {
+            assume in(a, q) {
+              apply invoke rightward sep(r, \lambda^P z. \forall s (closed(s, \psi) \wedge in(y, s) \to in(z, s)), q) for a
+              split in(a, r) \wedge \forall s (closed(s, \psi) \wedge in(y, s) \to in(a, s))
+              apply invoke \forall a (in(a, r) \to \phi(a) \vee \exists b (\psi(b, a))) for a
+            }
+          }
+          connect rtcset(y, \psi, q) \wedge \forall a (in(a, q) \to \phi(a) \vee \exists b (\psi(b, a)))
+          lift for q conclude genbase(y, \psi, \phi)
+        }
+      }
+    }
+  }
+}
+
+theorem generation_from_genbase_is_genbase \forall^P \psi[2] \forall^P \phi[1] \forall Y ((\phi(Y) \vee \exists u (\psi(u, Y))) \wedge \forall y (\psi(y, Y) \to genbase(y, \psi, \phi)) \wedge \exists S \exists Z \exists W \exists V (rtcsetstep(\psi, Y, S, Z, W, V)) \to genbase(Y, \psi, \phi)) {
+  any predicate \psi[2], predicate \phi[1], Y {
+    assume (\phi(Y) \vee \exists u (\psi(u, Y))) \wedge \forall y (\psi(y, Y) \to genbase(y, \psi, \phi)) \wedge \exists S \exists Z \exists W \exists V (rtcsetstep(\psi, Y, S, Z, W, V)) {
+      split (\phi(Y) \vee \exists u (\psi(u, Y))) \wedge \forall y (\psi(y, Y) \to genbase(y, \psi, \phi)) \wedge \exists S \exists Z \exists W \exists V (rtcsetstep(\psi, Y, S, Z, W, V))
+      some S, Z, W, V such \exists S \exists Z \exists W \exists V (rtcsetstep(\psi, Y, S, Z, W, V)) {
+        split rtcsetstep(\psi, Y, S, Z, W, V)
+        apply invoke rtcset_is_cup_of_itself_and_bigcup_of_rtcset_of_element for \psi, Y, S, Z, W, V
+        any v {
+          assume in(v, V) {
+            substitute in(v, V) for V: adj(W, Y)
+            apply invoke rightward adj_existence for W, Y, v
+            divide in(v, W) \vee equal(v, Y)
+              case in(v, W) {
+                apply invoke rightward bigcup(Z, W) for v
+                some z such \exists z (in(v, z) \wedge in(z, Z)) {
+                  split in(v, z) \wedge in(z, Z)
+                  apply invoke rightward replacement(S, \lambda^P y, z. rtcset(y, \psi, z), Z) for z
+                  some y such \exists y (in(y, S) \wedge rtcset(y, \psi, z)) {
+                    split in(y, S) \wedge rtcset(y, \psi, z)
+                    apply invoke rightward seg(Y, \psi, S) for y
+                    apply invoke \forall y (\psi(y, Y) \to genbase(y, \psi, \phi)) for y
+                    some z' such genbase(y, \psi, \phi) {
+                      split rtcset(y, \psi, z') \wedge \forall v (in(v, z') \to \phi(v) \vee \exists u (\psi(u, v)))
+                      connect rtcset(y, \psi, z) \wedge rtcset(y, \psi, z')
+                      apply invoke rtcset_is_unique for y, \psi, z, z'
+                      substitute \forall v (in(v, z') \to \phi(v) \vee \exists u (\psi(u, v))) for z': z
+                      apply invoke \forall v (in(v, z) \to \phi(v) \vee \exists u (\psi(u, v))) for v
+                    }
+                  }
+                }
+              }
+              case equal(v, Y) {
+                substitute \phi(Y) \vee \exists u (\psi(u, Y)) for Y: v
+              }
+          }
+        }
+        connect rtcset(Y, \psi, V) \wedge \forall v (in(v, V) \to \phi(v) \vee \exists u (\psi(u, v)))
+        lift for V conclude genbase(Y, \psi, \phi)
+      }
+    }
+  }
+}
+
+definition predicate regulargenbase(x, predicate \psi[2], predicate \phi[1]) as regular(x, \psi) \wedge genbase(x, \psi, \phi)
+
+theorem base_satisfies_regulargenbase \forall x \forall^P \psi[2] \forall^P \phi[1] (\phi(x) \wedge \neg(\exists y (\psi(y, x))) \to regulargenbase(x, \psi, \phi)) {
+  any x, predicate \psi[2], predicate \phi[1] {
+    assume \phi(x) \wedge \neg(\exists y (\psi(y, x))) {
+      split 2 \phi(x) \wedge \neg(\exists y (\psi(y, x)))
+      apply invoke base_satisfies_regular for x, \psi
+      apply invoke base_satisfies_genbase for x, \psi, \phi
+      connect regulargenbase(x, \psi, \phi)
+    }
+  }
+}
+
+
+theorem element_of_regulargenbase_is_regulargenbase \forall^P \psi[2] \forall^P \phi[1] \forall x \forall y (regulargenbase(x, \psi, \phi) \wedge \psi(y, x) \to regulargenbase(y, \psi, \phi)) {
+  any predicate \psi[2], predicate \phi[1], x, y {
+    assume regulargenbase(x, \psi, \phi) \wedge \psi(y, x) {
+      split regulargenbase(x, \psi, \phi) \wedge \psi(y, x)
+      split regulargenbase(x, \psi, \phi)
+      connect regular(x, \psi) \wedge \psi(y, x)
+      apply invoke element_of_regular_is_regular for x, \psi, y
+      connect genbase(x, \psi, \phi) \wedge \psi(y, x)
+      apply invoke element_of_genbase_is_genbase for \psi, \phi, x, y
+      connect regulargenbase(y, \psi, \phi)
+    }
+  }
+}
+
+theorem regulargenbase_iff_existence_of_irrefrel_wellfounded_rtcset_genbase \forall x \forall^P \psi[2] \forall^P \phi[1] (regulargenbase(x, \psi, \phi) \leftrightarrow \exists r (irrefrel(r, \psi) \wedge wellfounded(r, \psi) \wedge rtcset(x, \psi, r) \wedge \forall y (in(y, r) \to \phi(y) \vee \exists z (\psi(z, y))))) {
+  any x, predicate \psi[2], predicate \phi[1] {
+    assume regulargenbase(x, \psi, \phi) {
+      split regulargenbase(x, \psi, \phi)
+      apply invoke rightward regular_iff_existence_of_irrefrel_wellfounded_rtcset for x, \psi
+      some r such \exists r (irrefrel(r, \psi) \wedge wellfounded(r, \psi) \wedge rtcset(x, \psi, r)) {
+        split irrefrel(r, \psi) \wedge wellfounded(r, \psi) \wedge rtcset(x, \psi, r)
+        some r' such genbase(x, \psi, \phi) {
+          split rtcset(x, \psi, r') \wedge \forall y (in(y, r') \to \phi(y) \vee \exists z (\psi(z, y)))
+          connect rtcset(x, \psi, r) \wedge rtcset(x, \psi, r')
+          apply invoke rtcset_is_unique for x, \psi, r, r'
+          substitute \forall y (in(y, r') \to \phi(y) \vee \exists z (\psi(z, y))) for r': r
+          connect irrefrel(r, \psi) \wedge wellfounded(r, \psi) \wedge rtcset(x, \psi, r) \wedge \forall y (in(y, r) \to \phi(y) \vee \exists z (\psi(z, y)))
+          lift for r conclude \exists r (irrefrel(r, \psi) \wedge wellfounded(r, \psi) \wedge rtcset(x, \psi, r) \wedge \forall y (in(y, r) \to \phi(y) \vee \exists z (\psi(z, y))))
+        }
+      }
+    }
+    assume \exists r (irrefrel(r, \psi) \wedge wellfounded(r, \psi) \wedge rtcset(x, \psi, r)  \wedge \forall y (in(y, r) \to \phi(y) \vee \exists z (\psi(z, y)))) {
+      some r such \exists r (irrefrel(r, \psi) \wedge wellfounded(r, \psi) \wedge rtcset(x, \psi, r)  \wedge \forall y (in(y, r) \to \phi(y) \vee \exists z (\psi(z, y)))) {
+        split irrefrel(r, \psi) \wedge wellfounded(r, \psi) \wedge rtcset(x, \psi, r) \wedge \forall y (in(y, r) \to \phi(y) \vee \exists z (\psi(z, y)))
+        connect irrefrel(r, \psi) \wedge wellfounded(r, \psi) \wedge rtcset(x, \psi, r)
+        lift for r conclude \exists r (irrefrel(r, \psi) \wedge wellfounded(r, \psi) \wedge rtcset(x, \psi, r))
+        apply invoke leftward regular_iff_existence_of_irrefrel_wellfounded_rtcset for x, \psi
+        connect rtcset(x, \psi, r) \wedge \forall y (in(y, r) \to \phi(y) \vee \exists z (\psi(z, y)))
+        lift for r conclude genbase(x, \psi, \phi)
+        connect regulargenbase(x, \psi, \phi)
+      }
+    }
+    connect regulargenbase(x, \psi, \phi) \leftrightarrow \exists r (irrefrel(r, \psi) \wedge wellfounded(r, \psi) \wedge rtcset(x, \psi, r) \wedge \forall y (in(y, r) \to \phi(y) \vee \exists z (\psi(z, y))))
+  }
+}
+
+theorem regulargenbase_wellfounded_induction \forall^P \psi[2] \forall^P \phi[1] \forall^P \chi[1] ((\forall x (regulargenbase(x, \psi, \phi) \wedge (\forall y (\psi(y, x) \to \chi(y))) \to \chi(x))) \to \forall x (regulargenbase(x, \psi, \phi) \to \chi(x))) {
+  any predicate \psi[2], predicate \phi[1], predicate \chi[1] {
+    assume \forall x (regulargenbase(x, \psi, \phi) \wedge \forall y (\psi(y, x) \to \chi(y)) \to \chi(x)) {
+      any x {
+        assume regular(x, \psi) \wedge \forall y (\psi(y, x) \to (regulargenbase(y, \psi, \phi) \to \chi(y))) {
+          split 2 regular(x, \psi) \wedge \forall y (\psi(y, x) \to (regulargenbase(y, \psi, \phi) \to \chi(y)))
+          assume regulargenbase(x, \psi, \phi) {
+            any y {
+              assume \psi(y, x) {
+                apply invoke \forall y (\psi(y, x) \to (regulargenbase(y, \psi, \phi) \to \chi(y))) for y
+                connect regulargenbase(x, \psi, \phi) \wedge \psi(y, x)
+                apply invoke element_of_regulargenbase_is_regulargenbase for \psi, \phi, x, y
+                invoke regulargenbase(y, \psi, \phi) \to \chi(y)
+              }
+            }
+            connect regulargenbase(x, \psi, \phi) \wedge \forall y (\psi(y, x) \to \chi(y))
+            apply invoke \forall x (regulargenbase(x, \psi, \phi) \wedge \forall y (\psi(y, x) \to \chi(y)) \to \chi(x)) for x
+          }
+        }
+      }
+      apply invoke regular_induction for \psi, \lambda^P x. (regulargenbase(x, \psi, \phi) \to \chi(x))
+      any x {
+        assume regulargenbase(x, \psi, \phi) {
+          split 1 regulargenbase(x, \psi, \phi)
+          apply invoke \forall x (regular(x, \psi) \to (regulargenbase(x, \psi, \phi) \to \chi(x))) for x
+          invoke regulargenbase(x, \psi, \phi) \to \chi(x)
+        }
+      }
+    }
+  }
+}
+
+theorem regulargenbase_induction \forall^P \psi[2] \forall^P \phi[1] \forall^P \chi[1] (\forall x (\phi(x) \to \chi(x)) \wedge \forall x (regulargenbase(x, \psi, \phi) \to (\chi(x) \to \forall y (\psi(x, y) \to \chi(y)))) \to \forall x (regulargenbase(x, \psi, \phi) \to \chi(x))) {
+  any predicate \psi[2], predicate \phi[1], predicate \chi[1] {
+    assume \forall x (\phi(x) \to \chi(x)) \wedge \forall x (regulargenbase(x, \psi, \phi) \to (\chi(x) \to \forall y (\psi(x, y) \to \chi(y)))) {
+      split \forall x (\phi(x) \to \chi(x)) \wedge \forall x (regulargenbase(x, \psi, \phi) \to (\chi(x) \to \forall y (\psi(x, y) \to \chi(y))))
+      any x {
+        assume regulargenbase(x, \psi, \phi) \wedge \forall y (\psi(y, x) \to \chi(y)) {
+          split regulargenbase(x, \psi, \phi) \wedge \forall y (\psi(y, x) \to \chi(y))
+          split regulargenbase(x, \psi, \phi)
+          some r such genbase(x, \psi, \phi) {
+            split rtcset(x, \psi, r) \wedge \forall y (in(y, r) \to \phi(y) \vee \exists z (\psi(z, y)))
+            split rtcset(x, \psi, r)
+            apply invoke \forall y (in(y, r) \to \phi(y) \vee \exists z (\psi(z, y))) for x
+            divide \phi(x) \vee \exists z (\psi(z, x))
+              case \phi(x) {
+                apply invoke \forall x (\phi(x) \to \chi(x)) for x
+              }
+              case \exists z (\psi(z, x)) {
+                some z such \exists z (\psi(z, x)) {
+                  connect regulargenbase(x, \psi, \phi) \wedge \psi(z, x)
+                  apply invoke element_of_regulargenbase_is_regulargenbase for \psi, \phi, x, z
+                  apply invoke \forall y (\psi(y, x) \to \chi(y)) for z
+                  apply invoke \forall x (regulargenbase(x, \psi, \phi) \to (\chi(x) \to \forall y (\psi(x, y) \to \chi(y)))) for z
+                  invoke \chi(z) \to \forall y (\psi(z, y) \to \chi(y))
+                  apply invoke \forall y (\psi(z, y) \to \chi(y)) for x
+                }
+              }
+          }
+        }
+      }
+      apply invoke regulargenbase_wellfounded_induction for \psi, \phi, \chi
+    }
+  }
+}
+
+definition predicate hfgenbase(x, predicate \psi[2], predicate \phi[1]) as hf(x, \psi) \wedge genbase(x, \psi, \phi)
+
+theorem finite_generation_from_hfgenbase_is_hfgenbase \forall^P \psi[2] \forall^P \phi[1] \forall Y (\exists S (finite(S) \wedge seg(Y, \psi, S)) \wedge (\phi(Y) \vee \exists u (\psi(u, Y))) \wedge \forall y (\psi(y, Y) \to hfgenbase(y, \psi, \phi)) \to hfgenbase(Y, \psi, \phi)) {
+  any predicate \psi[2], predicate \phi[1], Y {
+    assume \exists S (finite(S) \wedge seg(Y, \psi, S)) \wedge (\phi(Y) \vee \exists u (\psi(u, Y))) \wedge \forall y (\psi(y, Y) \to hfgenbase(y, \psi, \phi)) {
+      split \exists S (finite(S) \wedge seg(Y, \psi, S)) \wedge (\phi(Y) \vee \exists u (\psi(u, Y))) \wedge \forall y (\psi(y, Y) \to hfgenbase(y, \psi, \phi))
+      any y {
+        assume \psi(y, Y) {
+          apply invoke \forall y (\psi(y, Y) \to hfgenbase(y, \psi, \phi)) for y
+          split 1 hfgenbase(y, \psi, \phi)
+        }
+      }
+      connect \exists S (finite(S) \wedge seg(Y, \psi, S)) \wedge \forall y (\psi(y, Y) \to hf(y, \psi))
+      apply invoke finite_generation_of_hf_is_hf for \psi, Y
+      split hf(Y, \psi)
+      any y {
+        assume \psi(y, Y) {
+          apply invoke \forall y (\psi(y, Y) \to hfgenbase(y, \psi, \phi)) for y
+          split 2 hfgenbase(y, \psi, \phi)
+        }
+      }
+      any y {
+        assume \psi(y, Y) {
+          apply invoke \forall y (\psi(y, Y) \to hfgenbase(y, \psi, \phi)) for y
+          split 1 hfgenbase(y, \psi, \phi)
+          split 2 hf(y, \psi)
+        }
+      }
+      connect \exists S (finite(S) \wedge seg(Y, \psi, S)) \wedge \forall y (\psi(y, Y) \to hfcore(y, \psi))
+      apply invoke finite_generation_of_hfcore_is_hfcore for \psi, Y
+      split 2 hfcore(Y, \psi) \wedge \exists S \exists Z \exists W \exists V (rtcsetstep(\psi, Y, S, Z, W, V))
+      connect (\phi(Y) \vee \exists u (\psi(u, Y))) \wedge \forall y (\psi(y, Y) \to genbase(y, \psi, \phi)) \wedge \exists S \exists Z \exists W \exists V (rtcsetstep(\psi, Y, S, Z, W, V))
+      apply invoke generation_from_genbase_is_genbase for \psi, \phi, Y
+      connect regulargenbase(Y, \psi, \phi)
+      connect hfgenbase(Y, \psi, \phi)
+    }
+  }
+}

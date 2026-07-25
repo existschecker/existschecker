@@ -1,0 +1,58 @@
+include "zfc_genbase.proof"
+
+theorem hfcore_step \forall^P \psi[2] \forall x (\exists s (finite(s) \wedge seg(x, \psi, s)) \wedge \forall y (\psi(y, x) \to hfcore(y, \psi)) \to hfcore(x, \psi)) {
+  any predicate \psi[2], x {
+    assume \exists s (finite(s) \wedge seg(x, \psi, s)) \wedge \forall y (\psi(y, x) \to hfcore(y, \psi)) {
+      apply invoke finite_generation_of_hfcore_is_hfcore for \psi, x
+      split 1 hfcore(x, \psi) \wedge \exists S \exists Z \exists W \exists V (rtcsetstep(\psi, x, S, Z, W, V))
+    }
+  }
+}
+
+definition predicate finitesetlike(predicate \psi[2], predicate \chi[1]) as \forall x (\chi(x) \to \exists s (finite(s) \wedge seg(x, \psi, s)))
+
+theorem finitesetlike_implies_regular_is_hf \forall^P \psi[2] (finitesetlike(\psi, \lambda^P x. regular(x, \psi)) \to \forall x (regular(x, \psi) \to hf(x, \psi))) {
+  any predicate \psi[2] {
+    assume finitesetlike(\psi, \lambda^P x. regular(x, \psi)) {
+      any x {
+        assume regular(x, \psi) \wedge \forall y (\psi(y, x) \to hfcore(y, \psi)) {
+          split regular(x, \psi) \wedge \forall y (\psi(y, x) \to hfcore(y, \psi))
+          apply invoke finitesetlike(\psi, \lambda^P x. regular(x, \psi)) for x
+          connect \exists s (finite(s) \wedge seg(x, \psi, s)) \wedge \forall y (\psi(y, x) \to hfcore(y, \psi))
+          apply invoke hfcore_step for \psi, x
+        }
+      }
+      apply invoke regular_induction for \psi, \lambda^P x. hfcore(x, \psi)
+      any x {
+        assume regular(x, \psi) {
+          apply invoke \forall x (regular(x, \psi) \to hfcore(x, \psi)) for x
+          connect hf(x, \psi)
+        }
+      }
+    }
+  }
+}
+
+theorem finitesetlike_implies_regulargenbase_is_hfgenbase \forall^P \psi[2] \forall^P \phi[1] (finitesetlike(\psi, \lambda^P x. regulargenbase(x, \psi, \phi)) \to \forall x (regulargenbase(x, \psi, \phi) \to hfgenbase(x, \psi, \phi))) {
+  any predicate \psi[2], predicate \phi[1] {
+    assume finitesetlike(\psi, \lambda^P x. regulargenbase(x, \psi, \phi)) {
+      any x {
+        assume regulargenbase(x, \psi, \phi) \wedge \forall y (\psi(y, x) \to hfcore(y, \psi)) {
+          split regulargenbase(x, \psi, \phi) \wedge \forall y (\psi(y, x) \to hfcore(y, \psi))
+          apply invoke finitesetlike(\psi, \lambda^P x. regulargenbase(x, \psi, \phi)) for x
+          connect \exists s (finite(s) \wedge seg(x, \psi, s)) \wedge \forall y (\psi(y, x) \to hfcore(y, \psi))
+          apply invoke hfcore_step for \psi, x
+        }
+      }
+      apply invoke regulargenbase_wellfounded_induction for \psi, \phi, \lambda^P x. hfcore(x, \psi)
+      any x {
+        assume regulargenbase(x, \psi, \phi) {
+          split regulargenbase(x, \psi, \phi)
+          apply invoke \forall x (regulargenbase(x, \psi, \phi) \to hfcore(x, \psi)) for x
+          connect hf(x, \psi)
+          connect hfgenbase(x, \psi, \phi)
+        }
+      }
+    }
+  }
+}
