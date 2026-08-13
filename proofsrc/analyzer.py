@@ -12,6 +12,7 @@ from ast_types import Context, DeclarationUnit, Workspace, Declaration, Include,
 from splitter import split
 from to_html import Renderer
 from parser import Parser
+from name_resolver import NameResolver
 from checker import Checker
 
 HTML_TEMPLATE = """<!doctype html>
@@ -154,7 +155,8 @@ def analyze_diff(all_units: list[DeclarationUnit], start_index: int, context: Co
             return None
         unit = all_units[i]
         working_context = context.copy()
-        Parser(unit).parse_unit(working_context)
+        parsed_unit = Parser(unit).parse_unit()
+        NameResolver(unit, parsed_unit).resolve_unit(working_context)
         if Checker(unit).check_unit(working_context):
             context = working_context
         unit.context = context.copy()
