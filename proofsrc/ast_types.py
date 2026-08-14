@@ -763,34 +763,27 @@ class DeclarationContextNameSpace:
 
 @dataclass
 class Context:
-    decl: DeclarationContextNameSpace
     ctrl: ControlContext
     form: FormulaContext
 
     @staticmethod
     def init() -> "Context":
-        return Context(DeclarationContextNameSpace.init(), ControlContext.init(), FormulaContext.init())
-
-    def add_decl(self, path: str, declaration: Declaration):
-        self.decl.add(path, declaration)
+        return Context(ControlContext.init(), FormulaContext.init())
 
     def copy_ctrl(self):
-        return Context(self.decl, self.ctrl.copy(), self.form)
+        return Context(self.ctrl.copy(), self.form)
 
     def add_ctrl(self, new_vars: list[Var], new_formulas: list[Bottom | Formula], new_pred_tmpls: list[PredTemplate], new_fun_tmpls: list[FunTemplate], new_symbols: list[Var | PredTemplate | FunTemplate]):
-        return Context(self.decl, self.ctrl.add(new_vars, new_formulas, new_pred_tmpls, new_fun_tmpls, new_symbols), self.form)
+        return Context(self.ctrl.add(new_vars, new_formulas, new_pred_tmpls, new_fun_tmpls, new_symbols), self.form)
 
     def copy_form(self):
-        return Context(self.decl, self.ctrl, self.form.copy())
+        return Context(self.ctrl, self.form.copy())
 
     def add_form(self, new_vars: list[Var], new_pred_tmpls: list[PredTemplate], new_fun_tmpls: list[FunTemplate]):
-        return Context(self.decl, self.ctrl, self.form.add(new_vars, new_pred_tmpls, new_fun_tmpls))
+        return Context(self.ctrl, self.form.add(new_vars, new_pred_tmpls, new_fun_tmpls))
 
     def copy(self):
-        return Context(self.decl.copy(), self.ctrl.copy(), self.form.copy())
-
-    def merge(self, context: "Context") -> None:
-        self.decl.merge(context.decl)
+        return Context(self.ctrl.copy(), self.form.copy())
 
 @dataclass
 class Include:
@@ -811,7 +804,7 @@ class DeclarationUnit:
     nodes: list[Include | Declaration | Control | Formula | Term | RefFact] = field(default_factory=list[Include | Declaration | Control | Formula | Term | RefFact])
     token_to_node: dict[int, Include | Declaration | Control | Formula | Term | RefFact] = field(default_factory=dict[int, Include | Declaration | Control | Formula | Term | RefFact])
     token_to_control: dict[int, Control] = field(default_factory=dict[int, Control])
-    context: Context = field(default_factory=Context.init)
+    decl: DeclarationContextNameSpace = field(default_factory=DeclarationContextNameSpace.init)
     diagnostics: list[lsp.Diagnostic] = field(default_factory=list[lsp.Diagnostic])
     decl_refs: dict[str, list[Token]] = field(default_factory=dict[str, list[Token]])
     ctrl_defs: dict[int, int] = field(default_factory=dict[int, int])
@@ -823,7 +816,7 @@ class DeclarationUnit:
         self.nodes = old.nodes
         self.token_to_node = old.token_to_node
         self.token_to_control = old.token_to_control
-        self.context = old.context
+        self.decl = old.decl
         self.diagnostics = old.diagnostics
         self.decl_refs = old.decl_refs
         self.ctrl_defs = old.ctrl_defs

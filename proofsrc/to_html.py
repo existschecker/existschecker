@@ -1,6 +1,6 @@
 from datetime import datetime
 from html import escape
-from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, Context, DefConExist, DefConUniq, DefFunExist, DefFunUniq, AtomicFormula, Compound, Control, Declaration, Bottom, Formula, Term, Var, Include, Assert, Fold, PredTemplate, RefDefPred, RefDefFunTerm, InvalidDeclaration, InvalidControl, RefFact, RefEquality, RefPrimPred, RefDefCon, RefDefFun, RenderError
+from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, DefConExist, DefConUniq, DefFunExist, DefFunUniq, AtomicFormula, Compound, Control, Declaration, Bottom, Formula, Term, Var, Include, Assert, Fold, PredTemplate, RefDefPred, RefDefFunTerm, InvalidDeclaration, InvalidControl, RefFact, RefEquality, RefPrimPred, RefDefCon, RefDefFun, RenderError, DeclarationContextNameSpace
 from svg import output_svg
 from typing import Sequence, Mapping, TypeVar
 from formatter import ExprFormatter
@@ -54,8 +54,8 @@ SVG_HEAD = """
 """
 
 class Renderer:
-    def __init__(self, context: Context, use_svg: bool = False):
-        self.context = context
+    def __init__(self, decl: DeclarationContextNameSpace, use_svg: bool = False):
+        self.decl = decl
         if use_svg:
             self.render_expr = self.render_expr_svg
             self.render_expr_list = self.render_expr_list_svg
@@ -87,7 +87,7 @@ class Renderer:
         if isinstance(node, RefFact):
             return self.render_identifier(node)
         else:
-            return escape(f"\\({ExprFormatter(self.context, "tex").pretty_expr(node)}\\)")
+            return escape(f"\\({ExprFormatter(self.decl, "tex").pretty_expr(node)}\\)")
 
     def render_expr_list_mathjax(self, expr_list: Sequence[RefFact | Bottom | Formula | Term]) -> str:
         return ", ".join(self.render_expr_mathjax(expr) for expr in expr_list)
@@ -95,7 +95,7 @@ class Renderer:
     T_Key = TypeVar("T_Key", RefFact, Var)
 
     def render_expr_dict_mathjax(self, expr_dict: Mapping[T_Key, Term]) -> str:
-        parts = [f"{escape(f"\\({ExprFormatter(self.context, "tex").pretty_expr(k)}\\)")}:{escape(f"\\({ExprFormatter(self.context, "tex").pretty_expr(v)}\\)")}" for k, v in expr_dict.items()]
+        parts = [f"{escape(f"\\({ExprFormatter(self.decl, "tex").pretty_expr(k)}\\)")}:{escape(f"\\({ExprFormatter(self.decl, "tex").pretty_expr(v)}\\)")}" for k, v in expr_dict.items()]
         return ",".join(parts)
 
     def render_tex_mathjax(self, tex: list[str]):
@@ -108,7 +108,7 @@ class Renderer:
         if isinstance(node, RefFact):
             return self.render_identifier(node)
         else:
-            latex_code = ExprFormatter(self.context, "tex").pretty_expr(node)
+            latex_code = ExprFormatter(self.decl, "tex").pretty_expr(node)
             svg_path = output_svg(latex_code)
             return self.img_tag(svg_path, latex_code)
 
@@ -604,7 +604,7 @@ class Renderer:
                         self.render_expr(node.fact),
                         self.render_keyword("for"),
                         env_parts]
-        equality = self.context.decl.get_equality()
+        equality = self.decl.get_equality()
         if equality is None:
             raise RenderError("context.equality is None")
         header_parts_jp = [self.bullet,
@@ -728,12 +728,12 @@ class Renderer:
         content_html = f"<div class='block-content'>{body_html}</div>"
         return f"  <div class='block'>{header_html}{proofinfo_html}{content_html}</div>"
 
-def to_html(ast: list[Include | Declaration], context: Context, title: str, use_svg: bool) -> tuple[str, bool]:
+def to_html(ast: list[Include | Declaration], decl: DeclarationContextNameSpace, title: str, use_svg: bool) -> tuple[str, bool]:
     error_found = False
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     parts: list[str] = []
     for node in ast:
-        parts.append(Renderer(context, use_svg).render_node(node))
+        parts.append(Renderer(decl, use_svg).render_node(node))
         if isinstance(node, Declaration) and node.proofinfo.status == "❌Failed":
             error_found = True
             break
@@ -767,7 +767,7 @@ if __name__ == "__main__":
                 continue
             name = os.path.splitext(os.path.basename(file))[0]
             title = f"{name}_checker_{mode}"
-            checker_html, error_found = to_html([unit.ast for unit in all_units if unit.ast is not None], all_units[-1].context, title, mode == "svg")
+            checker_html, error_found = to_html([unit.ast for unit in all_units if unit.ast is not None], all_units[-1].decl, title, mode == "svg")
             f = open(os.path.join("html", f"{title}.html"), 'w', encoding='utf-8')
             f.write(checker_html)
             f.close()

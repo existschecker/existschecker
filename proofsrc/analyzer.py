@@ -8,7 +8,7 @@ from typing import Sequence
 
 from dependency import DependencyResolver
 from lexer import KEYWORDS, STRINGS, Token
-from ast_types import Context, DeclarationUnit, Workspace, Declaration, Include, Control, Formula, Term, RefFact, RefDefCon, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, RefEquality, PredLambda, FunLambda, FormatError, RenderError, Bottom
+from ast_types import DeclarationUnit, Workspace, Declaration, Include, Control, Formula, Term, RefFact, RefDefCon, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, RefEquality, PredLambda, FunLambda, FormatError, RenderError, Bottom, DeclarationContextNameSpace
 from splitter import split
 from to_html import Renderer
 from parser import Parser
@@ -59,8 +59,8 @@ def get_hover(node: Include | Declaration | Control | Formula | Term | RefFact) 
     else:
         return node.__class__.__name__
 
-def render_statement(node: Declaration | Control, context: Context) -> str:
-    renderer = Renderer(context)
+def render_statement(node: Declaration | Control, decl: DeclarationContextNameSpace) -> str:
+    renderer = Renderer(decl)
     method_name = f"render_{node.__class__.__name__.lower()}"
     renderer_method = getattr(renderer, method_name, None)
     if renderer_method is None:
@@ -77,17 +77,17 @@ def render_expr_list(renderer: Renderer, formulas: Sequence[RefFact | Bottom | F
     except (FormatError, RenderError) as e:
         return f"{e.__class__.__name__}: {e.msg}"
 
-def render_proofinfo(node: Include | Declaration | Control, context: Context) -> str:
+def render_proofinfo(node: Include | Declaration | Control, decl: DeclarationContextNameSpace) -> str:
     if isinstance(node, Declaration):
-        statement = render_statement(node, context)
+        statement = render_statement(node, decl)
         return f"""<div class="statement">
     <span class="status-icon">{node.proofinfo.status}</span>
     {statement}
 </div>
 """
     elif isinstance(node, Control):
-        statement = render_statement(node, context)
-        renderer = Renderer(context)
+        statement = render_statement(node, decl)
+        renderer = Renderer(decl)
         context_symbols = render_expr_list(renderer, node.proofinfo.ctrl_ctx.symbols)
         context_formulas = render_expr_list(renderer, node.proofinfo.ctrl_ctx.formulas)
         premises = render_expr_list(renderer, node.proofinfo.premises)
@@ -132,36 +132,36 @@ def tokens_to_locations(tokens: list[Token]) -> list[lsp.Location]:
             locations.append(location)
     return locations
 
-def prepare_context(file: str, resolver: DependencyResolver, file_final_contexts: dict[str, Context]) -> Context:
-    context = Context.init()
+def prepare_context(file: str, resolver: DependencyResolver, file_final_decls: dict[str, DeclarationContextNameSpace]) -> DeclarationContextNameSpace:
+    decl = DeclarationContextNameSpace.init()
     for dep in resolver.dependencies[file]:
-        context.merge(file_final_contexts[dep])
-    return context
+        decl.merge(file_final_decls[dep])
+    return decl
 
-def restore_cache(all_units: list[DeclarationUnit], old_all_units: list[DeclarationUnit], context: Context) -> tuple[Context, int]:
+def restore_cache(all_units: list[DeclarationUnit], old_all_units: list[DeclarationUnit], decl: DeclarationContextNameSpace) -> tuple[DeclarationContextNameSpace, int]:
     start_index = 0
     for i in range(min(len(all_units), len(old_all_units))):
         if all_units[i].hash == old_all_units[i].hash:
             all_units[i].restore_from(old_all_units[i])
-            context = all_units[i].context
+            decl = all_units[i].decl
             start_index = i + 1
         else:
             break
-    return context, start_index
+    return decl, start_index
 
-def analyze_diff(all_units: list[DeclarationUnit], start_index: int, context: Context, cancel_analysis: threading.Event | None = None) -> Context | None:
+def analyze_diff(all_units: list[DeclarationUnit], start_index: int, decl: DeclarationContextNameSpace, cancel_analysis: threading.Event | None = None) -> DeclarationContextNameSpace | None:
     for i in range(start_index, len(all_units)):
         if cancel_analysis is not None and cancel_analysis.is_set():
             return None
         unit = all_units[i]
-        working_context = context.copy()
+        working_decl = decl.copy()
         parsed_unit = Parser(unit).parse_unit()
-        NameResolver(unit, parsed_unit).resolve_unit(working_context)
-        if Checker(unit).check_unit(working_context):
-            context = working_context
-        unit.context = context.copy()
+        NameResolver(unit, parsed_unit, working_decl).resolve_unit()
+        if Checker(unit, working_decl).check_unit():
+            decl = working_decl
+        unit.decl = decl.copy()
         unit.build_token_to_node()
-    return context
+    return decl
 
 class Analyzer:
     def __init__(self):
@@ -178,7 +178,7 @@ class Analyzer:
         order = self.resolver.get_full_order()
 
         file_units: dict[str, list[DeclarationUnit]] = {}
-        file_final_contexts: dict[str, Context] = {}
+        file_final_decls: dict[str, DeclarationContextNameSpace] = {}
         newly_analyzed: set[str] = set()
         for file in order:
             is_affected = file in affected_files
@@ -186,19 +186,19 @@ class Analyzer:
             if not is_affected and not dependency_changed:
                 if self.old_workspace is not None and file in self.old_workspace.file_units and len(self.old_workspace.file_units[file]) > 0:
                     file_units[file] = self.old_workspace.file_units[file]
-                    file_final_contexts[file] = file_units[file][-1].context.copy()
+                    file_final_decls[file] = file_units[file][-1].decl.copy()
                     continue
             all_units = split(file, self.resolver.tokens_cache[file], self.resolver.source_cache[file])
             file_units[file] = all_units
-            context = prepare_context(file, self.resolver, file_final_contexts)
+            decl = prepare_context(file, self.resolver, file_final_decls)
             old_all_units = [] if self.old_workspace is None or dependency_changed else self.old_workspace.file_units.get(file, [])
-            context, start_index = restore_cache(all_units, old_all_units, context)
+            decl, start_index = restore_cache(all_units, old_all_units, decl)
             if start_index < len(all_units):
                 newly_analyzed.add(file)
-            context = analyze_diff(all_units, start_index, context, cancel_analysis)
-            if context is None:
+            decl = analyze_diff(all_units, start_index, decl, cancel_analysis)
+            if decl is None:
                 return {}
-            file_final_contexts[file] = context.copy()
+            file_final_decls[file] = decl.copy()
 
         workspace = Workspace(file_units)
 
@@ -383,8 +383,8 @@ class Analyzer:
         path = uris.from_fs_path(current_cursor.uri)
         if path is None:
             return "path is not found"
-        decl_info = render_proofinfo(unit.ast, unit.context)
-        ctrl_info = "" if node is None else render_proofinfo(node, unit.context)
+        decl_info = render_proofinfo(unit.ast, unit.decl)
+        ctrl_info = "" if node is None else render_proofinfo(node, unit.decl)
         return HTML_TEMPLATE.format(decl_info=decl_info, ctrl_info=ctrl_info)
 
     def semantic_tokens_full(self, params: lsp.SemanticTokensParams) -> lsp.SemanticTokens:
