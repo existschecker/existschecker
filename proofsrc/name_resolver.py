@@ -164,15 +164,11 @@ class NameResolver:
         ref_theorem = RefTheorem(node.ref_theorem.name)
         self.add_node_to_token(ref_theorem, node.ref_theorem)
         vars_, body = strip_forall_vars(context.decl.get_theorem(node.ref_theorem.name).conclusion)
-        if isinstance(body, ExistsUniq):
-            existsuniq = body
-        elif isinstance(body, Implies) and isinstance(body.right, ExistsUniq):
-            existsuniq = body.right
-        else:
+        if not (isinstance(body, ExistsUniq) or (isinstance(body, Implies) and isinstance(body.right, ExistsUniq))):
             msg = f"conclusion of {node.ref_theorem.name} cannot be used for function definition"
             raise ResolveError(node, msg)
         tex = self.create_or_check_tex(node.tex, node.name, len(vars_), node)
-        resolved = DefFun(node.name, ref, vars_, existsuniq.var, ref_theorem, tex)
+        resolved = DefFun(node.name, ref, vars_, ref_theorem, tex)
         self.add_node_to_token(resolved, node)
         return resolved
 

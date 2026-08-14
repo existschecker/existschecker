@@ -421,7 +421,6 @@ class DefFunUniq(Declaration):
 class DefFun(Declaration):
     ref: RefDefFun
     args: list[Var | PredTemplate | FunTemplate]
-    returned: Var | PredTemplate
     ref_theorem: RefTheorem
     tex: list[str]
 
