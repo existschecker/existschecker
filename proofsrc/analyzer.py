@@ -8,11 +8,13 @@ from typing import Sequence
 
 from dependency import DependencyResolver
 from lexer import KEYWORDS, STRINGS, Token
-from ast_types import DeclarationUnit, Workspace, Declaration, Include, Control, Formula, Term, RefFact, RefDefCon, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, RefEquality, PredLambda, FunLambda, FormatError, RenderError, Bottom, DeclarationContextNameSpace
+from ast_types import DeclarationUnit, Workspace, Declaration, Include, Control, Formula, Term, RefFact, FormatError, RenderError, Bottom, DeclarationContextNameSpace, RefStruct, RefStructCondition
+from resolved_ast_types import ResolvedInclude, ResolvedDeclaration, ResolvedControl, ResolvedFormula, ResolvedTerm, ResolvedRefFact, ResolvedRefStruct, ResolvedRefStructField, ResolvedRefStructCondition, ResolvedStructVar, ResolvedRefEquality, ResolvedRefPrimPred, ResolvedRefDefPred, ResolvedRefDefCon, ResolvedRefDefFun, ResolvedRefDefFunTerm, ResolvedPredLambda, ResolvedFunLambda
 from splitter import split
 from to_html import Renderer
 from parser import Parser
 from name_resolver import NameResolver
+from elaborator import Elaborator
 from checker import Checker
 
 HTML_TEMPLATE = """<!doctype html>
@@ -47,17 +49,18 @@ class TokenType(IntEnum):
     FUNCTION = 0
     CONSTANT = 1
     VARIABLE = 2
+    STRUCT = 3
 
 @dataclass
 class CursorState:
     uri: str
     position: lsp.Position
 
-def get_hover(node: Include | Declaration | Control | Formula | Term | RefFact) -> str:
+def get_hover(resolved_node: ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar, node: Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition) -> str:
     if isinstance(node, (Declaration, Control)):
-        return f"{node.__class__.__name__}: {node.proofinfo.status}"
+        return f"{resolved_node.__class__.__name__} -> {node.__class__.__name__}: {node.proofinfo.status}"
     else:
-        return node.__class__.__name__
+        return f"{resolved_node.__class__.__name__} -> {node.__class__.__name__}"
 
 def render_statement(node: Declaration | Control, decl: DeclarationContextNameSpace) -> str:
     renderer = Renderer(decl)
@@ -149,14 +152,15 @@ def restore_cache(all_units: list[DeclarationUnit], old_all_units: list[Declarat
             break
     return decl, start_index
 
-def analyze_diff(all_units: list[DeclarationUnit], start_index: int, decl: DeclarationContextNameSpace, cancel_analysis: threading.Event | None = None) -> DeclarationContextNameSpace | None:
+def analyze_diff(all_units: list[DeclarationUnit], start_index: int, decl: DeclarationContextNameSpace, dependency_resolver: DependencyResolver, file_units: dict[str, list[DeclarationUnit]], cancel_analysis: threading.Event | None = None) -> DeclarationContextNameSpace | None:
     for i in range(start_index, len(all_units)):
         if cancel_analysis is not None and cancel_analysis.is_set():
             return None
         unit = all_units[i]
         working_decl = decl.copy()
         parsed_unit = Parser(unit).parse_unit()
-        NameResolver(unit, parsed_unit, working_decl).resolve_unit()
+        NameResolver(unit, parsed_unit, working_decl, dependency_resolver, file_units).resolve_unit()
+        Elaborator(unit, working_decl).elaborate_unit()
         if Checker(unit, working_decl).check_unit():
             decl = working_decl
         unit.decl = decl.copy()
@@ -195,7 +199,7 @@ class Analyzer:
             decl, start_index = restore_cache(all_units, old_all_units, decl)
             if start_index < len(all_units):
                 newly_analyzed.add(file)
-            decl = analyze_diff(all_units, start_index, decl, cancel_analysis)
+            decl = analyze_diff(all_units, start_index, decl, self.resolver, file_units, cancel_analysis)
             if decl is None:
                 return {}
             file_final_decls[file] = decl.copy()
@@ -229,19 +233,24 @@ class Analyzer:
         ref_token = self.find_token_at(unit, params.position)
         if ref_token is None:
             return None
-        ctrl_def_token = unit.get_ctrl_def(ref_token)
-        if ctrl_def_token is not None:
-            return token_to_location(ctrl_def_token)
         ref_name = ref_token.value
         if self.old_workspace is None:
             return None
         if self.resolver is None:
             return None
         order = self.resolver.get_dependent_order(unit.file)
-        decl_def_token = self.old_workspace.get_decl_def(ref_name, order)
-        if decl_def_token is None:
-            return None
-        return token_to_location(decl_def_token)
+        ref_node = unit.resolved_token_to_node[ref_token.index]
+        if id(ref_node) in unit.resolved_ctrl_defs:
+            def_unit_name, def_node_id = unit.resolved_ctrl_defs[id(ref_node)]
+            ctrl_def_token = self.old_workspace.get_ctrl_def(order, def_unit_name, def_node_id)
+            if ctrl_def_token is None:
+                return None
+            return token_to_location(ctrl_def_token)
+        else:
+            decl_def_token = self.old_workspace.get_decl_def(ref_name, order)
+            if decl_def_token is None:
+                return None
+            return token_to_location(decl_def_token)
 
     def get_references(self, params: lsp.ReferenceParams) -> list[lsp.Location]:
         unit = self.get_unit_at(params.text_document.uri, params.position)
@@ -250,17 +259,20 @@ class Analyzer:
         ref_token = self.find_token_at(unit, params.position)
         if ref_token is None:
             return []
-        ctrl_ref_tokens = unit.get_ctrl_refs(ref_token)
-        if len(ctrl_ref_tokens) > 0:
-            return tokens_to_locations(ctrl_ref_tokens)
         ref_name = ref_token.value
         if self.old_workspace is None:
             return []
+        ref_node = unit.resolved_token_to_node[ref_token.index]
         if self.resolver is None:
             return []
         affected_files = self.resolver.get_affected_files(unit.file)
-        decl_ref_tokens = self.old_workspace.get_all_decl_refs(ref_name, affected_files)
-        return tokens_to_locations(decl_ref_tokens)
+        if id(ref_node) in unit.resolved_ctrl_defs:
+            def_unit_name, def_node_id = unit.resolved_ctrl_defs[id(ref_node)]
+            ctrl_ref_tokens = self.old_workspace.get_ctrl_refs(affected_files, def_unit_name, def_node_id)
+            return tokens_to_locations(ctrl_ref_tokens)
+        else:
+            decl_ref_tokens = self.old_workspace.get_all_decl_refs(ref_name, affected_files)
+            return tokens_to_locations(decl_ref_tokens)
 
     def get_completion(self, params: lsp.CompletionParams, source: str) -> list[lsp.CompletionItem]:
         match = re.search(r"\\(\w+)?$", source.splitlines()[params.position.line][:params.position.character])
@@ -350,13 +362,16 @@ class Analyzer:
         token = self.find_token_at(unit, params.position)
         if token is None:
             return None
+        if token.index not in unit.resolved_token_to_node:
+            return None
+        resolved_node = unit.resolved_token_to_node[token.index]
         if token.index not in unit.token_to_node:
             return None
         node = unit.token_to_node[token.index]
         return lsp.Hover(
             contents=lsp.MarkupContent(
                 kind=lsp.MarkupKind.Markdown,
-                value=get_hover(node)
+                value=get_hover(resolved_node, node)
             )
         )
 
@@ -397,13 +412,15 @@ class Analyzer:
         if path not in self.old_workspace.file_units:
             return lsp.SemanticTokens(data=[])
         for unit in self.old_workspace.file_units[path]:
-            for index, node in unit.token_to_node.items():
+            for index, node in unit.resolved_token_to_node.items():
                 token = unit.tokens[index]
-                if isinstance(node, RefFact):
+                if isinstance(node, (ResolvedRefFact, ResolvedRefStructCondition)):
                     t_type = TokenType.FUNCTION
-                elif isinstance(node, (RefEquality, RefPrimPred, RefDefPred, RefDefCon, RefDefFun, RefDefFunTerm)):
+                elif isinstance(node, (ResolvedRefEquality, ResolvedRefPrimPred, ResolvedRefDefPred, ResolvedRefDefCon, ResolvedRefDefFun, ResolvedRefDefFunTerm)):
                     t_type = TokenType.CONSTANT
-                elif isinstance(node, Term) and not isinstance(node, PredLambda) and not isinstance(node, FunLambda):
+                elif isinstance(node, ResolvedRefStruct):
+                    t_type = TokenType.STRUCT
+                elif isinstance(node, (ResolvedTerm, ResolvedStructVar, ResolvedRefStructField)) and not isinstance(node, ResolvedPredLambda) and not isinstance(node, ResolvedFunLambda):
                     t_type = TokenType.VARIABLE
                 else:
                     t_type = None

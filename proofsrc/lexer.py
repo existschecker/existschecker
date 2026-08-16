@@ -16,9 +16,9 @@ class Token:
     def info(self):
         return f"[{self.file}:{self.line}:{self.column}]"
 
-DECLARATIONS = {"primitive", "axiom", "theorem", "definition", "equality", "existence", "uniqueness"}
+DECLARATIONS = {"primitive", "axiom", "theorem", "definition", "equality", "existence", "uniqueness", "struct"}
 
-CONTROLS = {"any", "assume", "conclude", "divide", "case", "some", "such", "deny", "contradict", "explode", "apply", "for", "lift", "predicate", "arity", "invoke", "expand", "constant", "by", "pad", "split", "connect", "autoexpand", "function", "substitute", "characterize", "show", "tex", "as", "leftward", "rightward", "include", "assert", "fold", "infix"}
+CONTROLS = {"any", "assume", "conclude", "divide", "case", "some", "such", "deny", "contradict", "explode", "apply", "for", "lift", "predicate", "arity", "invoke", "expand", "constant", "by", "pad", "split", "connect", "autoexpand", "function", "substitute", "characterize", "show", "tex", "as", "leftward", "rightward", "include", "assert", "fold", "infix", "field", "condition"}
 
 KEYWORDS = DECLARATIONS | CONTROLS
 

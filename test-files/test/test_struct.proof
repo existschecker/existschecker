@@ -1,0 +1,44 @@
+equality equal tex infix "="
+
+primitive predicate in arity 2 tex infix "\in"
+
+definition predicate subset(x, y) as \forall z (in(z, x) \to in(z, y))
+
+struct Subset {
+  field {
+    X,
+    Y
+  }
+  condition {
+    relation: subset(X, Y)
+  }
+}
+
+theorem test01 \forall p: Subset (subset(p.X, p.Y)) {
+  any p: Subset {
+    assert p.relation
+  }
+}
+
+theorem test02 \forall p: Subset \forall z (in(z, p.X) \to in(z, p.Y)) {
+  any p: Subset, z {
+    assume in(z, p.X) {
+      apply invoke p.relation for z
+    }
+  }
+}
+
+theorem test03 \forall p: Subset \forall q: Subset (equal(p.Y, q.X) \to subset(p.X, q.Y)) {
+  any p: Subset, q: Subset {
+    assume equal(p.Y, q.X) {
+      any z {
+        assume in(z, p.X) {
+          apply invoke p.relation for z
+          substitute in(z, p.Y) for p.Y: q.X
+          apply invoke q.relation for z
+        }
+      }
+      fold for subset conclude subset(p.X, q.Y)
+    }
+  }
+}

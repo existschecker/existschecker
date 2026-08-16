@@ -12,6 +12,16 @@ class ParsedIdent(ParsedExpr):
     name: str
 
 @dataclass(frozen=True)
+class ParsedTypedIdent(ParsedExpr):
+    name: ParsedIdent
+    type: ParsedIdent
+
+@dataclass(frozen=True)
+class ParsedAccess(ParsedExpr):
+    parent: ParsedIdent
+    child: ParsedIdent
+
+@dataclass(frozen=True)
 class ParsedFunLambda(ParsedExpr):
     args: tuple[ParsedIdent, ...]
     body: ParsedExpr
@@ -62,7 +72,7 @@ class ParsedIff(ParsedExpr):
 
 @dataclass(frozen=True)
 class ParsedForall(ParsedExpr):
-    var: ParsedIdent | ParsedPredTemplate | ParsedFunTemplate
+    var: ParsedIdent | ParsedTypedIdent | ParsedPredTemplate | ParsedFunTemplate
     body: ParsedExpr
 
 @dataclass(frozen=True)
@@ -94,7 +104,7 @@ class ParsedAssume(ParsedControl):
 
 @dataclass
 class ParsedAny(ParsedControl):
-    items: list[ParsedIdent | ParsedPredTemplate | ParsedFunTemplate]
+    items: list[ParsedIdent | ParsedTypedIdent | ParsedPredTemplate | ParsedFunTemplate]
     body: list[ParsedControl]
 
 @dataclass
@@ -257,6 +267,12 @@ class ParsedDefFunTerm(ParsedDeclaration):
 class ParsedEquality(ParsedDeclaration):
     ref: ParsedIdent
     tex: list[str]
+
+@dataclass
+class ParsedStruct(ParsedDeclaration):
+    ref: ParsedIdent
+    vars: list[ParsedIdent]
+    formulas: dict[ParsedIdent, ParsedExpr]
 
 @dataclass
 class ParsedInclude:

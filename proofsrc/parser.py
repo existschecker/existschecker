@@ -1,5 +1,5 @@
 from ast_types import DeclarationUnit, ContextError, TokenStreamError, ParseError
-from parsed_ast_types import ParsedExpr, ParsedIdent, ParsedIdentArgs, ParsedFunTemplate, ParsedFunLambda, ParsedPredTemplate, ParsedPredLambda, ParsedNot, ParsedAnd, ParsedOr, ParsedImplies, ParsedIff, ParsedForall, ParsedExists, ParsedExistsUniq, ParsedBottom, ParsedControl, ParsedInvalidControl, ParsedAny, ParsedAssume, ParsedDivide, ParsedSome, ParsedDeny, ParsedContradict, ParsedCase, ParsedExplode, ParsedApply, ParsedLift, ParsedCharacterize, ParsedInvoke, ParsedExpand, ParsedFold, ParsedPad, ParsedSplit, ParsedConnect, ParsedSubstitute, ParsedShow, ParsedAssert, ParsedDeclaration, ParsedInvalidDeclaration, ParsedPrimPred, ParsedAxiom, ParsedTheorem, ParsedDefPred, ParsedDefCon, ParsedDefFun, ParsedDefFunTerm, ParsedDefExist, ParsedDefUniq, ParsedEquality, ParsedInclude, ParsedInvalidInclude, ParsedUnit
+from parsed_ast_types import ParsedExpr, ParsedIdent, ParsedIdentArgs, ParsedFunTemplate, ParsedFunLambda, ParsedPredTemplate, ParsedPredLambda, ParsedNot, ParsedAnd, ParsedOr, ParsedImplies, ParsedIff, ParsedForall, ParsedExists, ParsedExistsUniq, ParsedBottom, ParsedControl, ParsedInvalidControl, ParsedAny, ParsedAssume, ParsedDivide, ParsedSome, ParsedDeny, ParsedContradict, ParsedCase, ParsedExplode, ParsedApply, ParsedLift, ParsedCharacterize, ParsedInvoke, ParsedExpand, ParsedFold, ParsedPad, ParsedSplit, ParsedConnect, ParsedSubstitute, ParsedShow, ParsedAssert, ParsedDeclaration, ParsedInvalidDeclaration, ParsedPrimPred, ParsedAxiom, ParsedTheorem, ParsedDefPred, ParsedDefCon, ParsedDefFun, ParsedDefFunTerm, ParsedDefExist, ParsedDefUniq, ParsedEquality, ParsedInclude, ParsedInvalidInclude, ParsedUnit, ParsedStruct, ParsedTypedIdent, ParsedAccess
 from lexer import Token
 from token_stream import TokenStream
 
@@ -87,6 +87,8 @@ class Parser:
                 return self.parse_uniqueness()
             elif tok.type == "EQUALITY":
                 return self.parse_equality()
+            elif tok.type == "STRUCT":
+                return self.parse_struct()
             else:
                 msg = "Declaration is required"
                 raise ParseError(tok, msg)
@@ -278,6 +280,39 @@ class Parser:
         logger.debug(f"[equality] {name}")
         return equality
 
+    def parse_struct(self) -> ParsedStruct:
+        start_token = self.stream.consume("STRUCT")
+        name_token = self.stream.consume("IDENT")
+        name = name_token.value
+        ref = ParsedIdent(name)
+        self.add_node_to_token(ref, name_token, name_token)
+        self.stream.consume("LBRACE")
+        self.stream.consume("FIELD")
+        self.stream.consume("LBRACE")
+        vars = self.parse_vars()
+        self.stream.consume("RBRACE")
+        self.stream.consume("CONDITION")
+        self.stream.consume("LBRACE")
+        formulas: dict[ParsedIdent, ParsedExpr] = {}
+        while True:
+            formula_name_token = self.stream.consume("IDENT")
+            formula_name = formula_name_token.value
+            ref_formula = ParsedIdent(formula_name)
+            self.add_node_to_token(ref_formula, formula_name_token, formula_name_token)
+            self.stream.consume("COLON")
+            formula = self.parse_formula()
+            formulas[ref_formula] = formula
+            if self.stream.peek().type == "COMMA":
+                self.stream.consume("COMMA")
+            else:
+                break
+        self.stream.consume("RBRACE")
+        self.stream.consume("RBRACE")
+        struct = ParsedStruct(name=name, ref=ref, vars=vars, formulas=formulas)
+        self.add_node_to_token(struct, start_token, self.stream.last_token)
+        logger.debug(f"[struct] {name}")
+        return struct
+
     def parse_include(self) -> ParsedInclude:
         start_token = self.stream.consume("INCLUDE")
         try:
@@ -368,7 +403,7 @@ class Parser:
 
     def parse_any(self) -> ParsedAny:
         start_token = self.stream.consume("ANY")
-        items, _, _, _ = self.parse_vars_or_pred_tmpls_or_fun_tmpls()
+        items, _, _, _ = self.parse_vars_or_struct_vars_or_pred_tmpls_or_fun_tmpls()
         self.stream.consume("LBRACE")
         body = self.parse_block()
         self.stream.consume("RBRACE")
@@ -654,6 +689,8 @@ class Parser:
                 formula = ParsedIdentArgs(ident, tuple(args))
                 self.add_node_to_token(formula, tok, self.stream.last_token)
                 return formula
+            elif self.stream.peek().type == "DOT":
+                return self.parse_access(ident, pred_tok)
             else:
                 return ident
 
@@ -673,11 +710,11 @@ class Parser:
             return formula
 
         elif tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ", "FORALL_PRED_TMPL", "FORALL_FUN_TMPL"):
-            quantified_pairs: list[tuple[Token, ParsedIdent | ParsedPredTemplate | ParsedFunTemplate]] = []
+            quantified_pairs: list[tuple[Token, ParsedIdent | ParsedTypedIdent | ParsedPredTemplate | ParsedFunTemplate]] = []
             while tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ", "FORALL_PRED_TMPL", "FORALL_FUN_TMPL"):
                 self.stream.consume(tok.type)
                 if tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ"):
-                    var = self.parse_var()
+                    var = self.parse_var_or_struct_var()
                     quantified_pairs.append((tok, var))
                     tok = self.stream.peek()
                 elif tok.type == "FORALL_PRED_TMPL":
@@ -736,6 +773,15 @@ class Parser:
             terms.append(self.parse_term())
         return terms
 
+    def parse_access(self, parent: ParsedIdent, start_token: Token) -> ParsedAccess:
+        self.stream.consume("DOT")
+        tok = self.stream.consume("IDENT")
+        child = ParsedIdent(tok.value)
+        self.add_node_to_token(child, tok, tok)
+        access = ParsedAccess(parent, child)
+        self.add_node_to_token(access, start_token, tok)
+        return access
+
     def parse_term(self) -> ParsedExpr:
         tok = self.stream.peek()
         if tok.type == "IDENT":
@@ -749,6 +795,8 @@ class Parser:
                 term = ParsedIdentArgs(ident, tuple(args))
                 self.add_node_to_token(term, tok, self.stream.last_token)
                 return term
+            elif self.stream.peek().type == "DOT":
+                return self.parse_access(ident, tok)
             else:
                 return ident
         elif tok.type == "LAMBDA_PRED":
@@ -810,6 +858,32 @@ class Parser:
             tex.append(")")
         return tex
 
+    def parse_vars_or_struct_vars_or_pred_tmpls_or_fun_tmpls(self) -> tuple[list[ParsedIdent | ParsedTypedIdent | ParsedPredTemplate | ParsedFunTemplate], list[ParsedIdent | ParsedTypedIdent], list[ParsedPredTemplate], list[ParsedFunTemplate]]:
+        items: list[ParsedIdent | ParsedTypedIdent | ParsedPredTemplate | ParsedFunTemplate] = []
+        vars: list[ParsedIdent | ParsedTypedIdent] = []
+        pred_tmpls: list[ParsedPredTemplate] = []
+        fun_tmpls: list[ParsedFunTemplate] = []
+        while True:
+            if self.stream.peek().type == "PREDICATE":
+                self.stream.consume("PREDICATE")
+                pred_tmpl = self.parse_pred_tmpl()
+                items.append(pred_tmpl)
+                pred_tmpls.append(pred_tmpl)
+            elif self.stream.peek().type == "FUNCTION":
+                self.stream.consume("FUNCTION")
+                fun_tmpl = self.parse_fun_tmpl()
+                items.append(fun_tmpl)
+                fun_tmpls.append(fun_tmpl)
+            else:
+                var = self.parse_var_or_struct_var()
+                items.append(var)
+                vars.append(var)
+            if self.stream.peek().type == "COMMA":
+                self.stream.consume("COMMA")
+            else:
+                break
+        return items, vars, pred_tmpls, fun_tmpls
+
     def parse_vars_or_pred_tmpls_or_fun_tmpls(self) -> tuple[list[ParsedIdent | ParsedPredTemplate | ParsedFunTemplate], list[ParsedIdent], list[ParsedPredTemplate], list[ParsedFunTemplate]]:
         items: list[ParsedIdent | ParsedPredTemplate | ParsedFunTemplate] = []
         vars: list[ParsedIdent] = []
@@ -845,6 +919,22 @@ class Parser:
             else:
                 break
         return vars
+
+    def parse_var_or_struct_var(self) -> ParsedIdent | ParsedTypedIdent:
+        tok = self.stream.consume("IDENT")
+        var_name = tok.value
+        var = ParsedIdent(var_name)
+        self.add_node_to_token(var, tok, tok)
+        if self.stream.peek().type == "COLON":
+            self.stream.consume("COLON")
+            struct_tok = self.stream.consume("IDENT")
+            struct_type = ParsedIdent(struct_tok.value)
+            self.add_node_to_token(struct_type, struct_tok, struct_tok)
+            struct_var = ParsedTypedIdent(var, struct_type)
+            self.add_node_to_token(struct_var, tok, struct_tok)
+            return struct_var
+        else:
+            return var
 
     def parse_var(self) -> ParsedIdent:
         tok = self.stream.consume("IDENT")

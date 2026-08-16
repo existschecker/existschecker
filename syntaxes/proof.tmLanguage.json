@@ -24,11 +24,11 @@
 	"repository": {
 		"declarations": {
 			"name": "keyword.declaration.proof",
-			"match": "\\b(primitive|axiom|theorem|definition|equality|existence|uniqueness)\\b"
+			"match": "\\b(primitive|axiom|theorem|definition|equality|existence|uniqueness|struct)\\b"
 		},
 		"controls": {
 			"name": "keyword.control.proof",
-			"match": "\\b(any|assume|conclude|divide|case|some|such|deny|contradict|explode|apply|for|lift|predicate|arity|invoke|expand|constant|by|pad|split|connect|autoexpand|function|substitute|characterize|show|tex|as|leftward|rightward|include|assert|fold|infix)\\b"
+			"match": "\\b(any|assume|conclude|divide|case|some|such|deny|contradict|explode|apply|for|lift|predicate|arity|invoke|expand|constant|by|pad|split|connect|autoexpand|function|substitute|characterize|show|tex|as|leftward|rightward|include|assert|fold|infix|field|condition)\\b"
 		},
 		"formulas": {
 			"name": "entity.name.type.proof",

@@ -30,7 +30,7 @@ def get_tokens_until_next(stream: TokenStream) -> list[Token]:
     tokens: list[Token] = []
     while True:
         tok = stream.peek()
-        if tok.type in ("INCLUDE", "PRIMITIVE", "AXIOM", "THEOREM", "DEFINITION", "EXISTENCE", "UNIQUENESS", "EQUALITY", "MEMBERSHIP", "EOF"):
+        if tok.type in ("INCLUDE", "PRIMITIVE", "AXIOM", "THEOREM", "DEFINITION", "EXISTENCE", "UNIQUENESS", "EQUALITY", "STRUCT", "EOF"):
             return tokens
         else:
             tokens.append(stream.consume(tok.type))
