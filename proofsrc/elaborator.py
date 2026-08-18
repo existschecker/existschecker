@@ -1,6 +1,6 @@
 from lsprotocol import types as lsp
 from pygls import uris
-from ast_types import Context, DeclarationUnit, Term, Declaration, PrimPred, Axiom, Theorem, DefPred, DefCon, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, InvalidDeclaration, Formula, AtomicFormula, Not, And, Or, Implies, Iff, Forall, Exists, ExistsUniq, PredTemplate, Var, FunTemplate, RefEquality, Compound, RefPrimPred, RefDefPred, RefDefCon, RefDefFun, RefDefFunTerm, VarTerm, PredTerm, FunTerm, Control, Any, Assume, Divide, Some, Deny, Case, Contradict, Explode, Apply, Lift, Characterize, Invoke, Expand, Fold, Pad, Split, Connect, Substitute, Show, Assert, InvalidControl, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq, RefFact, PredLambda, FunLambda, Bottom, Include, InvalidInclude, DeclarationContextNameSpace, RefStruct, Struct, RefStructCondition
+from ast_types import Context, DeclarationUnit, Term, Declaration, PrimPred, Axiom, Theorem, DefPred, DefCon, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, InvalidDeclaration, Formula, AtomicFormula, Not, And, Or, Implies, Iff, Forall, Exists, ExistsUniq, PredTemplate, Var, FunTemplate, RefEquality, Compound, RefPrimPred, RefDefPred, RefDefCon, RefDefFun, RefDefFunTerm, VarTerm, PredTerm, FunTerm, Control, Any, Assume, Divide, Some, Deny, Case, Contradict, Explode, Apply, Lift, Characterize, Invoke, Expand, Fold, Pad, Split, Connect, Substitute, Show, Assert, InvalidControl, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq, RefFact, PredLambda, FunLambda, Bottom, Include, InvalidInclude, DeclarationContextNameSpace, RefStruct, Struct, RefStructCondition, StructVar
 from resolved_ast_types import ResolvedTerm, ResolvedFormula, ResolvedVarTerm, ResolvedVar, ResolvedRefDefCon, ResolvedFunTerm, ResolvedRefDefFun, ResolvedRefDefFunTerm, ResolvedFunTemplate, ResolvedFunLambda, ResolvedCompound, ResolvedPredTerm, ResolvedRefEquality, ResolvedRefPrimPred, ResolvedRefDefPred, ResolvedPredTemplate, ResolvedPredLambda, ResolvedAtomicFormula, ResolvedNot, ResolvedAnd, ResolvedOr, ResolvedImplies, ResolvedIff, ResolvedForall, ResolvedExists, ResolvedExistsUniq, ResolvedBottom, ResolvedRefFact, ResolvedRefAxiom, ResolvedRefTheorem, ResolvedRefDefConExist, ResolvedRefDefConUniq, ResolvedRefDefFunExist, ResolvedRefDefFunUniq, ResolvedControl, ResolvedInvalidControl, ResolvedAssume, ResolvedAny, ResolvedCase, ResolvedDivide, ResolvedSome, ResolvedDeny, ResolvedContradict, ResolvedExplode, ResolvedApply, ResolvedLift, ResolvedCharacterize, ResolvedInvoke, ResolvedExpand, ResolvedFold, ResolvedPad, ResolvedSplit, ResolvedConnect, ResolvedSubstitute, ResolvedShow, ResolvedAssert, ResolvedDeclaration, ResolvedInvalidDeclaration, ResolvedPrimPred, ResolvedAxiom, ResolvedTheorem, ResolvedDefPred, ResolvedDefConExist, ResolvedDefConUniq, ResolvedDefCon, ResolvedDefFunExist, ResolvedDefFunUniq, ResolvedDefFun, ResolvedDefFunTerm, ResolvedEquality, ResolvedInclude, ResolvedInvalidInclude, ResolvedRefStruct, ResolvedStructVar, ResolvedStructMemberField, ResolvedRefStructCondition, ResolvedRefStructMemberCondition, ResolvedStruct
 from lexer import Token
 from logic_utils import Substitutor
@@ -33,7 +33,7 @@ class Elaborator:
     def get_node_token(self, node: ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact) -> Token:
         return self.unit.tokens[self.unit.resolved_node_to_token[id(node)][0]]
 
-    def add_node_to_token(self, node: Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition, resolved: ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructCondition) -> None:
+    def add_node_to_token(self, node: Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar, resolved: ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructCondition) -> None:
         self.unit.node_to_token[id(node)] = self.unit.resolved_node_to_token[id(resolved)]
         self.unit.nodes.append(node)
 
@@ -198,7 +198,7 @@ class Elaborator:
     def elaborate_struct(self, node: ResolvedStruct) -> Declaration:
         ref = RefStruct(node.ref.name)
         self.add_node_to_token(ref, node.ref)
-        fields = self.elaborate_vars(node.fields)
+        fields = self.elaborate_vars_or_struct_vars(node.fields)
         conditions: dict[RefStructCondition, Formula] = {}
         for k, v in node.conditions.items():
             ref_condition = RefStructCondition(k.name)
@@ -207,6 +207,19 @@ class Elaborator:
         elaboated = Struct(node.name, ref, fields, conditions)
         self.add_node_to_token(elaboated, node)
         return elaboated
+
+    def elaborate_vars_or_struct_vars(self, nodes: tuple[ResolvedVar | ResolvedStructVar, ...]) -> list[Var | StructVar]:
+        fields: list[Var | StructVar] = []
+        for node in nodes:
+            if isinstance(node, ResolvedVar):
+                field = Var(node.name)
+            else:
+                ref_struct = RefStruct(node.ref_struct.name)
+                self.add_node_to_token(ref_struct, node.ref_struct)
+                field = StructVar(node.name, ref_struct)
+            self.add_node_to_token(field, node)
+            fields.append(field)
+        return fields
 
     def elaborate_invalid_declaration(self, node: ResolvedInvalidDeclaration) -> InvalidDeclaration:
         elaborated = InvalidDeclaration(node.name)
@@ -516,8 +529,10 @@ class Elaborator:
             elif isinstance(node, ResolvedRefDefFunUniq):
                 elaborated = RefDefFunUniq(node.name)
             elif isinstance(node, ResolvedRefStructMemberCondition):
-                _, conditions = self.collect_struct_members(node.struct_var)
-                elaborated = conditions[RefStructCondition(node.struct_condition.name)]
+                parent_name = self.get_struct_access_name(node.parent)
+                full_name = f"{parent_name}.{node.struct_condition.name}"
+                _, conditions = self.collect_struct_members(node.parent)
+                elaborated = conditions[RefStructCondition(full_name)]
             else:
                 raise ElaborateError(node, f"Unexpected type {type(node)}")
             self.add_node_to_token(elaborated, node)
@@ -602,11 +617,21 @@ class Elaborator:
         elif isinstance(node, ResolvedStructVar):
             raise ElaborateError(node, f"Unexpected type {type(node)}")
         elif isinstance(node, ResolvedStructMemberField):
-            elaborated = Var(f"{node.struct_var.name}.{node.struct_field.name}")
+            name = self.get_struct_access_name(node)
+            elaborated = Var(name)
         else:
             raise ElaborateError(node, f"Unexpected type {type(node)}")
         self.add_node_to_token(elaborated, node)
         return elaborated
+
+    def get_struct_access_name(self, node: ResolvedStructVar | ResolvedStructMemberField) -> str:
+        if isinstance(node, ResolvedStructVar):
+            return node.name
+        elif isinstance(node, ResolvedStructMemberField):
+            parent_name = self.get_struct_access_name(node.parent)
+            return f"{parent_name}.{node.struct_field.name}"
+        else:
+            raise ElaborateError(node, f"Unexpected type {type(node)}")
 
     def elaborate_pred_term(self, node: ResolvedPredTerm) -> PredTerm:
         if isinstance(node, ResolvedRefEquality):
@@ -694,15 +719,24 @@ class Elaborator:
         self.add_node_to_token(fun_tmpl, node)
         return fun_tmpl
 
-    def collect_struct_members(self, var: ResolvedStructVar) -> tuple[list[Var], dict[RefStructCondition, Formula]]:
-        struct = self.decl.get_struct(var.ref_struct.name)
-        fields: list[Var] = []
-        for field in struct.fields:
-            access = f"{var.name}.{field.name}"
-            fields.append(Var(access))
-        conditions: dict[RefStructCondition, Formula] = {}
-        for ref, condition in struct.conditions.items():
-            elaborated_ref = RefStructCondition(ref.name)
-            mapping: dict[VarTerm, VarTerm] = {Var(field.name): Var(f"{var.name}.{field.name}") for field in struct.fields}
-            conditions[elaborated_ref] = Substitutor((mapping, {}, {}), Context.init(), self.decl).substitute_formula(condition)
-        return fields, conditions
+    def collect_struct_members(self, var: ResolvedStructVar | ResolvedStructMemberField) -> tuple[list[Var], dict[RefStructCondition, Formula]]:
+        if isinstance(var, ResolvedStructVar):
+            struct = self.decl.get_struct(var.ref_struct.name)
+            fields: list[Var] = []
+            conditions = dict(struct.conditions)
+            for field in struct.fields:
+                if isinstance(field, Var):
+                    fields.append(field)
+                else:
+                    child_fields, child_conditions = self.collect_struct_members(ResolvedStructVar(field.name, ResolvedRefStruct(field.ref_struct.name)))
+                    fields.extend(child_fields)
+                    conditions.update(child_conditions)
+            full_fields = [Var(f"{var.name}.{field.name}") for field in fields]
+            full_conditions: dict[RefStructCondition, Formula] = {}
+            for ref, condition in conditions.items():
+                full_ref = RefStructCondition(f"{var.name}.{ref.name}")
+                mapping: dict[VarTerm, VarTerm] = {field: Var(f"{var.name}.{field.name}") for field in fields}
+                full_conditions[full_ref] = Substitutor((mapping, {}, {}), Context.init(), self.decl).substitute_formula(condition)
+            return full_fields, full_conditions
+        else:
+            return self.collect_struct_members(var.parent)

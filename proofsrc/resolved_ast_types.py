@@ -355,7 +355,7 @@ class ResolvedRefStruct:
     name: str
 
 @dataclass(frozen=True)
-class ResolvedStructVar:
+class ResolvedStructVar(ResolvedVarTerm):
     name: str
     ref_struct: ResolvedRefStruct
 
@@ -365,8 +365,9 @@ class ResolvedRefStructField:
 
 @dataclass(frozen=True)
 class ResolvedStructMemberField(ResolvedVarTerm):
-    struct_var: ResolvedStructVar
+    parent: "ResolvedStructVar | ResolvedStructMemberField"
     struct_field: ResolvedRefStructField
+    ref_struct: ResolvedRefStruct | None
 
 @dataclass(frozen=True)
 class ResolvedRefStructCondition:
@@ -374,13 +375,13 @@ class ResolvedRefStructCondition:
 
 @dataclass(frozen=True)
 class ResolvedRefStructMemberCondition(ResolvedRefFact):
-    struct_var: ResolvedStructVar
+    parent: ResolvedStructVar | ResolvedStructMemberField
     struct_condition: ResolvedRefStructCondition
 
 @dataclass
 class ResolvedStruct(ResolvedDeclaration):
     ref: ResolvedRefStruct
-    fields: tuple[ResolvedVar, ...]
+    fields: tuple["ResolvedVar | ResolvedStructVar", ...]
     conditions: dict[ResolvedRefStructCondition, ResolvedFormula]
 
 @dataclass

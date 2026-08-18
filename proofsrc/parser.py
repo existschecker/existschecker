@@ -289,7 +289,7 @@ class Parser:
         self.stream.consume("LBRACE")
         self.stream.consume("FIELD")
         self.stream.consume("LBRACE")
-        vars = self.parse_vars()
+        vars = self.parse_vars_or_struct_vars()
         self.stream.consume("RBRACE")
         self.stream.consume("CONDITION")
         self.stream.consume("LBRACE")
@@ -773,14 +773,18 @@ class Parser:
             terms.append(self.parse_term())
         return terms
 
-    def parse_access(self, parent: ParsedIdent, start_token: Token) -> ParsedAccess:
-        self.stream.consume("DOT")
-        tok = self.stream.consume("IDENT")
-        child = ParsedIdent(tok.value)
-        self.add_node_to_token(child, tok, tok)
-        access = ParsedAccess(parent, child)
-        self.add_node_to_token(access, start_token, tok)
-        return access
+    def parse_access(self, parent: ParsedIdent | ParsedAccess, start_token: Token) -> ParsedExpr:
+        current_expr = parent
+        while True:
+            self.stream.consume("DOT")
+            child_tok = self.stream.consume("IDENT")
+            child = ParsedIdent(child_tok.value)
+            self.add_node_to_token(child, child_tok, child_tok)
+            current_expr = ParsedAccess(current_expr, child)
+            self.add_node_to_token(current_expr, start_token, child_tok)
+            if self.stream.peek().type != "DOT":
+                break
+        return current_expr
 
     def parse_term(self) -> ParsedExpr:
         tok = self.stream.peek()
@@ -857,6 +861,16 @@ class Parser:
             tex.extend(["," for _ in range(arity - 1)])
             tex.append(")")
         return tex
+
+    def parse_vars_or_struct_vars(self) -> list[ParsedIdent | ParsedTypedIdent]:
+        vars: list[ParsedIdent | ParsedTypedIdent] = []
+        while True:
+            vars.append(self.parse_var_or_struct_var())
+            if self.stream.peek().type == "COMMA":
+                self.stream.consume("COMMA")
+            else:
+                break
+        return vars
 
     def parse_vars_or_struct_vars_or_pred_tmpls_or_fun_tmpls(self) -> tuple[list[ParsedIdent | ParsedTypedIdent | ParsedPredTemplate | ParsedFunTemplate], list[ParsedIdent | ParsedTypedIdent], list[ParsedPredTemplate], list[ParsedFunTemplate]]:
         items: list[ParsedIdent | ParsedTypedIdent | ParsedPredTemplate | ParsedFunTemplate] = []

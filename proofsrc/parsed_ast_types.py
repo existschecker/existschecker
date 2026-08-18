@@ -18,7 +18,7 @@ class ParsedTypedIdent(ParsedExpr):
 
 @dataclass(frozen=True)
 class ParsedAccess(ParsedExpr):
-    parent: ParsedIdent
+    parent: "ParsedIdent | ParsedAccess"
     child: ParsedIdent
 
 @dataclass(frozen=True)
@@ -271,7 +271,7 @@ class ParsedEquality(ParsedDeclaration):
 @dataclass
 class ParsedStruct(ParsedDeclaration):
     ref: ParsedIdent
-    vars: list[ParsedIdent]
+    vars: list[ParsedIdent | ParsedTypedIdent]
     formulas: dict[ParsedIdent, ParsedExpr]
 
 @dataclass

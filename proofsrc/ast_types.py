@@ -445,9 +445,14 @@ class RefStructCondition:
     name: str
 
 @dataclass
+class StructVar:
+    name: str
+    ref_struct: RefStruct
+
+@dataclass
 class Struct(Declaration):
     ref: RefStruct
-    fields: list[Var]
+    fields: list[Var | StructVar]
     conditions: dict[RefStructCondition, Formula]
 
 @dataclass
@@ -845,8 +850,8 @@ class DeclarationUnit:
     resolved_ctrl_refs: dict[int, list[int]] = field(default_factory=dict[int, list[int]])
     ast: Include | Declaration | None = None
     node_to_token: dict[int, tuple[int, int]] = field(default_factory=dict[int, tuple[int, int]])
-    nodes: list[Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition] = field(default_factory=list[Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition])
-    token_to_node: dict[int, Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition] = field(default_factory=dict[int, Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition])
+    nodes: list[Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar] = field(default_factory=list[Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar])
+    token_to_node: dict[int, Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar] = field(default_factory=dict[int, Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar])
     token_to_control: dict[int, Control] = field(default_factory=dict[int, Control])
     decl: DeclarationContextNameSpace = field(default_factory=DeclarationContextNameSpace.init)
     diagnostics: list[lsp.Diagnostic] = field(default_factory=list[lsp.Diagnostic])

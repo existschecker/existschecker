@@ -42,3 +42,53 @@ theorem test03 \forall p: Subset \forall q: Subset (equal(p.Y, q.X) \to subset(p
     }
   }
 }
+
+struct SubsetPair {
+  field {
+    u: Subset,
+    v: Subset
+  }
+  condition {
+    relation: subset(u.Y, v.X)
+  }
+}
+
+theorem test04 \forall p: SubsetPair (subset(p.u.X, p.v.Y)) {
+  any p: SubsetPair {
+    any z {
+      assume in(z, p.u.X) {
+        apply invoke p.u.relation for z
+        apply invoke p.relation for z
+        apply invoke p.v.relation for z
+      }
+    }
+    fold for subset conclude subset(p.u.X, p.v.Y)
+  }
+}
+
+struct SubsetPairPair {
+  field {
+    s: SubsetPair,
+    t: SubsetPair
+  }
+  condition {
+    relation: subset(s.v.Y, t.u.X)
+  }
+}
+
+theorem test05 \forall p: SubsetPairPair (subset(p.s.u.X, p.t.v.Y)) {
+  any p: SubsetPairPair {
+    any z {
+      assume in(z, p.s.u.X) {
+        apply invoke p.s.u.relation for z
+        apply invoke p.s.relation for z
+        apply invoke p.s.v.relation for z
+        apply invoke p.relation for z
+        apply invoke p.t.u.relation for z
+        apply invoke p.t.relation for z
+        apply invoke p.t.v.relation for z
+      }
+    }
+    fold for subset conclude subset(p.s.u.X, p.t.v.Y)
+  }
+}

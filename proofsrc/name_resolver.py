@@ -265,17 +265,26 @@ class NameResolver:
         ref = ResolvedRefStruct(node.ref.name)
         self.add_node_to_token(ref, node.ref)
         vars: list[ResolvedVar] = []
+        struct_vars: list[ResolvedStructVar] = []
+        symbols: list[ResolvedVar | ResolvedStructVar] = []
         context = ResolvedContext.init()
         for v in node.vars:
-            vars.append(self.resolve_var(v, context.ctrl))
-        local_ctx = context.add_ctrl(vars, [], [], [], [], list(vars))
+            if isinstance(v, ParsedIdent):
+                var = self.resolve_var(v, context.ctrl)
+                vars.append(var)
+                symbols.append(var)
+            else:
+                struct_var = self.resolve_struct_var(v, context.ctrl)
+                struct_vars.append(struct_var)
+                symbols.append(struct_var)
+        local_ctx = context.add_ctrl(vars, struct_vars, [], [], [], list(symbols))
         formulas: dict[ResolvedRefStructCondition, ResolvedFormula] = {}
         for k, v in node.formulas.items():
             ref_formula = ResolvedRefStructCondition(k.name)
             self.add_node_to_token(ref_formula, k)
             self.add_ctrl_defs_refs(ref_formula, ref_formula)
             formulas[ref_formula] = self.resolve_formula(v, local_ctx)
-        resolved = ResolvedStruct(node.name, ref, tuple(vars), formulas)
+        resolved = ResolvedStruct(node.name, ref, tuple(symbols), formulas)
         self.add_node_to_token(resolved, node)
         return resolved
 
@@ -657,25 +666,21 @@ class NameResolver:
                 msg = f"Unexpected name: {name}"
                 raise ResolveError(node, msg)
         else:
-            name = node.parent.name
-            if any(struct_var.name == name for struct_var in context.form.struct_vars):
-                def_var = next(struct_var for struct_var in context.form.struct_vars if struct_var.name == name)
-                ref_var = ResolvedStructVar(name, def_var.ref_struct)
-                self.add_node_to_token(ref_var, node.parent)
-                self.add_ctrl_defs_refs(def_var, ref_var)
-            elif any(struct_var.name == name for struct_var in context.ctrl.struct_vars):
-                def_var = next((struct_var for struct_var in context.ctrl.struct_vars if struct_var.name == name))
-                ref_var = ResolvedStructVar(name, def_var.ref_struct)
-                self.add_node_to_token(ref_var, node.parent)
-                self.add_ctrl_defs_refs(def_var, ref_var)
+            parent = self.resolve_term(node.parent, context)
+            if isinstance(parent, ResolvedStructVar):
+                ref_struct = parent.ref_struct
+            elif isinstance(parent, ResolvedStructMemberField):
+                ref_struct = parent.ref_struct
+                if ref_struct is None:
+                    raise ResolveError(node.parent, f"ref_struct of parent is unknown")
             else:
-                raise ResolveError(node.parent, f"{node.parent.name} is unknown")
+                raise ResolveError(node.parent, f"Unexpected type {type(node.parent)}")
             order = self.dependency_resolver.get_dependent_order(self.unit.file)
             def_unit = None
             def_struct = None
             for path in order:
                 for unit in self.file_units[path]:
-                    if isinstance(unit.resolved_ast, ResolvedStruct) and unit.resolved_ast.name == ref_var.ref_struct.name:
+                    if isinstance(unit.resolved_ast, ResolvedStruct) and unit.resolved_ast.name == ref_struct.name:
                         def_unit = unit
                         def_struct = unit.resolved_ast
             if def_unit is None or def_struct is None:
@@ -685,11 +690,11 @@ class NameResolver:
                 if condition.name == node.child.name:
                     def_condition = condition
             if def_condition is None:
-                raise ResolveError(node, f"{node.child.name} is not found")
+                raise ResolveError(node.child, f"{node.child.name} is not found")
             ref_condition = ResolvedRefStructCondition(node.child.name)
             self.add_node_to_token(ref_condition, node.child)
-            self.add_ctrl_defs_refs(def_condition, ref_condition, ref_var.ref_struct.name)
-            access = ResolvedRefStructMemberCondition("", ref_var, ref_condition)
+            self.add_ctrl_defs_refs(def_condition, ref_condition, ref_struct.name)
+            access = ResolvedRefStructMemberCondition("", parent, ref_condition)
             self.add_node_to_token(access, node)
             return access
 
@@ -757,6 +762,12 @@ class NameResolver:
                 self.add_node_to_token(ref_var, node)
                 self.add_ctrl_defs_refs(def_var, ref_var)
                 return ref_var
+            elif any(struct_var.name == name for struct_var in context.form.struct_vars):
+                def_var = next(struct_var for struct_var in context.form.struct_vars if struct_var.name == name)
+                ref_var = ResolvedStructVar(name, def_var.ref_struct)
+                self.add_node_to_token(ref_var, node)
+                self.add_ctrl_defs_refs(def_var, ref_var)
+                return ref_var
             elif any(pred_tmpl.name == name for pred_tmpl in context.form.pred_tmpls):
                 def_pred_tmpl = next(pred_tmpl for pred_tmpl in context.form.pred_tmpls if pred_tmpl.name == name)
                 ref_pred_tmpl = ResolvedPredTemplate(name, def_pred_tmpl.arity)
@@ -766,6 +777,12 @@ class NameResolver:
             elif any(var.name == name for var in context.ctrl.vars):
                 def_var = next((var for var in context.ctrl.vars if var.name == name))
                 ref_var = ResolvedVar(name)
+                self.add_node_to_token(ref_var, node)
+                self.add_ctrl_defs_refs(def_var, ref_var)
+                return ref_var
+            elif any(struct_var.name == name for struct_var in context.ctrl.struct_vars):
+                def_var = next(struct_var for struct_var in context.ctrl.struct_vars if struct_var.name == name)
+                ref_var = ResolvedStructVar(name, def_var.ref_struct)
                 self.add_node_to_token(ref_var, node)
                 self.add_ctrl_defs_refs(def_var, ref_var)
                 return ref_var
@@ -846,25 +863,21 @@ class NameResolver:
             self.add_node_to_token(resolved, node)
             return resolved
         elif isinstance(node, ParsedAccess):
-            name = node.parent.name
-            if any(struct_var.name == name for struct_var in context.form.struct_vars):
-                def_var = next(struct_var for struct_var in context.form.struct_vars if struct_var.name == name)
-                ref_var = ResolvedStructVar(name, def_var.ref_struct)
-                self.add_node_to_token(ref_var, node.parent)
-                self.add_ctrl_defs_refs(def_var, ref_var)
-            elif any(struct_var.name == name for struct_var in context.ctrl.struct_vars):
-                def_var = next((struct_var for struct_var in context.ctrl.struct_vars if struct_var.name == name))
-                ref_var = ResolvedStructVar(name, def_var.ref_struct)
-                self.add_node_to_token(ref_var, node.parent)
-                self.add_ctrl_defs_refs(def_var, ref_var)
+            parent = self.resolve_term(node.parent, context)
+            if isinstance(parent, ResolvedStructVar):
+                ref_struct = parent.ref_struct
+            elif isinstance(parent, ResolvedStructMemberField):
+                ref_struct = parent.ref_struct
+                if ref_struct is None:
+                    raise ResolveError(node.parent, f"ref_struct of parent is unknown")
             else:
-                raise ResolveError(node.parent, f"{node.parent.name} is unknown")
+                raise ResolveError(node.parent, f"Unexpected type {type(node.parent)}")
             order = self.dependency_resolver.get_dependent_order(self.unit.file)
             def_unit = None
             def_struct = None
             for path in order:
                 for unit in self.file_units[path]:
-                    if isinstance(unit.resolved_ast, ResolvedStruct) and unit.resolved_ast.name == ref_var.ref_struct.name:
+                    if isinstance(unit.resolved_ast, ResolvedStruct) and unit.resolved_ast.name == ref_struct.name:
                         def_unit = unit
                         def_struct = unit.resolved_ast
             if def_unit is None or def_struct is None:
@@ -874,11 +887,12 @@ class NameResolver:
                 if field.name == node.child.name:
                     def_field = field
             if def_field is None:
-                raise ResolveError(node, f"{node.child.name} is not found")
+                raise ResolveError(node.child, f"{node.child.name} is not found")
+            next_ref_struct = None if isinstance(def_field, ResolvedVar) else def_field.ref_struct
             ref_field = ResolvedRefStructField(node.child.name)
             self.add_node_to_token(ref_field, node.child)
-            self.add_ctrl_defs_refs(def_field, ref_field, ref_var.ref_struct.name)
-            access = ResolvedStructMemberField(ref_var, ref_field)
+            self.add_ctrl_defs_refs(def_field, ref_field, ref_struct.name)
+            access = ResolvedStructMemberField(parent, ref_field, next_ref_struct)
             self.add_node_to_token(access, node)
             return access
         else:
