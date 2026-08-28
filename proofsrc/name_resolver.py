@@ -149,7 +149,7 @@ class NameResolver:
         self.add_node_to_token(ref, node.ref)
         context = ResolvedContext.init()
         local_vars, local_pred_tmpls, local_fun_tmpls, args = self.resolve_vars_or_pred_tmpls_or_fun_tmpls(node.args, context.ctrl)
-        local_ctx = context.add_ctrl(local_vars, [], [], local_pred_tmpls, local_fun_tmpls, list(args))
+        local_ctx = context.add_ctrl(local_vars, [], local_pred_tmpls, local_fun_tmpls)
         formula = self.resolve_formula(node.formula, local_ctx)
         tex = self.create_or_check_tex(node.tex, node.name, len(node.args), node)
         resolved = ResolvedDefPred(node.name, ref, args, formula, node.autoexpand, tex)
@@ -242,7 +242,7 @@ class NameResolver:
         self.add_node_to_token(ref, node.ref)
         context = ResolvedContext.init()
         local_vars, local_pred_tmpls, local_fun_tmpls, args = self.resolve_vars_or_pred_tmpls_or_fun_tmpls(node.args, context.ctrl)
-        local_ctx = context.add_ctrl(local_vars, [], [], local_pred_tmpls, local_fun_tmpls, list(args))
+        local_ctx = context.add_ctrl(local_vars, [], local_pred_tmpls, local_fun_tmpls)
         varterm = self.resolve_term(node.varterm, local_ctx)
         if not isinstance(varterm, ResolvedVarTerm):
             raise ResolveError(node, "Unexpected type")
@@ -279,7 +279,7 @@ class NameResolver:
                 struct_var = self.resolve_struct_var(v, context.ctrl)
                 struct_vars.append(struct_var)
                 symbols.append(struct_var)
-        local_ctx = context.add_ctrl(vars, struct_vars, [], [], [], list(symbols))
+        local_ctx = context.add_ctrl(vars, struct_vars, [], [])
         formulas: dict[ResolvedRefStructCondition, ResolvedFormula] = {}
         for k, v in node.formulas.items():
             ref_formula = ResolvedRefStructCondition(k.name)
@@ -307,7 +307,7 @@ class NameResolver:
         context = ResolvedContext.init()
         context = context.add_ref_struct(ref_struct)
         args = self.resolve_vars(node.args, context.ctrl)
-        local_ctx = context.add_ctrl(args, [], [], [], [], list(args))
+        local_ctx = context.add_ctrl(args, [], [], [])
         formula = self.resolve_formula(node.formula, local_ctx)
         resolved = ResolvedStructPred(node.name, ref_struct, ref, tuple(args), formula)
         self.add_node_to_token(resolved, node)
@@ -393,7 +393,7 @@ class NameResolver:
 
     def resolve_any(self, node: ParsedAny, context: ResolvedContext) -> ResolvedAny:
         local_vars, local_struct_vars, local_pred_tmpls, local_fun_tmpls, items = self.resolve_vars_or_struct_vars_or_pred_tmpls_or_fun_tmpls(node.items, context)
-        local_ctx = context.add_ctrl(local_vars, local_struct_vars, [], local_pred_tmpls, local_fun_tmpls, items)
+        local_ctx = context.add_ctrl(local_vars, local_struct_vars, local_pred_tmpls, local_fun_tmpls)
         body = self.resolve_block(node.body, local_ctx)
         resolved = ResolvedAny(items, body)
         self.add_node_to_token(resolved, node)
@@ -426,7 +426,7 @@ class NameResolver:
     def resolve_some(self, node: ParsedSome, context: ResolvedContext) -> ResolvedSome:
         fact = self.resolve_reference_or_formula(node.fact, context)
         items, local_vars = self.resolve_vars_or_none(node.items, context.ctrl)
-        local_ctx = context.add_ctrl(local_vars, [], [], [], [], list(local_vars))
+        local_ctx = context.add_ctrl(local_vars, [], [], [])
         body = self.resolve_block(node.body, local_ctx)
         resolved = ResolvedSome(items, fact, body)
         self.add_node_to_token(resolved, node)

@@ -425,24 +425,22 @@ class ResolvedFormulaContext:
 class ResolvedControlContext:
     vars: list[ResolvedVar]
     struct_vars: list[ResolvedStructVar]
-    formulas: list[ResolvedBottom | ResolvedFormula]
     pred_tmpls: list[ResolvedPredTemplate]
     fun_tmpls: list[ResolvedFunTemplate]
-    symbols: list[ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate]
     used_names: set[str]
 
     @staticmethod
     def init() -> "ResolvedControlContext":
-        return ResolvedControlContext(vars=[], struct_vars=[], formulas=[], pred_tmpls=[], fun_tmpls=[], symbols=[], used_names=set())
+        return ResolvedControlContext(vars=[], struct_vars=[], pred_tmpls=[], fun_tmpls=[], used_names=set())
 
-    def add(self, new_vars: list[ResolvedVar], new_struct_vars: list[ResolvedStructVar], new_formulas: list[ResolvedBottom | ResolvedFormula], new_pred_tmpls: list[ResolvedPredTemplate], new_fun_tmpls: list[ResolvedFunTemplate], new_symbols: list[ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate]) -> "ResolvedControlContext":
+    def add(self, new_vars: list[ResolvedVar], new_struct_vars: list[ResolvedStructVar], new_pred_tmpls: list[ResolvedPredTemplate], new_fun_tmpls: list[ResolvedFunTemplate]) -> "ResolvedControlContext":
         new_used_names = self.used_names.copy()
         for item in new_vars + new_struct_vars + new_pred_tmpls + new_fun_tmpls:
             if item.name in new_used_names:
                 msg = f"{item.name} is already used"
                 raise Exception(msg)
             new_used_names.add(item.name)
-        return ResolvedControlContext(list(self.vars + new_vars), list(self.struct_vars + new_struct_vars), list(self.formulas + new_formulas), list(self.pred_tmpls + new_pred_tmpls), list(self.fun_tmpls + new_fun_tmpls), list(self.symbols + new_symbols), new_used_names)
+        return ResolvedControlContext(list(self.vars + new_vars), list(self.struct_vars + new_struct_vars), list(self.pred_tmpls + new_pred_tmpls), list(self.fun_tmpls + new_fun_tmpls), new_used_names)
 
 @dataclass
 class ResolvedContext:
@@ -454,8 +452,8 @@ class ResolvedContext:
     def init() -> "ResolvedContext":
         return ResolvedContext(ResolvedControlContext.init(), ResolvedFormulaContext.init(), None)
 
-    def add_ctrl(self, new_vars: list[ResolvedVar], new_struct_vars: list[ResolvedStructVar], new_formulas: list[ResolvedBottom | ResolvedFormula], new_pred_tmpls: list[ResolvedPredTemplate], new_fun_tmpls: list[ResolvedFunTemplate], new_symbols: list[ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate]):
-        return ResolvedContext(self.ctrl.add(new_vars, new_struct_vars, new_formulas, new_pred_tmpls, new_fun_tmpls, new_symbols), self.form, self.ref_struct)
+    def add_ctrl(self, new_vars: list[ResolvedVar], new_struct_vars: list[ResolvedStructVar], new_pred_tmpls: list[ResolvedPredTemplate], new_fun_tmpls: list[ResolvedFunTemplate]):
+        return ResolvedContext(self.ctrl.add(new_vars, new_struct_vars, new_pred_tmpls, new_fun_tmpls), self.form, self.ref_struct)
 
     def add_form(self, new_vars: list[ResolvedVar], new_struct_vars: list[ResolvedStructVar], new_pred_tmpls: list[ResolvedPredTemplate], new_fun_tmpls: list[ResolvedFunTemplate]):
         return ResolvedContext(self.ctrl, self.form.add(new_vars, new_struct_vars, new_pred_tmpls, new_fun_tmpls), self.ref_struct)
