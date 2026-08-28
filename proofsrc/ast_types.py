@@ -195,9 +195,6 @@ class ControlContext:
     def init() -> "ControlContext":
         return ControlContext(vars=[], formulas=[], pred_tmpls=[], fun_tmpls=[], symbols=[], used_names=set())
 
-    def copy(self) -> "ControlContext":
-        return ControlContext(list(self.vars), list(self.formulas), list(self.pred_tmpls), list(self.fun_tmpls), list(self.symbols), self.used_names.copy())
-
     def add(self, new_vars: list[Var], new_formulas: list[Bottom | Formula], new_pred_tmpls: list[PredTemplate], new_fun_tmpls: list[FunTemplate], new_symbols: list[Var | PredTemplate | FunTemplate]) -> "ControlContext":
         new_used_names = self.used_names.copy()
         for item in new_vars + new_pred_tmpls + new_fun_tmpls:
@@ -844,9 +841,6 @@ class Context:
     def init() -> "Context":
         return Context(ControlContext.init(), FormulaContext.init())
 
-    def copy_ctrl(self):
-        return Context(self.ctrl.copy(), self.form)
-
     def add_ctrl(self, new_vars: list[Var], new_formulas: list[Bottom | Formula], new_pred_tmpls: list[PredTemplate], new_fun_tmpls: list[FunTemplate], new_symbols: list[Var | PredTemplate | FunTemplate]):
         return Context(self.ctrl.add(new_vars, new_formulas, new_pred_tmpls, new_fun_tmpls, new_symbols), self.form)
 
@@ -855,9 +849,6 @@ class Context:
 
     def add_form(self, new_vars: list[Var], new_pred_tmpls: list[PredTemplate], new_fun_tmpls: list[FunTemplate]):
         return Context(self.ctrl, self.form.add(new_vars, new_pred_tmpls, new_fun_tmpls))
-
-    def copy(self):
-        return Context(self.ctrl.copy(), self.form.copy())
 
 @dataclass
 class Include:
