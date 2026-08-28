@@ -349,12 +349,12 @@ class DefExpander:
                 if should_expand:
                     renamed_term, renamed_mapping = alpha_safe_var_term(deffunterm.varterm, dict(zip(deffunterm.args, expr.args)), context, self.decl)
                     expanded = Substitutor(renamed_mapping, context, self.decl).substitute_var_term(renamed_term)
-                    return self.expand_defs_var_term(expanded, context.copy_form())
+                    return self.expand_defs_var_term(expanded, context)
             elif isinstance(expr.fun, FunLambda):
                 renamed_body, renamed_mapping = alpha_safe_var_term(expr.fun.body, dict(zip(expr.fun.args, expr.args)), context, self.decl)
                 beta_reduced = Substitutor(renamed_mapping, context, self.decl).substitute_var_term(renamed_body)
-                return self.expand_defs_var_term(beta_reduced, context.copy_form())
-            return Compound(expr.fun, tuple(self.expand_defs_term(arg, context.copy_form()) for arg in expr.args))
+                return self.expand_defs_var_term(beta_reduced, context)
+            return Compound(expr.fun, tuple(self.expand_defs_term(arg, context) for arg in expr.args))
         else:
             raise LogicError(f"Unexpected type: {type(expr)}")
 
@@ -362,7 +362,7 @@ class DefExpander:
         if isinstance(expr, (PredTemplate, RefPrimPred, RefDefPred)):
             return expr
         elif isinstance(expr, PredLambda):
-            return PredLambda(expr.args, self.expand_defs_formula(expr.body, context.copy_form()))
+            return PredLambda(expr.args, self.expand_defs_formula(expr.body, context))
         else:
             raise LogicError(f"Unexpected type: {type(expr)}")
 
@@ -370,7 +370,7 @@ class DefExpander:
         if isinstance(expr, (FunTemplate, RefDefFun, RefDefFunTerm)):
             return expr
         elif isinstance(expr, FunLambda):
-            return FunLambda(expr.args, self.expand_defs_var_term(expr.body, context.copy_form()))
+            return FunLambda(expr.args, self.expand_defs_var_term(expr.body, context))
         else:
             raise LogicError(f"Unexpected type: {type(expr)}")
 
@@ -401,12 +401,12 @@ class DefExpander:
                 if should_expand:
                     renamed_formula, renamed_mapping = alpha_safe_formula(defpred.formula, dict(zip(defpred.args, expr.args)), context, self.decl)
                     expanded = Substitutor(renamed_mapping, context, self.decl).substitute_formula(renamed_formula)
-                    return self.expand_defs_formula(expanded, context.copy_form())
-            return AtomicFormula(expr.pred, tuple(self.expand_defs_term(arg, context.copy_form()) for arg in expr.args))
+                    return self.expand_defs_formula(expanded, context)
+            return AtomicFormula(expr.pred, tuple(self.expand_defs_term(arg, context) for arg in expr.args))
         elif isinstance(expr, Not):
-            return Not(self.expand_defs_formula(expr.body, context.copy_form()))
+            return Not(self.expand_defs_formula(expr.body, context))
         elif isinstance(expr, (And, Or, Implies, Iff)):
-            return type(expr)(self.expand_defs_formula(expr.left, context.copy_form()), self.expand_defs_formula(expr.right, context.copy_form()))
+            return type(expr)(self.expand_defs_formula(expr.left, context), self.expand_defs_formula(expr.right, context))
         elif isinstance(expr, Forall):
             pred_tmpls: list[PredTemplate] = []
             fun_tmpls: list[FunTemplate] = []
@@ -414,9 +414,9 @@ class DefExpander:
                 pred_tmpls.append(expr.var)
             elif isinstance(expr.var, FunTemplate):
                 fun_tmpls.append(expr.var)
-            return Forall(expr.var, self.expand_defs_formula(expr.body, context.add_form([], pred_tmpls, fun_tmpls)))
+            return Forall(expr.var, self.expand_defs_formula(expr.body, context))
         elif isinstance(expr, (Exists, ExistsUniq)):
-            return type(expr)(expr.var, self.expand_defs_formula(expr.body, context.copy_form()))
+            return type(expr)(expr.var, self.expand_defs_formula(expr.body, context))
         else:
             raise LogicError(f"Unexpected type: {type(expr)}")
 

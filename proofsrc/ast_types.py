@@ -111,29 +111,6 @@ class PredLambda(PredTerm):
     args: tuple[Var, ...]
     body: Formula
 
-@dataclass
-class FormulaContext:
-    vars: list[Var]
-    pred_tmpls: list[PredTemplate]
-    fun_tmpls: list[FunTemplate]
-    used_names: set[str]
-
-    @staticmethod
-    def init() -> "FormulaContext":
-        return FormulaContext(vars=[], pred_tmpls=[], fun_tmpls=[], used_names=set())
-
-    def copy(self) -> "FormulaContext":
-        return FormulaContext(list(self.vars), list(self.pred_tmpls), list(self.fun_tmpls), self.used_names.copy())
-
-    def add(self, new_vars: list[Var], new_pred_tmpls: list[PredTemplate], new_fun_tmpls: list[FunTemplate]) -> "FormulaContext":
-        new_used_names = self.used_names.copy()
-        for item in new_vars + new_pred_tmpls + new_fun_tmpls:
-            if item.name in new_used_names:
-                msg = f"{item.name} is already used"
-                raise ContextError(msg)
-            new_used_names.add(item.name)
-        return FormulaContext(list(self.vars + new_vars), list(self.pred_tmpls + new_pred_tmpls), list(self.fun_tmpls + new_fun_tmpls), new_used_names)
-
 @dataclass(frozen=True)
 class AtomicFormula(Formula):
     pred: PredTerm
@@ -835,20 +812,13 @@ class DeclarationContextNameSpace:
 @dataclass
 class Context:
     ctrl: ControlContext
-    form: FormulaContext
 
     @staticmethod
     def init() -> "Context":
-        return Context(ControlContext.init(), FormulaContext.init())
+        return Context(ControlContext.init())
 
     def add_ctrl(self, new_vars: list[Var], new_formulas: list[Bottom | Formula], new_pred_tmpls: list[PredTemplate], new_fun_tmpls: list[FunTemplate], new_symbols: list[Var | PredTemplate | FunTemplate]):
-        return Context(self.ctrl.add(new_vars, new_formulas, new_pred_tmpls, new_fun_tmpls, new_symbols), self.form)
-
-    def copy_form(self):
-        return Context(self.ctrl, self.form.copy())
-
-    def add_form(self, new_vars: list[Var], new_pred_tmpls: list[PredTemplate], new_fun_tmpls: list[FunTemplate]):
-        return Context(self.ctrl, self.form.add(new_vars, new_pred_tmpls, new_fun_tmpls))
+        return Context(self.ctrl.add(new_vars, new_formulas, new_pred_tmpls, new_fun_tmpls, new_symbols))
 
 @dataclass
 class Include:
