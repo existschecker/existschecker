@@ -8,8 +8,8 @@ from typing import Sequence
 
 from dependency import DependencyResolver
 from lexer import KEYWORDS, STRINGS, Token
-from ast_types import DeclarationUnit, Workspace, Declaration, Include, Control, Formula, Term, RefFact, FormatError, RenderError, Bottom, DeclarationContextNameSpace, RefStruct, RefStructCondition, StructVar
-from resolved_ast_types import ResolvedInclude, ResolvedDeclaration, ResolvedControl, ResolvedFormula, ResolvedTerm, ResolvedRefFact, ResolvedRefStruct, ResolvedRefStructField, ResolvedRefStructCondition, ResolvedStructVar, ResolvedRefEquality, ResolvedRefPrimPred, ResolvedRefDefPred, ResolvedRefDefCon, ResolvedRefDefFun, ResolvedRefDefFunTerm, ResolvedPredLambda, ResolvedFunLambda
+from ast_types import DeclarationUnit, Workspace, Declaration, Include, Control, Formula, Term, RefFact, FormatError, RenderError, Bottom, DeclarationContextNameSpace, RefStruct, RefStructCondition, StructVar, RefStructPred
+from resolved_ast_types import ResolvedInclude, ResolvedDeclaration, ResolvedControl, ResolvedFormula, ResolvedTerm, ResolvedRefFact, ResolvedRefStruct, ResolvedRefStructField, ResolvedRefStructCondition, ResolvedStructVar, ResolvedRefEquality, ResolvedRefPrimPred, ResolvedRefDefPred, ResolvedRefDefCon, ResolvedRefDefFun, ResolvedRefDefFunTerm, ResolvedPredLambda, ResolvedFunLambda, ResolvedRefStructPred
 from splitter import split
 from to_html import Renderer
 from parser import Parser
@@ -56,7 +56,7 @@ class CursorState:
     uri: str
     position: lsp.Position
 
-def get_hover(resolved_node: ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar, node: Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar) -> str:
+def get_hover(resolved_node: ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred, node: Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred) -> str:
     if isinstance(node, (Declaration, Control)):
         return f"{resolved_node.__class__.__name__} -> {node.__class__.__name__}: {node.proofinfo.status}"
     else:
@@ -420,7 +420,7 @@ class Analyzer:
                     t_type = TokenType.CONSTANT
                 elif isinstance(node, ResolvedRefStruct):
                     t_type = TokenType.STRUCT
-                elif isinstance(node, (ResolvedTerm, ResolvedStructVar, ResolvedRefStructField)) and not isinstance(node, ResolvedPredLambda) and not isinstance(node, ResolvedFunLambda):
+                elif isinstance(node, (ResolvedTerm, ResolvedStructVar, ResolvedRefStructField, ResolvedRefStructPred)) and not isinstance(node, ResolvedPredLambda) and not isinstance(node, ResolvedFunLambda):
                     t_type = TokenType.VARIABLE
                 else:
                     t_type = None

@@ -37,6 +37,11 @@ class ParsedIdentArgs(ParsedExpr):
     args: tuple[ParsedExpr, ...]
 
 @dataclass(frozen=True)
+class ParsedCall(ParsedExpr):
+    callee: ParsedAccess
+    args: tuple[ParsedExpr, ...]
+
+@dataclass(frozen=True)
 class ParsedPredTemplate(ParsedExpr):
     name: str
     arity: int
@@ -273,6 +278,13 @@ class ParsedStruct(ParsedDeclaration):
     ref: ParsedIdent
     vars: list[ParsedIdent | ParsedTypedIdent]
     formulas: dict[ParsedIdent, ParsedExpr]
+
+@dataclass
+class ParsedStructPred(ParsedDeclaration):
+    ref_struct: ParsedIdent
+    ref: ParsedIdent
+    args: tuple[ParsedIdent, ...]
+    formula: ParsedExpr
 
 @dataclass
 class ParsedInclude:

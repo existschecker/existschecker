@@ -92,3 +92,206 @@ theorem test05 \forall p: SubsetPairPair (subset(p.s.u.X, p.t.v.Y)) {
     fold for subset conclude subset(p.s.u.X, p.t.v.Y)
   }
 }
+
+struct Subset predicate inX(a) as in(a, X)
+
+struct Subset predicate inY(a) as in(a, Y)
+
+theorem test06 \forall p: Subset \forall a (p.inX(a) \to p.inY(a)) {
+  any p: Subset, a {
+    assume p.inX(a) {
+      apply invoke p.relation for a
+    }
+  }
+}
+
+theorem test07 \forall p: SubsetPair \forall a (p.u.inX(a) \to p.u.inY(a)) {
+  any p: SubsetPair, a {
+    assume p.u.inX(a) {
+      apply invoke p.u.relation for a
+    }
+  }
+}
+
+theorem test08 \forall p: SubsetPairPair \forall a (p.s.u.inX(a) \to p.s.u.inY(a)) {
+  any p: SubsetPairPair, a {
+    assume p.s.u.inX(a) {
+      apply invoke p.s.u.relation for a
+    }
+  }
+}
+
+struct SubsetPair predicate inuX(a) as in(a, u.X)
+
+struct SubsetPair predicate inuY(a) as in(a, u.Y)
+
+struct SubsetPair predicate invX(a) as in(a, v.X)
+
+struct SubsetPair predicate invY(a) as in(a, v.Y)
+
+theorem test09 \forall p: SubsetPair \forall a (p.inuX(a) \to p.invY(a)) {
+  any p: SubsetPair, a {
+    assume p.inuX(a) {
+      apply invoke p.u.relation for a
+      apply invoke p.relation for a
+      apply invoke p.v.relation for a
+    }
+  }
+}
+
+theorem test10 \forall p: SubsetPairPair \forall a (p.s.inuX(a) \to p.s.invY(a)) {
+  any p: SubsetPairPair, a {
+    assume p.s.inuX(a) {
+      apply invoke p.s.u.relation for a
+      apply invoke p.s.relation for a
+      apply invoke p.s.v.relation for a
+    }
+  }
+}
+
+struct SubsetPairPair predicate insuX(a) as in(a, s.u.X)
+
+struct SubsetPairPair predicate insuY(a) as in(a, s.u.Y)
+
+struct SubsetPairPair predicate insvX(a) as in(a, s.v.X)
+
+struct SubsetPairPair predicate insvY(a) as in(a, s.v.Y)
+
+struct SubsetPairPair predicate intuX(a) as in(a, t.u.X)
+
+struct SubsetPairPair predicate intuY(a) as in(a, t.u.Y)
+
+struct SubsetPairPair predicate intvX(a) as in(a, t.v.X)
+
+struct SubsetPairPair predicate intvY(a) as in(a, t.v.Y)
+
+theorem test11 \forall p: SubsetPairPair \forall a (p.insuX(a) \to p.intvY(a)) {
+  any p: SubsetPairPair, a {
+    assume p.insuX(a) {
+      apply invoke p.s.u.relation for a
+      apply invoke p.s.relation for a
+      apply invoke p.s.v.relation for a
+      apply invoke p.relation for a
+      apply invoke p.t.u.relation for a
+      apply invoke p.t.relation for a
+      apply invoke p.t.v.relation for a
+    }
+  }
+}
+
+definition predicate psubset(predicate \phi[1], predicate \psi[1]) as \forall a (\phi(a) \to \psi(a))
+
+theorem test12 \forall p: Subset (psubset(p.inX, p.inY)) {
+  any p: Subset {
+    any a {
+      assume p.inX(a) {
+        apply invoke p.relation for a
+      }
+    }
+    fold for psubset conclude psubset(p.inX, p.inY)
+  }
+}
+
+theorem test13 \forall p: SubsetPair (psubset(p.inuY, p.invX)) {
+  any p: SubsetPair {
+    any a {
+      assume p.inuY(a) {
+        apply invoke p.relation for a
+      }
+    }
+    fold for psubset conclude psubset(p.inuY, p.invX)
+  }
+}
+
+theorem test14 \forall p: SubsetPair (psubset(p.inuX, p.invY)) {
+  any p: SubsetPair {
+    apply test12 for p.u
+    apply test13 for p
+    apply test12 for p.v
+    any a {
+      assume p.inuX(a) {
+        apply invoke psubset(p.u.inX, p.u.inY) for a
+        apply invoke psubset(p.u.inY, p.v.inX) for a
+        apply invoke psubset(p.v.inX, p.v.inY) for a
+      }
+    }
+    fold for psubset conclude psubset(p.inuX, p.invY)
+  }
+}
+
+theorem test15 \forall p: SubsetPairPair (psubset(p.insvY, p.intuX)) {
+  any p: SubsetPairPair {
+    any a {
+      assume p.insvY(a) {
+        apply invoke p.relation for a
+      }
+    }
+    fold for psubset conclude psubset(p.insvY, p.intuX)
+  }
+}
+
+theorem test16 \forall p: SubsetPairPair (psubset(p.insuX, p.intvY)) {
+  any p: SubsetPairPair {
+    apply test12 for p.s.u
+    apply test13 for p.s
+    apply test12 for p.s.v
+    apply test15 for p
+    apply test12 for p.t.u
+    apply test13 for p.t
+    apply test12 for p.t.v
+    any a {
+      assume p.insuX(a) {
+        apply invoke psubset(p.insuX, p.insuY) for a
+        apply invoke psubset(p.insuY, p.insvX) for a
+        apply invoke psubset(p.insvX, p.insvY) for a
+        apply invoke psubset(p.insvY, p.intuX) for a
+        apply invoke psubset(p.intuX, p.intuY) for a
+        apply invoke psubset(p.intuY, p.intvX) for a
+        apply invoke psubset(p.intvX, p.intvY) for a
+      }
+    }
+    fold for psubset conclude psubset(p.insuX, p.intvY)
+  }
+}
+
+theorem test17 \forall p: Subset \forall q: Subset (subset(p.X, p.Y) \wedge subset(q.X, q.Y)) {
+  any p: Subset, q: Subset {
+    connect subset(p.X, p.Y) \wedge subset(q.X, q.Y)
+  }
+}
+
+theorem test18 \forall p: Subset \forall q: Subset (subset(p.X, p.Y) \wedge subset(q.X, q.Y)) {
+  any p: Subset, q: Subset {
+    apply test17 for p, q
+  }
+}
+
+theorem test19 \forall x (subset(x, x)) {
+  any x {
+    any y {
+      assume in(y, x) {}
+    }
+    fold for subset conclude subset(x, x)
+  }
+}
+
+theorem test20 \forall p: Subset (subset(p.X, p.X)) {
+  any p: Subset {
+    apply test19 for p.X
+  }
+}
+
+theorem test21 \forall^P \phi[1] (psubset(\phi, \phi)) {
+  any predicate \phi[1] {
+    any x {
+      assume \phi(x) {}
+    }
+    fold for psubset conclude psubset(\phi, \phi)
+  }
+}
+
+theorem test22 \forall p: Subset (psubset(p.inX, p.inX)) {
+  any p: Subset {
+    apply test21 for p.inX
+  }
+}

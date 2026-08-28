@@ -3,8 +3,8 @@ from pygls import uris
 from typing import Sequence
 from ast_types import DeclarationUnit, DeclarationContextNameSpace
 from ast_types import Var, PredTemplate, FunTemplate
-from resolved_ast_types import ResolvedTerm, ResolvedFormula, ResolvedVarTerm, ResolvedVar, ResolvedRefDefCon, ResolvedFunTerm, ResolvedRefDefFun, ResolvedRefDefFunTerm, ResolvedFunTemplate, ResolvedFunLambda, ResolvedCompound, ResolvedPredTerm, ResolvedRefEquality, ResolvedRefPrimPred, ResolvedRefDefPred, ResolvedPredTemplate, ResolvedPredLambda, ResolvedAtomicFormula, ResolvedNot, ResolvedAnd, ResolvedOr, ResolvedImplies, ResolvedIff, ResolvedForall, ResolvedExists, ResolvedExistsUniq, ResolvedBottom, ResolvedRefFact, ResolvedRefAxiom, ResolvedRefTheorem, ResolvedRefDefConExist, ResolvedRefDefConUniq, ResolvedRefDefFunExist, ResolvedRefDefFunUniq, ResolvedControl, ResolvedInvalidControl, ResolvedAssume, ResolvedAny, ResolvedCase, ResolvedDivide, ResolvedSome, ResolvedDeny, ResolvedContradict, ResolvedExplode, ResolvedApply, ResolvedLift, ResolvedCharacterize, ResolvedInvoke, ResolvedExpand, ResolvedFold, ResolvedPad, ResolvedSplit, ResolvedConnect, ResolvedSubstitute, ResolvedShow, ResolvedAssert, ResolvedDeclaration, ResolvedInvalidDeclaration, ResolvedPrimPred, ResolvedAxiom, ResolvedTheorem, ResolvedDefPred, ResolvedDefConExist, ResolvedDefConUniq, ResolvedDefCon, ResolvedDefFunExist, ResolvedDefFunUniq, ResolvedDefFun, ResolvedDefFunTerm, ResolvedEquality, ResolvedInclude, ResolvedInvalidInclude, ResolvedRefStruct, ResolvedStructVar, ResolvedRefStructField, ResolvedStructMemberField, ResolvedRefStructCondition, ResolvedRefStructMemberCondition, ResolvedStruct, ResolvedFormulaContext, ResolvedControlContext, ResolvedContext
-from parsed_ast_types import ParsedExpr, ParsedIdent, ParsedIdentArgs, ParsedFunTemplate, ParsedFunLambda, ParsedPredTemplate, ParsedPredLambda, ParsedNot, ParsedAnd, ParsedOr, ParsedImplies, ParsedIff, ParsedForall, ParsedExists, ParsedExistsUniq, ParsedBottom, ParsedControl, ParsedInvalidControl, ParsedAny, ParsedAssume, ParsedDivide, ParsedSome, ParsedDeny, ParsedContradict, ParsedCase, ParsedExplode, ParsedApply, ParsedLift, ParsedCharacterize, ParsedInvoke, ParsedExpand, ParsedFold, ParsedPad, ParsedSplit, ParsedConnect, ParsedSubstitute, ParsedShow, ParsedAssert, ParsedDeclaration, ParsedInvalidDeclaration, ParsedPrimPred, ParsedAxiom, ParsedTheorem, ParsedDefPred, ParsedDefCon, ParsedDefFun, ParsedDefFunTerm, ParsedDefExist, ParsedDefUniq, ParsedEquality, ParsedInclude, ParsedInvalidInclude, ParsedUnit, ParsedStruct, ParsedTypedIdent, ParsedAccess
+from resolved_ast_types import ResolvedTerm, ResolvedFormula, ResolvedVarTerm, ResolvedVar, ResolvedRefDefCon, ResolvedFunTerm, ResolvedRefDefFun, ResolvedRefDefFunTerm, ResolvedFunTemplate, ResolvedFunLambda, ResolvedCompound, ResolvedPredTerm, ResolvedRefEquality, ResolvedRefPrimPred, ResolvedRefDefPred, ResolvedPredTemplate, ResolvedPredLambda, ResolvedAtomicFormula, ResolvedNot, ResolvedAnd, ResolvedOr, ResolvedImplies, ResolvedIff, ResolvedForall, ResolvedExists, ResolvedExistsUniq, ResolvedBottom, ResolvedRefFact, ResolvedRefAxiom, ResolvedRefTheorem, ResolvedRefDefConExist, ResolvedRefDefConUniq, ResolvedRefDefFunExist, ResolvedRefDefFunUniq, ResolvedControl, ResolvedInvalidControl, ResolvedAssume, ResolvedAny, ResolvedCase, ResolvedDivide, ResolvedSome, ResolvedDeny, ResolvedContradict, ResolvedExplode, ResolvedApply, ResolvedLift, ResolvedCharacterize, ResolvedInvoke, ResolvedExpand, ResolvedFold, ResolvedPad, ResolvedSplit, ResolvedConnect, ResolvedSubstitute, ResolvedShow, ResolvedAssert, ResolvedDeclaration, ResolvedInvalidDeclaration, ResolvedPrimPred, ResolvedAxiom, ResolvedTheorem, ResolvedDefPred, ResolvedDefConExist, ResolvedDefConUniq, ResolvedDefCon, ResolvedDefFunExist, ResolvedDefFunUniq, ResolvedDefFun, ResolvedDefFunTerm, ResolvedEquality, ResolvedInclude, ResolvedInvalidInclude, ResolvedRefStruct, ResolvedStructVar, ResolvedRefStructField, ResolvedStructMemberField, ResolvedRefStructCondition, ResolvedRefStructMemberCondition, ResolvedStruct, ResolvedFormulaContext, ResolvedControlContext, ResolvedContext, ResolvedStructPred, ResolvedRefStructPred, ResolvedStructMemberPred
+from parsed_ast_types import ParsedExpr, ParsedIdent, ParsedIdentArgs, ParsedFunTemplate, ParsedFunLambda, ParsedPredTemplate, ParsedPredLambda, ParsedNot, ParsedAnd, ParsedOr, ParsedImplies, ParsedIff, ParsedForall, ParsedExists, ParsedExistsUniq, ParsedBottom, ParsedControl, ParsedInvalidControl, ParsedAny, ParsedAssume, ParsedDivide, ParsedSome, ParsedDeny, ParsedContradict, ParsedCase, ParsedExplode, ParsedApply, ParsedLift, ParsedCharacterize, ParsedInvoke, ParsedExpand, ParsedFold, ParsedPad, ParsedSplit, ParsedConnect, ParsedSubstitute, ParsedShow, ParsedAssert, ParsedDeclaration, ParsedInvalidDeclaration, ParsedPrimPred, ParsedAxiom, ParsedTheorem, ParsedDefPred, ParsedDefCon, ParsedDefFun, ParsedDefFunTerm, ParsedDefExist, ParsedDefUniq, ParsedEquality, ParsedInclude, ParsedInvalidInclude, ParsedUnit, ParsedStruct, ParsedTypedIdent, ParsedAccess, ParsedStructPred, ParsedCall
 from lexer import Token
 from logic_utils import strip_forall_vars
 from dependency import DependencyResolver
@@ -40,7 +40,7 @@ class NameResolver:
     def get_node_token(self, node: ParsedDeclaration | ParsedControl | ParsedExpr) -> Token:
         return self.unit.tokens[self.parsed_unit.node_to_token[id(node)][0]]
 
-    def add_node_to_token(self, node: ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar, parsed: ParsedDeclaration | ParsedControl | ParsedExpr) -> None:
+    def add_node_to_token(self, node: ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred, parsed: ParsedDeclaration | ParsedControl | ParsedExpr) -> None:
         self.unit.resolved_node_to_token[id(node)] = self.parsed_unit.node_to_token[id(parsed)]
         self.unit.resolved_nodes.append(node)
         if isinstance(node, (ResolvedRefFact, ResolvedRefEquality, ResolvedRefPrimPred, ResolvedRefDefPred, ResolvedRefDefCon, ResolvedRefDefFun, ResolvedRefDefFunTerm, ResolvedRefStruct, ResolvedRefStructField, ResolvedRefStructCondition)):
@@ -51,7 +51,7 @@ class NameResolver:
             self.unit.resolved_decl_refs[name] = []
         self.unit.resolved_decl_refs[name].append(token)
 
-    def add_ctrl_defs_refs(self, def_node: ResolvedTerm | ResolvedStructVar | ResolvedRefStructCondition, ref_node: ResolvedTerm | ResolvedStructVar | ResolvedRefStructField | ResolvedRefStructCondition, unit_name: str | None = None) -> None:
+    def add_ctrl_defs_refs(self, def_node: ResolvedTerm | ResolvedStructVar | ResolvedRefStructCondition | ResolvedStructPred | ResolvedRefStructPred, ref_node: ResolvedTerm | ResolvedStructVar | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedRefStructPred, unit_name: str | None = None) -> None:
         if unit_name is None:
             if isinstance(self.parsed_unit.ast, ParsedDeclaration):
                 unit_name = self.parsed_unit.ast.name
@@ -98,6 +98,8 @@ class NameResolver:
                 return self.resolve_equality(node)
             elif isinstance(node, ParsedStruct):
                 return self.resolve_struct(node)
+            elif isinstance(node, ParsedStructPred):
+                return self.resolve_struct_predicate(node)
             elif isinstance(node, ParsedInvalidDeclaration):
                 return self.resolve_invalid_declaration(node)
             else:
@@ -288,6 +290,29 @@ class NameResolver:
         self.add_node_to_token(resolved, node)
         return resolved
 
+    def resolve_struct_predicate(self, node: ParsedStructPred) -> ResolvedStructPred:
+        if not self.decl.has_struct(node.ref_struct.name):
+            raise ResolveError(node.ref_struct, f"{node.ref_struct.name} is unknown")
+        ref_struct = ResolvedRefStruct(node.ref_struct.name)
+        self.add_node_to_token(ref_struct, node.ref_struct)
+        struct = self.decl.get_struct(node.ref_struct.name)
+        field_names = [field.name for field in struct.fields]
+        condition_names = [condition.name for condition in struct.conditions]
+        predicate_names = [name[len(node.ref_struct.name) + 1:] for name in self.decl.get_used_names() if name.startswith(node.ref_struct.name + ".")]
+        if node.ref.name in field_names + condition_names + predicate_names:
+            raise ResolveError(node.ref, f"{node.ref.name} is already used")
+        ref = ResolvedRefStructPred(node.ref.name)
+        self.add_node_to_token(ref, node.ref)
+        self.add_ctrl_defs_refs(ref, ref)
+        context = ResolvedContext.init()
+        context = context.add_ref_struct(ref_struct)
+        args = self.resolve_vars(node.args, context.ctrl)
+        local_ctx = context.add_ctrl(args, [], [], [], [], list(args))
+        formula = self.resolve_formula(node.formula, local_ctx)
+        resolved = ResolvedStructPred(node.name, ref_struct, ref, tuple(args), formula)
+        self.add_node_to_token(resolved, node)
+        return resolved
+
     def resolve_invalid_declaration(self, node: ParsedInvalidDeclaration) -> ResolvedInvalidDeclaration:
         resolved = ResolvedInvalidDeclaration(node.name)
         self.add_node_to_token(resolved, node)
@@ -376,7 +401,7 @@ class NameResolver:
 
     def resolve_assume(self, node: ParsedAssume, context: ResolvedContext) -> ResolvedAssume:
         premise = self.resolve_formula(node.premise, context)
-        body = self.resolve_block(node.body, context.copy_ctrl())
+        body = self.resolve_block(node.body, context)
         resolved = ResolvedAssume(premise, body)
         self.add_node_to_token(resolved, node)
         return resolved
@@ -386,13 +411,13 @@ class NameResolver:
         if len(node.cases) < 2:
             msg = "At least two cases are required"
             raise ResolveError(node, msg)
-        cases = [self.resolve_case(case, context.copy_ctrl()) for case in node.cases]
+        cases = [self.resolve_case(case, context) for case in node.cases]
         resolved = ResolvedDivide(fact, cases)
         self.add_node_to_token(resolved, node)
         return resolved
 
     def resolve_case(self, node: ParsedCase, context: ResolvedContext) -> ResolvedCase:
-        premise = self.resolve_formula(node.premise, context.copy_ctrl())
+        premise = self.resolve_formula(node.premise, context)
         body = self.resolve_block(node.body, context)
         resolved = ResolvedCase(premise, body)
         self.add_node_to_token(resolved, node)
@@ -409,7 +434,7 @@ class NameResolver:
 
     def resolve_deny(self, node: ParsedDeny, context: ResolvedContext) -> ResolvedDeny:
         premise = self.resolve_formula(node.premise, context)
-        body = self.resolve_block(node.body, context.copy_ctrl())
+        body = self.resolve_block(node.body, context)
         resolved = ResolvedDeny(premise, body)
         self.add_node_to_token(resolved, node)
         return resolved
@@ -557,7 +582,7 @@ class NameResolver:
 
     def resolve_show(self, node: ParsedShow, context: ResolvedContext) -> ResolvedShow:
         conclusion = self.resolve_bot_or_formula(node.conclusion, context)
-        body = self.resolve_block(node.body, context.copy_ctrl())
+        body = self.resolve_block(node.body, context)
         resolved = ResolvedShow(conclusion, body)
         self.add_node_to_token(resolved, node)
         return resolved
@@ -586,7 +611,7 @@ class NameResolver:
             return self.resolve_formula(node, context)
 
     def resolve_formula(self, node: ParsedExpr, context: ResolvedContext) -> ResolvedFormula:
-        if isinstance(node, (ParsedIdent, ParsedIdentArgs)):
+        if isinstance(node, (ParsedIdent, ParsedIdentArgs, ParsedCall)):
             return self.resolve_atomic_formula(node, context)
         elif isinstance(node, ParsedNot):
             resolved = ResolvedNot(self.resolve_formula(node.body, context))
@@ -698,7 +723,7 @@ class NameResolver:
             self.add_node_to_token(access, node)
             return access
 
-    def resolve_atomic_formula(self, node: ParsedIdent | ParsedIdentArgs, context: ResolvedContext) -> ResolvedAtomicFormula:
+    def resolve_atomic_formula(self, node: ParsedIdent | ParsedIdentArgs | ParsedCall, context: ResolvedContext) -> ResolvedAtomicFormula:
         if isinstance(node, ParsedIdent):
             name = node.name
             if any(pred_tmpl.name == name for pred_tmpl in context.form.pred_tmpls):
@@ -717,7 +742,7 @@ class NameResolver:
             formula = ResolvedAtomicFormula(pred, ())
             self.add_node_to_token(formula, node)
             return formula
-        else:
+        elif isinstance(node, ParsedIdentArgs):
             name = node.name.name
             equality = self.decl.get_equality()
             if any(pred_tmpl.name == name for pred_tmpl in context.form.pred_tmpls):
@@ -752,10 +777,29 @@ class NameResolver:
             formula = ResolvedAtomicFormula(pred, tuple(subargs))
             self.add_node_to_token(formula, node)
             return formula
+        else:
+            callee = self.resolve_term(node.callee, context)
+            if not isinstance(callee, ResolvedStructMemberPred):
+                raise ResolveError(node.callee, f"Unexpected type {type(callee)}")
+            if isinstance(callee.parent, ResolvedStructVar):
+                ref_struct = callee.parent.ref_struct
+            elif isinstance(callee.parent, ResolvedStructMemberField):
+                ref_struct = callee.parent.ref_struct
+                if ref_struct is None:
+                    raise ResolveError(node.callee, f"ref_struct of parent is unknown")
+            else:
+                raise ResolveError(node.callee, f"Unexpected type {type(callee.parent)}")
+            def_args = self.decl.get_structpred(f"{ref_struct.name}.{callee.struct_pred.name}").args
+            subargs = tuple(self.resolve_term(arg, context) for arg in node.args)
+            self.match_args(def_args, subargs, node)
+            formula = ResolvedAtomicFormula(callee, subargs)
+            self.add_node_to_token(formula, node)
+            return formula
 
     def resolve_term(self, node: ParsedExpr, context: ResolvedContext) -> ResolvedTerm:
         if isinstance(node, ParsedIdent):
             name = node.name
+            struct = None if context.ref_struct is None else self.get_struct(context.ref_struct.name)
             if any(var.name == name for var in context.form.vars):
                 def_var = next(var for var in context.form.vars if var.name == name)
                 ref_var = ResolvedVar(name)
@@ -792,6 +836,15 @@ class NameResolver:
                 self.add_node_to_token(ref_pred_tmpl, node)
                 self.add_ctrl_defs_refs(def_pred_tmpl, ref_pred_tmpl)
                 return ref_pred_tmpl
+            elif struct is not None and any(field.name == name for field in struct.fields):
+                def_field = next(field for field in struct.fields if field.name == name)
+                if isinstance(def_field, ResolvedVar):
+                    ref_field = ResolvedVar(name)
+                else:
+                    ref_field = ResolvedStructVar(name, def_field.ref_struct)
+                self.add_node_to_token(ref_field, node)
+                self.add_ctrl_defs_refs(def_field, ref_field, struct.name)
+                return ref_field
             elif self.decl.has_defcon(name):
                 ref = ResolvedRefDefCon(name)
                 self.add_node_to_token(ref, node)
@@ -886,13 +939,22 @@ class NameResolver:
             for field in def_struct.fields:
                 if field.name == node.child.name:
                     def_field = field
-            if def_field is None:
-                raise ResolveError(node.child, f"{node.child.name} is not found")
-            next_ref_struct = None if isinstance(def_field, ResolvedVar) else def_field.ref_struct
-            ref_field = ResolvedRefStructField(node.child.name)
-            self.add_node_to_token(ref_field, node.child)
-            self.add_ctrl_defs_refs(def_field, ref_field, ref_struct.name)
-            access = ResolvedStructMemberField(parent, ref_field, next_ref_struct)
+            if def_field is not None:
+                next_ref_struct = None if isinstance(def_field, ResolvedVar) else def_field.ref_struct
+                ref_field = ResolvedRefStructField(node.child.name)
+                self.add_node_to_token(ref_field, node.child)
+                self.add_ctrl_defs_refs(def_field, ref_field, ref_struct.name)
+                access = ResolvedStructMemberField(parent, ref_field, next_ref_struct)
+                self.add_node_to_token(access, node)
+                return access
+            struct_predicate_name = f"{ref_struct.name}.{node.child.name}"
+            def_predicate = self.get_struct_predicate(struct_predicate_name)
+            if def_predicate is None:
+                raise ResolveError(node, f"{struct_predicate_name} is not found")
+            ref_predicate = ResolvedRefStructPred(node.child.name)
+            self.add_node_to_token(ref_predicate, node.child)
+            self.add_ctrl_defs_refs(def_predicate.ref, ref_predicate, def_predicate.name)
+            access = ResolvedStructMemberPred(parent, ref_predicate)
             self.add_node_to_token(access, node)
             return access
         else:
@@ -1040,7 +1102,7 @@ class NameResolver:
         self.add_ctrl_defs_refs(fun_tmpl, fun_tmpl)
         return fun_tmpl
 
-    def match_args(self, defargs: Sequence[Var | PredTemplate | FunTemplate], subargs: Sequence[ResolvedTerm], node: ParsedIdentArgs) -> None:
+    def match_args(self, defargs: Sequence[Var | PredTemplate | FunTemplate], subargs: Sequence[ResolvedTerm], node: ParsedIdentArgs | ParsedCall) -> None:
         if len(defargs) != len(subargs):
             msg = f"len(defargs): {len(defargs)}, len(subargs): {len(subargs)}"
             raise ResolveError(node, msg)
@@ -1057,3 +1119,21 @@ class NameResolver:
                 if not isinstance(subarg, ResolvedFunTerm):
                     msg = f"ResolvedFunTerm must be substituted into {defarg.name}, but {type(subarg)} is substituted"
                     raise ResolveError(node, msg)
+
+    def get_struct(self, name: str) -> ResolvedStruct | None:
+        order = self.dependency_resolver.get_dependent_order(self.unit.file)
+        for path in order:
+            for unit in self.file_units[path]:
+                resolved_ast = unit.resolved_ast
+                if (isinstance(resolved_ast, ResolvedStruct) and resolved_ast.name == name):
+                    return resolved_ast
+        return None
+
+    def get_struct_predicate(self, struct_predicate_name: str) -> ResolvedStructPred | None:
+        order = self.dependency_resolver.get_dependent_order(self.unit.file)
+        for path in order:
+            for unit in self.file_units[path]:
+                resolved_ast = unit.resolved_ast
+                if isinstance(resolved_ast, ResolvedStructPred) and resolved_ast.name == struct_predicate_name:
+                    return resolved_ast
+        return None

@@ -1,5 +1,5 @@
 from ast_types import DeclarationUnit, ContextError, TokenStreamError, ParseError
-from parsed_ast_types import ParsedExpr, ParsedIdent, ParsedIdentArgs, ParsedFunTemplate, ParsedFunLambda, ParsedPredTemplate, ParsedPredLambda, ParsedNot, ParsedAnd, ParsedOr, ParsedImplies, ParsedIff, ParsedForall, ParsedExists, ParsedExistsUniq, ParsedBottom, ParsedControl, ParsedInvalidControl, ParsedAny, ParsedAssume, ParsedDivide, ParsedSome, ParsedDeny, ParsedContradict, ParsedCase, ParsedExplode, ParsedApply, ParsedLift, ParsedCharacterize, ParsedInvoke, ParsedExpand, ParsedFold, ParsedPad, ParsedSplit, ParsedConnect, ParsedSubstitute, ParsedShow, ParsedAssert, ParsedDeclaration, ParsedInvalidDeclaration, ParsedPrimPred, ParsedAxiom, ParsedTheorem, ParsedDefPred, ParsedDefCon, ParsedDefFun, ParsedDefFunTerm, ParsedDefExist, ParsedDefUniq, ParsedEquality, ParsedInclude, ParsedInvalidInclude, ParsedUnit, ParsedStruct, ParsedTypedIdent, ParsedAccess
+from parsed_ast_types import ParsedExpr, ParsedIdent, ParsedIdentArgs, ParsedFunTemplate, ParsedFunLambda, ParsedPredTemplate, ParsedPredLambda, ParsedNot, ParsedAnd, ParsedOr, ParsedImplies, ParsedIff, ParsedForall, ParsedExists, ParsedExistsUniq, ParsedBottom, ParsedControl, ParsedInvalidControl, ParsedAny, ParsedAssume, ParsedDivide, ParsedSome, ParsedDeny, ParsedContradict, ParsedCase, ParsedExplode, ParsedApply, ParsedLift, ParsedCharacterize, ParsedInvoke, ParsedExpand, ParsedFold, ParsedPad, ParsedSplit, ParsedConnect, ParsedSubstitute, ParsedShow, ParsedAssert, ParsedDeclaration, ParsedInvalidDeclaration, ParsedPrimPred, ParsedAxiom, ParsedTheorem, ParsedDefPred, ParsedDefCon, ParsedDefFun, ParsedDefFunTerm, ParsedDefExist, ParsedDefUniq, ParsedEquality, ParsedInclude, ParsedInvalidInclude, ParsedUnit, ParsedStruct, ParsedTypedIdent, ParsedAccess, ParsedStructPred, ParsedCall
 from lexer import Token
 from token_stream import TokenStream
 
@@ -280,12 +280,21 @@ class Parser:
         logger.debug(f"[equality] {name}")
         return equality
 
-    def parse_struct(self) -> ParsedStruct:
+    def parse_struct(self) -> ParsedStruct | ParsedStructPred:
         start_token = self.stream.consume("STRUCT")
         name_token = self.stream.consume("IDENT")
         name = name_token.value
         ref = ParsedIdent(name)
         self.add_node_to_token(ref, name_token, name_token)
+        tok = self.stream.peek()
+        if tok.type == "LBRACE":
+            return self.parse_struct_main(start_token, ref)
+        elif tok.type == "PREDICATE":
+            return self.parse_struct_predicate(start_token, ref)
+        else:
+            raise ParseError(tok, f"Unexpected token type {tok.type}")
+
+    def parse_struct_main(self, start_token: Token, ref: ParsedIdent) -> ParsedStruct:
         self.stream.consume("LBRACE")
         self.stream.consume("FIELD")
         self.stream.consume("LBRACE")
@@ -308,10 +317,26 @@ class Parser:
                 break
         self.stream.consume("RBRACE")
         self.stream.consume("RBRACE")
-        struct = ParsedStruct(name=name, ref=ref, vars=vars, formulas=formulas)
+        struct = ParsedStruct(name=ref.name, ref=ref, vars=vars, formulas=formulas)
         self.add_node_to_token(struct, start_token, self.stream.last_token)
-        logger.debug(f"[struct] {name}")
+        logger.debug(f"[struct] {ref.name}")
         return struct
+
+    def parse_struct_predicate(self, start_token: Token, ref_struct: ParsedIdent) -> ParsedStructPred:
+        self.stream.consume("PREDICATE")
+        name_token = self.stream.consume("IDENT")
+        name = name_token.value
+        ref = ParsedIdent(name)
+        self.add_node_to_token(ref, name_token, name_token)
+        self.stream.consume("LPAREN")
+        args = self.parse_vars()
+        self.stream.consume("RPAREN")
+        self.stream.consume("AS")
+        formula = self.parse_formula()
+        defpred = ParsedStructPred(name=f"{ref_struct.name}.{ref.name}", ref_struct=ref_struct, ref=ref, args=tuple(args), formula=formula)
+        self.add_node_to_token(defpred, start_token, self.stream.last_token)
+        logger.debug(f"[struct predicate] {name}")
+        return defpred
 
     def parse_include(self) -> ParsedInclude:
         start_token = self.stream.consume("INCLUDE")
@@ -680,19 +705,20 @@ class Parser:
         tok = self.stream.peek()
         if tok.type == "IDENT":
             pred_tok = self.stream.consume("IDENT")
-            ident = ParsedIdent(pred_tok.value)
-            self.add_node_to_token(ident, pred_tok, pred_tok)
+            expr = ParsedIdent(pred_tok.value)
+            self.add_node_to_token(expr, pred_tok, pred_tok)
+            if self.stream.peek().type == "DOT":
+                expr = self.parse_access(expr, pred_tok)
             if self.stream.peek().type == "LPAREN":
                 self.stream.consume("LPAREN")
                 args = self.parse_terms()
                 self.stream.consume("RPAREN")
-                formula = ParsedIdentArgs(ident, tuple(args))
-                self.add_node_to_token(formula, tok, self.stream.last_token)
-                return formula
-            elif self.stream.peek().type == "DOT":
-                return self.parse_access(ident, pred_tok)
-            else:
-                return ident
+                if isinstance(expr, ParsedIdent):
+                    expr = ParsedIdentArgs(expr, tuple(args))
+                else:
+                    expr = ParsedCall(expr, tuple(args))
+                self.add_node_to_token(expr, tok, self.stream.last_token)
+            return expr
 
         elif tok.type == "LPAREN":
             self.stream.consume("LPAREN")
@@ -773,7 +799,7 @@ class Parser:
             terms.append(self.parse_term())
         return terms
 
-    def parse_access(self, parent: ParsedIdent | ParsedAccess, start_token: Token) -> ParsedExpr:
+    def parse_access(self, parent: ParsedIdent | ParsedAccess, start_token: Token) -> ParsedAccess:
         current_expr = parent
         while True:
             self.stream.consume("DOT")

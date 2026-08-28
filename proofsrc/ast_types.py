@@ -2,7 +2,7 @@ from lexer import Token
 from dataclasses import dataclass, field
 from lsprotocol import types as lsp
 from typing import Sequence, Literal
-from resolved_ast_types import ResolvedInclude, ResolvedDeclaration, ResolvedControl, ResolvedFormula, ResolvedTerm, ResolvedRefFact, ResolvedRefStruct, ResolvedRefStructField, ResolvedRefStructCondition, ResolvedStructVar
+from resolved_ast_types import ResolvedInclude, ResolvedDeclaration, ResolvedControl, ResolvedFormula, ResolvedTerm, ResolvedRefFact, ResolvedRefStruct, ResolvedRefStructField, ResolvedRefStructCondition, ResolvedStructVar, ResolvedRefStructPred
 
 import logging
 logger = logging.getLogger("proof")
@@ -456,6 +456,17 @@ class Struct(Declaration):
     conditions: dict[RefStructCondition, Formula]
 
 @dataclass
+class RefStructPred:
+    name: str
+
+@dataclass
+class StructPred(Declaration):
+    ref_struct: RefStruct
+    ref: RefStructPred
+    args: list[Var]
+    formula: Formula
+
+@dataclass
 class DeclarationContext:
     primpreds: dict[str, PrimPred]
     axioms: dict[str, Axiom]
@@ -470,11 +481,12 @@ class DeclarationContext:
     deffunterms: dict[str, DefFunTerm]
     equality: Equality | None
     structs: dict[str, Struct]
+    structpreds: dict[str, StructPred]
     used_names: set[str]
 
     @staticmethod
     def init() -> "DeclarationContext":
-        return DeclarationContext(primpreds={}, axioms={}, theorems={}, defpreds={}, defcons={}, defconexists={}, defconuniqs={}, deffuns={}, deffunexists={}, deffununiqs={}, deffunterms={}, equality=None, structs={}, used_names=set())
+        return DeclarationContext(primpreds={}, axioms={}, theorems={}, defpreds={}, defcons={}, defconexists={}, defconuniqs={}, deffuns={}, deffunexists={}, deffununiqs={}, deffunterms={}, equality=None, structs={}, structpreds={}, used_names=set())
 
     def add(self, declaration: Declaration):
         if declaration.name in self.used_names:
@@ -509,13 +521,15 @@ class DeclarationContext:
             self.deffunterms[declaration.name] = declaration
         elif isinstance(declaration, Struct):
             self.structs[declaration.name] = declaration
+        elif isinstance(declaration, StructPred):
+            self.structpreds[declaration.name] = declaration
         else:
             msg = f"Unexpected type: {type(declaration)}"
             raise ContextError(msg)
         self.used_names.add(declaration.name)
 
     def copy(self) -> "DeclarationContext":
-        return DeclarationContext(self.primpreds.copy(), self.axioms.copy(), self.theorems.copy(), self.defpreds.copy(), self.defcons.copy(), self.defconexists.copy(), self.defconuniqs.copy(), self.deffuns.copy(), self.deffunexists.copy(), self.deffununiqs.copy(), self.deffunterms.copy(), self.equality, self.structs.copy(), set(self.used_names))
+        return DeclarationContext(self.primpreds.copy(), self.axioms.copy(), self.theorems.copy(), self.defpreds.copy(), self.defcons.copy(), self.defconexists.copy(), self.defconuniqs.copy(), self.deffuns.copy(), self.deffunexists.copy(), self.deffununiqs.copy(), self.deffunterms.copy(), self.equality, self.structs.copy(), self.structpreds.copy(), set(self.used_names))
 
 @dataclass
 class DeclarationContextNameSpace:
@@ -779,6 +793,25 @@ class DeclarationContextNameSpace:
             msg = f"{len(candidates)} candidates found for {name}"
             raise ContextError(msg)
 
+    def has_structpred(self, ref: str | RefStructPred) -> bool:
+        name = ref if isinstance(ref, str) else ref.name
+        for file_decl in self.namespace.values():
+            if name in file_decl.structpreds:
+                return True
+        return False
+
+    def get_structpred(self, ref: str | RefStructPred) -> StructPred:
+        name = ref if isinstance(ref, str) else ref.name
+        candidates: list[StructPred] = []
+        for file_decl in self.namespace.values():
+            if name in file_decl.structpreds:
+                candidates.append(file_decl.structpreds[name])
+        if len(candidates) == 1:
+            return candidates[0]
+        else:
+            msg = f"{len(candidates)} candidates found for {name}"
+            raise ContextError(msg)
+
     def get_used_names(self) -> set[str]:
         names: set[str] = set()
         for ctx in self.namespace.values():
@@ -842,16 +875,16 @@ class DeclarationUnit:
     hash: str
     resolved_ast: ResolvedInclude | ResolvedDeclaration | None = None
     resolved_node_to_token: dict[int, tuple[int, int]] = field(default_factory=dict[int, tuple[int, int]])
-    resolved_nodes: list[ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar] = field(default_factory=list[ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar])
-    resolved_token_to_node: dict[int, ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar] = field(default_factory=dict[int, ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar])
+    resolved_nodes: list[ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred] = field(default_factory=list[ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred])
+    resolved_token_to_node: dict[int, ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred] = field(default_factory=dict[int, ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred])
     resolved_token_to_control: dict[int, ResolvedControl] = field(default_factory=dict[int, ResolvedControl])
     resolved_decl_refs: dict[str, list[Token]] = field(default_factory=dict[str, list[Token]])
     resolved_ctrl_defs: dict[int, tuple[str, int]] = field(default_factory=dict[int, tuple[str, int]])
     resolved_ctrl_refs: dict[int, list[int]] = field(default_factory=dict[int, list[int]])
     ast: Include | Declaration | None = None
     node_to_token: dict[int, tuple[int, int]] = field(default_factory=dict[int, tuple[int, int]])
-    nodes: list[Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar] = field(default_factory=list[Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar])
-    token_to_node: dict[int, Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar] = field(default_factory=dict[int, Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar])
+    nodes: list[Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred] = field(default_factory=list[Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred])
+    token_to_node: dict[int, Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred] = field(default_factory=dict[int, Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred])
     token_to_control: dict[int, Control] = field(default_factory=dict[int, Control])
     decl: DeclarationContextNameSpace = field(default_factory=DeclarationContextNameSpace.init)
     diagnostics: list[lsp.Diagnostic] = field(default_factory=list[lsp.Diagnostic])
@@ -919,7 +952,7 @@ class Workspace:
         def_unit = None
         for path in order:
             for unit in self.file_units[path]:
-                if isinstance(unit.ast, (Equality, PrimPred, Axiom, Theorem, DefPred, DefConExist, DefConUniq, DefCon, DefFunExist, DefFunUniq, DefFun, DefFunTerm, Struct)) and def_unit_name == unit.ast.name:
+                if isinstance(unit.ast, (Equality, PrimPred, Axiom, Theorem, DefPred, DefConExist, DefConUniq, DefCon, DefFunExist, DefFunUniq, DefFun, DefFunTerm, Struct, StructPred)) and def_unit_name == unit.ast.name:
                     def_unit = unit
         if def_unit is None:
             return None

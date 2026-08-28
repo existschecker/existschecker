@@ -384,6 +384,22 @@ class ResolvedStruct(ResolvedDeclaration):
     fields: tuple["ResolvedVar | ResolvedStructVar", ...]
     conditions: dict[ResolvedRefStructCondition, ResolvedFormula]
 
+@dataclass(frozen=True)
+class ResolvedRefStructPred:
+    name: str
+
+@dataclass
+class ResolvedStructPred(ResolvedDeclaration):
+    ref_struct: ResolvedRefStruct
+    ref: ResolvedRefStructPred
+    args: tuple[ResolvedVar, ...]
+    formula: ResolvedFormula
+
+@dataclass(frozen=True)
+class ResolvedStructMemberPred(ResolvedPredTerm):
+    parent: ResolvedStructVar | ResolvedStructMemberField
+    struct_pred: ResolvedRefStructPred
+
 @dataclass
 class ResolvedFormulaContext:
     vars: list[ResolvedVar]
@@ -395,9 +411,6 @@ class ResolvedFormulaContext:
     @staticmethod
     def init() -> "ResolvedFormulaContext":
         return ResolvedFormulaContext(vars=[], struct_vars=[], pred_tmpls=[], fun_tmpls=[], used_names=set())
-
-    def copy(self) -> "ResolvedFormulaContext":
-        return ResolvedFormulaContext(list(self.vars), list(self.struct_vars), list(self.pred_tmpls), list(self.fun_tmpls), self.used_names.copy())
 
     def add(self, new_vars: list[ResolvedVar], new_struct_vars: list[ResolvedStructVar], new_pred_tmpls: list[ResolvedPredTemplate], new_fun_tmpls: list[ResolvedFunTemplate]) -> "ResolvedFormulaContext":
         new_used_names = self.used_names.copy()
@@ -422,9 +435,6 @@ class ResolvedControlContext:
     def init() -> "ResolvedControlContext":
         return ResolvedControlContext(vars=[], struct_vars=[], formulas=[], pred_tmpls=[], fun_tmpls=[], symbols=[], used_names=set())
 
-    def copy(self) -> "ResolvedControlContext":
-        return ResolvedControlContext(list(self.vars), list(self.struct_vars), list(self.formulas), list(self.pred_tmpls), list(self.fun_tmpls), list(self.symbols), self.used_names.copy())
-
     def add(self, new_vars: list[ResolvedVar], new_struct_vars: list[ResolvedStructVar], new_formulas: list[ResolvedBottom | ResolvedFormula], new_pred_tmpls: list[ResolvedPredTemplate], new_fun_tmpls: list[ResolvedFunTemplate], new_symbols: list[ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate]) -> "ResolvedControlContext":
         new_used_names = self.used_names.copy()
         for item in new_vars + new_struct_vars + new_pred_tmpls + new_fun_tmpls:
@@ -438,22 +448,17 @@ class ResolvedControlContext:
 class ResolvedContext:
     ctrl: ResolvedControlContext
     form: ResolvedFormulaContext
+    ref_struct: ResolvedRefStruct | None
 
     @staticmethod
     def init() -> "ResolvedContext":
-        return ResolvedContext(ResolvedControlContext.init(), ResolvedFormulaContext.init())
-
-    def copy_ctrl(self):
-        return ResolvedContext(self.ctrl.copy(), self.form)
+        return ResolvedContext(ResolvedControlContext.init(), ResolvedFormulaContext.init(), None)
 
     def add_ctrl(self, new_vars: list[ResolvedVar], new_struct_vars: list[ResolvedStructVar], new_formulas: list[ResolvedBottom | ResolvedFormula], new_pred_tmpls: list[ResolvedPredTemplate], new_fun_tmpls: list[ResolvedFunTemplate], new_symbols: list[ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate]):
-        return ResolvedContext(self.ctrl.add(new_vars, new_struct_vars, new_formulas, new_pred_tmpls, new_fun_tmpls, new_symbols), self.form)
-
-    def copy_form(self):
-        return ResolvedContext(self.ctrl, self.form.copy())
+        return ResolvedContext(self.ctrl.add(new_vars, new_struct_vars, new_formulas, new_pred_tmpls, new_fun_tmpls, new_symbols), self.form, self.ref_struct)
 
     def add_form(self, new_vars: list[ResolvedVar], new_struct_vars: list[ResolvedStructVar], new_pred_tmpls: list[ResolvedPredTemplate], new_fun_tmpls: list[ResolvedFunTemplate]):
-        return ResolvedContext(self.ctrl, self.form.add(new_vars, new_struct_vars, new_pred_tmpls, new_fun_tmpls))
+        return ResolvedContext(self.ctrl, self.form.add(new_vars, new_struct_vars, new_pred_tmpls, new_fun_tmpls), self.ref_struct)
 
-    def copy(self):
-        return ResolvedContext(self.ctrl.copy(), self.form.copy())
+    def add_ref_struct(self, ref_struct: ResolvedRefStruct):
+        return ResolvedContext(self.ctrl, self.form, ref_struct)
