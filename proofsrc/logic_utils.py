@@ -12,15 +12,11 @@ def flatten_op(expr: Formula, op: type[And] | type[Or]) -> list[Formula]:
         return [expr]
 
 class AlphaEquiv:
-    def __init__(self, decl: DeclarationContextNameSpace):
-        self.decl = decl
-
     def begin_log(self, depth: int, e1: Formula | Term, e2: Formula | Term, env: dict[Var | PredTemplate | FunTemplate, Var | PredTemplate | FunTemplate]):
         if False:
-            from formatter import ExprFormatter
-            print(f"{'  ' * depth}[{e1.__class__.__name__}] e1: {ExprFormatter(self.decl).pretty_expr(e1)}")
-            print(f"{'  ' * depth}[{e2.__class__.__name__}] e2: {ExprFormatter(self.decl).pretty_expr(e2)}")
-            print(f"{'  ' * depth}[env] {", ".join([ExprFormatter(self.decl).pretty_expr(k) + ": " + ExprFormatter(self.decl).pretty_expr(v) for k, v in env.items()])}")
+            print(f"{'  ' * depth}[{e1.__class__.__name__}] e1: {e1}")
+            print(f"{'  ' * depth}[{e2.__class__.__name__}] e2: {e2}")
+            print(f"{'  ' * depth}[env] {", ".join([str(k) + ": " + str(v) for k, v in env.items()])}")
 
     def end_log(self, depth: int, result: bool):
         if False:
@@ -122,7 +118,7 @@ class AlphaEquiv:
             return False
         if len(e1.args) != len(e2.args):
             return False
-        if self.decl.get_equality() is not None and isinstance(e1.pred, RefEquality):
+        if isinstance(e1.pred, RefEquality):
             a1, b1 = e1.args
             a2, b2 = e2.args
             return (self.alpha_equiv_term(a1, a2, env, depth+1) and self.alpha_equiv_term(b1, b2, env, depth+1)) or (self.alpha_equiv_term(a1, b2, env, depth+1) and self.alpha_equiv_term(b1, a2, env, depth+1))
@@ -320,7 +316,7 @@ def alpha_equiv_with_defs(e1: Bottom | Formula, e2: Bottom | Formula, decl: Decl
     else:
         e1_exp = normalize_neg(DefExpander(refs, decl).expand_defs_formula(e1))
         e2_exp = normalize_neg(DefExpander(refs, decl).expand_defs_formula(e2))
-        return AlphaEquiv(decl).alpha_equiv(e1_exp, e2_exp)
+        return AlphaEquiv().alpha_equiv(e1_exp, e2_exp)
 
 @dataclass
 class DefExpander:
