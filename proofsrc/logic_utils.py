@@ -348,11 +348,11 @@ class DefExpander:
                         should_expand = True
                 if should_expand:
                     renamed_term, renamed_mapping = alpha_safe_var_term(deffunterm.varterm, dict(zip(deffunterm.args, expr.args)), context, self.decl)
-                    expanded = Substitutor(renamed_mapping, context, self.decl).substitute_var_term(renamed_term)
+                    expanded = Substitutor(renamed_mapping, self.decl).substitute_var_term(renamed_term)
                     return self.expand_defs_var_term(expanded, context)
             elif isinstance(expr.fun, FunLambda):
                 renamed_body, renamed_mapping = alpha_safe_var_term(expr.fun.body, dict(zip(expr.fun.args, expr.args)), context, self.decl)
-                beta_reduced = Substitutor(renamed_mapping, context, self.decl).substitute_var_term(renamed_body)
+                beta_reduced = Substitutor(renamed_mapping, self.decl).substitute_var_term(renamed_body)
                 return self.expand_defs_var_term(beta_reduced, context)
             return Compound(expr.fun, tuple(self.expand_defs_term(arg, context) for arg in expr.args))
         else:
@@ -400,7 +400,7 @@ class DefExpander:
                         should_expand = True
                 if should_expand:
                     renamed_formula, renamed_mapping = alpha_safe_formula(defpred.formula, dict(zip(defpred.args, expr.args)), context, self.decl)
-                    expanded = Substitutor(renamed_mapping, context, self.decl).substitute_formula(renamed_formula)
+                    expanded = Substitutor(renamed_mapping, self.decl).substitute_formula(renamed_formula)
                     return self.expand_defs_formula(expanded, context)
             return AtomicFormula(expr.pred, tuple(self.expand_defs_term(arg, context) for arg in expr.args))
         elif isinstance(expr, Not):
@@ -466,7 +466,6 @@ def fresh_fun_tmpl(fun_tmpl: FunTemplate, used_items: set[Var | PredTemplate | F
 @dataclass
 class Substitutor:
     mapping: tuple[Mapping[VarTerm, VarTerm], Mapping[PredTerm, PredTerm], Mapping[FunTerm, FunTerm]]
-    context: Context
     decl: DeclarationContextNameSpace
     indexes: Mapping[Term, list[int]] = field(default_factory=dict[Term, list[int]])
     counter: dict[Term, int] = field(init=False, default_factory=dict[Term, int])
@@ -558,7 +557,7 @@ class Substitutor:
                     if not isinstance(b, VarTerm):
                         raise LogicError(f"Unexpected type: {type(b)}")
                     lambda_mapping[a] = b
-                subst = Substitutor((lambda_mapping, {}, {}), self.context, self.decl)
+                subst = Substitutor((lambda_mapping, {}, {}), self.decl)
                 lambda_mapped = subst.substitute_formula(new_pred.body)
                 return self.substitute_formula(lambda_mapped)
             else:

@@ -166,7 +166,7 @@ class Checker:
             raise CheckError(node, msg)
         logger.debug(f"{debug_prefix}ExistsUniq object: {ExprFormatter(self.decl).pretty_expr(existsuniq)}")
         context = Context.init()
-        existence_formula = Substitutor(({existsuniq.var: RefDefCon(node.ref_con.name)}, {}, {}), context, self.decl).substitute_formula(existsuniq.body)
+        existence_formula = Substitutor(({existsuniq.var: RefDefCon(node.ref_con.name)}, {}, {}), self.decl).substitute_formula(existsuniq.body)
         if not alpha_equiv_with_defs(node.formula, existence_formula, context, self.decl):
             msg = f"existence_formula is not matched with theorem: {ExprFormatter(self.decl).pretty_expr(node.formula)}"
             raise CheckError(node, msg)
@@ -184,7 +184,7 @@ class Checker:
         fv, bv, fpt, bpt, fft, bft = collect_vars(existsuniq.body)
         context = Context.init()
         var = fresh_var(existsuniq.var, fv | bv | fpt | bpt | fft | bft, context, self.decl)
-        body = Substitutor(({existsuniq.var: var}, {}, {}), context, self.decl).substitute_formula(existsuniq.body)
+        body = Substitutor(({existsuniq.var: var}, {}, {}), self.decl).substitute_formula(existsuniq.body)
         equality = self.decl.get_equality()
         if equality is None:
             msg = "equality has not been declared yet"
@@ -207,9 +207,9 @@ class Checker:
         args, body = strip_forall_vars(self.decl.get_theorem(self.decl.get_deffun(node.ref_fun).ref_theorem).conclusion)
         context = Context.init()
         if isinstance(body, ExistsUniq):
-            existence_formula = Substitutor(({body.var: Compound(RefDefFun(node.ref_fun.name), tuple(args))}, {}, {}), context, self.decl).substitute_formula(body.body)
+            existence_formula = Substitutor(({body.var: Compound(RefDefFun(node.ref_fun.name), tuple(args))}, {}, {}), self.decl).substitute_formula(body.body)
         elif isinstance(body, Implies) and isinstance(body.right, ExistsUniq):
-            existence_formula = Implies(body.left, Substitutor(({body.right.var: Compound(RefDefFun(node.ref_fun.name), tuple(args))}, {}, {}), context, self.decl).substitute_formula(body.right.body))
+            existence_formula = Implies(body.left, Substitutor(({body.right.var: Compound(RefDefFun(node.ref_fun.name), tuple(args))}, {}, {}), self.decl).substitute_formula(body.right.body))
         else:
             msg = f"Unexpected formula: {ExprFormatter(self.decl).pretty_expr(body)}"
             raise CheckError(node, msg)
@@ -474,13 +474,13 @@ class Checker:
                 raise CheckError(node, msg)
         mapping: dict[Term, Term] = {bound: free for bound, free in zip(vars, node.items) if free is not None}
         renamed_body, renamed_mapping = alpha_safe_formula(body, mapping, context, self.decl)
-        existence = Substitutor(renamed_mapping, context, self.decl).substitute_formula(renamed_body)
+        existence = Substitutor(renamed_mapping, self.decl).substitute_formula(renamed_body)
         if isinstance(fact, Exists):
             premises: list[Bottom | Formula] = [existence]
         else:
             fv, bv, fpt, bpt, fft, bft = collect_vars(existence)
             var = fresh_var(vars[0], fv | bv | fpt | bpt | fft | bft, context, self.decl)
-            body = Substitutor(({vars[0]: var}, {}, {}), context, self.decl).substitute_formula(existence)
+            body = Substitutor(({vars[0]: var}, {}, {}), self.decl).substitute_formula(existence)
             equality = self.decl.get_equality()
             if equality is None:
                 msg = "equality has not been declared yet"
@@ -584,7 +584,7 @@ class Checker:
             mapping[item] = term
         renamed_body, renamed_map = alpha_safe_formula(body, mapping, context, self.decl)
         logger.debug(f"{debug_prefix}Instantiable: mapping={mapping}")
-        instantiation = Substitutor(renamed_map, context, self.decl).substitute_formula(renamed_body)
+        instantiation = Substitutor(renamed_map, self.decl).substitute_formula(renamed_body)
         logger.debug(f"{debug_prefix}\\forall-elimination is done: instantiation={ExprFormatter(self.decl).pretty_expr(instantiation)}")
         if node.invoke == "none":
             node.proofinfo.premises = [node.fact]
@@ -648,7 +648,7 @@ class Checker:
         body = make_exists_vars(body, Exists, [item for item, term in zip(items, node.varterms) if term is None])
         mapping: dict[Term, Term] = {item: term for item, term in zip(items, node.varterms) if term is not None}
         renamed_body, renamed_mapping = alpha_safe_formula(body, mapping, context, self.decl)
-        fact = Substitutor(renamed_mapping, context, self.decl).substitute_formula(renamed_body)
+        fact = Substitutor(renamed_mapping, self.decl).substitute_formula(renamed_body)
         if not goal_in_context(fact, context, self.decl):
             msg = f"Not fact: {ExprFormatter(self.decl).pretty_expr(fact)}"
             raise CheckError(node, msg)
@@ -666,8 +666,8 @@ class Checker:
         if not isinstance(renamed_conclusion, ExistsUniq):
             msg = f"renamed_conclusion is not ExistsUniq object: {ExprFormatter(self.decl).pretty_expr(renamed_conclusion)}"
             raise CheckError(node, msg)
-        existence = Substitutor(({renamed_conclusion.var: node.varterm}, {}, {}), context, self.decl).substitute_formula(renamed_conclusion.body)
-        existence_dash = Substitutor(({renamed_conclusion.var: vardash}, {}, {}), context, self.decl).substitute_formula(renamed_conclusion.body)
+        existence = Substitutor(({renamed_conclusion.var: node.varterm}, {}, {}), self.decl).substitute_formula(renamed_conclusion.body)
+        existence_dash = Substitutor(({renamed_conclusion.var: vardash}, {}, {}), self.decl).substitute_formula(renamed_conclusion.body)
         equality = self.decl.get_equality()
         if equality is None:
             msg = "equality has not been declared yet"
@@ -875,7 +875,7 @@ class Checker:
             logger.debug(f"{debug_prefix}Fact: {ExprFormatter(self.decl).pretty_expr(equation)}")
             premises_equal.append(equation)
         renamed_fact, mapping = alpha_safe_formula(fact, node.env, context, self.decl, True)
-        conclusion = Substitutor(mapping, context, self.decl, node.indexes).substitute_formula(renamed_fact)
+        conclusion = Substitutor(mapping, self.decl, node.indexes).substitute_formula(renamed_fact)
         logger.debug(f"{debug_prefix}conclusion: {ExprFormatter(self.decl).pretty_expr(conclusion)}")
         logger.debug(f"{debug_prefix}Matched")
         node.proofinfo.premises = [node.fact] + premises_equal

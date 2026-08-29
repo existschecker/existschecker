@@ -429,7 +429,7 @@ class Elaborator:
                 mapping[fact.var] = term
                 fact = fact.body
             fact, renamed_mapping = alpha_safe_formula(fact, mapping, Context.init(), self.decl)
-            fact = Substitutor(renamed_mapping, Context.init(), self.decl).substitute_formula(fact)
+            fact = Substitutor(renamed_mapping, self.decl).substitute_formula(fact)
             for _ in range(len(conditions)):
                 if not isinstance(fact, Implies):
                     raise ElaborateError(node, f"Expected Implies, got {type(fact)}")
@@ -688,7 +688,7 @@ class Elaborator:
                     raise ElaborateError(arg, f"Unexpected type {type(arg)}")
                 ref_args.append(self.elaborate_var_term(arg))
             mapping_args: dict[VarTerm, VarTerm] = {def_arg: ref_arg for def_arg, ref_arg in zip(structpred.args, ref_args)}
-            elaborated = Substitutor((mapping_field | mapping_args, {}, {}), Context.init(), self.decl).substitute_formula(structpred.formula)
+            elaborated = Substitutor((mapping_field | mapping_args, {}, {}), self.decl).substitute_formula(structpred.formula)
             self.add_node_to_token(elaborated, node)
             return elaborated
         else:
@@ -766,7 +766,7 @@ class Elaborator:
                     continue
                 mapping_field[Var(field.name[len(prefix) + 1:])] = field
             structpred = self.decl.get_structpred(f"{ref_struct.name}.{node.struct_pred.name}")
-            formula = Substitutor((mapping_field, {}, {}), Context.init(), self.decl).substitute_formula(structpred.formula)
+            formula = Substitutor((mapping_field, {}, {}), self.decl).substitute_formula(structpred.formula)
             elaborated = PredLambda(tuple(structpred.args), formula)
             self.add_node_to_token(elaborated, node)
             return elaborated
@@ -860,7 +860,7 @@ class Elaborator:
             for ref, condition in conditions.items():
                 full_ref = RefStructCondition(f"{var.name}.{ref.name}")
                 mapping: dict[VarTerm, VarTerm] = {field: Var(f"{var.name}.{field.name}") for field in fields}
-                full_conditions[full_ref] = Substitutor((mapping, {}, {}), Context.init(), self.decl).substitute_formula(condition)
+                full_conditions[full_ref] = Substitutor((mapping, {}, {}), self.decl).substitute_formula(condition)
             return full_fields, full_conditions
         else:
             return self.collect_struct_members(var.parent)
