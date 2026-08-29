@@ -181,8 +181,7 @@ class Checker:
             raise CheckError(node, msg)
         logger.debug(f"{debug_prefix}ExistsUniq object: {ExprFormatter(self.decl).pretty_expr(existsuniq)}")
         fv, bv, fpt, bpt, fft, bft = collect_vars(existsuniq.body)
-        context = Context.init()
-        var = fresh_var(existsuniq.var, fv | bv | fpt | bpt | fft | bft, context, self.decl)
+        var = fresh_var(existsuniq.var, fv | bv | fpt | bpt | fft | bft)
         body = Substitutor(({existsuniq.var: var}, {}, {}), self.decl).substitute_formula(existsuniq.body)
         equality = self.decl.get_equality()
         if equality is None:
@@ -477,7 +476,7 @@ class Checker:
             premises: list[Bottom | Formula] = [existence]
         else:
             fv, bv, fpt, bpt, fft, bft = collect_vars(existence)
-            var = fresh_var(vars[0], fv | bv | fpt | bpt | fft | bft, context, self.decl)
+            var = fresh_var(vars[0], fv | bv | fpt | bpt | fft | bft)
             body = Substitutor(({vars[0]: var}, {}, {}), self.decl).substitute_formula(existence)
             equality = self.decl.get_equality()
             if equality is None:
@@ -657,9 +656,9 @@ class Checker:
 
     def check_characterize(self, node: Characterize, context: Context, indent: int) -> Context:
         debug_prefix = make_debug_prefix(node, indent)
-        _, used_bound_vars, _, used_bound_pred_tmpls, _, used_bound_fun_tmpls = collect_vars(node.conclusion.body)
+        used_free_vars, used_bound_vars, used_free_pred_tmpls, used_bound_pred_tmpls, used_free_fun_tmpls, used_bound_fun_tmpls = collect_vars(node.conclusion.body)
         fv, bv, fpt, bpt, fft, bft = collect_vars(node.varterm)
-        vardash = fresh_var(Var(node.conclusion.var.name + "'"), used_bound_vars | used_bound_pred_tmpls | used_bound_fun_tmpls | fv | bv | fpt | bpt | fft | bft, context, self.decl)
+        vardash = fresh_var(Var(node.conclusion.var.name + "'"), used_free_vars | used_bound_vars | used_free_pred_tmpls | used_bound_pred_tmpls | used_free_fun_tmpls | used_bound_fun_tmpls | fv | bv | fpt | bpt | fft | bft)
         renamed_conclusion, _ = alpha_safe_formula(node.conclusion, {node.conclusion.var: node.varterm})
         if not isinstance(renamed_conclusion, ExistsUniq):
             msg = f"renamed_conclusion is not ExistsUniq object: {ExprFormatter(self.decl).pretty_expr(renamed_conclusion)}"

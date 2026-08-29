@@ -45,3 +45,15 @@ theorem test06 \forall^P p[1] \forall^F f[1] \forall^F f_0[1] \forall^F f_1[1] \
     }
   }
 }
+
+equality equal tex infix "="
+
+theorem test07 \forall^P p[2] \forall x' (\exists x (p(x, x') \wedge \forall y (p(y, x') \to equal(y, x))) \to \exists! x (p(x, x'))) {
+  any predicate p[2], x' {
+    assume \exists x (p(x, x') \wedge \forall y (p(y, x') \to equal(y, x))) {
+      some x such \exists x (p(x, x') \wedge \forall y (p(y, x') \to equal(y, x))) {
+        characterize for x conclude \exists! x (p(x, x'))
+      }
+    }
+  }
+}

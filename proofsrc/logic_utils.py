@@ -437,12 +437,8 @@ def normalize_neg(expr: Formula) -> Formula:
     else:
         raise LogicError(f"Unexpected type: {type(expr)}")
 
-def fresh_name(item: Var | PredTemplate | FunTemplate, used_items: set[Var | PredTemplate | FunTemplate], context: Context | None = None, decl: DeclarationContextNameSpace | None = None) -> str:
+def fresh_name(item: Var | PredTemplate | FunTemplate, used_items: set[Var | PredTemplate | FunTemplate]) -> str:
     used_names = {item.name for item in used_items}
-    if context is not None:
-        used_names.update(context.ctrl.used_names)
-    if decl is not None:
-        used_names.update(decl.get_used_names())
     if item.name not in used_names:
         return item.name
     match = re.match(r"^(.*)_(\d+)$", item.name)
@@ -458,8 +454,8 @@ def fresh_name(item: Var | PredTemplate | FunTemplate, used_items: set[Var | Pre
         new_name = f"{base_name}_{i}"
     return new_name
 
-def fresh_var(var: Var, used_items: set[Var | PredTemplate | FunTemplate], context: Context | None = None, decl: DeclarationContextNameSpace | None = None) -> Var:
-    return Var(fresh_name(var, used_items, context, decl))
+def fresh_var(var: Var, used_items: set[Var | PredTemplate | FunTemplate]) -> Var:
+    return Var(fresh_name(var, used_items))
 
 def fresh_pred_tmpl(pred_tmpl: PredTemplate, used_items: set[Var | PredTemplate | FunTemplate]) -> PredTemplate:
     return PredTemplate(fresh_name(pred_tmpl, used_items), pred_tmpl.arity)
