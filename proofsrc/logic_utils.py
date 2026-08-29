@@ -341,11 +341,11 @@ class DefExpander:
                         should_expand = True
                 if should_expand:
                     renamed_term, renamed_mapping = alpha_safe_var_term(deffunterm.varterm, dict(zip(deffunterm.args, expr.args)))
-                    expanded = Substitutor(renamed_mapping, self.decl).substitute_var_term(renamed_term)
+                    expanded = Substitutor(renamed_mapping).substitute_var_term(renamed_term)
                     return self.expand_defs_var_term(expanded)
             elif isinstance(expr.fun, FunLambda):
                 renamed_body, renamed_mapping = alpha_safe_var_term(expr.fun.body, dict(zip(expr.fun.args, expr.args)))
-                beta_reduced = Substitutor(renamed_mapping, self.decl).substitute_var_term(renamed_body)
+                beta_reduced = Substitutor(renamed_mapping).substitute_var_term(renamed_body)
                 return self.expand_defs_var_term(beta_reduced)
             return Compound(expr.fun, tuple(self.expand_defs_term(arg) for arg in expr.args))
         else:
@@ -393,7 +393,7 @@ class DefExpander:
                         should_expand = True
                 if should_expand:
                     renamed_formula, renamed_mapping = alpha_safe_formula(defpred.formula, dict(zip(defpred.args, expr.args)))
-                    expanded = Substitutor(renamed_mapping, self.decl).substitute_formula(renamed_formula)
+                    expanded = Substitutor(renamed_mapping).substitute_formula(renamed_formula)
                     return self.expand_defs_formula(expanded)
             return AtomicFormula(expr.pred, tuple(self.expand_defs_term(arg) for arg in expr.args))
         elif isinstance(expr, Not):
@@ -459,7 +459,6 @@ def fresh_fun_tmpl(fun_tmpl: FunTemplate, used_items: set[Var | PredTemplate | F
 @dataclass
 class Substitutor:
     mapping: tuple[Mapping[VarTerm, VarTerm], Mapping[PredTerm, PredTerm], Mapping[FunTerm, FunTerm]]
-    decl: DeclarationContextNameSpace
     indexes: Mapping[Term, list[int]] = field(default_factory=dict[Term, list[int]])
     counter: dict[Term, int] = field(init=False, default_factory=dict[Term, int])
 
@@ -520,37 +519,15 @@ class Substitutor:
     def substitute_formula(self, expr: Formula) -> Formula:
         if isinstance(expr, AtomicFormula):
             new_pred = self.substitute_pred_term(expr.pred)
-            if isinstance(new_pred, (PredTemplate, RefEquality, RefPrimPred)):
+            if isinstance(new_pred, (PredTemplate, RefEquality, RefPrimPred, RefDefPred)):
                 return AtomicFormula(new_pred, tuple(self.substitute_term(arg) for arg in expr.args))
-            elif isinstance(new_pred, RefDefPred):
-                defpred = self.decl.get_defpred(new_pred)
-                resolved_args: list[Term] = []
-                for defarg, subarg in zip(defpred.args, expr.args):
-                    if isinstance(defarg, VarTerm):
-                        if isinstance(subarg, VarTerm):
-                            resolved_args.append(subarg)
-                        else:
-                            raise LogicError(f"VarTerm must be substituted into {defarg.name}, but {type(subarg)} is substituted")
-                    elif isinstance(defarg, PredTerm):
-                        if isinstance(subarg, PredTerm):
-                            resolved_args.append(subarg)
-                        else:
-                            raise LogicError(f"PredTerm must be substituted into {defarg.name}, but {type(subarg)} is substituted")
-                    elif isinstance(defarg, FunTerm):
-                        if isinstance(subarg, FunTerm):
-                            resolved_args.append(subarg)
-                        else:
-                            raise LogicError(f"FunTerm must be substituted into {defarg.name}, but {type(subarg)} is substituted")
-                    else:
-                        raise LogicError(f"Unexpected type: {type(defarg)}")
-                return AtomicFormula(new_pred, tuple(self.substitute_term(arg) for arg in resolved_args))
             elif isinstance(new_pred, PredLambda):
                 lambda_mapping: dict[VarTerm, VarTerm] = {}
                 for a, b in zip(new_pred.args, expr.args):
                     if not isinstance(b, VarTerm):
                         raise LogicError(f"Unexpected type: {type(b)}")
                     lambda_mapping[a] = b
-                subst = Substitutor((lambda_mapping, {}, {}), self.decl)
+                subst = Substitutor((lambda_mapping, {}, {}))
                 lambda_mapped = subst.substitute_formula(new_pred.body)
                 return self.substitute_formula(lambda_mapped)
             else:
