@@ -1,6 +1,6 @@
 from lsprotocol import types as lsp
 from pygls import uris
-from ast_types import Context, DeclarationUnit, Term, Declaration, PrimPred, Axiom, Theorem, DefPred, DefCon, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, InvalidDeclaration, Formula, AtomicFormula, Not, And, Or, Implies, Iff, Forall, Exists, ExistsUniq, PredTemplate, Var, FunTemplate, RefEquality, Compound, RefPrimPred, RefDefPred, RefDefCon, RefDefFun, RefDefFunTerm, VarTerm, PredTerm, FunTerm, Control, Any, Assume, Divide, Some, Deny, Case, Contradict, Explode, Apply, Lift, Characterize, Invoke, Expand, Fold, Pad, Split, Connect, Substitute, Show, Assert, InvalidControl, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq, RefFact, PredLambda, FunLambda, Bottom, Include, InvalidInclude, DeclarationContextNameSpace, RefStruct, Struct, RefStructCondition, StructVar, RefStructPred, StructPred
+from ast_types import DeclarationUnit, Term, Declaration, PrimPred, Axiom, Theorem, DefPred, DefCon, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, InvalidDeclaration, Formula, AtomicFormula, Not, And, Or, Implies, Iff, Forall, Exists, ExistsUniq, PredTemplate, Var, FunTemplate, RefEquality, Compound, RefPrimPred, RefDefPred, RefDefCon, RefDefFun, RefDefFunTerm, VarTerm, PredTerm, FunTerm, Control, Any, Assume, Divide, Some, Deny, Case, Contradict, Explode, Apply, Lift, Characterize, Invoke, Expand, Fold, Pad, Split, Connect, Substitute, Show, Assert, InvalidControl, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq, RefFact, PredLambda, FunLambda, Bottom, Include, InvalidInclude, DeclarationContextNameSpace, RefStruct, Struct, RefStructCondition, StructVar, RefStructPred, StructPred
 from resolved_ast_types import ResolvedTerm, ResolvedFormula, ResolvedVarTerm, ResolvedVar, ResolvedRefDefCon, ResolvedFunTerm, ResolvedRefDefFun, ResolvedRefDefFunTerm, ResolvedFunTemplate, ResolvedFunLambda, ResolvedCompound, ResolvedPredTerm, ResolvedRefEquality, ResolvedRefPrimPred, ResolvedRefDefPred, ResolvedPredTemplate, ResolvedPredLambda, ResolvedAtomicFormula, ResolvedNot, ResolvedAnd, ResolvedOr, ResolvedImplies, ResolvedIff, ResolvedForall, ResolvedExists, ResolvedExistsUniq, ResolvedBottom, ResolvedRefFact, ResolvedRefAxiom, ResolvedRefTheorem, ResolvedRefDefConExist, ResolvedRefDefConUniq, ResolvedRefDefFunExist, ResolvedRefDefFunUniq, ResolvedControl, ResolvedInvalidControl, ResolvedAssume, ResolvedAny, ResolvedCase, ResolvedDivide, ResolvedSome, ResolvedDeny, ResolvedContradict, ResolvedExplode, ResolvedApply, ResolvedLift, ResolvedCharacterize, ResolvedInvoke, ResolvedExpand, ResolvedFold, ResolvedPad, ResolvedSplit, ResolvedConnect, ResolvedSubstitute, ResolvedShow, ResolvedAssert, ResolvedDeclaration, ResolvedInvalidDeclaration, ResolvedPrimPred, ResolvedAxiom, ResolvedTheorem, ResolvedDefPred, ResolvedDefConExist, ResolvedDefConUniq, ResolvedDefCon, ResolvedDefFunExist, ResolvedDefFunUniq, ResolvedDefFun, ResolvedDefFunTerm, ResolvedEquality, ResolvedInclude, ResolvedInvalidInclude, ResolvedRefStruct, ResolvedStructVar, ResolvedStructMemberField, ResolvedRefStructCondition, ResolvedRefStructMemberCondition, ResolvedStruct, ResolvedStructPred, ResolvedStructMemberPred, ResolvedRefStructPred
 from lexer import Token
 from logic_utils import Substitutor, DefExpander, strip_forall_vars, alpha_safe_formula
@@ -414,7 +414,7 @@ class Elaborator:
             if isinstance(fact, RefFact):
                 fact = self.decl.get_fact(fact)
             if isinstance(fact, AtomicFormula) and isinstance(fact.pred, RefDefPred):
-                fact = DefExpander([fact.pred], self.decl, {fact.pred: [1]}).expand_defs_formula(fact, Context.init())
+                fact = DefExpander([fact.pred], self.decl, {fact.pred: [1]}).expand_defs_formula(fact)
             vars_, _ = strip_forall_vars(fact)
             if len(vars_) < len(terms):
                 raise ElaborateError(node, f"{len(terms)} terms are given to {len(vars_)} forall vars")
@@ -428,7 +428,7 @@ class Elaborator:
                     raise ElaborateError(node, f"Expected Forall, got {type(fact)}")
                 mapping[fact.var] = term
                 fact = fact.body
-            fact, renamed_mapping = alpha_safe_formula(fact, mapping, Context.init(), self.decl)
+            fact, renamed_mapping = alpha_safe_formula(fact, mapping)
             fact = Substitutor(renamed_mapping, self.decl).substitute_formula(fact)
             for _ in range(len(conditions)):
                 if not isinstance(fact, Implies):

@@ -15,22 +15,22 @@ def goal_in_context(goal: Bottom | Formula, context: Context, decl: DeclarationC
     else:
         return expr_in_context(goal, context, decl)
 
-def get_fact(fact: RefFact | Formula, context: Context, node: Declaration | Control, decl: DeclarationContextNameSpace, expand_symbol: bool = False) -> Formula:
+def get_fact(fact: RefFact | Formula, node: Declaration | Control, decl: DeclarationContextNameSpace, expand_symbol: bool = False) -> Formula:
     if isinstance(fact, RefFact):
         fact = decl.get_fact(fact)
     elif not isinstance(fact, Formula):
         msg = f"Expected Formula, got {type(fact)}"
         raise CheckError(node, msg)
     if expand_symbol and isinstance(fact, AtomicFormula) and isinstance(fact.pred, RefDefPred):
-        fact = DefExpander([fact.pred], decl, {fact.pred: [1]}).expand_defs_formula(fact, context)
+        fact = DefExpander([fact.pred], decl, {fact.pred: [1]}).expand_defs_formula(fact)
     return fact
 
-def expand_if_atomic(formula: Formula, context: Context, node: Declaration | Control, decl: DeclarationContextNameSpace) -> Formula:
+def expand_if_atomic(formula: Formula, node: Declaration | Control, decl: DeclarationContextNameSpace) -> Formula:
     if isinstance(formula, AtomicFormula):
         if not isinstance(formula.pred, RefDefPred):
             msg = f"Expected RefDefPred, got {type(formula.pred)}"
             raise CheckError(node, msg)
-        return DefExpander([formula.pred], decl).expand_defs_formula(formula, context)
+        return DefExpander([formula.pred], decl).expand_defs_formula(formula)
     else:
         return formula
 
@@ -165,9 +165,8 @@ class Checker:
             msg = f"Not ExistsUniq object: {ExprFormatter(self.decl).pretty_expr(existsuniq)}"
             raise CheckError(node, msg)
         logger.debug(f"{debug_prefix}ExistsUniq object: {ExprFormatter(self.decl).pretty_expr(existsuniq)}")
-        context = Context.init()
         existence_formula = Substitutor(({existsuniq.var: RefDefCon(node.ref_con.name)}, {}, {}), self.decl).substitute_formula(existsuniq.body)
-        if not alpha_equiv_with_defs(node.formula, existence_formula, context, self.decl):
+        if not alpha_equiv_with_defs(node.formula, existence_formula, self.decl):
             msg = f"existence_formula is not matched with theorem: {ExprFormatter(self.decl).pretty_expr(node.formula)}"
             raise CheckError(node, msg)
         logger.debug(f"{debug_prefix}existence_formula is matched with theorem: {ExprFormatter(self.decl).pretty_expr(node.formula)}")
@@ -190,7 +189,7 @@ class Checker:
             msg = "equality has not been declared yet"
             raise CheckError(node, msg)
         uniqueness_formula = Forall(var, Implies(body, AtomicFormula(RefEquality(equality.ref.name), (var, RefDefCon(node.ref_con.name)))))
-        if not alpha_equiv_with_defs(node.formula, uniqueness_formula, context, self.decl):
+        if not alpha_equiv_with_defs(node.formula, uniqueness_formula, self.decl):
             msg = f"uniqueness_formula is not matched with theorem: {ExprFormatter(self.decl).pretty_expr(node.formula)}"
             raise CheckError(node, msg)
         logger.debug(f"{debug_prefix}uniqueness_formula is matched with theorem: {ExprFormatter(self.decl).pretty_expr(node.formula)}")
@@ -205,7 +204,6 @@ class Checker:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}, fun_name: {node.ref_fun.name}")
         args, body = strip_forall_vars(self.decl.get_theorem(self.decl.get_deffun(node.ref_fun).ref_theorem).conclusion)
-        context = Context.init()
         if isinstance(body, ExistsUniq):
             existence_formula = Substitutor(({body.var: Compound(RefDefFun(node.ref_fun.name), tuple(args))}, {}, {}), self.decl).substitute_formula(body.body)
         elif isinstance(body, Implies) and isinstance(body.right, ExistsUniq):
@@ -214,7 +212,7 @@ class Checker:
             msg = f"Unexpected formula: {ExprFormatter(self.decl).pretty_expr(body)}"
             raise CheckError(node, msg)
         existence_formula = make_forall_vars(existence_formula, args)
-        if not alpha_equiv_with_defs(node.formula, existence_formula, context, self.decl):
+        if not alpha_equiv_with_defs(node.formula, existence_formula, self.decl):
             msg = f"existence_formula is not matched with theorem: {ExprFormatter(self.decl).pretty_expr(node.formula)}"
             raise CheckError(node, msg)
         logger.debug(f"{debug_prefix}existence_formula is matched with theorem: {ExprFormatter(self.decl).pretty_expr(node.formula)}")
@@ -236,7 +234,7 @@ class Checker:
             msg = f"Unexpected formula: {ExprFormatter(self.decl).pretty_expr(body)}"
             raise CheckError(node, msg)
         uniqueness_formula = make_forall_vars(uniqueness_formula, args)
-        if not alpha_equiv_with_defs(node.formula, uniqueness_formula, Context.init(), self.decl):
+        if not alpha_equiv_with_defs(node.formula, uniqueness_formula, self.decl):
             msg = f"uniqueness_formula is not matched with theorem: {ExprFormatter(self.decl).pretty_expr(node.formula)}"
             raise CheckError(node, msg)
         logger.debug(f"{debug_prefix}uniqueness_formula is matched with theorem: {ExprFormatter(self.decl).pretty_expr(node.formula)}")
@@ -392,13 +390,13 @@ class Checker:
             if not goal_in_context(node.fact, context, self.decl):
                 msg = f"Not fact: {ExprFormatter(self.decl).pretty_expr(node.fact)}"
                 raise CheckError(node, msg)
-        fact = get_fact(node.fact, context, node, self.decl, True)
+        fact = get_fact(node.fact, node, self.decl, True)
         connected_premise = Or(node.cases[0].premise, node.cases[1].premise)
         i = 2
         while i < len(node.cases):
             connected_premise = Or(connected_premise, node.cases[i].premise)
             i += 1
-        if alpha_equiv_with_defs(connected_premise, fact, context, self.decl):
+        if alpha_equiv_with_defs(connected_premise, fact, self.decl):
             logger.debug(f"{debug_prefix}mathched: fact={ExprFormatter(self.decl).pretty_expr(fact)}, connected_premise={ExprFormatter(self.decl).pretty_expr(connected_premise)}")
         else:
             msg = f"not matched: fact={ExprFormatter(self.decl).pretty_expr(fact)}, conected_premise={ExprFormatter(self.decl).pretty_expr(connected_premise)}"
@@ -414,7 +412,7 @@ class Checker:
             logger.debug(f"{debug_prefix}derived goal: {ExprFormatter(self.decl).pretty_expr(goal)}")
             goals.append(goal)
         for i in range(len(goals) - 1):
-            if not alpha_equiv_with_defs(goals[i], goals[i + 1], context, self.decl):
+            if not alpha_equiv_with_defs(goals[i], goals[i + 1], self.decl):
                 msg = f"Not matched: goals[{i}]: {ExprFormatter(self.decl).pretty_expr(goals[i])}, goals[{i + 1}]: {ExprFormatter(self.decl).pretty_expr(goals[i + 1])}"
                 raise CheckError(node, msg)
         node.proofinfo.premises = [node.fact]
@@ -451,7 +449,7 @@ class Checker:
                 msg = f"not derivable: {ExprFormatter(self.decl).pretty_expr(node.fact)}"
                 raise CheckError(node, msg)
             logger.debug(f"{debug_prefix}derivable: {ExprFormatter(self.decl).pretty_expr(node.fact)}")
-        fact = get_fact(node.fact, context, node, self.decl, True)
+        fact = get_fact(node.fact, node, self.decl, True)
         if isinstance(fact, Exists):
             vars, body = strip_exists_vars(fact, Exists)
             body = make_exists_vars(body, Exists, [bound for bound, free in zip(vars, node.items) if free is None])
@@ -473,7 +471,7 @@ class Checker:
                 msg = f"{ExprFormatter(self.decl).pretty_expr(item)} is already used"
                 raise CheckError(node, msg)
         mapping: dict[Term, Term] = {bound: free for bound, free in zip(vars, node.items) if free is not None}
-        renamed_body, renamed_mapping = alpha_safe_formula(body, mapping, context, self.decl)
+        renamed_body, renamed_mapping = alpha_safe_formula(body, mapping)
         existence = Substitutor(renamed_mapping, self.decl).substitute_formula(renamed_body)
         if isinstance(fact, Exists):
             premises: list[Bottom | Formula] = [existence]
@@ -571,7 +569,7 @@ class Checker:
                 msg = f"Cannot derive fact: {ExprFormatter(self.decl).pretty_expr(node.fact)}"
                 raise CheckError(node, msg)
             logger.debug(f"{debug_prefix}Drivable fact: {ExprFormatter(self.decl).pretty_expr(node.fact)}")
-        fact = get_fact(node.fact, context, node, self.decl, True)
+        fact = get_fact(node.fact, node, self.decl, True)
         items, body = strip_forall_vars(fact)
         if len(items) != len(node.terms):
             msg = f"Formula has {len(items)} forall vars, but {len(node.terms)} terms are given"
@@ -582,7 +580,7 @@ class Checker:
             if term is None:
                 continue
             mapping[item] = term
-        renamed_body, renamed_map = alpha_safe_formula(body, mapping, context, self.decl)
+        renamed_body, renamed_map = alpha_safe_formula(body, mapping)
         logger.debug(f"{debug_prefix}Instantiable: mapping={mapping}")
         instantiation = Substitutor(renamed_map, self.decl).substitute_formula(renamed_body)
         logger.debug(f"{debug_prefix}\\forall-elimination is done: instantiation={ExprFormatter(self.decl).pretty_expr(instantiation)}")
@@ -637,7 +635,7 @@ class Checker:
     def check_lift(self, node: Lift, context: Context, indent: int) -> Context:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}Target conclusion: {ExprFormatter(self.decl).pretty_expr(node.conclusion)}")
-        conclusion = expand_if_atomic(node.conclusion, context, node, self.decl)
+        conclusion = expand_if_atomic(node.conclusion, node, self.decl)
         if not isinstance(conclusion, Exists):
             msg = f"Expected Exists, got {type(conclusion)}"
             raise CheckError(node, msg)
@@ -647,7 +645,7 @@ class Checker:
             raise CheckError(node, msg)
         body = make_exists_vars(body, Exists, [item for item, term in zip(items, node.varterms) if term is None])
         mapping: dict[Term, Term] = {item: term for item, term in zip(items, node.varterms) if term is not None}
-        renamed_body, renamed_mapping = alpha_safe_formula(body, mapping, context, self.decl)
+        renamed_body, renamed_mapping = alpha_safe_formula(body, mapping)
         fact = Substitutor(renamed_mapping, self.decl).substitute_formula(renamed_body)
         if not goal_in_context(fact, context, self.decl):
             msg = f"Not fact: {ExprFormatter(self.decl).pretty_expr(fact)}"
@@ -662,7 +660,7 @@ class Checker:
         _, used_bound_vars, _, used_bound_pred_tmpls, _, used_bound_fun_tmpls = collect_vars(node.conclusion.body)
         fv, bv, fpt, bpt, fft, bft = collect_vars(node.varterm)
         vardash = fresh_var(Var(node.conclusion.var.name + "'"), used_bound_vars | used_bound_pred_tmpls | used_bound_fun_tmpls | fv | bv | fpt | bpt | fft | bft, context, self.decl)
-        renamed_conclusion, _ = alpha_safe_formula(node.conclusion, {node.conclusion.var: node.varterm}, context, self.decl)
+        renamed_conclusion, _ = alpha_safe_formula(node.conclusion, {node.conclusion.var: node.varterm})
         if not isinstance(renamed_conclusion, ExistsUniq):
             msg = f"renamed_conclusion is not ExistsUniq object: {ExprFormatter(self.decl).pretty_expr(renamed_conclusion)}"
             raise CheckError(node, msg)
@@ -737,8 +735,8 @@ class Checker:
                 msg = f"Not fact: {ExprFormatter(self.decl).pretty_expr(node.fact)}"
                 raise CheckError(node, msg)
             logger.debug(f"{debug_prefix}fact: {ExprFormatter(self.decl).pretty_expr(node.fact)}")
-        fact = get_fact(node.fact, context, node, self.decl)
-        conclusion = DefExpander(node.refs, self.decl, node.indexes).expand_defs_formula(fact, context)
+        fact = get_fact(node.fact, node, self.decl)
+        conclusion = DefExpander(node.refs, self.decl, node.indexes).expand_defs_formula(fact)
         node.proofinfo.premises = [node.fact]
         node.proofinfo.conclusions = [conclusion]
         logger.debug(f"{debug_prefix}Added: {ExprFormatter(self.decl).pretty_expr(conclusion)}")
@@ -746,7 +744,7 @@ class Checker:
 
     def check_fold(self, node: Fold, context: Context, indent: int) -> Context:
         debug_prefix = make_debug_prefix(node, indent)
-        fact = DefExpander(node.refs, self.decl, node.indexes).expand_defs_formula(node.conclusion, context)
+        fact = DefExpander(node.refs, self.decl, node.indexes).expand_defs_formula(node.conclusion)
         if not goal_in_context(fact, context, self.decl):
             msg = f"Not fact: {ExprFormatter(self.decl).pretty_expr(fact)}"
             raise CheckError(node, msg)
@@ -763,14 +761,14 @@ class Checker:
                 msg = f"Not derivable: {ExprFormatter(self.decl).pretty_expr(node.fact)}"
                 raise CheckError(node, msg)
             logger.debug(f"{debug_prefix}Derivable: {ExprFormatter(self.decl).pretty_expr(node.fact)}")
-        fact = get_fact(node.fact, context, node, self.decl)
+        fact = get_fact(node.fact, node, self.decl)
         fact_parts = flatten_op(fact, Or)
-        conclusion = expand_if_atomic(node.conclusion, context, node, self.decl)
+        conclusion = expand_if_atomic(node.conclusion, node, self.decl)
         if not isinstance(conclusion, Or):
             msg = f"Expected Or, got {type(conclusion)}"
             raise CheckError(node, msg)
         conclusion_parts = flatten_op(conclusion, Or)
-        if not all(any(alpha_equiv_with_defs(c, f, context, self.decl) for c in conclusion_parts) for f in fact_parts):
+        if not all(any(alpha_equiv_with_defs(c, f, self.decl) for c in conclusion_parts) for f in fact_parts):
             msg = f"neither left or right not derivable: {ExprFormatter(self.decl).pretty_expr(node.conclusion)}"
             raise CheckError(node, msg)
         node.proofinfo.premises = [node.fact]
@@ -784,7 +782,7 @@ class Checker:
             if not goal_in_context(node.fact, context, self.decl):
                 msg = f"Not derivable: {ExprFormatter(self.decl).pretty_expr(node.fact)}"
                 raise CheckError(node, msg)
-        fact = get_fact(node.fact, context, node, self.decl, True)
+        fact = get_fact(node.fact, node, self.decl, True)
         logger.debug(f"{debug_prefix}Derivable: {ExprFormatter(self.decl).pretty_expr(fact)}")
         if isinstance(fact, And):
             logger.debug(f"{debug_prefix}And object: {ExprFormatter(self.decl).pretty_expr(fact)}")
@@ -818,7 +816,7 @@ class Checker:
 
     def check_connect(self, node: Connect, context: Context, indent: int) -> Context:
         debug_prefix = make_debug_prefix(node, indent)
-        conclusion = expand_if_atomic(node.conclusion, context, node, self.decl)
+        conclusion = expand_if_atomic(node.conclusion, node, self.decl)
         if isinstance(conclusion, And):
             logger.debug(f"{debug_prefix}And object: {ExprFormatter(self.decl).pretty_expr(conclusion)}")
             conclusion_parts = flatten_op(conclusion, And)
@@ -855,7 +853,7 @@ class Checker:
                 msg = f"Not fact: {ExprFormatter(self.decl).pretty_expr(node.fact)}"
                 raise CheckError(node, msg)
             logger.debug(f"{debug_prefix}Fact: {ExprFormatter(self.decl).pretty_expr(node.fact)}")
-        fact = get_fact(node.fact, context, node, self.decl)
+        fact = get_fact(node.fact, node, self.decl)
         equality = self.decl.get_equality()
         if equality is None:
             msg = "equality has not been declared yet"
@@ -874,7 +872,7 @@ class Checker:
                 raise CheckError(node, msg)
             logger.debug(f"{debug_prefix}Fact: {ExprFormatter(self.decl).pretty_expr(equation)}")
             premises_equal.append(equation)
-        renamed_fact, mapping = alpha_safe_formula(fact, node.env, context, self.decl, True)
+        renamed_fact, mapping = alpha_safe_formula(fact, node.env, True)
         conclusion = Substitutor(mapping, self.decl, node.indexes).substitute_formula(renamed_fact)
         logger.debug(f"{debug_prefix}conclusion: {ExprFormatter(self.decl).pretty_expr(conclusion)}")
         logger.debug(f"{debug_prefix}Matched")
@@ -894,7 +892,7 @@ class Checker:
             raise CheckError(node, msg)
         goal = local_ctx.ctrl.formulas[-1]
         logger.debug(f"{debug_prefix}derived goal: {ExprFormatter(self.decl).pretty_expr(goal)}")
-        if not alpha_equiv_with_defs(node.conclusion, goal, context, self.decl):
+        if not alpha_equiv_with_defs(node.conclusion, goal, self.decl):
             msg = f"Not matched with target conclusion: {ExprFormatter(self.decl).pretty_expr(node.conclusion)}"
             raise CheckError(node, msg)
         logger.debug(f"{debug_prefix}Matched with target conclusion: {ExprFormatter(self.decl).pretty_expr(node.conclusion)}")
@@ -913,7 +911,7 @@ class Checker:
                 msg = f"Not fact: {ExprFormatter(self.decl).pretty_expr(node.reference)}"
                 raise CheckError(node, msg)
             logger.debug(f"{debug_prefix}Fact: {ExprFormatter(self.decl).pretty_expr(node.reference)}")
-        formula = get_fact(node.reference, context, node, self.decl)
+        formula = get_fact(node.reference, node, self.decl)
         node.proofinfo.premises = []
         node.proofinfo.conclusions = [formula]
         logger.debug(f"{debug_prefix}Added {ExprFormatter(self.decl).pretty_expr(formula)}")

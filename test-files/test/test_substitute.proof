@@ -1,0 +1,47 @@
+theorem test01 \forall^P p[1] \forall x \forall x_0 (\forall y \forall y_0 (p(y) \wedge p(y_0)) \to \forall y_0 (p(x_0) \wedge p(y_0))) {
+  any predicate p[1], x, x_0 {
+    assume \forall x \forall x_0 (p(x) \wedge p(x_0)) {
+      apply \forall x \forall x_0 (p(x) \wedge p(x_0)) for x_0, _
+    }
+  }
+}
+
+theorem test02 \forall^P p[1] \forall x \forall x_0 \forall x_1 (\forall y \forall y_0 (p(y) \wedge p(y_0) \wedge p(x_1)) \to \forall y_0 (p(x_0) \wedge p(y_0) \wedge p(x_1))) {
+  any predicate p[1], x, x_0, x_1 {
+    assume \forall x \forall x_0 (p(x) \wedge p(x_0) \wedge p(x_1)) {
+      apply \forall x \forall x_0 (p(x) \wedge p(x_0) \wedge p(x_1)) for x_0, _
+    }
+  }
+}
+
+theorem test03 \forall x \forall^P p[1] \forall^P p_0[1] (\forall^P q[1] \forall^P q_0[1] (q(x) \wedge q_0(x)) \to \forall^P q_0[1] (p_0(x) \wedge q_0(x))) {
+  any x, predicate p[1], predicate p_0[1] {
+    assume \forall^P p[1] \forall^P p_0[1] (p(x) \wedge p_0(x)) {
+      apply \forall^P p[1] \forall^P p_0[1] (p(x) \wedge p_0(x)) for p_0, _
+    }
+  }
+}
+
+theorem test04 \forall x \forall^P p[1] \forall^P p_0[1] \forall^P p_1[1] (\forall^P q[1] \forall^P q_0[1] (q(x) \wedge q_0(x) \wedge p_1(x)) \to \forall^P q_0[1] (p_0(x) \wedge q_0(x) \wedge p_1(x))) {
+  any x, predicate p[1], predicate p_0[1], predicate p_1[1] {
+    assume \forall^P p[1] \forall^P p_0[1] (p(x) \wedge p_0(x) \wedge p_1(x)) {
+      apply \forall^P p[1] \forall^P p_0[1] (p(x) \wedge p_0(x) \wedge p_1(x)) for p_0, _
+    }
+  }
+}
+
+theorem test05 \forall^P p[1] \forall^F f[1] \forall^F f_0[1] \forall x (\forall^F g[1] \forall^F g_0[1] (p(g(x)) \wedge p(g_0(x))) \to \forall^F g_0[1] (p(f(x)) \wedge p(g_0(x)))) {
+  any predicate p[1], function f[1], function f_0[1], x {
+    assume \forall^F f[1] \forall^F f_0[1] (p(f(x)) \wedge p(f_0(x))) {
+      apply \forall^F f[1] \forall^F f_0[1] (p(f(x)) \wedge p(f_0(x))) for \lambda^F x. f_0(x), _
+    }
+  }
+}
+
+theorem test06 \forall^P p[1] \forall^F f[1] \forall^F f_0[1] \forall^F f_1[1] \forall x (\forall^F g[1] \forall^F g_0[1] (p(g(x)) \wedge p(g_0(x)) \wedge p(f_1(x))) \to \forall^F g_0[1] (p(f(x)) \wedge p(g_0(x)) \wedge p(f_1(x)))) {
+  any predicate p[1], function f[1], function f_0[1], function f_1[1], x {
+    assume \forall^F f[1] \forall^F f_0[1] (p(f(x)) \wedge p(f_0(x)) \wedge p(f_1(x))) {
+      apply \forall^F f[1] \forall^F f_0[1] (p(f(x)) \wedge p(f_0(x)) \wedge p(f_1(x))) for \lambda^F x. f_0(x), _
+    }
+  }
+}
