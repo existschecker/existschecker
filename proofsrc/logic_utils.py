@@ -1,4 +1,4 @@
-from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, AtomicFormula, Context, Compound, RefDefCon, Var, Bottom, Term, Formula, PredTemplate, PredLambda, VarTerm, PredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, RefEquality, LogicError, DeclarationContextNameSpace
+from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, AtomicFormula, Compound, RefDefCon, Var, Bottom, Term, Formula, PredTemplate, PredLambda, VarTerm, PredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, RefEquality, LogicError, DeclarationContextNameSpace
 from itertools import permutations
 from copy import deepcopy
 from typing import Mapping
@@ -311,9 +311,6 @@ def collect_vars(expr: Formula | Term, used_bv: set[Var] | None = None, used_bpt
         return found_fv, found_bv | set(expr.args), found_fpt, found_bpt, found_fft, found_bft
     else:
         raise LogicError(f"Unexpected type {type(expr)}")
-
-def expr_in_context(expr: Bottom | Formula, context: Context, decl: DeclarationContextNameSpace) -> bool:
-    return any(alpha_equiv_with_defs(expr, f, decl) for f in context.ctrl.formulas)
 
 def alpha_equiv_with_defs(e1: Bottom | Formula, e2: Bottom | Formula, decl: DeclarationContextNameSpace, refs: list[RefDefFunTerm | RefDefPred] | None = None) -> bool:
     if refs is None:
