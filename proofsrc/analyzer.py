@@ -138,7 +138,7 @@ def tokens_to_locations(tokens: list[Token]) -> list[lsp.Location]:
 def prepare_context(file: str, resolver: DependencyResolver, file_final_decls: dict[str, DeclarationContextNameSpace]) -> DeclarationContextNameSpace:
     decl = DeclarationContextNameSpace.init()
     for dep in resolver.dependencies[file]:
-        decl.merge(file_final_decls[dep])
+        decl = decl.merge(file_final_decls[dep])
     return decl
 
 def restore_cache(all_units: list[DeclarationUnit], old_all_units: list[DeclarationUnit], decl: DeclarationContextNameSpace) -> tuple[DeclarationContextNameSpace, int]:
@@ -157,13 +157,11 @@ def analyze_diff(all_units: list[DeclarationUnit], start_index: int, decl: Decla
         if cancel_analysis is not None and cancel_analysis.is_set():
             return None
         unit = all_units[i]
-        working_decl = decl.copy()
         parsed_unit = Parser(unit).parse_unit()
-        NameResolver(unit, parsed_unit, working_decl, dependency_resolver, file_units).resolve_unit()
-        Elaborator(unit, working_decl).elaborate_unit()
-        if Checker(unit, working_decl).check_unit():
-            decl = working_decl
-        unit.decl = decl.copy()
+        NameResolver(unit, parsed_unit, decl, dependency_resolver, file_units).resolve_unit()
+        Elaborator(unit, decl).elaborate_unit()
+        decl = Checker(unit, decl).check_unit()
+        unit.decl = decl
         unit.build_token_to_node()
     return decl
 
@@ -190,7 +188,7 @@ class Analyzer:
             if not is_affected and not dependency_changed:
                 if self.old_workspace is not None and file in self.old_workspace.file_units and len(self.old_workspace.file_units[file]) > 0:
                     file_units[file] = self.old_workspace.file_units[file]
-                    file_final_decls[file] = file_units[file][-1].decl.copy()
+                    file_final_decls[file] = file_units[file][-1].decl
                     continue
             all_units = split(file, self.resolver.tokens_cache[file], self.resolver.source_cache[file])
             file_units[file] = all_units
@@ -202,7 +200,7 @@ class Analyzer:
             decl = analyze_diff(all_units, start_index, decl, self.resolver, file_units, cancel_analysis)
             if decl is None:
                 return {}
-            file_final_decls[file] = decl.copy()
+            file_final_decls[file] = decl
 
         workspace = Workspace(file_units)
 

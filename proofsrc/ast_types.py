@@ -442,68 +442,21 @@ class StructPred(Declaration):
 
 @dataclass
 class DeclarationContext:
-    primpreds: dict[str, PrimPred]
-    axioms: dict[str, Axiom]
-    theorems: dict[str, Theorem]
-    defpreds: dict[str, DefPred]
-    defcons: dict[str, DefCon]
-    defconexists: dict[str, DefConExist]
-    defconuniqs: dict[str, DefConUniq]
-    deffuns: dict[str, DefFun]
-    deffunexists: dict[str, DefFunExist]
-    deffununiqs: dict[str, DefFunUniq]
-    deffunterms: dict[str, DefFunTerm]
-    equality: Equality | None
-    structs: dict[str, Struct]
-    structpreds: dict[str, StructPred]
-    used_names: set[str]
+    declarations: dict[str, Declaration]
 
     @staticmethod
     def init() -> "DeclarationContext":
-        return DeclarationContext(primpreds={}, axioms={}, theorems={}, defpreds={}, defcons={}, defconexists={}, defconuniqs={}, deffuns={}, deffunexists={}, deffununiqs={}, deffunterms={}, equality=None, structs={}, structpreds={}, used_names=set())
+        return DeclarationContext(declarations={})
 
-    def add(self, declaration: Declaration):
-        if declaration.name in self.used_names:
+    def add(self, declaration: Declaration) -> "DeclarationContext":
+        if declaration.name in self.declarations:
             msg = f"{declaration.name} is already used"
             raise ContextError(msg)
         if isinstance(declaration, Equality):
-            if self.equality is not None:
+            if any(isinstance(decl, Equality) for decl in self.declarations.values()):
                 msg = "equality is already declared"
                 raise ContextError(msg)
-            self.equality = declaration
-        elif isinstance(declaration, PrimPred):
-            self.primpreds[declaration.name] = declaration
-        elif isinstance(declaration, Axiom):
-            self.axioms[declaration.name] = declaration
-        elif isinstance(declaration, Theorem):
-            self.theorems[declaration.name] = declaration
-        elif isinstance(declaration, DefPred):
-            self.defpreds[declaration.name] = declaration
-        elif isinstance(declaration, DefCon):
-            self.defcons[declaration.name] = declaration
-        elif isinstance(declaration, DefConExist):
-            self.defconexists[declaration.name] = declaration
-        elif isinstance(declaration, DefConUniq):
-            self.defconuniqs[declaration.name] = declaration
-        elif isinstance(declaration, DefFun):
-            self.deffuns[declaration.name] = declaration
-        elif isinstance(declaration, DefFunExist):
-            self.deffunexists[declaration.name] = declaration
-        elif isinstance(declaration, DefFunUniq):
-            self.deffununiqs[declaration.name] = declaration
-        elif isinstance(declaration, DefFunTerm):
-            self.deffunterms[declaration.name] = declaration
-        elif isinstance(declaration, Struct):
-            self.structs[declaration.name] = declaration
-        elif isinstance(declaration, StructPred):
-            self.structpreds[declaration.name] = declaration
-        else:
-            msg = f"Unexpected type: {type(declaration)}"
-            raise ContextError(msg)
-        self.used_names.add(declaration.name)
-
-    def copy(self) -> "DeclarationContext":
-        return DeclarationContext(self.primpreds.copy(), self.axioms.copy(), self.theorems.copy(), self.defpreds.copy(), self.defcons.copy(), self.defconexists.copy(), self.defconuniqs.copy(), self.deffuns.copy(), self.deffunexists.copy(), self.deffununiqs.copy(), self.deffunterms.copy(), self.equality, self.structs.copy(), self.structpreds.copy(), set(self.used_names))
+        return DeclarationContext(self.declarations | {declaration.name: declaration})
 
 @dataclass
 class DeclarationContextNameSpace:
@@ -513,23 +466,18 @@ class DeclarationContextNameSpace:
     def init() -> "DeclarationContextNameSpace":
         return DeclarationContextNameSpace(namespace={})
 
-    def add(self, path: str, declaration: Declaration) -> None:
-        if path not in self.namespace:
-            self.namespace[path] = DeclarationContext.init()
-        self.namespace[path].add(declaration)
+    def add(self, path: str, declaration: Declaration) -> "DeclarationContextNameSpace":
+        context = self.namespace.get(path, DeclarationContext.init()).add(declaration)
+        return DeclarationContextNameSpace(self.namespace | {path: context})
 
-    def copy(self) -> "DeclarationContextNameSpace":
-        return DeclarationContextNameSpace(namespace={path: file_decl.copy() for path, file_decl in self.namespace.items()})
-
-    def merge(self, other: "DeclarationContextNameSpace") -> None:
-        for path, file_decl in other.namespace.items():
-            if path not in self.namespace:
-                self.namespace[path] = file_decl
+    def merge(self, other: "DeclarationContextNameSpace") -> "DeclarationContextNameSpace":
+        return DeclarationContextNameSpace(other.namespace | self.namespace)
 
     def has_defcon(self, ref: str | RefDefCon) -> bool:
         name = ref if isinstance(ref, str) else ref.name
         for file_decl in self.namespace.values():
-            if name in file_decl.defcons:
+            decl = file_decl.declarations.get(name)
+            if isinstance(decl, DefCon):
                 return True
         return False
 
@@ -537,8 +485,9 @@ class DeclarationContextNameSpace:
         name = ref if isinstance(ref, str) else ref.name
         candidates: list[DefCon] = []
         for file_decl in self.namespace.values():
-            if name in file_decl.defcons:
-                candidates.append(file_decl.defcons[name])
+            decl = file_decl.declarations.get(name)
+            if isinstance(decl, DefCon):
+                candidates.append(decl)
         if len(candidates) == 1:
             return candidates[0]
         else:
@@ -548,7 +497,8 @@ class DeclarationContextNameSpace:
     def has_primpred(self, ref: str | RefPrimPred) -> bool:
         name = ref if isinstance(ref, str) else ref.name
         for file_decl in self.namespace.values():
-            if name in file_decl.primpreds:
+            decl = file_decl.declarations.get(name)
+            if isinstance(decl, PrimPred):
                 return True
         return False
 
@@ -556,8 +506,9 @@ class DeclarationContextNameSpace:
         name = ref if isinstance(ref, str) else ref.name
         candidates: list[PrimPred] = []
         for file_decl in self.namespace.values():
-            if name in file_decl.primpreds:
-                candidates.append(file_decl.primpreds[name])
+            decl = file_decl.declarations.get(name)
+            if isinstance(decl, PrimPred):
+                candidates.append(decl)
         if len(candidates) == 1:
             return candidates[0]
         else:
@@ -567,7 +518,8 @@ class DeclarationContextNameSpace:
     def has_defpred(self, ref: str | RefDefPred) -> bool:
         name = ref if isinstance(ref, str) else ref.name
         for file_decl in self.namespace.values():
-            if name in file_decl.defpreds:
+            decl = file_decl.declarations.get(name)
+            if isinstance(decl, DefPred):
                 return True
         return False
 
@@ -575,8 +527,9 @@ class DeclarationContextNameSpace:
         name = ref if isinstance(ref, str) else ref.name
         candidates: list[DefPred] = []
         for file_decl in self.namespace.values():
-            if name in file_decl.defpreds:
-                candidates.append(file_decl.defpreds[name])
+            decl = file_decl.declarations.get(name)
+            if isinstance(decl, DefPred):
+                candidates.append(decl)
         if len(candidates) == 1:
             return candidates[0]
         else:
@@ -586,7 +539,8 @@ class DeclarationContextNameSpace:
     def has_deffun(self, ref: str | RefDefFun) -> bool:
         name = ref if isinstance(ref, str) else ref.name
         for file_decl in self.namespace.values():
-            if name in file_decl.deffuns:
+            decl = file_decl.declarations.get(name)
+            if isinstance(decl, DefFun):
                 return True
         return False
 
@@ -594,8 +548,9 @@ class DeclarationContextNameSpace:
         name = ref if isinstance(ref, str) else ref.name
         candidates: list[DefFun] = []
         for file_decl in self.namespace.values():
-            if name in file_decl.deffuns:
-                candidates.append(file_decl.deffuns[name])
+            decl = file_decl.declarations.get(name)
+            if isinstance(decl, DefFun):
+                candidates.append(decl)
         if len(candidates) == 1:
             return candidates[0]
         else:
@@ -605,7 +560,8 @@ class DeclarationContextNameSpace:
     def has_deffunterm(self, ref: str | RefDefFunTerm) -> bool:
         name = ref if isinstance(ref, str) else ref.name
         for file_decl in self.namespace.values():
-            if name in file_decl.deffunterms:
+            decl = file_decl.declarations.get(name)
+            if isinstance(decl, DefFunTerm):
                 return True
         return False
 
@@ -613,8 +569,9 @@ class DeclarationContextNameSpace:
         name = ref if isinstance(ref, str) else ref.name
         candidates: list[DefFunTerm] = []
         for file_decl in self.namespace.values():
-            if name in file_decl.deffunterms:
-                candidates.append(file_decl.deffunterms[name])
+            decl = file_decl.declarations.get(name)
+            if isinstance(decl, DefFunTerm):
+                candidates.append(decl)
         if len(candidates) == 1:
             return candidates[0]
         else:
@@ -624,7 +581,8 @@ class DeclarationContextNameSpace:
     def has_axiom(self, ref: str | RefAxiom) -> bool:
         name = ref if isinstance(ref, str) else ref.name
         for file_decl in self.namespace.values():
-            if name in file_decl.axioms:
+            decl = file_decl.declarations.get(name)
+            if isinstance(decl, Axiom):
                 return True
         return False
 
@@ -632,8 +590,9 @@ class DeclarationContextNameSpace:
         name = ref if isinstance(ref, str) else ref.name
         candidates: list[Axiom] = []
         for file_decl in self.namespace.values():
-            if name in file_decl.axioms:
-                candidates.append(file_decl.axioms[name])
+            decl = file_decl.declarations.get(name)
+            if isinstance(decl, Axiom):
+                candidates.append(decl)
         if len(candidates) == 1:
             return candidates[0]
         else:
@@ -643,7 +602,8 @@ class DeclarationContextNameSpace:
     def has_theorem(self, ref: str | RefTheorem) -> bool:
         name = ref if isinstance(ref, str) else ref.name
         for file_decl in self.namespace.values():
-            if name in file_decl.theorems:
+            decl = file_decl.declarations.get(name)
+            if isinstance(decl, Theorem):
                 return True
         return False
 
@@ -651,8 +611,9 @@ class DeclarationContextNameSpace:
         name = ref if isinstance(ref, str) else ref.name
         candidates: list[Theorem] = []
         for file_decl in self.namespace.values():
-            if name in file_decl.theorems:
-                candidates.append(file_decl.theorems[name])
+            decl = file_decl.declarations.get(name)
+            if isinstance(decl, Theorem):
+                candidates.append(decl)
         if len(candidates) == 1:
             return candidates[0]
         else:
@@ -662,7 +623,8 @@ class DeclarationContextNameSpace:
     def has_defconexist(self, ref: str | RefDefConExist) -> bool:
         name = ref if isinstance(ref, str) else ref.name
         for file_decl in self.namespace.values():
-            if name in file_decl.defconexists:
+            decl = file_decl.declarations.get(name)
+            if isinstance(decl, DefConExist):
                 return True
         return False
 
@@ -670,8 +632,9 @@ class DeclarationContextNameSpace:
         name = ref if isinstance(ref, str) else ref.name
         candidates: list[DefConExist] = []
         for file_decl in self.namespace.values():
-            if name in file_decl.defconexists:
-                candidates.append(file_decl.defconexists[name])
+            decl = file_decl.declarations.get(name)
+            if isinstance(decl, DefConExist):
+                candidates.append(decl)
         if len(candidates) == 1:
             return candidates[0]
         else:
@@ -681,7 +644,8 @@ class DeclarationContextNameSpace:
     def has_defconuniq(self, ref: str | RefDefConUniq) -> bool:
         name = ref if isinstance(ref, str) else ref.name
         for file_decl in self.namespace.values():
-            if name in file_decl.defconuniqs:
+            decl = file_decl.declarations.get(name)
+            if isinstance(decl, DefConUniq):
                 return True
         return False
 
@@ -689,8 +653,9 @@ class DeclarationContextNameSpace:
         name = ref if isinstance(ref, str) else ref.name
         candidates: list[DefConUniq] = []
         for file_decl in self.namespace.values():
-            if name in file_decl.defconuniqs:
-                candidates.append(file_decl.defconuniqs[name])
+            decl = file_decl.declarations.get(name)
+            if isinstance(decl, DefConUniq):
+                candidates.append(decl)
         if len(candidates) == 1:
             return candidates[0]
         else:
@@ -700,7 +665,8 @@ class DeclarationContextNameSpace:
     def has_deffunexist(self, ref: str | RefDefFunExist) -> bool:
         name = ref if isinstance(ref, str) else ref.name
         for file_decl in self.namespace.values():
-            if name in file_decl.deffunexists:
+            decl = file_decl.declarations.get(name)
+            if isinstance(decl, DefFunExist):
                 return True
         return False
 
@@ -708,8 +674,9 @@ class DeclarationContextNameSpace:
         name = ref if isinstance(ref, str) else ref.name
         candidates: list[DefFunExist] = []
         for file_decl in self.namespace.values():
-            if name in file_decl.deffunexists:
-                candidates.append(file_decl.deffunexists[name])
+            decl = file_decl.declarations.get(name)
+            if isinstance(decl, DefFunExist):
+                candidates.append(decl)
         if len(candidates) == 1:
             return candidates[0]
         else:
@@ -719,7 +686,8 @@ class DeclarationContextNameSpace:
     def has_deffununiq(self, ref: str | RefDefFunUniq) -> bool:
         name = ref if isinstance(ref, str) else ref.name
         for file_decl in self.namespace.values():
-            if name in file_decl.deffununiqs:
+            decl = file_decl.declarations.get(name)
+            if isinstance(decl, DefFunUniq):
                 return True
         return False
 
@@ -727,8 +695,9 @@ class DeclarationContextNameSpace:
         name = ref if isinstance(ref, str) else ref.name
         candidates: list[DefFunUniq] = []
         for file_decl in self.namespace.values():
-            if name in file_decl.deffununiqs:
-                candidates.append(file_decl.deffununiqs[name])
+            decl = file_decl.declarations.get(name)
+            if isinstance(decl, DefFunUniq):
+                candidates.append(decl)
         if len(candidates) == 1:
             return candidates[0]
         else:
@@ -738,8 +707,9 @@ class DeclarationContextNameSpace:
     def get_equality(self) -> Equality | None:
         candidates: list[Equality] = []
         for file_decl in self.namespace.values():
-            if file_decl.equality is not None:
-                candidates.append(file_decl.equality)
+            for decl in file_decl.declarations.values():
+                if isinstance(decl, Equality):
+                    candidates.append(decl)
         if len(candidates) == 0:
             return None
         elif len(candidates) == 1:
@@ -751,7 +721,8 @@ class DeclarationContextNameSpace:
     def has_struct(self, ref: str | RefStruct) -> bool:
         name = ref if isinstance(ref, str) else ref.name
         for file_decl in self.namespace.values():
-            if name in file_decl.structs:
+            decl = file_decl.declarations.get(name)
+            if isinstance(decl, Struct):
                 return True
         return False
 
@@ -759,8 +730,9 @@ class DeclarationContextNameSpace:
         name = ref if isinstance(ref, str) else ref.name
         candidates: list[Struct] = []
         for file_decl in self.namespace.values():
-            if name in file_decl.structs:
-                candidates.append(file_decl.structs[name])
+            decl = file_decl.declarations.get(name)
+            if isinstance(decl, Struct):
+                candidates.append(decl)
         if len(candidates) == 1:
             return candidates[0]
         else:
@@ -770,7 +742,8 @@ class DeclarationContextNameSpace:
     def has_structpred(self, ref: str | RefStructPred) -> bool:
         name = ref if isinstance(ref, str) else ref.name
         for file_decl in self.namespace.values():
-            if name in file_decl.structpreds:
+            decl = file_decl.declarations.get(name)
+            if isinstance(decl, StructPred):
                 return True
         return False
 
@@ -778,8 +751,9 @@ class DeclarationContextNameSpace:
         name = ref if isinstance(ref, str) else ref.name
         candidates: list[StructPred] = []
         for file_decl in self.namespace.values():
-            if name in file_decl.structpreds:
-                candidates.append(file_decl.structpreds[name])
+            decl = file_decl.declarations.get(name)
+            if isinstance(decl, StructPred):
+                candidates.append(decl)
         if len(candidates) == 1:
             return candidates[0]
         else:
@@ -789,7 +763,7 @@ class DeclarationContextNameSpace:
     def get_used_names(self) -> set[str]:
         names: set[str] = set()
         for ctx in self.namespace.values():
-            names.update(ctx.used_names)
+            names.update(ctx.declarations.keys())
         return names
 
     def get_fact(self, ref: RefFact) -> Formula:
