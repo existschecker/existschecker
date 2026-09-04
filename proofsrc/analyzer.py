@@ -295,6 +295,8 @@ class Analyzer:
                 cursor_tokens.append(token)
         cursor_tokens.append(Token("EOF", "", path, 0, 0, 0, 0, 0))
         e = CompletionParser(cursor_tokens).parse_unit()
+        if e is None:
+            return []
         candidates: list[tuple[str, lsp.CompletionItemKind]] = []
         for expected_type in e.expected_types:
             if expected_type.lower() in KEYWORDS:

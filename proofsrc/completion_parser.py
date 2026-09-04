@@ -31,7 +31,7 @@ class CompletionParser:
     def __init__(self, tokens: list[Token]):
         self.stream = CompletionTokenStream(tokens)
 
-    def parse_unit(self) -> ExpectedTokenError:
+    def parse_unit(self) -> ExpectedTokenError | None:
         tok = self.stream.peek()
         try:
             if tok.type == "INCLUDE":
@@ -40,7 +40,10 @@ class CompletionParser:
                 self.parse_declaration(tok)
             raise ExpectedTokenError(("INCLUDE", "PRIMITIVE", "AXIOM", "THEOREM", "DEFINITION", "EXISTENCE", "UNIQUENESS", "EQUALITY", "STRUCT"))
         except ExpectedTokenError as e:
-            return e
+            if self.stream.peek().type == "EOF":
+                return e
+            else:
+                return None
 
     def parse_declaration(self, tok: Token) -> None:
         if tok.type == "PRIMITIVE":
@@ -203,7 +206,27 @@ class CompletionParser:
             if not tok or tok.type == "RBRACE":
                 break
             else:
-                self.parse_control(tok)
+                try:
+                    self.parse_control(tok)
+                except ExpectedTokenError:
+                    if self.stream.peek().type == "EOF":
+                        raise
+                    else:
+                        self.skip_until_next_RBRACE_or_control()
+
+    def skip_until_next_RBRACE_or_control(self):
+        nest_level = 0
+        while True:
+            tok = self.stream.peek()
+            if tok.type == "EOF":
+                return
+            if nest_level == 0 and tok.type in ("RBRACE", "ANY", "ASSUME", "DIVIDE", "SOME", "DENY", "CONTRADICT", "EXPLODE", "APPLY", "LIFT", "CHARACTERIZE", "INVOKE", "EXPAND", "FOLD", "PAD", "SPLIT", "CONNECT", "SUBSTITUTE", "SHOW", "ASSERT"):
+                return
+            if tok.type == "LBRACE":
+                nest_level += 1
+            elif tok.type == "RBRACE":
+                nest_level -= 1
+            self.stream.consume(tok.type)
 
     def parse_control(self, tok: Token) -> None:
         if tok.type == "ANY":
