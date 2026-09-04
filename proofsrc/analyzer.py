@@ -272,22 +272,51 @@ class Analyzer:
             decl_ref_tokens = self.old_workspace.get_all_decl_refs(ref_name, affected_files)
             return tokens_to_locations(decl_ref_tokens)
 
+    def get_completion_expected(self, params: lsp.CompletionParams, source: str) -> list[tuple[str, lsp.CompletionItemKind]]:
+        path = uris.to_fs_path(params.text_document.uri)
+        if path is None:
+            return []
+        from lexer import lex
+        tokens = lex(path, source)
+        units = split(path, tokens, source)
+        found_unit = None
+        for unit in units:
+            if self.is_in_range(params.position, unit):
+                found_unit = unit
+                break
+        if found_unit is None:
+            return []
+        from completion_parser import CompletionParser
+        line = params.position.line + 1
+        column = params.position.character + 1
+        cursor_tokens: list[Token] = []
+        for token in found_unit.tokens:
+            if token.end_line < line or (token.end_line == line and token.end_column < column):
+                cursor_tokens.append(token)
+        cursor_tokens.append(Token("EOF", "", path, 0, 0, 0, 0, 0))
+        e = CompletionParser(cursor_tokens).parse_unit()
+        candidates: list[tuple[str, lsp.CompletionItemKind]] = []
+        for expected_type in e.expected_types:
+            if expected_type.lower() in KEYWORDS:
+                candidates.append((expected_type.lower(), lsp.CompletionItemKind.Keyword))
+            elif expected_type in STRINGS.values():
+                found_key = next(k for k, v in STRINGS.items() if v == expected_type)
+                candidates.append((found_key, lsp.CompletionItemKind.Operator))
+            elif expected_type == "IDENT":
+                if self.old_workspace is not None and self.resolver is not None:
+                    current_unit = self.get_unit_at(params.text_document.uri, params.position)
+                    if current_unit is not None:
+                        order = self.resolver.get_dependent_order(current_unit.file)
+                        for path in order:
+                            for unit in self.old_workspace.file_units[path]:
+                                if isinstance(unit.ast, Declaration) and isinstance(unit.ast, e.decl_types):
+                                    candidates.append((unit.ast.name, lsp.CompletionItemKind.Function))
+        return candidates
+
     def get_completion(self, params: lsp.CompletionParams, source: str) -> list[lsp.CompletionItem]:
+        candidates = self.get_completion_expected(params, source)
         match = re.search(r"\\(\w+)?$", source.splitlines()[params.position.line][:params.position.character])
         typing_backslash = match is not None
-        candidates: list[tuple[str, lsp.CompletionItemKind]] = []
-        for keyword in KEYWORDS:
-            candidates.append((keyword, lsp.CompletionItemKind.Keyword))
-        for operator in STRINGS.keys():
-            candidates.append((operator, lsp.CompletionItemKind.Operator))
-        if self.old_workspace is not None and self.resolver is not None:
-            current_unit = self.get_unit_at(params.text_document.uri, params.position)
-            if current_unit is not None:
-                order = self.resolver.get_dependent_order(current_unit.file)
-                for path in order:
-                    for unit in self.old_workspace.file_units[path]:
-                        if isinstance(unit.ast, Declaration):
-                            candidates.append((unit.ast.name, lsp.CompletionItemKind.Function))
         items: list[lsp.CompletionItem] = []
         for name, kind in candidates:
             if typing_backslash and name.startswith("\\"):
