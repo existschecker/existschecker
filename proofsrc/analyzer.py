@@ -8,7 +8,7 @@ from typing import Sequence
 
 from dependency import DependencyResolver
 from lexer import KEYWORDS, STRINGS, Token
-from ast_types import DeclarationUnit, Workspace, Declaration, Include, Control, Formula, Term, RefFact, FormatError, RenderError, Bottom, DeclarationContextNameSpace, RefStruct, RefStructCondition, StructVar, RefStructPred
+from ast_types import DeclarationUnit, Workspace, Declaration, Include, Control, Formula, Term, RefFact, FormatError, RenderError, Bottom, DeclarationContextNameSpace, RefStruct, RefStructCondition, StructVar, RefStructPred, Equality, PrimPred, DefPred, DefFunTerm, Var, PredTemplate
 from resolved_ast_types import ResolvedInclude, ResolvedDeclaration, ResolvedControl, ResolvedFormula, ResolvedTerm, ResolvedRefFact, ResolvedRefStruct, ResolvedRefStructField, ResolvedRefStructCondition, ResolvedStructVar, ResolvedRefEquality, ResolvedRefPrimPred, ResolvedRefDefPred, ResolvedRefDefCon, ResolvedRefDefFun, ResolvedRefDefFunTerm, ResolvedPredLambda, ResolvedFunLambda, ResolvedRefStructPred
 from splitter import split
 from to_html import Renderer
@@ -335,6 +335,72 @@ class Analyzer:
                 )
             )
         return items
+
+    def get_signature_help(self, params: lsp.SignatureHelpParams, source: str) -> lsp.SignatureHelp | None:
+        path = uris.to_fs_path(params.text_document.uri)
+        if path is None:
+            return None
+        from lexer import lex
+        tokens = lex(path, source)
+        units = split(path, tokens, source)
+        found_index = None
+        found_unit = None
+        for index, unit in enumerate(units):
+            if self.is_in_range(params.position, unit):
+                found_index = index
+                found_unit = unit
+                break
+        if found_index is None or found_unit is None:
+            return None
+        from completion_parser import CompletionParser
+        line = params.position.line + 1
+        column = params.position.character + 1
+        cursor_tokens: list[Token] = []
+        for token in found_unit.tokens:
+            if token.end_line < line or (token.end_line == line and token.end_column < column) or (token.end_line == line and token.end_column == column and token.type != "IDENT"):
+                cursor_tokens.append(token)
+        cursor_tokens.append(Token("EOF", "", path, 0, 0, 0, 0, 0))
+        e = CompletionParser(cursor_tokens).parse_unit()
+        if e is None or e.call is None:
+            return None
+        if self.resolver is None:
+            return None
+        order = self.resolver.get_dependent_order(path)
+        name = e.call.callee.names[0]
+        if self.old_workspace is None:
+            return None
+        def_ast = None
+        for dep_path in order:
+            for unit in self.old_workspace.file_units[dep_path]:
+                if isinstance(unit.ast, (Equality, PrimPred, DefPred, DefFunTerm)) and unit.ast.name == name:
+                    def_ast = unit.ast
+        if isinstance(def_ast, Equality):
+            args = ["x", "y"]
+        elif isinstance(def_ast, PrimPred):
+            args = [f"x{i}" for i in range(1, def_ast.arity + 1)]
+        elif isinstance(def_ast, (DefPred, DefFunTerm)):
+            args: list[str] = []
+            for arg in def_ast.args:
+                if isinstance(arg, Var):
+                    args.append(arg.name)
+                elif isinstance(arg, PredTemplate):
+                    args.append(f"predicate {arg.name}[{arg.arity}]")
+                else:
+                    args.append(f"function {arg.name}[{arg.arity}]")
+        else:
+            return None
+        callee = name + "(" + ", ".join(args) + ")"
+        parameters = [lsp.ParameterInformation(label=arg) for arg in (args)]
+        return lsp.SignatureHelp(
+            signatures=[
+                lsp.SignatureInformation(
+                    label=callee,
+                    parameters=parameters
+                )
+            ],
+            active_signature=0,
+            active_parameter=e.call.argindex
+        )
 
     @staticmethod
     def find_token_at(unit: DeclarationUnit, pos: lsp.Position) -> Token | None:

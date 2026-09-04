@@ -1,12 +1,23 @@
 from lexer import Token
 from ast_types import PrimPred, DefPred, Equality, DefCon, DefFun, DefFunTerm, Axiom, Theorem, DefConExist, DefConUniq, DefFunExist, DefFunUniq
+from dataclasses import dataclass
+
+@dataclass(frozen=True)
+class AccessState:
+    names: tuple[str, ...]
+
+@dataclass(frozen=True)
+class CallState:
+    callee: AccessState
+    argindex: int
 
 class ExpectedTokenError(Exception):
-    def __init__(self, expected_types: tuple[str, ...], decl_types: tuple[type, ...] | None = None) -> None:
+    def __init__(self, expected_types: tuple[str, ...], decl_types: tuple[type, ...] | None = None, call: CallState | None = None) -> None:
         self.expected_types = expected_types
         if decl_types is None:
             decl_types = ()
         self.decl_types = decl_types
+        self.call = call
 
 class CompletionTokenStream:
     def __init__(self, tokens: list[Token]):
@@ -431,43 +442,45 @@ class CompletionParser:
         else:
             self.parse_formula()
 
-    def parse_formula(self) -> None:
-        return self.parse_implies()
+    def parse_formula(self, call: CallState | None = None) -> None:
+        return self.parse_implies(call)
 
-    def parse_implies(self) -> None:
-        self.parse_and()
+    def parse_implies(self, call: CallState | None) -> None:
+        self.parse_and(call)
         while self.stream.peek().type in ("IMPLIES", "IFF"):
             tok = self.stream.peek()
             self.stream.consume(tok.type)
-            self.parse_and()
+            self.parse_and(call)
 
-    def parse_and(self) -> None:
-        self.parse_primary()
+    def parse_and(self, call: CallState | None) -> None:
+        self.parse_primary(call)
         while self.stream.peek().type in ("AND", "OR"):
             tok = self.stream.peek()
             self.stream.consume(tok.type)
-            self.parse_primary()
+            self.parse_primary(call)
 
-    def parse_primary(self) -> None:
+    def parse_primary(self, call: CallState | None) -> None:
         tok = self.stream.peek()
         if tok.type == "IDENT":
-            self.stream.consume("IDENT", (PrimPred, DefPred, Equality, Axiom, Theorem, DefConExist, DefConUniq, DefFunExist, DefFunUniq))
+            parent = self.stream.consume("IDENT").value
+            access = AccessState((parent,))
             if self.stream.peek().type == "DOT":
-                self.parse_access()
+                access = self.parse_access(access)
             if self.stream.peek().type == "LPAREN":
                 self.stream.consume("LPAREN")
-                self.parse_terms()
+                local_call = CallState(access, 0)
+                self.parse_terms(local_call)
                 self.stream.consume("RPAREN")
 
         elif tok.type == "LPAREN":
             self.stream.consume("LPAREN")
-            self.parse_formula()
+            self.parse_formula(call)
             self.stream.consume("RPAREN")
 
         elif tok.type == "NOT":
             self.stream.consume("NOT")
             self.stream.consume("LPAREN")
-            self.parse_formula()
+            self.parse_formula(call)
             self.stream.consume("RPAREN")
 
         elif tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ", "FORALL_PRED_TMPL", "FORALL_FUN_TMPL"):
@@ -483,7 +496,7 @@ class CompletionParser:
                     self.parse_fun_tmpl()
                     tok = self.stream.peek()
             self.stream.consume("LPAREN")
-            self.parse_formula()
+            self.parse_formula(call)
             self.stream.consume("RPAREN")
 
         else:
@@ -500,43 +513,48 @@ class CompletionParser:
             else:
                 break
 
-    def parse_terms(self) -> None:
-        self.parse_term()
+    def parse_terms(self, call: CallState) -> None:
+        self.parse_term(call)
         while self.stream.peek().type == "COMMA":
             self.stream.consume("COMMA")
-            self.parse_term()
+            call = CallState(call.callee, call.argindex + 1)
+            self.parse_term(call)
 
-    def parse_access(self) -> None:
+    def parse_access(self, access: AccessState) -> AccessState:
         while True:
             self.stream.consume("DOT")
-            self.stream.consume("IDENT")
+            child = self.stream.consume("IDENT").value
+            access = AccessState(access.names + (child,))
             if self.stream.peek().type != "DOT":
                 break
+        return access
 
-    def parse_term(self) -> None:
+    def parse_term(self, call: CallState | None = None) -> None:
         tok = self.stream.peek()
         if tok.type == "IDENT":
-            self.stream.consume("IDENT", (PrimPred, DefPred, Equality, DefCon, DefFun, DefFunTerm))
+            parent = self.stream.consume("IDENT").value
+            access = AccessState((parent,))
             if self.stream.peek().type == "LPAREN":
                 self.stream.consume("LPAREN")
-                self.parse_terms()
+                local_call = CallState(access, 0)
+                self.parse_terms(local_call)
                 self.stream.consume("RPAREN")
             elif self.stream.peek().type == "DOT":
-                return self.parse_access()
+                self.parse_access(access)
         elif tok.type == "LAMBDA_PRED":
             self.stream.consume("LAMBDA_PRED")
             if self.stream.peek().type != "DOT":
                 self.parse_vars()
             self.stream.consume("DOT")
-            self.parse_formula()
+            self.parse_formula(call)
         elif tok.type == "LAMBDA_FUN":
             self.stream.consume("LAMBDA_FUN")
             if self.stream.peek().type != "DOT":
                 self.parse_vars()
             self.stream.consume("DOT")
-            self.parse_term()
+            self.parse_term(call)
         else:
-            raise ExpectedTokenError(("IDENT", "LAMBDA_PRED", "LAMBDA_FUN"), (PrimPred, DefPred, Equality, DefCon, DefFun, DefFunTerm))
+            raise ExpectedTokenError(("IDENT", "LAMBDA_PRED", "LAMBDA_FUN"), (PrimPred, DefPred, Equality, DefCon, DefFun, DefFunTerm), call)
 
     def parse_tex(self) -> None:
         if self.stream.peek().type == "TEX":
