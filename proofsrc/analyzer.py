@@ -8,7 +8,7 @@ from typing import Sequence
 
 from dependency import DependencyResolver
 from lexer import KEYWORDS, STRINGS, Token
-from ast_types import DeclarationUnit, Workspace, Declaration, Include, Control, Formula, Term, RefFact, FormatError, RenderError, Bottom, DeclarationContextNameSpace, RefStruct, RefStructCondition, StructVar, RefStructPred, Equality, PrimPred, DefPred, DefFunTerm, Var, PredTemplate
+from ast_types import DeclarationUnit, Workspace, Declaration, Include, Control, Formula, Term, RefFact, FormatError, RenderError, Bottom, DeclarationContextNameSpace, RefStruct, RefStructCondition, StructVar, RefStructPred, Equality, PrimPred, DefPred, DefFunTerm, Var, PredTemplate, DefCon, DefFun
 from resolved_ast_types import ResolvedInclude, ResolvedDeclaration, ResolvedControl, ResolvedFormula, ResolvedTerm, ResolvedRefFact, ResolvedRefStruct, ResolvedRefStructField, ResolvedRefStructCondition, ResolvedStructVar, ResolvedRefEquality, ResolvedRefPrimPred, ResolvedRefDefPred, ResolvedRefDefCon, ResolvedRefDefFun, ResolvedRefDefFunTerm, ResolvedPredLambda, ResolvedFunLambda, ResolvedRefStructPred
 from splitter import split
 from to_html import Renderer
@@ -16,7 +16,7 @@ from parser import Parser
 from name_resolver import NameResolver
 from elaborator import Elaborator
 from checker import Checker
-from completion_parser import CompletionPredTemplate, CompletionFunTemplate, ExpectedTokenError
+from completion_parser import CompletionVar, CompletionPredTemplate, CompletionFunTemplate, ExpectedTokenError
 
 HTML_TEMPLATE = """<!doctype html>
 <html lang="en">
@@ -299,9 +299,6 @@ class Analyzer:
         if e is None:
             return []
         candidates: list[tuple[str, lsp.CompletionItemKind]] = []
-        if e.context is not None:
-            for item in e.context.form + e.context.ctrl:
-                candidates.append((item.name, lsp.CompletionItemKind.Variable))
         for expected_type in e.expected_types:
             if expected_type.lower() in KEYWORDS:
                 candidates.append((expected_type.lower(), lsp.CompletionItemKind.Keyword))
@@ -309,13 +306,32 @@ class Analyzer:
                 found_key = next(k for k, v in STRINGS.items() if v == expected_type)
                 candidates.append((found_key, lsp.CompletionItemKind.Operator))
             elif expected_type == "IDENT":
+                args = self.get_signature_help_args(e, path)
+                if e.call is None:
+                    arg_types = (CompletionVar, CompletionPredTemplate, CompletionFunTemplate)
+                elif e.call.argindex < len(args):
+                    arg_types = (type(args[e.call.argindex]),)
+                else:
+                    arg_types = ()
+                if e.context is not None:
+                    for item in e.context.form + e.context.ctrl:
+                        if isinstance(item, arg_types):
+                            candidates.append((item.name, lsp.CompletionItemKind.Variable))
+                decl_types: list[type] = []
+                for arg_type in arg_types:
+                    if arg_type is CompletionVar:
+                        decl_types.extend([DefCon])
+                    elif arg_type is CompletionPredTemplate:
+                        decl_types.extend([PrimPred, DefPred, Equality])
+                    else:
+                        decl_types.extend([DefFun, DefFunTerm])
                 if self.old_workspace is not None and self.resolver is not None:
                     current_unit = self.get_unit_at(params.text_document.uri, params.position)
                     if current_unit is not None:
                         order = self.resolver.get_dependent_order(current_unit.file)
                         for path in order:
                             for unit in self.old_workspace.file_units[path]:
-                                if isinstance(unit.ast, Declaration) and isinstance(unit.ast, e.decl_types):
+                                if isinstance(unit.ast, Declaration) and isinstance(unit.ast, e.decl_types) and isinstance(unit.ast, tuple(decl_types)):
                                     candidates.append((unit.ast.name, lsp.CompletionItemKind.Function))
         return candidates
 
@@ -340,7 +356,7 @@ class Analyzer:
             )
         return items
 
-    def get_signature_help_args(self, e: ExpectedTokenError, path: str) -> tuple[str, ...]:
+    def get_signature_help_args(self, e: ExpectedTokenError, path: str) -> tuple[CompletionVar | CompletionPredTemplate | CompletionFunTemplate, ...]:
         if e.call is None:
             return ()
         name = e.call.callee.names[0]
@@ -351,14 +367,14 @@ class Analyzer:
                     if item.name == name:
                         found_item = item
             if found_item is not None:
-                return tuple(f"x{i}" for i in range(1, found_item.arity + 1))
+                return tuple(CompletionVar(f"x{i}") for i in range(1, found_item.arity + 1))
             found_item = None
             for item in e.context.ctrl:
                 if isinstance(item, (CompletionPredTemplate, CompletionFunTemplate)):
                     if item.name == name:
                         found_item = item
             if found_item is not None:
-                return tuple(f"x{i}" for i in range(1, found_item.arity + 1))
+                return tuple(CompletionVar(f"x{i}") for i in range(1, found_item.arity + 1))
         if self.resolver is None:
             return ()
         order = self.resolver.get_dependent_order(path)
@@ -370,18 +386,18 @@ class Analyzer:
                 if isinstance(unit.ast, (Equality, PrimPred, DefPred, DefFunTerm)) and unit.ast.name == name:
                     def_ast = unit.ast
         if isinstance(def_ast, Equality):
-            return ("x", "y")
+            return (CompletionVar("x"), CompletionVar("y"))
         elif isinstance(def_ast, PrimPred):
-            return tuple(f"x{i}" for i in range(1, def_ast.arity + 1))
+            return tuple(CompletionVar(f"x{i}") for i in range(1, def_ast.arity + 1))
         elif isinstance(def_ast, (DefPred, DefFunTerm)):
-            args: list[str] = []
+            args: list[CompletionVar | CompletionPredTemplate | CompletionFunTemplate] = []
             for arg in def_ast.args:
                 if isinstance(arg, Var):
-                    args.append(arg.name)
+                    args.append(CompletionVar(arg.name))
                 elif isinstance(arg, PredTemplate):
-                    args.append(f"predicate {arg.name}[{arg.arity}]")
+                    args.append(CompletionPredTemplate(arg.name, arg.arity))
                 else:
-                    args.append(f"function {arg.name}[{arg.arity}]")
+                    args.append(CompletionFunTemplate(arg.name, arg.arity))
             return tuple(args)
         else:
             return ()
@@ -415,8 +431,16 @@ class Analyzer:
             return None
         name = e.call.callee.names[0]
         args = self.get_signature_help_args(e, path)
-        callee = name + "(" + ", ".join(args) + ")"
-        parameters = [lsp.ParameterInformation(label=arg) for arg in (args)]
+        args_str: list[str] = []
+        for arg in args:
+            if isinstance(arg, CompletionVar):
+                args_str.append(arg.name)
+            elif isinstance(arg, CompletionPredTemplate):
+                args_str.append(f"predicate {arg.name}[{arg.arity}]")
+            else:
+                args_str.append(f"function {arg.name}[{arg.arity}]")
+        callee = name + "(" + ", ".join(args_str) + ")"
+        parameters = [lsp.ParameterInformation(label=arg) for arg in (args_str)]
         return lsp.SignatureHelp(
             signatures=[
                 lsp.SignatureInformation(
