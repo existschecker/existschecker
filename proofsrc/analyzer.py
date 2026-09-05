@@ -315,12 +315,16 @@ class Analyzer:
                     arg_types = ()
                 if e.context is not None:
                     for item in e.context.form + e.context.ctrl:
-                        if isinstance(item, arg_types):
+                        if isinstance(item, CompletionVar) and CompletionVar in arg_types:
+                            candidates.append((item.name, lsp.CompletionItemKind.Variable))
+                        if isinstance(item, CompletionPredTemplate) and CompletionPredTemplate in arg_types:
+                            candidates.append((item.name, lsp.CompletionItemKind.Variable))
+                        if isinstance(item, CompletionFunTemplate) and (CompletionVar in arg_types or CompletionFunTemplate in arg_types):
                             candidates.append((item.name, lsp.CompletionItemKind.Variable))
                 decl_types: list[type] = []
                 for arg_type in arg_types:
                     if arg_type is CompletionVar:
-                        decl_types.extend([DefCon])
+                        decl_types.extend([DefCon, DefFun, DefFunTerm])
                     elif arg_type is CompletionPredTemplate:
                         decl_types.extend([PrimPred, DefPred, Equality])
                     else:
