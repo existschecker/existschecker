@@ -75,7 +75,7 @@ def did_save(ls: ProofLanguageServer, params: lsp.DidSaveTextDocumentParams) -> 
 def lsp_definition(ls: ProofLanguageServer, params: lsp.DefinitionParams) -> lsp.Location | None:
     return ls.analyzer.get_definition(params)
 
-@server.feature(lsp.TEXT_DOCUMENT_COMPLETION, lsp.CompletionOptions(trigger_characters=["\\"]))
+@server.feature(lsp.TEXT_DOCUMENT_COMPLETION, lsp.CompletionOptions(trigger_characters=["\\", "."]))
 def lsp_completion(ls: ProofLanguageServer, params: lsp.CompletionParams):
     items = ls.get_completion(params)
     return lsp.CompletionList(is_incomplete=False, items=items)

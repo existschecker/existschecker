@@ -46,13 +46,14 @@ class CompletionContext:
         return CompletionContext(self.ctrl, self.form + items)
 
 class ExpectedTokenError(Exception):
-    def __init__(self, expected_types: tuple[str, ...], decl_types: tuple[type, ...] | None = None, call: CallState | None = None, context: CompletionContext | None = None) -> None:
+    def __init__(self, expected_types: tuple[str, ...], decl_types: tuple[type, ...] | None = None, call: CallState | None = None, context: CompletionContext | None = None, access: AccessState | None = None) -> None:
         self.expected_types = expected_types
         if decl_types is None:
             decl_types = ()
         self.decl_types = decl_types
         self.call = call
         self.context = context
+        self.access = access
 
 class CompletionTokenStream:
     def __init__(self, tokens: list[Token]):
@@ -517,7 +518,7 @@ class CompletionParser:
             parent = self.stream.consume("IDENT").value
             access = AccessState((parent,))
             if self.stream.peek().type == "DOT":
-                access = self.parse_access(access)
+                access = self.parse_access(access, context, call)
             if self.stream.peek().type == "LPAREN":
                 self.stream.consume("LPAREN")
                 local_call = CallState(access, 0)
@@ -574,10 +575,13 @@ class CompletionParser:
             call = CallState(call.callee, call.argindex + 1)
             self.parse_term(context, call)
 
-    def parse_access(self, access: AccessState) -> AccessState:
+    def parse_access(self, access: AccessState, context: CompletionContext, call: CallState | None) -> AccessState:
         while True:
             self.stream.consume("DOT")
-            child = self.stream.consume("IDENT").value
+            if self.stream.peek().type == "IDENT":
+                child = self.stream.consume("IDENT").value
+            else:
+                raise ExpectedTokenError(("IDENT",), None, call, context, access)
             access = AccessState(access.names + (child,))
             if self.stream.peek().type != "DOT":
                 break
@@ -594,7 +598,7 @@ class CompletionParser:
                 self.parse_terms(context, local_call)
                 self.stream.consume("RPAREN")
             elif self.stream.peek().type == "DOT":
-                self.parse_access(access)
+                self.parse_access(access, context, call)
         elif tok.type == "LAMBDA_PRED":
             self.stream.consume("LAMBDA_PRED")
             if self.stream.peek().type != "DOT":

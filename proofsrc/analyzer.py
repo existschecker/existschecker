@@ -8,7 +8,7 @@ from typing import Sequence
 
 from dependency import DependencyResolver
 from lexer import KEYWORDS, STRINGS, Token
-from ast_types import DeclarationUnit, Workspace, Declaration, Include, Control, Formula, Term, RefFact, FormatError, RenderError, Bottom, DeclarationContextNameSpace, RefStruct, RefStructCondition, StructVar, RefStructPred, Equality, PrimPred, DefPred, DefFunTerm, Var, PredTemplate, DefCon, DefFun
+from ast_types import DeclarationUnit, Workspace, Declaration, Include, Control, Formula, Term, RefFact, FormatError, RenderError, Bottom, DeclarationContextNameSpace, RefStruct, RefStructCondition, StructVar, RefStructPred, Equality, PrimPred, DefPred, DefFunTerm, Var, PredTemplate, DefCon, DefFun, Struct, StructPred
 from resolved_ast_types import ResolvedInclude, ResolvedDeclaration, ResolvedControl, ResolvedFormula, ResolvedTerm, ResolvedRefFact, ResolvedRefStruct, ResolvedRefStructField, ResolvedRefStructCondition, ResolvedStructVar, ResolvedRefEquality, ResolvedRefPrimPred, ResolvedRefDefPred, ResolvedRefDefCon, ResolvedRefDefFun, ResolvedRefDefFunTerm, ResolvedPredLambda, ResolvedFunLambda, ResolvedRefStructPred
 from splitter import split
 from to_html import Renderer
@@ -16,7 +16,7 @@ from parser import Parser
 from name_resolver import NameResolver
 from elaborator import Elaborator
 from checker import Checker
-from completion_parser import CompletionVar, CompletionPredTemplate, CompletionFunTemplate, ExpectedTokenError
+from completion_parser import CompletionVar, CompletionTypedVar, CompletionPredTemplate, CompletionFunTemplate, ExpectedTokenError
 
 HTML_TEMPLATE = """<!doctype html>
 <html lang="en">
@@ -273,6 +273,35 @@ class Analyzer:
             decl_ref_tokens = self.old_workspace.get_all_decl_refs(ref_name, affected_files)
             return tokens_to_locations(decl_ref_tokens)
 
+    def resolve_access_type(self, type_name: str, names: tuple[str, ...], order: list[str]) -> str | None:
+        if len(names) == 0:
+            return type_name
+        struct = self.find_struct(type_name, order)
+        if struct is None:
+            return None
+        name = names[0]
+        field = next((field for field in struct.fields if field.name == name), None)
+        if not isinstance(field, StructVar):
+            return None
+        return self.resolve_access_type(field.ref_struct.name, names[1:], order)
+
+    def find_struct(self, type_name: str, order: list[str]) -> Struct | None:
+        for path in order:
+            if self.old_workspace is not None:
+                for unit in self.old_workspace.file_units[path]:
+                    if isinstance(unit.ast, Struct) and unit.ast.name == type_name:
+                        return unit.ast
+        return None
+
+    def find_struct_predicate(self, type_name: str, order: list[str]) -> list[StructPred]:
+        preds: list[StructPred] = []
+        for path in order:
+            if self.old_workspace is not None:
+                for unit in self.old_workspace.file_units[path]:
+                    if isinstance(unit.ast, StructPred) and unit.ast.name.startswith(f"{type_name}."):
+                        preds.append(unit.ast)
+        return preds
+
     def get_completion_expected(self, params: lsp.CompletionParams, source: str) -> list[tuple[str, lsp.CompletionItemKind]]:
         path = uris.to_fs_path(params.text_document.uri)
         if path is None:
@@ -292,7 +321,7 @@ class Analyzer:
         column = params.position.character + 1
         cursor_tokens: list[Token] = []
         for token in found_unit.tokens:
-            if token.end_line < line or (token.end_line == line and token.end_column < column):
+            if token.end_line < line or (token.end_line == line and token.end_column < column) or (token.end_line == line and token.end_column == column and token.type != "IDENT"):
                 cursor_tokens.append(token)
         cursor_tokens.append(Token("EOF", "", path, 0, 0, 0, 0, 0))
         e = CompletionParser(cursor_tokens).parse_unit()
@@ -306,37 +335,58 @@ class Analyzer:
                 found_key = next(k for k, v in STRINGS.items() if v == expected_type)
                 candidates.append((found_key, lsp.CompletionItemKind.Operator))
             elif expected_type == "IDENT":
-                args = self.get_signature_help_args(e, path)
-                if e.call is None:
-                    arg_types = (CompletionVar, CompletionPredTemplate, CompletionFunTemplate)
-                elif e.call.argindex < len(args):
-                    arg_types = (type(args[e.call.argindex]),)
-                else:
-                    arg_types = ()
-                if e.context is not None:
-                    for item in e.context.form + e.context.ctrl:
-                        if isinstance(item, CompletionVar) and CompletionVar in arg_types:
-                            candidates.append((item.name, lsp.CompletionItemKind.Variable))
-                        if isinstance(item, CompletionPredTemplate) and CompletionPredTemplate in arg_types:
-                            candidates.append((item.name, lsp.CompletionItemKind.Variable))
-                        if isinstance(item, CompletionFunTemplate) and (CompletionVar in arg_types or CompletionFunTemplate in arg_types):
-                            candidates.append((item.name, lsp.CompletionItemKind.Variable))
-                decl_types: list[type] = []
-                for arg_type in arg_types:
-                    if arg_type is CompletionVar:
-                        decl_types.extend([DefCon, DefFun, DefFunTerm])
-                    elif arg_type is CompletionPredTemplate:
-                        decl_types.extend([PrimPred, DefPred, Equality])
-                    else:
-                        decl_types.extend([DefFun, DefFunTerm])
-                if self.old_workspace is not None and self.resolver is not None:
+                if e.access is not None:
                     current_unit = self.get_unit_at(params.text_document.uri, params.position)
                     if current_unit is not None:
-                        order = self.resolver.get_dependent_order(current_unit.file)
-                        for path in order:
-                            for unit in self.old_workspace.file_units[path]:
-                                if isinstance(unit.ast, Declaration) and isinstance(unit.ast, e.decl_types) and isinstance(unit.ast, tuple(decl_types)):
-                                    candidates.append((unit.ast.name, lsp.CompletionItemKind.Function))
+                        name = e.access.names[0]
+                        if e.context is not None:
+                            type_name = next((item.type_name for item in e.context.form if isinstance(item, CompletionTypedVar) and item.name == name), None)
+                            if type_name is None:
+                                type_name = next((item.type_name for item in e.context.ctrl if isinstance(item, CompletionTypedVar) and item.name == name), None)
+                                if type_name is None:
+                                    return []
+                            if self.resolver is not None:
+                                order = self.resolver.get_dependent_order(current_unit.file)
+                                type_name = self.resolve_access_type(type_name, e.access.names[1:], order)
+                                if type_name is not None:
+                                    struct = self.find_struct(type_name, order)
+                                    if struct is not None:
+                                        candidates.extend((field.name, lsp.CompletionItemKind.Variable) for field in struct.fields)
+                                        candidates.extend((condition.name, lsp.CompletionItemKind.Function) for condition in struct.conditions)
+                                        preds = self.find_struct_predicate(type_name, order)
+                                        candidates.extend((pred.ref.name, lsp.CompletionItemKind.Variable) for pred in preds)
+                else:
+                    args = self.get_signature_help_args(e, path)
+                    if e.call is None:
+                        arg_types = (CompletionVar, CompletionPredTemplate, CompletionFunTemplate)
+                    elif e.call.argindex < len(args):
+                        arg_types = (type(args[e.call.argindex]),)
+                    else:
+                        arg_types = ()
+                    if e.context is not None:
+                        for item in e.context.form + e.context.ctrl:
+                            if isinstance(item, CompletionVar) and CompletionVar in arg_types:
+                                candidates.append((item.name, lsp.CompletionItemKind.Variable))
+                            if isinstance(item, CompletionPredTemplate) and CompletionPredTemplate in arg_types:
+                                candidates.append((item.name, lsp.CompletionItemKind.Variable))
+                            if isinstance(item, CompletionFunTemplate) and (CompletionVar in arg_types or CompletionFunTemplate in arg_types):
+                                candidates.append((item.name, lsp.CompletionItemKind.Variable))
+                    decl_types: list[type] = []
+                    for arg_type in arg_types:
+                        if arg_type is CompletionVar:
+                            decl_types.extend([DefCon, DefFun, DefFunTerm])
+                        elif arg_type is CompletionPredTemplate:
+                            decl_types.extend([PrimPred, DefPred, Equality])
+                        else:
+                            decl_types.extend([DefFun, DefFunTerm])
+                    if self.old_workspace is not None and self.resolver is not None:
+                        current_unit = self.get_unit_at(params.text_document.uri, params.position)
+                        if current_unit is not None:
+                            order = self.resolver.get_dependent_order(current_unit.file)
+                            for path in order:
+                                for unit in self.old_workspace.file_units[path]:
+                                    if isinstance(unit.ast, Declaration) and isinstance(unit.ast, e.decl_types) and isinstance(unit.ast, tuple(decl_types)):
+                                        candidates.append((unit.ast.name, lsp.CompletionItemKind.Function))
         return candidates
 
     def get_completion(self, params: lsp.CompletionParams, source: str) -> list[lsp.CompletionItem]:
