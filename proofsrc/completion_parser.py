@@ -11,13 +11,48 @@ class CallState:
     callee: AccessState
     argindex: int
 
+@dataclass(frozen=True)
+class CompletionVar:
+    name: str
+
+@dataclass(frozen=True)
+class CompletionTypedVar:
+    name: str
+    type_name: str
+
+@dataclass(frozen=True)
+class CompletionPredTemplate:
+    name: str
+    arity: int
+
+@dataclass(frozen=True)
+class CompletionFunTemplate:
+    name: str
+    arity: int
+
+@dataclass(frozen=True)
+class CompletionContext:
+    ctrl: tuple[CompletionVar | CompletionTypedVar | CompletionPredTemplate | CompletionFunTemplate, ...]
+    form: tuple[CompletionVar | CompletionTypedVar | CompletionPredTemplate | CompletionFunTemplate, ...]
+
+    @staticmethod
+    def init() -> "CompletionContext":
+        return CompletionContext((), ())
+
+    def add_ctrl(self, items: tuple[CompletionVar | CompletionTypedVar | CompletionPredTemplate | CompletionFunTemplate, ...]) -> "CompletionContext":
+        return CompletionContext(self.ctrl + items, self.form)
+
+    def add_form(self, items: tuple[CompletionVar | CompletionTypedVar | CompletionPredTemplate | CompletionFunTemplate, ...]) -> "CompletionContext":
+        return CompletionContext(self.ctrl, self.form + items)
+
 class ExpectedTokenError(Exception):
-    def __init__(self, expected_types: tuple[str, ...], decl_types: tuple[type, ...] | None = None, call: CallState | None = None) -> None:
+    def __init__(self, expected_types: tuple[str, ...], decl_types: tuple[type, ...] | None = None, call: CallState | None = None, context: CompletionContext | None = None) -> None:
         self.expected_types = expected_types
         if decl_types is None:
             decl_types = ()
         self.decl_types = decl_types
         self.call = call
+        self.context = context
 
 class CompletionTokenStream:
     def __init__(self, tokens: list[Token]):
@@ -87,14 +122,14 @@ class CompletionParser:
     def parse_axiom(self) -> None:
         self.stream.consume("AXIOM")
         self.stream.consume("IDENT")
-        self.parse_formula()
+        self.parse_formula(CompletionContext.init())
 
     def parse_theorem(self) -> None:
         self.stream.consume("THEOREM")
         self.stream.consume("IDENT")
-        self.parse_formula()
+        self.parse_formula(CompletionContext.init())
         self.stream.consume("LBRACE")
-        self.parse_block()
+        self.parse_block(CompletionContext.init())
         self.stream.consume("RBRACE")
 
     def parse_definition(self) -> None:
@@ -115,10 +150,12 @@ class CompletionParser:
             self.stream.consume("AUTOEXPAND")
         self.stream.consume("IDENT")
         self.stream.consume("LPAREN")
-        self.parse_vars_or_pred_tmpls_or_fun_tmpls()
+        context = CompletionContext.init()
+        items = self.parse_vars_or_pred_tmpls_or_fun_tmpls()
+        local_ctx = context.add_ctrl(items)
         self.stream.consume("RPAREN")
         self.stream.consume("AS")
-        self.parse_formula()
+        self.parse_formula(local_ctx)
         self.parse_tex()
 
     def parse_defcon(self) -> None:
@@ -143,23 +180,25 @@ class CompletionParser:
 
     def parse_deffunterm(self) -> None:
         self.stream.consume("LPAREN")
-        self.parse_vars_or_pred_tmpls_or_fun_tmpls()
+        context = CompletionContext.init()
+        items = self.parse_vars_or_pred_tmpls_or_fun_tmpls()
+        local_ctx = context.add_ctrl(items)
         self.stream.consume("RPAREN")
         self.stream.consume("AS")
-        self.parse_term()
+        self.parse_term(local_ctx)
         self.parse_tex()
 
     def parse_existence(self) -> None:
         self.stream.consume("EXISTENCE")
         self.stream.consume("IDENT")
-        self.parse_formula()
+        self.parse_formula(CompletionContext.init())
         self.stream.consume("BY")
         self.stream.consume("IDENT", (DefCon, DefFun))
 
     def parse_uniqueness(self) -> None:
         self.stream.consume("UNIQUENESS")
         self.stream.consume("IDENT")
-        self.parse_formula()
+        self.parse_formula(CompletionContext.init())
         self.stream.consume("BY")
         self.stream.consume("IDENT", (DefCon, DefFun))
 
@@ -190,7 +229,7 @@ class CompletionParser:
         while True:
             self.stream.consume("IDENT")
             self.stream.consume("COLON")
-            self.parse_formula()
+            self.parse_formula(CompletionContext.init())
             if self.stream.peek().type == "COMMA":
                 self.stream.consume("COMMA")
             else:
@@ -205,20 +244,20 @@ class CompletionParser:
         self.parse_vars()
         self.stream.consume("RPAREN")
         self.stream.consume("AS")
-        self.parse_formula()
+        self.parse_formula(CompletionContext.init())
 
     def parse_include(self) -> None:
         self.stream.consume("INCLUDE")
         self.stream.consume("STRING")
 
-    def parse_block(self) -> None:
+    def parse_block(self, context: CompletionContext) -> None:
         while True:
             tok = self.stream.peek()
             if not tok or tok.type == "RBRACE":
                 break
             else:
                 try:
-                    self.parse_control(tok)
+                    self.parse_control(tok, context)
                 except ExpectedTokenError:
                     if self.stream.peek().type == "EOF":
                         raise
@@ -239,108 +278,111 @@ class CompletionParser:
                 nest_level -= 1
             self.stream.consume(tok.type)
 
-    def parse_control(self, tok: Token) -> None:
+    def parse_control(self, tok: Token, context: CompletionContext) -> None:
         if tok.type == "ANY":
-            return self.parse_any()
+            return self.parse_any(context)
         elif tok.type == "ASSUME":
-            return self.parse_assume()
+            return self.parse_assume(context)
         elif tok.type == "DIVIDE":
-            return self.parse_divide()
+            return self.parse_divide(context)
         elif tok.type == "SOME":
-            return self.parse_some()
+            return self.parse_some(context)
         elif tok.type == "DENY":
-            return self.parse_deny()
+            return self.parse_deny(context)
         elif tok.type == "CONTRADICT":
-            return self.parse_contradict()
+            return self.parse_contradict(context)
         elif tok.type == "EXPLODE":
-            return self.parse_explode()
+            return self.parse_explode(context)
         elif tok.type == "APPLY":
-            return self.parse_apply()
+            return self.parse_apply(context)
         elif tok.type == "LIFT":
-            return self.parse_lift()
+            return self.parse_lift(context)
         elif tok.type == "CHARACTERIZE":
-            return self.parse_characterize()
+            return self.parse_characterize(context)
         elif tok.type == "INVOKE":
-            return self.parse_invoke()
+            return self.parse_invoke(context)
         elif tok.type == "EXPAND":
-            return self.parse_expand()
+            return self.parse_expand(context)
         elif tok.type == "FOLD":
-            return self.parse_fold()
+            return self.parse_fold(context)
         elif tok.type == "PAD":
-            return self.parse_pad()
+            return self.parse_pad(context)
         elif tok.type == "SPLIT":
-            return self.parse_split()
+            return self.parse_split(context)
         elif tok.type == "CONNECT":
-            return self.parse_connect()
+            return self.parse_connect(context)
         elif tok.type == "SUBSTITUTE":
-            return self.parse_substitute()
+            return self.parse_substitute(context)
         elif tok.type == "SHOW":
-            return self.parse_show()
+            return self.parse_show(context)
         elif tok.type == "ASSERT":
-            return self.parse_assert()
+            return self.parse_assert(context)
         else:
             raise ExpectedTokenError(("ANY", "ASSUME", "DIVIDE", "SOME", "DENY", "CONTRADICT", "EXPLODE", "APPLY", "LIFT", "CHARACTERIZE", "INVOKE", "EXPAND", "FOLD", "PAD", "SPLIT", "CONNECT", "SUBSTITUTE", "SHOW", "ASSERT"))
 
-    def parse_any(self) -> None:
+    def parse_any(self, context: CompletionContext) -> None:
         self.stream.consume("ANY")
-        self.parse_vars_or_struct_vars_or_pred_tmpls_or_fun_tmpls()
+        items = self.parse_vars_or_struct_vars_or_pred_tmpls_or_fun_tmpls()
+        local_ctx = context.add_ctrl(items)
         self.stream.consume("LBRACE")
-        self.parse_block()
+        self.parse_block(local_ctx)
         self.stream.consume("RBRACE")
 
-    def parse_assume(self) -> None:
+    def parse_assume(self, context: CompletionContext) -> None:
         self.stream.consume("ASSUME")
-        self.parse_formula()
+        self.parse_formula(context)
         self.stream.consume("LBRACE")
-        self.parse_block()
+        self.parse_block(context)
         self.stream.consume("RBRACE")
 
-    def parse_divide(self) -> None:
+    def parse_divide(self, context: CompletionContext) -> None:
         self.stream.consume("DIVIDE")
-        self.parse_formula()
+        self.parse_formula(context)
         while self.stream.peek().type == "CASE":
-            self.parse_case()
+            self.parse_case(context)
 
-    def parse_case(self) -> None:
+    def parse_case(self, context: CompletionContext) -> None:
         self.stream.consume("CASE")
-        self.parse_formula()
+        self.parse_formula(context)
         self.stream.consume("LBRACE")
-        self.parse_block()
+        self.parse_block(context)
         self.stream.consume("RBRACE")
 
-    def parse_some(self) -> None:
+    def parse_some(self, context: CompletionContext) -> None:
         self.stream.consume("SOME")
+        items: list[CompletionVar] = []
         while True:
             if self.stream.peek().type == "UNDERSCORE":
                 self.stream.consume("UNDERSCORE")
             else:
-                self.parse_var()
+                items.append(self.parse_var())
             if self.stream.peek().type == "COMMA":
                 self.stream.consume("COMMA")
             else:
                 break
+        local_ctx = context.add_ctrl(tuple(items))
         self.stream.consume("SUCH")
-        self.parse_formula()
+        self.parse_formula(local_ctx)
         self.stream.consume("LBRACE")
-        self.parse_block()
+        self.parse_block(local_ctx)
         self.stream.consume("RBRACE")
 
-    def parse_deny(self) -> None:
+    def parse_deny(self, context: CompletionContext) -> None:
         self.stream.consume("DENY")
-        self.parse_formula()
+        self.parse_formula(context)
         self.stream.consume("LBRACE")
-        self.parse_block()
+        self.parse_block(context)
         self.stream.consume("RBRACE")
 
-    def parse_contradict(self) -> None:
+    def parse_contradict(self, context: CompletionContext) -> None:
         self.stream.consume("CONTRADICT")
-        self.parse_formula()
+        self.parse_formula(context)
 
-    def parse_explode(self) -> None:
+    def parse_explode(self, context: CompletionContext) -> None:
         self.stream.consume("EXPLODE")
-        self.parse_formula()
+        self.parse_formula(context)
 
-    def parse_apply(self) -> None:
+    def parse_apply(self, context: CompletionContext) -> None:
         self.stream.consume("APPLY")
         if self.stream.peek().type == "INVOKE":
             self.stream.consume("INVOKE")
@@ -348,67 +390,67 @@ class CompletionParser:
                 self.stream.consume("RIGHTWARD")
             elif self.stream.peek().type == "LEFTWARD":
                 self.stream.consume("LEFTWARD")
-        self.parse_formula()
+        self.parse_formula(context)
         self.stream.consume("FOR")
-        self.parse_terms_or_none()
+        self.parse_terms_or_none(context)
 
-    def parse_lift(self) -> None:
+    def parse_lift(self, context: CompletionContext) -> None:
         self.stream.consume("LIFT")
         self.stream.consume("FOR")
-        self.parse_terms_or_none()
+        self.parse_terms_or_none(context)
         self.stream.consume("CONCLUDE")
-        self.parse_formula()
+        self.parse_formula(context)
 
-    def parse_characterize(self) -> None:
+    def parse_characterize(self, context: CompletionContext) -> None:
         self.stream.consume("CHARACTERIZE")
         self.stream.consume("FOR")
-        self.parse_term()
+        self.parse_term(context)
         self.stream.consume("CONCLUDE")
-        self.parse_formula()
+        self.parse_formula(context)
 
-    def parse_invoke(self) -> None:
+    def parse_invoke(self, context: CompletionContext) -> None:
         self.stream.consume("INVOKE")
         if self.stream.peek().type == "RIGHTWARD":
             self.stream.consume("RIGHTWARD")
         elif self.stream.peek().type == "LEFTWARD":
             self.stream.consume("LEFTWARD")
-        self.parse_formula()
+        self.parse_formula(context)
 
-    def parse_expand(self) -> None:
+    def parse_expand(self, context: CompletionContext) -> None:
         self.stream.consume("EXPAND")
-        self.parse_formula()
+        self.parse_formula(context)
         self.stream.consume("FOR")
         self.parse_refs_indexes()
 
-    def parse_fold(self) -> None:
+    def parse_fold(self, context: CompletionContext) -> None:
         self.stream.consume("FOLD")
         self.stream.consume("FOR")
         self.parse_refs_indexes()
         self.stream.consume("CONCLUDE")
-        self.parse_formula()
+        self.parse_formula(context)
 
-    def parse_pad(self) -> None:
+    def parse_pad(self, context: CompletionContext) -> None:
         self.stream.consume("PAD")
-        self.parse_formula()
+        self.parse_formula(context)
         self.stream.consume("CONCLUDE")
-        self.parse_formula()
+        self.parse_formula(context)
 
-    def parse_split(self) -> None:
+    def parse_split(self, context: CompletionContext) -> None:
         self.stream.consume("SPLIT")
         if self.stream.peek().type == "NUMBER":
             self.stream.consume("NUMBER")
-        self.parse_formula()
+        self.parse_formula(context)
 
-    def parse_connect(self) -> None:
+    def parse_connect(self, context: CompletionContext) -> None:
         self.stream.consume("CONNECT")
-        self.parse_formula()
+        self.parse_formula(context)
 
-    def parse_substitute(self) -> None:
+    def parse_substitute(self, context: CompletionContext) -> None:
         self.stream.consume("SUBSTITUTE")
-        self.parse_formula()
+        self.parse_formula(context)
         self.stream.consume("FOR")
         while True:
-            self.parse_term()
+            self.parse_term(context)
             if self.stream.peek().type == "LBRACKET":
                 self.stream.consume("LBRACKET")
                 while True:
@@ -419,47 +461,47 @@ class CompletionParser:
                         break
                 self.stream.consume("RBRACKET")
             self.stream.consume("COLON")
-            self.parse_term()
+            self.parse_term(context)
             if self.stream.peek().type == "COMMA":
                 self.stream.consume("COMMA")
             else:
                 break
 
-    def parse_show(self) -> None:
+    def parse_show(self, context: CompletionContext) -> None:
         self.stream.consume("SHOW")
-        self.parse_bot_or_formula()
+        self.parse_bot_or_formula(context)
         self.stream.consume("LBRACE")
-        self.parse_block()
+        self.parse_block(context)
         self.stream.consume("RBRACE")
 
-    def parse_assert(self) -> None:
+    def parse_assert(self, context: CompletionContext) -> None:
         self.stream.consume("ASSERT")
-        self.parse_formula()
+        self.parse_formula(context)
 
-    def parse_bot_or_formula(self) -> None:
+    def parse_bot_or_formula(self, context: CompletionContext) -> None:
         if self.stream.peek().type == "BOT":
             self.stream.consume("BOT")
         else:
-            self.parse_formula()
+            self.parse_formula(context)
 
-    def parse_formula(self, call: CallState | None = None) -> None:
-        return self.parse_implies(call)
+    def parse_formula(self, context: CompletionContext, call: CallState | None = None) -> None:
+        return self.parse_implies(context, call)
 
-    def parse_implies(self, call: CallState | None) -> None:
-        self.parse_and(call)
+    def parse_implies(self, context: CompletionContext, call: CallState | None) -> None:
+        self.parse_and(context, call)
         while self.stream.peek().type in ("IMPLIES", "IFF"):
             tok = self.stream.peek()
             self.stream.consume(tok.type)
-            self.parse_and(call)
+            self.parse_and(context, call)
 
-    def parse_and(self, call: CallState | None) -> None:
-        self.parse_primary(call)
+    def parse_and(self, context: CompletionContext, call: CallState | None) -> None:
+        self.parse_primary(context, call)
         while self.stream.peek().type in ("AND", "OR"):
             tok = self.stream.peek()
             self.stream.consume(tok.type)
-            self.parse_primary(call)
+            self.parse_primary(context, call)
 
-    def parse_primary(self, call: CallState | None) -> None:
+    def parse_primary(self, context: CompletionContext, call: CallState | None) -> None:
         tok = self.stream.peek()
         if tok.type == "IDENT":
             parent = self.stream.consume("IDENT").value
@@ -469,56 +511,58 @@ class CompletionParser:
             if self.stream.peek().type == "LPAREN":
                 self.stream.consume("LPAREN")
                 local_call = CallState(access, 0)
-                self.parse_terms(local_call)
+                self.parse_terms(context, local_call)
                 self.stream.consume("RPAREN")
 
         elif tok.type == "LPAREN":
             self.stream.consume("LPAREN")
-            self.parse_formula(call)
+            self.parse_formula(context, call)
             self.stream.consume("RPAREN")
 
         elif tok.type == "NOT":
             self.stream.consume("NOT")
             self.stream.consume("LPAREN")
-            self.parse_formula(call)
+            self.parse_formula(context, call)
             self.stream.consume("RPAREN")
 
         elif tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ", "FORALL_PRED_TMPL", "FORALL_FUN_TMPL"):
+            items: list[CompletionVar | CompletionTypedVar | CompletionPredTemplate | CompletionFunTemplate] = []
             while tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ", "FORALL_PRED_TMPL", "FORALL_FUN_TMPL"):
                 self.stream.consume(tok.type)
                 if tok.type in ("FORALL", "EXISTS", "EXISTS_UNIQ"):
-                    self.parse_var_or_struct_var()
+                    items.append(self.parse_var_or_struct_var())
                     tok = self.stream.peek()
                 elif tok.type == "FORALL_PRED_TMPL":
-                    self.parse_pred_tmpl()
+                    items.append(self.parse_pred_tmpl())
                     tok = self.stream.peek()
                 else:
-                    self.parse_fun_tmpl()
+                    items.append(self.parse_fun_tmpl())
                     tok = self.stream.peek()
+            local_ctx = context.add_form(tuple(items))
             self.stream.consume("LPAREN")
-            self.parse_formula(call)
+            self.parse_formula(local_ctx, call)
             self.stream.consume("RPAREN")
 
         else:
-            raise ExpectedTokenError(("IDENT", "LPAREN", "NOT", "FORALL", "EXISTS", "EXISTS_UNIQ", "FORALL_PRED_TMPL", "FORALL_FUN_TMPL"), (PrimPred, DefPred, Equality, Axiom, Theorem, DefConExist, DefConUniq, DefFunExist, DefFunUniq))
+            raise ExpectedTokenError(("IDENT", "LPAREN", "NOT", "FORALL", "EXISTS", "EXISTS_UNIQ", "FORALL_PRED_TMPL", "FORALL_FUN_TMPL"), (PrimPred, DefPred, Equality, Axiom, Theorem, DefConExist, DefConUniq, DefFunExist, DefFunUniq), None, context)
 
-    def parse_terms_or_none(self) -> None:
+    def parse_terms_or_none(self, context: CompletionContext) -> None:
         while True:
             if self.stream.peek().type == "UNDERSCORE":
                 self.stream.consume("UNDERSCORE")
             else:
-                self.parse_term()
+                self.parse_term(context)
             if self.stream.peek().type == "COMMA":
                 self.stream.consume("COMMA")
             else:
                 break
 
-    def parse_terms(self, call: CallState) -> None:
-        self.parse_term(call)
+    def parse_terms(self, context: CompletionContext, call: CallState) -> None:
+        self.parse_term(context, call)
         while self.stream.peek().type == "COMMA":
             self.stream.consume("COMMA")
             call = CallState(call.callee, call.argindex + 1)
-            self.parse_term(call)
+            self.parse_term(context, call)
 
     def parse_access(self, access: AccessState) -> AccessState:
         while True:
@@ -529,7 +573,7 @@ class CompletionParser:
                 break
         return access
 
-    def parse_term(self, call: CallState | None = None) -> None:
+    def parse_term(self, context: CompletionContext, call: CallState | None = None) -> None:
         tok = self.stream.peek()
         if tok.type == "IDENT":
             parent = self.stream.consume("IDENT").value
@@ -537,24 +581,30 @@ class CompletionParser:
             if self.stream.peek().type == "LPAREN":
                 self.stream.consume("LPAREN")
                 local_call = CallState(access, 0)
-                self.parse_terms(local_call)
+                self.parse_terms(context, local_call)
                 self.stream.consume("RPAREN")
             elif self.stream.peek().type == "DOT":
                 self.parse_access(access)
         elif tok.type == "LAMBDA_PRED":
             self.stream.consume("LAMBDA_PRED")
             if self.stream.peek().type != "DOT":
-                self.parse_vars()
+                vars = self.parse_vars()
+            else:
+                vars = ()
+            local_ctx = context.add_form(vars)
             self.stream.consume("DOT")
-            self.parse_formula(call)
+            self.parse_formula(local_ctx, call)
         elif tok.type == "LAMBDA_FUN":
             self.stream.consume("LAMBDA_FUN")
             if self.stream.peek().type != "DOT":
-                self.parse_vars()
+                vars = self.parse_vars()
+            else:
+                vars = ()
+            local_ctx = context.add_form(vars)
             self.stream.consume("DOT")
-            self.parse_term(call)
+            self.parse_term(local_ctx, call)
         else:
-            raise ExpectedTokenError(("IDENT", "LAMBDA_PRED", "LAMBDA_FUN"), (PrimPred, DefPred, Equality, DefCon, DefFun, DefFunTerm), call)
+            raise ExpectedTokenError(("IDENT", "LAMBDA_PRED", "LAMBDA_FUN"), (PrimPred, DefPred, Equality, DefCon, DefFun, DefFunTerm), call, context)
 
     def parse_tex(self) -> None:
         if self.stream.peek().type == "TEX":
@@ -578,64 +628,76 @@ class CompletionParser:
             else:
                 break
 
-    def parse_vars_or_struct_vars_or_pred_tmpls_or_fun_tmpls(self) -> None:
+    def parse_vars_or_struct_vars_or_pred_tmpls_or_fun_tmpls(self) -> tuple[CompletionVar | CompletionTypedVar | CompletionPredTemplate | CompletionFunTemplate, ...]:
+        items: list[CompletionVar | CompletionTypedVar | CompletionPredTemplate | CompletionFunTemplate] = []
         while True:
             if self.stream.peek().type == "PREDICATE":
                 self.stream.consume("PREDICATE")
-                self.parse_pred_tmpl()
+                items.append(self.parse_pred_tmpl())
             elif self.stream.peek().type == "FUNCTION":
                 self.stream.consume("FUNCTION")
-                self.parse_fun_tmpl()
+                items.append(self.parse_fun_tmpl())
             else:
-                self.parse_var_or_struct_var()
+                items.append(self.parse_var_or_struct_var())
             if self.stream.peek().type == "COMMA":
                 self.stream.consume("COMMA")
             else:
                 break
+        return tuple(items)
 
-    def parse_vars_or_pred_tmpls_or_fun_tmpls(self) -> None:
+    def parse_vars_or_pred_tmpls_or_fun_tmpls(self) -> tuple[CompletionVar | CompletionPredTemplate | CompletionFunTemplate, ...]:
+        items: list[CompletionVar | CompletionPredTemplate | CompletionFunTemplate] = []
         while True:
             if self.stream.peek().type == "PREDICATE":
                 self.stream.consume("PREDICATE")
-                self.parse_pred_tmpl()
+                items.append(self.parse_pred_tmpl())
             elif self.stream.peek().type == "FUNCTION":
                 self.stream.consume("FUNCTION")
-                self.parse_fun_tmpl()
+                items.append(self.parse_fun_tmpl())
             else:
-                self.parse_var()
+                items.append(self.parse_var())
             if self.stream.peek().type == "COMMA":
                 self.stream.consume("COMMA")
             else:
                 break
+        return tuple(items)
 
-    def parse_vars(self) -> None:
+    def parse_vars(self) -> tuple[CompletionVar, ...]:
+        vars: list[CompletionVar] = []
         while True:
-            self.parse_var()
+            vars.append(self.parse_var())
             if self.stream.peek().type == "COMMA":
                 self.stream.consume("COMMA")
             else:
                 break
+        return tuple(vars)
 
-    def parse_var_or_struct_var(self) -> None:
-        self.stream.consume("IDENT")
+    def parse_var_or_struct_var(self) -> CompletionVar | CompletionTypedVar:
+        var_name = self.stream.consume("IDENT").value
         if self.stream.peek().type == "COLON":
             self.stream.consume("COLON")
-            self.stream.consume("IDENT")
+            type_name = self.stream.consume("IDENT").value
+            return CompletionTypedVar(var_name, type_name)
+        else:
+            return CompletionVar(var_name)
 
-    def parse_var(self) -> None:
-        self.stream.consume("IDENT")
+    def parse_var(self) -> CompletionVar:
+        name = self.stream.consume("IDENT").value
+        return CompletionVar(name)
 
-    def parse_pred_tmpl(self) -> None:
-        self.stream.consume("IDENT")
+    def parse_pred_tmpl(self) -> CompletionPredTemplate:
+        name = self.stream.consume("IDENT").value
         self.stream.consume("LBRACKET")
-        int(self.stream.consume("NUMBER").value)
+        arity = int(self.stream.consume("NUMBER").value)
         self.stream.consume("RBRACKET")
+        return CompletionPredTemplate(name, arity)
 
-    def parse_fun_tmpl(self) -> None:
-        self.stream.consume("IDENT")
+    def parse_fun_tmpl(self) -> CompletionFunTemplate:
+        name = self.stream.consume("IDENT").value
         self.stream.consume("LBRACKET")
-        int(self.stream.consume("NUMBER").value)
+        arity = int(self.stream.consume("NUMBER").value)
         self.stream.consume("RBRACKET")
+        return CompletionFunTemplate(name, arity)
 
     def parse_refs_indexes(self) -> None:
         while True:

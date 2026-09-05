@@ -16,6 +16,7 @@ from parser import Parser
 from name_resolver import NameResolver
 from elaborator import Elaborator
 from checker import Checker
+from completion_parser import CompletionPredTemplate, CompletionFunTemplate, ExpectedTokenError
 
 HTML_TEMPLATE = """<!doctype html>
 <html lang="en">
@@ -298,6 +299,9 @@ class Analyzer:
         if e is None:
             return []
         candidates: list[tuple[str, lsp.CompletionItemKind]] = []
+        if e.context is not None:
+            for item in e.context.form + e.context.ctrl:
+                candidates.append((item.name, lsp.CompletionItemKind.Variable))
         for expected_type in e.expected_types:
             if expected_type.lower() in KEYWORDS:
                 candidates.append((expected_type.lower(), lsp.CompletionItemKind.Keyword))
@@ -336,6 +340,52 @@ class Analyzer:
             )
         return items
 
+    def get_signature_help_args(self, e: ExpectedTokenError, path: str) -> tuple[str, ...]:
+        if e.call is None:
+            return ()
+        name = e.call.callee.names[0]
+        if e.context is not None:
+            found_item = None
+            for item in e.context.form:
+                if isinstance(item, (CompletionPredTemplate, CompletionFunTemplate)):
+                    if item.name == name:
+                        found_item = item
+            if found_item is not None:
+                return tuple(f"x{i}" for i in range(1, found_item.arity + 1))
+            found_item = None
+            for item in e.context.ctrl:
+                if isinstance(item, (CompletionPredTemplate, CompletionFunTemplate)):
+                    if item.name == name:
+                        found_item = item
+            if found_item is not None:
+                return tuple(f"x{i}" for i in range(1, found_item.arity + 1))
+        if self.resolver is None:
+            return ()
+        order = self.resolver.get_dependent_order(path)
+        if self.old_workspace is None:
+            return ()
+        def_ast = None
+        for dep_path in order:
+            for unit in self.old_workspace.file_units[dep_path]:
+                if isinstance(unit.ast, (Equality, PrimPred, DefPred, DefFunTerm)) and unit.ast.name == name:
+                    def_ast = unit.ast
+        if isinstance(def_ast, Equality):
+            return ("x", "y")
+        elif isinstance(def_ast, PrimPred):
+            return tuple(f"x{i}" for i in range(1, def_ast.arity + 1))
+        elif isinstance(def_ast, (DefPred, DefFunTerm)):
+            args: list[str] = []
+            for arg in def_ast.args:
+                if isinstance(arg, Var):
+                    args.append(arg.name)
+                elif isinstance(arg, PredTemplate):
+                    args.append(f"predicate {arg.name}[{arg.arity}]")
+                else:
+                    args.append(f"function {arg.name}[{arg.arity}]")
+            return tuple(args)
+        else:
+            return ()
+
     def get_signature_help(self, params: lsp.SignatureHelpParams, source: str) -> lsp.SignatureHelp | None:
         path = uris.to_fs_path(params.text_document.uri)
         if path is None:
@@ -363,32 +413,8 @@ class Analyzer:
         e = CompletionParser(cursor_tokens).parse_unit()
         if e is None or e.call is None:
             return None
-        if self.resolver is None:
-            return None
-        order = self.resolver.get_dependent_order(path)
         name = e.call.callee.names[0]
-        if self.old_workspace is None:
-            return None
-        def_ast = None
-        for dep_path in order:
-            for unit in self.old_workspace.file_units[dep_path]:
-                if isinstance(unit.ast, (Equality, PrimPred, DefPred, DefFunTerm)) and unit.ast.name == name:
-                    def_ast = unit.ast
-        if isinstance(def_ast, Equality):
-            args = ["x", "y"]
-        elif isinstance(def_ast, PrimPred):
-            args = [f"x{i}" for i in range(1, def_ast.arity + 1)]
-        elif isinstance(def_ast, (DefPred, DefFunTerm)):
-            args: list[str] = []
-            for arg in def_ast.args:
-                if isinstance(arg, Var):
-                    args.append(arg.name)
-                elif isinstance(arg, PredTemplate):
-                    args.append(f"predicate {arg.name}[{arg.arity}]")
-                else:
-                    args.append(f"function {arg.name}[{arg.arity}]")
-        else:
-            return None
+        args = self.get_signature_help_args(e, path)
         callee = name + "(" + ", ".join(args) + ")"
         parameters = [lsp.ParameterInformation(label=arg) for arg in (args)]
         return lsp.SignatureHelp(
