@@ -142,7 +142,7 @@ class CompletionParser:
         elif tok.type == "FUNCTION":
             return self.parse_deffun_or_deffunterm()
         else:
-            raise ExpectedTokenError(("DEFINITION", "CONSTANT", "FUNCTION"))
+            raise ExpectedTokenError(("PREDICATE", "CONSTANT", "FUNCTION"))
 
     def parse_defpred(self) -> None:
         self.stream.consume("PREDICATE")
