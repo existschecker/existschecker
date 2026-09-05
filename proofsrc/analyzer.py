@@ -413,46 +413,65 @@ class Analyzer:
     def get_signature_help_args(self, e: ExpectedTokenError, path: str) -> tuple[CompletionVar | CompletionPredTemplate | CompletionFunTemplate, ...]:
         if e.call is None:
             return ()
-        name = e.call.callee.names[0]
-        if e.context is not None:
-            found_item = None
-            for item in e.context.form:
-                if isinstance(item, (CompletionPredTemplate, CompletionFunTemplate)):
-                    if item.name == name:
-                        found_item = item
-            if found_item is not None:
-                return tuple(CompletionVar(f"x{i}") for i in range(1, found_item.arity + 1))
-            found_item = None
-            for item in e.context.ctrl:
-                if isinstance(item, (CompletionPredTemplate, CompletionFunTemplate)):
-                    if item.name == name:
-                        found_item = item
-            if found_item is not None:
-                return tuple(CompletionVar(f"x{i}") for i in range(1, found_item.arity + 1))
-        if self.resolver is None:
+        if len(e.call.callee.names) > 1:
+            if self.resolver is None or e.context is None:
+                return ()
+            order = self.resolver.get_dependent_order(path)
+            root = e.call.callee.names[0]
+            type_name = next((item.type_name for item in e.context.form + e.context.ctrl if isinstance(item, CompletionTypedVar) and item.name == root), None)
+            if type_name is None:
+                return ()
+            type_name = self.resolve_access_type(type_name, e.call.callee.names[1:-1], order)
+            if type_name is None:
+                return ()
+            name = e.call.callee.names[-1]
+            for pred in self.find_struct_predicate(type_name, order):
+                if pred.ref.name == name:
+                    return tuple(CompletionVar(arg.name) for arg in pred.args)
             return ()
-        order = self.resolver.get_dependent_order(path)
-        if self.old_workspace is None:
-            return ()
-        def_ast = None
-        for dep_path in order:
-            for unit in self.old_workspace.file_units[dep_path]:
-                if isinstance(unit.ast, (Equality, PrimPred, DefPred, DefFunTerm)) and unit.ast.name == name:
-                    def_ast = unit.ast
-        if isinstance(def_ast, Equality):
-            return (CompletionVar("x"), CompletionVar("y"))
-        elif isinstance(def_ast, PrimPred):
-            return tuple(CompletionVar(f"x{i}") for i in range(1, def_ast.arity + 1))
-        elif isinstance(def_ast, (DefPred, DefFunTerm)):
-            args: list[CompletionVar | CompletionPredTemplate | CompletionFunTemplate] = []
-            for arg in def_ast.args:
-                if isinstance(arg, Var):
-                    args.append(CompletionVar(arg.name))
-                elif isinstance(arg, PredTemplate):
-                    args.append(CompletionPredTemplate(arg.name, arg.arity))
-                else:
-                    args.append(CompletionFunTemplate(arg.name, arg.arity))
-            return tuple(args)
+        elif len(e.call.callee.names) == 1:
+            name = e.call.callee.names[0]
+            if e.context is not None:
+                found_item = None
+                for item in e.context.form:
+                    if isinstance(item, (CompletionPredTemplate, CompletionFunTemplate)):
+                        if item.name == name:
+                            found_item = item
+                if found_item is not None:
+                    return tuple(CompletionVar(f"x{i}") for i in range(1, found_item.arity + 1))
+                found_item = None
+                for item in e.context.ctrl:
+                    if isinstance(item, (CompletionPredTemplate, CompletionFunTemplate)):
+                        if item.name == name:
+                            found_item = item
+                if found_item is not None:
+                    return tuple(CompletionVar(f"x{i}") for i in range(1, found_item.arity + 1))
+            if self.resolver is None:
+                return ()
+            order = self.resolver.get_dependent_order(path)
+            if self.old_workspace is None:
+                return ()
+            def_ast = None
+            for dep_path in order:
+                for unit in self.old_workspace.file_units[dep_path]:
+                    if isinstance(unit.ast, (Equality, PrimPred, DefPred, DefFunTerm)) and unit.ast.name == name:
+                        def_ast = unit.ast
+            if isinstance(def_ast, Equality):
+                return (CompletionVar("x"), CompletionVar("y"))
+            elif isinstance(def_ast, PrimPred):
+                return tuple(CompletionVar(f"x{i}") for i in range(1, def_ast.arity + 1))
+            elif isinstance(def_ast, (DefPred, DefFunTerm)):
+                args: list[CompletionVar | CompletionPredTemplate | CompletionFunTemplate] = []
+                for arg in def_ast.args:
+                    if isinstance(arg, Var):
+                        args.append(CompletionVar(arg.name))
+                    elif isinstance(arg, PredTemplate):
+                        args.append(CompletionPredTemplate(arg.name, arg.arity))
+                    else:
+                        args.append(CompletionFunTemplate(arg.name, arg.arity))
+                return tuple(args)
+            else:
+                return ()
         else:
             return ()
 
@@ -483,7 +502,7 @@ class Analyzer:
         e = CompletionParser(cursor_tokens).parse_unit()
         if e is None or e.call is None:
             return None
-        name = e.call.callee.names[0]
+        name = ".".join(e.call.callee.names)
         args = self.get_signature_help_args(e, path)
         args_str: list[str] = []
         for arg in args:
