@@ -64,12 +64,10 @@ class CompletionTokenStream:
             raise Exception("Unexpected end of input")
         return self.tokens[self.pos]
 
-    def consume(self, expected_type: str, decl_types: tuple[type, ...] | None = None) -> Token:
-        if decl_types is None:
-            decl_types = ()
+    def consume(self, expected_type: str) -> Token:
         tok = self.peek()
         if tok.type != expected_type:
-            raise ExpectedTokenError((expected_type,), decl_types)
+            raise ExpectedTokenError((expected_type,))
         self.pos += 1
         return tok
 
@@ -162,7 +160,10 @@ class CompletionParser:
         self.stream.consume("CONSTANT")
         self.stream.consume("IDENT")
         self.stream.consume("BY")
-        self.stream.consume("IDENT", (Theorem,))
+        if self.stream.peek().type == "IDENT":
+            self.stream.consume("IDENT")
+        else:
+            raise ExpectedTokenError(("IDENT",), (Theorem,))
         self.parse_tex()
 
     def parse_deffun_or_deffunterm(self) -> None:
@@ -175,7 +176,10 @@ class CompletionParser:
 
     def parse_deffun(self) -> None:
         self.stream.consume("BY")
-        self.stream.consume("IDENT", (Theorem,))
+        if self.stream.peek().type == "IDENT":
+            self.stream.consume("IDENT")
+        else:
+            raise ExpectedTokenError(("IDENT",), (Theorem,))
         self.parse_tex()
 
     def parse_deffunterm(self) -> None:
@@ -193,14 +197,20 @@ class CompletionParser:
         self.stream.consume("IDENT")
         self.parse_formula(CompletionContext.init())
         self.stream.consume("BY")
-        self.stream.consume("IDENT", (DefCon, DefFun))
+        if self.stream.peek().type == "IDENT":
+            self.stream.consume("IDENT")
+        else:
+            raise ExpectedTokenError(("IDENT",), (DefCon, DefFun))
 
     def parse_uniqueness(self) -> None:
         self.stream.consume("UNIQUENESS")
         self.stream.consume("IDENT")
         self.parse_formula(CompletionContext.init())
         self.stream.consume("BY")
-        self.stream.consume("IDENT", (DefCon, DefFun))
+        if self.stream.peek().type == "IDENT":
+            self.stream.consume("IDENT")
+        else:
+            raise ExpectedTokenError(("IDENT",), (DefCon, DefFun))
 
     def parse_equality(self) -> None:
         self.stream.consume("EQUALITY")
@@ -701,7 +711,10 @@ class CompletionParser:
 
     def parse_refs_indexes(self) -> None:
         while True:
-            self.stream.consume("IDENT", (DefPred, DefFunTerm))
+            if self.stream.peek().type == "IDENT":
+                self.stream.consume("IDENT")
+            else:
+                raise ExpectedTokenError(("IDENT",), (DefPred, DefFunTerm))
             if self.stream.peek().type == "LBRACKET":
                 self.stream.consume("LBRACKET")
                 while True:
