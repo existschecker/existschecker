@@ -15,7 +15,6 @@ class Elaborator:
         self.lexed_unit = lexed_unit
         self.resolved_unit = resolved_unit
         self.decl = decl
-        self.elaborated_unit = ElaboratedUnit()
 
     def add_lsp_error(self, token: Token, message: str) -> None:
         uri = uris.from_fs_path(token.file)
@@ -30,33 +29,39 @@ class Elaborator:
             source="Elaborator",
             severity=lsp.DiagnosticSeverity.Error
         )
-        self.elaborated_unit.diagnostics.append(diag)
+        self.diagnostics.append(diag)
 
     def get_node_token(self, node: ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact) -> Token:
         return self.lexed_unit.tokens[self.resolved_unit.resolved_node_to_token[id(node)][0]]
 
     def add_node_to_token(self, node: Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred, resolved: ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructCondition | ResolvedRefStructPred) -> None:
-        self.elaborated_unit.node_to_token[id(node)] = self.resolved_unit.resolved_node_to_token[id(resolved)]
-        self.elaborated_unit.nodes.append(node)
+        self.node_to_token[id(node)] = self.resolved_unit.resolved_node_to_token[id(resolved)]
+        self.nodes.append(node)
 
-    def build_token_to_node(self):
-        for node in reversed(self.elaborated_unit.nodes):
-            start, end = self.elaborated_unit.node_to_token[id(node)]
+    def build_token_to_node(self) -> tuple[dict[int, Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred], dict[int, Control]]:
+        token_to_node: dict[int, Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred] = {}
+        token_to_control: dict[int, Control] = {}
+        for node in reversed(self.nodes):
+            start, end = self.node_to_token[id(node)]
             for index in range(start, end + 1):
-                self.elaborated_unit.token_to_node[index] = node
-        for node in reversed(self.elaborated_unit.nodes):
+                token_to_node[index] = node
+        for node in reversed(self.nodes):
             if isinstance(node, Control):
-                start, end = self.elaborated_unit.node_to_token[id(node)]
+                start, end = self.node_to_token[id(node)]
                 for index in range(start, end + 1):
-                    self.elaborated_unit.token_to_control[index] = node
+                    token_to_control[index] = node
+        return token_to_node, token_to_control
 
     def elaborate_unit(self) -> ElaboratedUnit:
+        self.node_to_token: dict[int, tuple[int, int]] = {}
+        self.nodes: list[Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred] = []
+        self.diagnostics: list[lsp.Diagnostic] = []
         if isinstance(self.resolved_unit.resolved_ast, ResolvedInclude):
-            self.elaborated_unit.ast = self.elaborate_include(self.resolved_unit.resolved_ast)
-        elif isinstance(self.resolved_unit.resolved_ast, ResolvedDeclaration):
-            self.elaborated_unit.ast = self.elaborate_declaration(self.resolved_unit.resolved_ast)
-        self.build_token_to_node()
-        return self.elaborated_unit
+            ast = self.elaborate_include(self.resolved_unit.resolved_ast)
+        else:
+            ast = self.elaborate_declaration(self.resolved_unit.resolved_ast)
+        token_to_node, token_to_control = self.build_token_to_node()
+        return ElaboratedUnit(ast, self.node_to_token, self.nodes, token_to_node, token_to_control, self.diagnostics)
 
     def elaborate_include(self, node: ResolvedInclude) -> Include:
         if isinstance(node, ResolvedInvalidInclude):

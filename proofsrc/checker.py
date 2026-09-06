@@ -45,7 +45,6 @@ class Checker:
         self.lexed_unit = lexed_unit
         self.elaborated_unit = elaborated_unit
         self.decl = decl
-        self.checked_unit = CheckedUnit()
 
     def get_node_token(self, node: Declaration | Control) -> Token:
         return self.lexed_unit.tokens[self.elaborated_unit.node_to_token[id(node)][0]]
@@ -66,14 +65,15 @@ class Checker:
             source="Checker",
             severity=lsp.DiagnosticSeverity.Error
         )
-        self.checked_unit.diagnostics.append(diag)
+        self.diagnostics.append(diag)
 
     def check_unit(self) -> tuple[CheckedUnit, DeclarationContextNameSpace]:
+        self.diagnostics: list[lsp.Diagnostic] = []
         if isinstance(self.elaborated_unit.ast, Declaration):
             decl = self.check_declaration(self.elaborated_unit.ast)
-            return self.checked_unit, decl
+            return CheckedUnit(self.diagnostics), decl
         else:
-            return self.checked_unit, self.decl
+            return CheckedUnit(self.diagnostics), self.decl
 
     def check_declaration(self, node: Declaration, indent: int = 0) -> DeclarationContextNameSpace:
         try:

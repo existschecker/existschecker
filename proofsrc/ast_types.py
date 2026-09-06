@@ -812,16 +812,16 @@ class LexedUnit:
 
 @dataclass
 class ElaboratedUnit:
-    ast: Include | Declaration | None = None
-    node_to_token: dict[int, tuple[int, int]] = field(default_factory=dict[int, tuple[int, int]])
-    nodes: list[Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred] = field(default_factory=list[Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred])
-    token_to_node: dict[int, Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred] = field(default_factory=dict[int, Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred])
-    token_to_control: dict[int, Control] = field(default_factory=dict[int, Control])
-    diagnostics: list[lsp.Diagnostic] = field(default_factory=list[lsp.Diagnostic])
+    ast: Include | Declaration
+    node_to_token: dict[int, tuple[int, int]]
+    nodes: list[Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred]
+    token_to_node: dict[int, Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred]
+    token_to_control: dict[int, Control]
+    diagnostics: list[lsp.Diagnostic]
 
 @dataclass
 class CheckedUnit:
-    diagnostics: list[lsp.Diagnostic] = field(default_factory=list[lsp.Diagnostic])
+    diagnostics: list[lsp.Diagnostic]
 
 @dataclass
 class DeclarationUnit:

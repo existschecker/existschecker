@@ -612,8 +612,6 @@ class Analyzer:
         unit = self.get_unit_at(current_cursor.uri, current_cursor.position)
         if unit is None:
             return "unit is not found"
-        if unit.elaborated_unit.ast is None:
-            return "ast is not found"
         node = self.find_node_by_line(unit, current_cursor.position)
         path = uris.from_fs_path(current_cursor.uri)
         if path is None:

@@ -12,8 +12,6 @@ logger = logging.getLogger("proof")
 class Parser:
     def __init__(self, lexed_unit: LexedUnit):
         self.lexed_unit = lexed_unit
-        self.stream = TokenStream(lexed_unit.tokens)
-        self.parsed_unit = ParsedUnit()
 
     def add_lsp_error(self, tok: Token, message: str):
         uri = uris.from_fs_path(tok.file)
@@ -28,10 +26,10 @@ class Parser:
             source="Parser",
             severity=lsp.DiagnosticSeverity.Error
         )
-        self.parsed_unit.diagnostics.append(diag)
+        self.diagnostics.append(diag)
 
     def add_node_to_token(self, node: ParsedInclude | ParsedDeclaration | ParsedControl | ParsedExpr, start_token: Token, end_token: Token):
-        self.parsed_unit.node_to_token[id(node)] = (start_token.index, end_token.index)
+        self.node_to_token[id(node)] = (start_token.index, end_token.index)
 
     def skip_until_next_RBRACE_or_control(self):
         nest_level = 0
@@ -47,13 +45,15 @@ class Parser:
                 self.stream.consume(tok.type)
 
     def parse_unit(self) -> ParsedUnit:
+        self.node_to_token: dict[int, tuple[int, int]] = {}
+        self.diagnostics: list[lsp.Diagnostic] = []
         self.stream = TokenStream(self.lexed_unit.tokens)
         tok = self.stream.peek()
         try:
             if tok.type == "INCLUDE":
-                self.parsed_unit.ast = self.parse_include()
+                ast = self.parse_include()
             else:
-                self.parsed_unit.ast = self.parse_declaration(tok)
+                ast = self.parse_declaration(tok)
             tok = self.stream.peek()
             if tok.type != "EOF":
                 msg = f"Unexpected token {tok.type} after Include or Declaration"
@@ -62,14 +62,14 @@ class Parser:
             self.add_lsp_error(e.token, e.msg)
             node = ParsedInvalidDeclaration("<invalid>")
             self.add_node_to_token(node, tok, self.stream.last_token)
-            self.parsed_unit.ast = node
+            ast = node
         except ContextError as e:
             msg = f"{e.__class__.__name__}: {e.msg}"
             self.add_lsp_error(tok, msg)
             node = ParsedInvalidDeclaration("<invalid>")
             self.add_node_to_token(node, tok, self.stream.last_token)
-            self.parsed_unit.ast = node
-        return self.parsed_unit
+            ast = node
+        return ParsedUnit(ast, self.node_to_token, self.diagnostics)
 
     def parse_declaration(self, tok: Token) -> ParsedDeclaration:
         try:
@@ -673,7 +673,7 @@ class Parser:
 
     def parse_implies(self) -> ParsedExpr:
         left = self.parse_and()
-        start_token = self.lexed_unit.tokens[self.parsed_unit.node_to_token[id(left)][0]]
+        start_token = self.lexed_unit.tokens[self.node_to_token[id(left)][0]]
         while self.stream.peek().type in ("IMPLIES", "IFF"):
             tok = self.stream.peek()
             self.stream.consume(tok.type)
@@ -688,7 +688,7 @@ class Parser:
 
     def parse_and(self) -> ParsedExpr:
         left = self.parse_primary()
-        start_token = self.lexed_unit.tokens[self.parsed_unit.node_to_token[id(left)][0]]
+        start_token = self.lexed_unit.tokens[self.node_to_token[id(left)][0]]
         while self.stream.peek().type in ("AND", "OR"):
             tok = self.stream.peek()
             self.stream.consume(tok.type)

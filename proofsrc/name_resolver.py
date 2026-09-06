@@ -21,7 +21,6 @@ class NameResolver:
         self.decl = decl
         self.dependency_resolver = dependency_resolver
         self.file_units = file_units
-        self.resolved_unit = ResolvedUnit()
 
     def add_lsp_error(self, token: Token, message: str) -> None:
         uri = uris.from_fs_path(token.file)
@@ -36,21 +35,21 @@ class NameResolver:
             source="Resolver",
             severity=lsp.DiagnosticSeverity.Error
         )
-        self.resolved_unit.diagnostics.append(diag)
+        self.diagnostics.append(diag)
 
     def get_node_token(self, node: ParsedDeclaration | ParsedControl | ParsedExpr) -> Token:
         return self.lexed_unit.tokens[self.parsed_unit.node_to_token[id(node)][0]]
 
     def add_node_to_token(self, node: ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred, parsed: ParsedDeclaration | ParsedControl | ParsedExpr) -> None:
-        self.resolved_unit.resolved_node_to_token[id(node)] = self.parsed_unit.node_to_token[id(parsed)]
-        self.resolved_unit.resolved_nodes.append(node)
+        self.resolved_node_to_token[id(node)] = self.parsed_unit.node_to_token[id(parsed)]
+        self.resolved_nodes.append(node)
         if isinstance(node, (ResolvedRefFact, ResolvedRefEquality, ResolvedRefPrimPred, ResolvedRefDefPred, ResolvedRefDefCon, ResolvedRefDefFun, ResolvedRefDefFunTerm, ResolvedRefStruct, ResolvedRefStructField, ResolvedRefStructCondition)):
-            self.add_decl_ref(node.name, self.lexed_unit.tokens[self.resolved_unit.resolved_node_to_token[id(node)][0]])
+            self.add_decl_ref(node.name, self.lexed_unit.tokens[self.resolved_node_to_token[id(node)][0]])
 
     def add_decl_ref(self, name: str, token: Token) -> None:
-        if name not in self.resolved_unit.resolved_decl_refs:
-            self.resolved_unit.resolved_decl_refs[name] = []
-        self.resolved_unit.resolved_decl_refs[name].append(token)
+        if name not in self.resolved_decl_refs:
+            self.resolved_decl_refs[name] = []
+        self.resolved_decl_refs[name].append(token)
 
     def add_ctrl_defs_refs(self, def_node: ResolvedTerm | ResolvedStructVar | ResolvedRefStructCondition | ResolvedStructPred | ResolvedRefStructPred, ref_node: ResolvedTerm | ResolvedStructVar | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedRefStructPred, unit_name: str | None = None) -> None:
         if unit_name is None:
@@ -58,29 +57,38 @@ class NameResolver:
                 unit_name = self.parsed_unit.ast.name
             else:
                 unit_name = ""
-        self.resolved_unit.resolved_ctrl_defs[id(ref_node)] = (unit_name, id(def_node))
-        if id(def_node) not in self.resolved_unit.resolved_ctrl_refs:
-            self.resolved_unit.resolved_ctrl_refs[id(def_node)] = []
-        self.resolved_unit.resolved_ctrl_refs[id(def_node)].append(id(ref_node))
+        self.resolved_ctrl_defs[id(ref_node)] = (unit_name, id(def_node))
+        if id(def_node) not in self.resolved_ctrl_refs:
+            self.resolved_ctrl_refs[id(def_node)] = []
+        self.resolved_ctrl_refs[id(def_node)].append(id(ref_node))
 
-    def build_token_to_node(self):
-        for node in reversed(self.resolved_unit.resolved_nodes):
-            start, end = self.resolved_unit.resolved_node_to_token[id(node)]
+    def build_token_to_node(self) -> tuple[dict[int, ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred], dict[int, ResolvedControl]]:
+        resolved_token_to_node: dict[int, ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred] = {}
+        resolved_token_to_control: dict[int, ResolvedControl] = {}
+        for node in reversed(self.resolved_nodes):
+            start, end = self.resolved_node_to_token[id(node)]
             for index in range(start, end + 1):
-                self.resolved_unit.resolved_token_to_node[index] = node
-        for node in reversed(self.resolved_unit.resolved_nodes):
+                resolved_token_to_node[index] = node
+        for node in reversed(self.resolved_nodes):
             if isinstance(node, ResolvedControl):
-                start, end = self.resolved_unit.resolved_node_to_token[id(node)]
+                start, end = self.resolved_node_to_token[id(node)]
                 for index in range(start, end + 1):
-                    self.resolved_unit.resolved_token_to_control[index] = node
+                    resolved_token_to_control[index] = node
+        return resolved_token_to_node, resolved_token_to_control
 
     def resolve_unit(self) -> ResolvedUnit:
+        self.resolved_node_to_token: dict[int, tuple[int, int]] = {}
+        self.resolved_nodes: list[ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred] = []
+        self.resolved_decl_refs: dict[str, list[Token]] = {}
+        self.resolved_ctrl_defs: dict[int, tuple[str, int]] = {}
+        self.resolved_ctrl_refs: dict[int, list[int]] = {}
+        self.diagnostics: list[lsp.Diagnostic] = []
         if isinstance(self.parsed_unit.ast, ParsedInclude):
-            self.resolved_unit.resolved_ast = self.resolve_include(self.parsed_unit.ast)
-        elif isinstance(self.parsed_unit.ast, ParsedDeclaration):
-            self.resolved_unit.resolved_ast = self.resolve_declaration(self.parsed_unit.ast)
-        self.build_token_to_node()
-        return self.resolved_unit
+            resolved_ast = self.resolve_include(self.parsed_unit.ast)
+        else:
+            resolved_ast = self.resolve_declaration(self.parsed_unit.ast)
+        resolved_token_to_node, resolved_token_to_control = self.build_token_to_node()
+        return ResolvedUnit(resolved_ast, self.resolved_node_to_token, self.resolved_nodes, resolved_token_to_node, resolved_token_to_control, self.resolved_decl_refs, self.resolved_ctrl_defs, self.resolved_ctrl_refs, self.diagnostics)
 
     def resolve_include(self, node: ParsedInclude) -> ResolvedInclude:
         if isinstance(node, ParsedInvalidInclude):
