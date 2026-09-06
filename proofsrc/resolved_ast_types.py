@@ -1,6 +1,7 @@
 from lexer import Token
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal
+from lsprotocol import types as lsp
 
 @dataclass(frozen=True)
 class ResolvedTerm:
@@ -460,3 +461,15 @@ class ResolvedContext:
 
     def add_ref_struct(self, ref_struct: ResolvedRefStruct):
         return ResolvedContext(self.ctrl, self.form, ref_struct)
+
+@dataclass
+class ResolvedUnit:
+    resolved_ast: ResolvedInclude | ResolvedDeclaration | None = None
+    resolved_node_to_token: dict[int, tuple[int, int]] = field(default_factory=dict[int, tuple[int, int]])
+    resolved_nodes: list[ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred] = field(default_factory=list[ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred])
+    resolved_token_to_node: dict[int, ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred] = field(default_factory=dict[int, ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred])
+    resolved_token_to_control: dict[int, ResolvedControl] = field(default_factory=dict[int, ResolvedControl])
+    resolved_decl_refs: dict[str, list[Token]] = field(default_factory=dict[str, list[Token]])
+    resolved_ctrl_defs: dict[int, tuple[str, int]] = field(default_factory=dict[int, tuple[str, int]])
+    resolved_ctrl_refs: dict[int, list[int]] = field(default_factory=dict[int, list[int]])
+    diagnostics: list[lsp.Diagnostic] = field(default_factory=list[lsp.Diagnostic])

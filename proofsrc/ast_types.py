@@ -2,7 +2,8 @@ from lexer import Token
 from dataclasses import dataclass, field
 from lsprotocol import types as lsp
 from typing import Sequence, Literal
-from resolved_ast_types import ResolvedInclude, ResolvedDeclaration, ResolvedControl, ResolvedFormula, ResolvedTerm, ResolvedRefFact, ResolvedRefStruct, ResolvedRefStructField, ResolvedRefStructCondition, ResolvedStructVar, ResolvedRefStructPred
+from resolved_ast_types import ResolvedUnit
+from parsed_ast_types import ParsedUnit
 
 import logging
 logger = logging.getLogger("proof")
@@ -804,65 +805,32 @@ class InvalidInclude(Include):
     pass
 
 @dataclass
-class DeclarationUnit:
+class LexedUnit:
     file: str
     tokens: list[Token]
     hash: str
-    resolved_ast: ResolvedInclude | ResolvedDeclaration | None = None
-    resolved_node_to_token: dict[int, tuple[int, int]] = field(default_factory=dict[int, tuple[int, int]])
-    resolved_nodes: list[ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred] = field(default_factory=list[ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred])
-    resolved_token_to_node: dict[int, ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred] = field(default_factory=dict[int, ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred])
-    resolved_token_to_control: dict[int, ResolvedControl] = field(default_factory=dict[int, ResolvedControl])
-    resolved_decl_refs: dict[str, list[Token]] = field(default_factory=dict[str, list[Token]])
-    resolved_ctrl_defs: dict[int, tuple[str, int]] = field(default_factory=dict[int, tuple[str, int]])
-    resolved_ctrl_refs: dict[int, list[int]] = field(default_factory=dict[int, list[int]])
+
+@dataclass
+class ElaboratedUnit:
     ast: Include | Declaration | None = None
     node_to_token: dict[int, tuple[int, int]] = field(default_factory=dict[int, tuple[int, int]])
     nodes: list[Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred] = field(default_factory=list[Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred])
     token_to_node: dict[int, Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred] = field(default_factory=dict[int, Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred])
     token_to_control: dict[int, Control] = field(default_factory=dict[int, Control])
-    decl: DeclarationContextNameSpace = field(default_factory=DeclarationContextNameSpace.init)
     diagnostics: list[lsp.Diagnostic] = field(default_factory=list[lsp.Diagnostic])
 
-    def restore_from(self, old: "DeclarationUnit") -> None:
-        self.ast = old.ast
-        self.resolved_ast = old.resolved_ast
-        self.resolved_node_to_token = old.resolved_node_to_token
-        self.resolved_nodes = old.resolved_nodes
-        self.resolved_token_to_node = old.resolved_token_to_node
-        self.resolved_token_to_control = old.resolved_token_to_control
-        self.resolved_decl_refs = old.resolved_decl_refs
-        self.resolved_ctrl_defs = old.resolved_ctrl_defs
-        self.resolved_ctrl_refs = old.resolved_ctrl_refs
-        self.node_to_token = old.node_to_token
-        self.nodes = old.nodes
-        self.token_to_node = old.token_to_node
-        self.token_to_control = old.token_to_control
-        self.decl = old.decl
-        self.diagnostics = old.diagnostics
+@dataclass
+class CheckedUnit:
+    diagnostics: list[lsp.Diagnostic] = field(default_factory=list[lsp.Diagnostic])
 
-    def build_token_to_node(self):
-        for node in reversed(self.resolved_nodes):
-            start, end = self.resolved_node_to_token[id(node)]
-            for index in range(start, end + 1):
-                self.resolved_token_to_node[index] = node
-        for node in reversed(self.resolved_nodes):
-            if isinstance(node, ResolvedControl):
-                start, end = self.resolved_node_to_token[id(node)]
-                for index in range(start, end + 1):
-                    self.resolved_token_to_control[index] = node
-        for node in reversed(self.nodes):
-            start, end = self.node_to_token[id(node)]
-            for index in range(start, end + 1):
-                self.token_to_node[index] = node
-        for node in reversed(self.nodes):
-            if isinstance(node, Control):
-                start, end = self.node_to_token[id(node)]
-                for index in range(start, end + 1):
-                    self.token_to_control[index] = node
-
-    def get_node_token(self, node: Declaration | Control) -> Token:
-        return self.tokens[self.node_to_token[id(node)][0]]
+@dataclass
+class DeclarationUnit:
+    lexed_unit: LexedUnit
+    parsed_unit: ParsedUnit
+    resolved_unit: ResolvedUnit
+    elaborated_unit: ElaboratedUnit
+    checked_unit: CheckedUnit
+    decl: DeclarationContextNameSpace
 
 class Workspace:
     def __init__(self, file_units: dict[str, list[DeclarationUnit]]):
@@ -871,38 +839,38 @@ class Workspace:
     def get_decl_def(self, name: str, order: list[str]) -> Token | None:
         for path in order:
             for unit in self.file_units[path]:
-                if isinstance(unit.ast, (Equality, PrimPred, Axiom, Theorem, DefPred, DefConExist, DefConUniq, DefCon, DefFunExist, DefFunUniq, DefFun, DefFunTerm, Struct)) and name == unit.ast.name:
-                    return unit.tokens[unit.node_to_token[id(unit.ast.ref)][0]]
+                if isinstance(unit.elaborated_unit.ast, (Equality, PrimPred, Axiom, Theorem, DefPred, DefConExist, DefConUniq, DefCon, DefFunExist, DefFunUniq, DefFun, DefFunTerm, Struct)) and name == unit.elaborated_unit.ast.name:
+                    return unit.lexed_unit.tokens[unit.elaborated_unit.node_to_token[id(unit.elaborated_unit.ast.ref)][0]]
         return None
 
     def get_all_decl_refs(self, name: str, affected_files: set[str]) -> list[Token]:
         all_decl_refs: list[Token] = []
         for path in affected_files:
             for unit in self.file_units[path]:
-                if name in unit.resolved_decl_refs:
-                    all_decl_refs.extend(unit.resolved_decl_refs[name])
+                if name in unit.resolved_unit.resolved_decl_refs:
+                    all_decl_refs.extend(unit.resolved_unit.resolved_decl_refs[name])
         return all_decl_refs
 
     def get_ctrl_def(self, order: list[str], def_unit_name: str, def_node_id: int) -> Token | None:
         def_unit = None
         for path in order:
             for unit in self.file_units[path]:
-                if isinstance(unit.ast, (Equality, PrimPred, Axiom, Theorem, DefPred, DefConExist, DefConUniq, DefCon, DefFunExist, DefFunUniq, DefFun, DefFunTerm, Struct, StructPred)) and def_unit_name == unit.ast.name:
+                if isinstance(unit.elaborated_unit.ast, (Equality, PrimPred, Axiom, Theorem, DefPred, DefConExist, DefConUniq, DefCon, DefFunExist, DefFunUniq, DefFun, DefFunTerm, Struct, StructPred)) and def_unit_name == unit.elaborated_unit.ast.name:
                     def_unit = unit
         if def_unit is None:
             return None
-        def_token_index = def_unit.resolved_node_to_token[def_node_id][0]
-        def_token = def_unit.tokens[def_token_index]
+        def_token_index = def_unit.resolved_unit.resolved_node_to_token[def_node_id][0]
+        def_token = def_unit.lexed_unit.tokens[def_token_index]
         return def_token
 
     def get_ctrl_refs(self, affected_files: set[str], target_def_unit_name: str, target_def_node_id: int) -> list[Token]:
         refs: list[Token] = []
         for path in affected_files:
             for unit in self.file_units[path]:
-                for ref_node_id, (def_unit_name, def_node_id) in unit.resolved_ctrl_defs.items():
+                for ref_node_id, (def_unit_name, def_node_id) in unit.resolved_unit.resolved_ctrl_defs.items():
                     if def_unit_name == target_def_unit_name and def_node_id == target_def_node_id:
-                        ref_token_index = unit.resolved_node_to_token[ref_node_id][0]
-                        refs.append(unit.tokens[ref_token_index])
+                        ref_token_index = unit.resolved_unit.resolved_node_to_token[ref_node_id][0]
+                        refs.append(unit.lexed_unit.tokens[ref_token_index])
         return refs
 
     def merge(self, new: "Workspace") -> None:

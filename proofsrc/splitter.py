@@ -1,12 +1,12 @@
 from lexer import Token
 from token_stream import TokenStream
-from ast_types import DeclarationUnit
+from ast_types import LexedUnit
 
 import hashlib
 
-def split(file: str, file_tokens: list[Token], source: str) -> list[DeclarationUnit]:
+def split(file: str, file_tokens: list[Token], source: str) -> list[LexedUnit]:
     stream = TokenStream(file_tokens)
-    units: list[DeclarationUnit] = []
+    units: list[LexedUnit] = []
     while True:
         start_token = stream.peek()
         if start_token.type == "EOF":
@@ -22,7 +22,7 @@ def split(file: str, file_tokens: list[Token], source: str) -> list[DeclarationU
         raw_text = source[start:end]
         normalized_text = raw_text.replace("\r\n", "\n")
         hash = hashlib.md5(normalized_text.encode()).hexdigest()
-        unit = DeclarationUnit(file=file, tokens=unit_tokens, hash=hash)
+        unit = LexedUnit(file=file, tokens=unit_tokens, hash=hash)
         units.append(unit)
     return units
 

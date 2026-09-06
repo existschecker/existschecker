@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from typing import Literal
+from lsprotocol import types as lsp
 
 from lexer import Token
 
@@ -299,3 +300,4 @@ class ParsedInvalidInclude(ParsedInclude):
 class ParsedUnit:
     ast: ParsedInclude | ParsedDeclaration | None = None
     node_to_token: dict[int, tuple[int, int]] = field(default_factory=dict[int, tuple[int, int]])
+    diagnostics: list[lsp.Diagnostic] = field(default_factory=list[lsp.Diagnostic])

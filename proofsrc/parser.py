@@ -1,4 +1,4 @@
-from ast_types import DeclarationUnit, ContextError, TokenStreamError, ParseError
+from ast_types import LexedUnit, ContextError, TokenStreamError, ParseError
 from parsed_ast_types import ParsedExpr, ParsedIdent, ParsedIdentArgs, ParsedFunTemplate, ParsedFunLambda, ParsedPredTemplate, ParsedPredLambda, ParsedNot, ParsedAnd, ParsedOr, ParsedImplies, ParsedIff, ParsedForall, ParsedExists, ParsedExistsUniq, ParsedBottom, ParsedControl, ParsedInvalidControl, ParsedAny, ParsedAssume, ParsedDivide, ParsedSome, ParsedDeny, ParsedContradict, ParsedCase, ParsedExplode, ParsedApply, ParsedLift, ParsedCharacterize, ParsedInvoke, ParsedExpand, ParsedFold, ParsedPad, ParsedSplit, ParsedConnect, ParsedSubstitute, ParsedShow, ParsedAssert, ParsedDeclaration, ParsedInvalidDeclaration, ParsedPrimPred, ParsedAxiom, ParsedTheorem, ParsedDefPred, ParsedDefCon, ParsedDefFun, ParsedDefFunTerm, ParsedDefExist, ParsedDefUniq, ParsedEquality, ParsedInclude, ParsedInvalidInclude, ParsedUnit, ParsedStruct, ParsedTypedIdent, ParsedAccess, ParsedStructPred, ParsedCall
 from lexer import Token
 from token_stream import TokenStream
@@ -10,9 +10,9 @@ import logging
 logger = logging.getLogger("proof")
 
 class Parser:
-    def __init__(self, unit: DeclarationUnit):
-        self.unit = unit
-        self.stream = TokenStream(unit.tokens)
+    def __init__(self, lexed_unit: LexedUnit):
+        self.lexed_unit = lexed_unit
+        self.stream = TokenStream(lexed_unit.tokens)
         self.parsed_unit = ParsedUnit()
 
     def add_lsp_error(self, tok: Token, message: str):
@@ -28,7 +28,7 @@ class Parser:
             source="Parser",
             severity=lsp.DiagnosticSeverity.Error
         )
-        self.unit.diagnostics.append(diag)
+        self.parsed_unit.diagnostics.append(diag)
 
     def add_node_to_token(self, node: ParsedInclude | ParsedDeclaration | ParsedControl | ParsedExpr, start_token: Token, end_token: Token):
         self.parsed_unit.node_to_token[id(node)] = (start_token.index, end_token.index)
@@ -47,7 +47,7 @@ class Parser:
                 self.stream.consume(tok.type)
 
     def parse_unit(self) -> ParsedUnit:
-        self.stream = TokenStream(self.unit.tokens)
+        self.stream = TokenStream(self.lexed_unit.tokens)
         tok = self.stream.peek()
         try:
             if tok.type == "INCLUDE":
@@ -673,7 +673,7 @@ class Parser:
 
     def parse_implies(self) -> ParsedExpr:
         left = self.parse_and()
-        start_token = self.unit.tokens[self.parsed_unit.node_to_token[id(left)][0]]
+        start_token = self.lexed_unit.tokens[self.parsed_unit.node_to_token[id(left)][0]]
         while self.stream.peek().type in ("IMPLIES", "IFF"):
             tok = self.stream.peek()
             self.stream.consume(tok.type)
@@ -688,7 +688,7 @@ class Parser:
 
     def parse_and(self) -> ParsedExpr:
         left = self.parse_primary()
-        start_token = self.unit.tokens[self.parsed_unit.node_to_token[id(left)][0]]
+        start_token = self.lexed_unit.tokens[self.parsed_unit.node_to_token[id(left)][0]]
         while self.stream.peek().type in ("AND", "OR"):
             tok = self.stream.peek()
             self.stream.consume(tok.type)

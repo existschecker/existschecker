@@ -1,7 +1,7 @@
 from lsprotocol import types as lsp
 from pygls import uris
-from ast_types import DeclarationUnit, Term, Declaration, PrimPred, Axiom, Theorem, DefPred, DefCon, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, InvalidDeclaration, Formula, AtomicFormula, Not, And, Or, Implies, Iff, Forall, Exists, ExistsUniq, PredTemplate, Var, FunTemplate, RefEquality, Compound, RefPrimPred, RefDefPred, RefDefCon, RefDefFun, RefDefFunTerm, VarTerm, PredTerm, FunTerm, Control, Any, Assume, Divide, Some, Deny, Case, Contradict, Explode, Apply, Lift, Characterize, Invoke, Expand, Fold, Pad, Split, Connect, Substitute, Show, Assert, InvalidControl, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq, RefFact, PredLambda, FunLambda, Bottom, Include, InvalidInclude, DeclarationContextNameSpace, RefStruct, Struct, RefStructCondition, StructVar, RefStructPred, StructPred
-from resolved_ast_types import ResolvedTerm, ResolvedFormula, ResolvedVarTerm, ResolvedVar, ResolvedRefDefCon, ResolvedFunTerm, ResolvedRefDefFun, ResolvedRefDefFunTerm, ResolvedFunTemplate, ResolvedFunLambda, ResolvedCompound, ResolvedPredTerm, ResolvedRefEquality, ResolvedRefPrimPred, ResolvedRefDefPred, ResolvedPredTemplate, ResolvedPredLambda, ResolvedAtomicFormula, ResolvedNot, ResolvedAnd, ResolvedOr, ResolvedImplies, ResolvedIff, ResolvedForall, ResolvedExists, ResolvedExistsUniq, ResolvedBottom, ResolvedRefFact, ResolvedRefAxiom, ResolvedRefTheorem, ResolvedRefDefConExist, ResolvedRefDefConUniq, ResolvedRefDefFunExist, ResolvedRefDefFunUniq, ResolvedControl, ResolvedInvalidControl, ResolvedAssume, ResolvedAny, ResolvedCase, ResolvedDivide, ResolvedSome, ResolvedDeny, ResolvedContradict, ResolvedExplode, ResolvedApply, ResolvedLift, ResolvedCharacterize, ResolvedInvoke, ResolvedExpand, ResolvedFold, ResolvedPad, ResolvedSplit, ResolvedConnect, ResolvedSubstitute, ResolvedShow, ResolvedAssert, ResolvedDeclaration, ResolvedInvalidDeclaration, ResolvedPrimPred, ResolvedAxiom, ResolvedTheorem, ResolvedDefPred, ResolvedDefConExist, ResolvedDefConUniq, ResolvedDefCon, ResolvedDefFunExist, ResolvedDefFunUniq, ResolvedDefFun, ResolvedDefFunTerm, ResolvedEquality, ResolvedInclude, ResolvedInvalidInclude, ResolvedRefStruct, ResolvedStructVar, ResolvedStructMemberField, ResolvedRefStructCondition, ResolvedRefStructMemberCondition, ResolvedStruct, ResolvedStructPred, ResolvedStructMemberPred, ResolvedRefStructPred
+from ast_types import LexedUnit, Term, Declaration, PrimPred, Axiom, Theorem, DefPred, DefCon, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, InvalidDeclaration, Formula, AtomicFormula, Not, And, Or, Implies, Iff, Forall, Exists, ExistsUniq, PredTemplate, Var, FunTemplate, RefEquality, Compound, RefPrimPred, RefDefPred, RefDefCon, RefDefFun, RefDefFunTerm, VarTerm, PredTerm, FunTerm, Control, Any, Assume, Divide, Some, Deny, Case, Contradict, Explode, Apply, Lift, Characterize, Invoke, Expand, Fold, Pad, Split, Connect, Substitute, Show, Assert, InvalidControl, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq, RefFact, PredLambda, FunLambda, Bottom, Include, InvalidInclude, DeclarationContextNameSpace, RefStruct, Struct, RefStructCondition, StructVar, RefStructPred, StructPred, ElaboratedUnit
+from resolved_ast_types import ResolvedTerm, ResolvedFormula, ResolvedVarTerm, ResolvedVar, ResolvedRefDefCon, ResolvedFunTerm, ResolvedRefDefFun, ResolvedRefDefFunTerm, ResolvedFunTemplate, ResolvedFunLambda, ResolvedCompound, ResolvedPredTerm, ResolvedRefEquality, ResolvedRefPrimPred, ResolvedRefDefPred, ResolvedPredTemplate, ResolvedPredLambda, ResolvedAtomicFormula, ResolvedNot, ResolvedAnd, ResolvedOr, ResolvedImplies, ResolvedIff, ResolvedForall, ResolvedExists, ResolvedExistsUniq, ResolvedBottom, ResolvedRefFact, ResolvedRefAxiom, ResolvedRefTheorem, ResolvedRefDefConExist, ResolvedRefDefConUniq, ResolvedRefDefFunExist, ResolvedRefDefFunUniq, ResolvedControl, ResolvedInvalidControl, ResolvedAssume, ResolvedAny, ResolvedCase, ResolvedDivide, ResolvedSome, ResolvedDeny, ResolvedContradict, ResolvedExplode, ResolvedApply, ResolvedLift, ResolvedCharacterize, ResolvedInvoke, ResolvedExpand, ResolvedFold, ResolvedPad, ResolvedSplit, ResolvedConnect, ResolvedSubstitute, ResolvedShow, ResolvedAssert, ResolvedDeclaration, ResolvedInvalidDeclaration, ResolvedPrimPred, ResolvedAxiom, ResolvedTheorem, ResolvedDefPred, ResolvedDefConExist, ResolvedDefConUniq, ResolvedDefCon, ResolvedDefFunExist, ResolvedDefFunUniq, ResolvedDefFun, ResolvedDefFunTerm, ResolvedEquality, ResolvedInclude, ResolvedInvalidInclude, ResolvedRefStruct, ResolvedStructVar, ResolvedStructMemberField, ResolvedRefStructCondition, ResolvedRefStructMemberCondition, ResolvedStruct, ResolvedStructPred, ResolvedStructMemberPred, ResolvedRefStructPred, ResolvedUnit
 from lexer import Token
 from logic_utils import Substitutor, DefExpander, strip_forall_vars, alpha_safe_formula
 
@@ -11,9 +11,11 @@ class ElaborateError(Exception):
         self.msg = msg
 
 class Elaborator:
-    def __init__(self, unit: DeclarationUnit, decl: DeclarationContextNameSpace) -> None:
-        self.unit = unit
+    def __init__(self, lexed_unit: LexedUnit, resolved_unit: ResolvedUnit, decl: DeclarationContextNameSpace) -> None:
+        self.lexed_unit = lexed_unit
+        self.resolved_unit = resolved_unit
         self.decl = decl
+        self.elaborated_unit = ElaboratedUnit()
 
     def add_lsp_error(self, token: Token, message: str) -> None:
         uri = uris.from_fs_path(token.file)
@@ -28,20 +30,33 @@ class Elaborator:
             source="Elaborator",
             severity=lsp.DiagnosticSeverity.Error
         )
-        self.unit.diagnostics.append(diag)
+        self.elaborated_unit.diagnostics.append(diag)
 
     def get_node_token(self, node: ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact) -> Token:
-        return self.unit.tokens[self.unit.resolved_node_to_token[id(node)][0]]
+        return self.lexed_unit.tokens[self.resolved_unit.resolved_node_to_token[id(node)][0]]
 
     def add_node_to_token(self, node: Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred, resolved: ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructCondition | ResolvedRefStructPred) -> None:
-        self.unit.node_to_token[id(node)] = self.unit.resolved_node_to_token[id(resolved)]
-        self.unit.nodes.append(node)
+        self.elaborated_unit.node_to_token[id(node)] = self.resolved_unit.resolved_node_to_token[id(resolved)]
+        self.elaborated_unit.nodes.append(node)
 
-    def elaborate_unit(self) -> None:
-        if isinstance(self.unit.resolved_ast, ResolvedInclude):
-            self.unit.ast = self.elaborate_include(self.unit.resolved_ast)
-        elif isinstance(self.unit.resolved_ast, ResolvedDeclaration):
-            self.unit.ast = self.elaborate_declaration(self.unit.resolved_ast)
+    def build_token_to_node(self):
+        for node in reversed(self.elaborated_unit.nodes):
+            start, end = self.elaborated_unit.node_to_token[id(node)]
+            for index in range(start, end + 1):
+                self.elaborated_unit.token_to_node[index] = node
+        for node in reversed(self.elaborated_unit.nodes):
+            if isinstance(node, Control):
+                start, end = self.elaborated_unit.node_to_token[id(node)]
+                for index in range(start, end + 1):
+                    self.elaborated_unit.token_to_control[index] = node
+
+    def elaborate_unit(self) -> ElaboratedUnit:
+        if isinstance(self.resolved_unit.resolved_ast, ResolvedInclude):
+            self.elaborated_unit.ast = self.elaborate_include(self.resolved_unit.resolved_ast)
+        elif isinstance(self.resolved_unit.resolved_ast, ResolvedDeclaration):
+            self.elaborated_unit.ast = self.elaborate_declaration(self.resolved_unit.resolved_ast)
+        self.build_token_to_node()
+        return self.elaborated_unit
 
     def elaborate_include(self, node: ResolvedInclude) -> Include:
         if isinstance(node, ResolvedInvalidInclude):

@@ -8,7 +8,7 @@ from typing import Sequence
 
 from dependency import DependencyResolver
 from lexer import KEYWORDS, STRINGS, Token
-from ast_types import DeclarationUnit, Workspace, Declaration, Include, Control, Formula, Term, RefFact, FormatError, RenderError, Bottom, DeclarationContextNameSpace, RefStruct, RefStructCondition, StructVar, RefStructPred, Equality, PrimPred, DefPred, DefFunTerm, Var, PredTemplate, DefCon, DefFun, Struct, StructPred
+from ast_types import DeclarationUnit, Workspace, Declaration, Include, Control, Formula, Term, RefFact, FormatError, RenderError, Bottom, DeclarationContextNameSpace, RefStruct, RefStructCondition, StructVar, RefStructPred, Equality, PrimPred, DefPred, DefFunTerm, Var, PredTemplate, DefCon, DefFun, Struct, StructPred, LexedUnit
 from resolved_ast_types import ResolvedInclude, ResolvedDeclaration, ResolvedControl, ResolvedFormula, ResolvedTerm, ResolvedRefFact, ResolvedRefStruct, ResolvedRefStructField, ResolvedRefStructCondition, ResolvedStructVar, ResolvedRefEquality, ResolvedRefPrimPred, ResolvedRefDefPred, ResolvedRefDefCon, ResolvedRefDefFun, ResolvedRefDefFunTerm, ResolvedPredLambda, ResolvedFunLambda, ResolvedRefStructPred
 from splitter import split
 from to_html import Renderer
@@ -142,28 +142,27 @@ def prepare_context(file: str, resolver: DependencyResolver, file_final_decls: d
         decl = decl.merge(file_final_decls[dep])
     return decl
 
-def restore_cache(all_units: list[DeclarationUnit], old_all_units: list[DeclarationUnit], decl: DeclarationContextNameSpace) -> tuple[DeclarationContextNameSpace, int]:
+def restore_cache(lexed_units: list[LexedUnit], old_all_units: list[DeclarationUnit], decl: DeclarationContextNameSpace, file_units: dict[str, list[DeclarationUnit]], file: str) -> tuple[DeclarationContextNameSpace, int]:
     start_index = 0
-    for i in range(min(len(all_units), len(old_all_units))):
-        if all_units[i].hash == old_all_units[i].hash:
-            all_units[i].restore_from(old_all_units[i])
-            decl = all_units[i].decl
+    for i in range(min(len(lexed_units), len(old_all_units))):
+        if lexed_units[i].hash == old_all_units[i].lexed_unit.hash:
+            file_units[file].append(old_all_units[i])
+            decl = old_all_units[i].decl
             start_index = i + 1
         else:
             break
     return decl, start_index
 
-def analyze_diff(all_units: list[DeclarationUnit], start_index: int, decl: DeclarationContextNameSpace, dependency_resolver: DependencyResolver, file_units: dict[str, list[DeclarationUnit]], cancel_analysis: threading.Event | None = None) -> DeclarationContextNameSpace | None:
-    for i in range(start_index, len(all_units)):
+def analyze_diff(lexed_units: list[LexedUnit], start_index: int, decl: DeclarationContextNameSpace, dependency_resolver: DependencyResolver, file_units: dict[str, list[DeclarationUnit]], file: str, cancel_analysis: threading.Event | None = None) -> DeclarationContextNameSpace | None:
+    for i in range(start_index, len(lexed_units)):
         if cancel_analysis is not None and cancel_analysis.is_set():
             return None
-        unit = all_units[i]
-        parsed_unit = Parser(unit).parse_unit()
-        NameResolver(unit, parsed_unit, decl, dependency_resolver, file_units).resolve_unit()
-        Elaborator(unit, decl).elaborate_unit()
-        decl = Checker(unit, decl).check_unit()
-        unit.decl = decl
-        unit.build_token_to_node()
+        lexed_unit = lexed_units[i]
+        parsed_unit = Parser(lexed_unit).parse_unit()
+        resolved_unit = NameResolver(lexed_unit, parsed_unit, decl, dependency_resolver, file_units).resolve_unit()
+        elaborated_unit = Elaborator(lexed_unit, resolved_unit, decl).elaborate_unit()
+        checked_unit, decl = Checker(lexed_unit, elaborated_unit, decl).check_unit()
+        file_units[file].append(DeclarationUnit(lexed_unit, parsed_unit, resolved_unit, elaborated_unit, checked_unit, decl))
     return decl
 
 class Analyzer:
@@ -191,14 +190,14 @@ class Analyzer:
                     file_units[file] = self.old_workspace.file_units[file]
                     file_final_decls[file] = file_units[file][-1].decl
                     continue
-            all_units = split(file, self.resolver.tokens_cache[file], self.resolver.source_cache[file])
-            file_units[file] = all_units
+            lexed_units = split(file, self.resolver.tokens_cache[file], self.resolver.source_cache[file])
             decl = prepare_context(file, self.resolver, file_final_decls)
             old_all_units = [] if self.old_workspace is None or dependency_changed else self.old_workspace.file_units.get(file, [])
-            decl, start_index = restore_cache(all_units, old_all_units, decl)
-            if start_index < len(all_units):
+            file_units[file] = []
+            decl, start_index = restore_cache(lexed_units, old_all_units, decl, file_units, file)
+            if start_index < len(lexed_units):
                 newly_analyzed.add(file)
-            decl = analyze_diff(all_units, start_index, decl, self.resolver, file_units, cancel_analysis)
+            decl = analyze_diff(lexed_units, start_index, decl, self.resolver, file_units, file, cancel_analysis)
             if decl is None:
                 return {}
             file_final_decls[file] = decl
@@ -217,7 +216,10 @@ class Analyzer:
                 continue
             final_diagnostics[uri] = []
             for unit in workspace.file_units[file]:
-                final_diagnostics[uri].extend(unit.diagnostics)
+                final_diagnostics[uri].extend(unit.parsed_unit.diagnostics)
+                final_diagnostics[uri].extend(unit.resolved_unit.diagnostics)
+                final_diagnostics[uri].extend(unit.elaborated_unit.diagnostics)
+                final_diagnostics[uri].extend(unit.checked_unit.diagnostics)
         for uri, diags in self.resolver.diagnostics.items():
             if uri not in final_diagnostics:
                 continue
@@ -237,10 +239,10 @@ class Analyzer:
             return None
         if self.resolver is None:
             return None
-        order = self.resolver.get_dependent_order(unit.file)
-        ref_node = unit.resolved_token_to_node[ref_token.index]
-        if id(ref_node) in unit.resolved_ctrl_defs:
-            def_unit_name, def_node_id = unit.resolved_ctrl_defs[id(ref_node)]
+        order = self.resolver.get_dependent_order(unit.lexed_unit.file)
+        ref_node = unit.resolved_unit.resolved_token_to_node[ref_token.index]
+        if id(ref_node) in unit.resolved_unit.resolved_ctrl_defs:
+            def_unit_name, def_node_id = unit.resolved_unit.resolved_ctrl_defs[id(ref_node)]
             ctrl_def_token = self.old_workspace.get_ctrl_def(order, def_unit_name, def_node_id)
             if ctrl_def_token is None:
                 return None
@@ -261,12 +263,12 @@ class Analyzer:
         ref_name = ref_token.value
         if self.old_workspace is None:
             return []
-        ref_node = unit.resolved_token_to_node[ref_token.index]
+        ref_node = unit.resolved_unit.resolved_token_to_node[ref_token.index]
         if self.resolver is None:
             return []
-        affected_files = self.resolver.get_affected_files(unit.file)
-        if id(ref_node) in unit.resolved_ctrl_defs:
-            def_unit_name, def_node_id = unit.resolved_ctrl_defs[id(ref_node)]
+        affected_files = self.resolver.get_affected_files(unit.lexed_unit.file)
+        if id(ref_node) in unit.resolved_unit.resolved_ctrl_defs:
+            def_unit_name, def_node_id = unit.resolved_unit.resolved_ctrl_defs[id(ref_node)]
             ctrl_ref_tokens = self.old_workspace.get_ctrl_refs(affected_files, def_unit_name, def_node_id)
             return tokens_to_locations(ctrl_ref_tokens)
         else:
@@ -289,8 +291,8 @@ class Analyzer:
         for path in order:
             if self.old_workspace is not None:
                 for unit in self.old_workspace.file_units[path]:
-                    if isinstance(unit.ast, Struct) and unit.ast.name == type_name:
-                        return unit.ast
+                    if isinstance(unit.elaborated_unit.ast, Struct) and unit.elaborated_unit.ast.name == type_name:
+                        return unit.elaborated_unit.ast
         return None
 
     def find_struct_predicate(self, type_name: str, order: list[str]) -> list[StructPred]:
@@ -298,8 +300,8 @@ class Analyzer:
         for path in order:
             if self.old_workspace is not None:
                 for unit in self.old_workspace.file_units[path]:
-                    if isinstance(unit.ast, StructPred) and unit.ast.name.startswith(f"{type_name}."):
-                        preds.append(unit.ast)
+                    if isinstance(unit.elaborated_unit.ast, StructPred) and unit.elaborated_unit.ast.name.startswith(f"{type_name}."):
+                        preds.append(unit.elaborated_unit.ast)
         return preds
 
     def get_completion_expected(self, params: lsp.CompletionParams, source: str) -> list[tuple[str, lsp.CompletionItemKind]]:
@@ -346,7 +348,7 @@ class Analyzer:
                                 if type_name is None:
                                     return []
                             if self.resolver is not None:
-                                order = self.resolver.get_dependent_order(current_unit.file)
+                                order = self.resolver.get_dependent_order(current_unit.lexed_unit.file)
                                 type_name = self.resolve_access_type(type_name, e.access.names[1:], order)
                                 if type_name is not None:
                                     struct = self.find_struct(type_name, order)
@@ -382,11 +384,11 @@ class Analyzer:
                     if self.old_workspace is not None and self.resolver is not None:
                         current_unit = self.get_unit_at(params.text_document.uri, params.position)
                         if current_unit is not None:
-                            order = self.resolver.get_dependent_order(current_unit.file)
+                            order = self.resolver.get_dependent_order(current_unit.lexed_unit.file)
                             for path in order:
                                 for unit in self.old_workspace.file_units[path]:
-                                    if isinstance(unit.ast, Declaration) and isinstance(unit.ast, e.decl_types) and isinstance(unit.ast, tuple(decl_types)):
-                                        candidates.append((unit.ast.name, lsp.CompletionItemKind.Function))
+                                    if isinstance(unit.elaborated_unit.ast, Declaration) and isinstance(unit.elaborated_unit.ast, e.decl_types) and isinstance(unit.elaborated_unit.ast, tuple(decl_types)):
+                                        candidates.append((unit.elaborated_unit.ast.name, lsp.CompletionItemKind.Function))
         return candidates
 
     def get_completion(self, params: lsp.CompletionParams, source: str) -> list[lsp.CompletionItem]:
@@ -454,8 +456,8 @@ class Analyzer:
             def_ast = None
             for dep_path in order:
                 for unit in self.old_workspace.file_units[dep_path]:
-                    if isinstance(unit.ast, (Equality, PrimPred, DefPred, DefFunTerm)) and unit.ast.name == name:
-                        def_ast = unit.ast
+                    if isinstance(unit.elaborated_unit.ast, (Equality, PrimPred, DefPred, DefFunTerm)) and unit.elaborated_unit.ast.name == name:
+                        def_ast = unit.elaborated_unit.ast
             if isinstance(def_ast, Equality):
                 return (CompletionVar("x"), CompletionVar("y"))
             elif isinstance(def_ast, PrimPred):
@@ -481,13 +483,13 @@ class Analyzer:
             return None
         from lexer import lex
         tokens = lex(path, source)
-        units = split(path, tokens, source)
+        lexer_units = split(path, tokens, source)
         found_index = None
         found_unit = None
-        for index, unit in enumerate(units):
-            if self.is_in_range(params.position, unit):
+        for index, lexer_unit in enumerate(lexer_units):
+            if self.is_in_range(params.position, lexer_unit):
                 found_index = index
-                found_unit = unit
+                found_unit = lexer_unit
                 break
         if found_index is None or found_unit is None:
             return None
@@ -530,7 +532,7 @@ class Analyzer:
         target_line = pos.line + 1
         target_column = pos.character + 1
         candidate = None
-        for token in unit.tokens[:-1]:
+        for token in unit.lexed_unit.tokens[:-1]:
             if target_line < token.line or target_line > token.end_line:
                 continue
             if target_line == token.line and target_column < token.column:
@@ -543,11 +545,11 @@ class Analyzer:
         return candidate
 
     @staticmethod
-    def is_in_range(pos: lsp.Position, unit: DeclarationUnit) -> bool:
+    def is_in_range(pos: lsp.Position, lexer_unit: LexedUnit) -> bool:
         target_line = pos.line + 1
         target_column = pos.character + 1
-        start_token = unit.tokens[0]
-        end_token = unit.tokens[-1]
+        start_token = lexer_unit.tokens[0]
+        end_token = lexer_unit.tokens[-1]
         if target_line < start_token.line or target_line > end_token.line:
             return False
         if target_line == start_token.line and target_column < start_token.column:
@@ -566,9 +568,9 @@ class Analyzer:
         target_line = position.line + 1
         last_unit = None
         for unit in units:
-            if target_line < unit.tokens[0].line:
+            if target_line < unit.lexed_unit.tokens[0].line:
                 return last_unit
-            if self.is_in_range(position, unit):
+            if self.is_in_range(position, unit.lexed_unit):
                 return unit
             last_unit = unit
         return last_unit
@@ -580,12 +582,12 @@ class Analyzer:
         token = self.find_token_at(unit, params.position)
         if token is None:
             return None
-        if token.index not in unit.resolved_token_to_node:
+        if token.index not in unit.resolved_unit.resolved_token_to_node:
             return None
-        resolved_node = unit.resolved_token_to_node[token.index]
-        if token.index not in unit.token_to_node:
+        resolved_node = unit.resolved_unit.resolved_token_to_node[token.index]
+        if token.index not in unit.elaborated_unit.token_to_node:
             return None
-        node = unit.token_to_node[token.index]
+        node = unit.elaborated_unit.token_to_node[token.index]
         return lsp.Hover(
             contents=lsp.MarkupContent(
                 kind=lsp.MarkupKind.Markdown,
@@ -597,11 +599,11 @@ class Analyzer:
     def find_node_by_line(unit: DeclarationUnit, position: lsp.Position) -> Control | None:
         target_line = position.line + 1
         last_node = None
-        for token in unit.tokens:
-            if token.line < target_line and token.index in unit.token_to_control:
-                last_node = unit.token_to_control[token.index]
-            elif token.line == target_line and token.index in unit.token_to_control:
-                return unit.token_to_control[token.index]
+        for token in unit.lexed_unit.tokens:
+            if token.line < target_line and token.index in unit.elaborated_unit.token_to_control:
+                last_node = unit.elaborated_unit.token_to_control[token.index]
+            elif token.line == target_line and token.index in unit.elaborated_unit.token_to_control:
+                return unit.elaborated_unit.token_to_control[token.index]
         return last_node
 
     def get_proofinfo(self, current_cursor: CursorState | None) -> str:
@@ -610,13 +612,13 @@ class Analyzer:
         unit = self.get_unit_at(current_cursor.uri, current_cursor.position)
         if unit is None:
             return "unit is not found"
-        if unit.ast is None:
+        if unit.elaborated_unit.ast is None:
             return "ast is not found"
         node = self.find_node_by_line(unit, current_cursor.position)
         path = uris.from_fs_path(current_cursor.uri)
         if path is None:
             return "path is not found"
-        decl_info = render_proofinfo(unit.ast, unit.decl)
+        decl_info = render_proofinfo(unit.elaborated_unit.ast, unit.decl)
         ctrl_info = "" if node is None else render_proofinfo(node, unit.decl)
         return HTML_TEMPLATE.format(decl_info=decl_info, ctrl_info=ctrl_info)
 
@@ -630,8 +632,8 @@ class Analyzer:
         if path not in self.old_workspace.file_units:
             return lsp.SemanticTokens(data=[])
         for unit in self.old_workspace.file_units[path]:
-            for index, node in unit.resolved_token_to_node.items():
-                token = unit.tokens[index]
+            for index, node in unit.resolved_unit.resolved_token_to_node.items():
+                token = unit.lexed_unit.tokens[index]
                 if isinstance(node, (ResolvedRefFact, ResolvedRefStructCondition)):
                     t_type = TokenType.FUNCTION
                 elif isinstance(node, (ResolvedRefEquality, ResolvedRefPrimPred, ResolvedRefDefPred, ResolvedRefDefCon, ResolvedRefDefFun, ResolvedRefDefFunTerm)):
