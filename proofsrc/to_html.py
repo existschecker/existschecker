@@ -767,7 +767,7 @@ if __name__ == "__main__":
                 continue
             name = os.path.splitext(os.path.basename(file))[0]
             title = f"{name}_checker_{mode}"
-            checker_html, error_found = to_html([unit.ast for unit in all_units if unit.ast is not None], all_units[-1].decl, title, mode == "svg")
+            checker_html, error_found = to_html([unit.elaborated_unit.ast for unit in all_units], all_units[-1].decl, title, mode == "svg")
             f = open(os.path.join("html", f"{title}.html"), 'w', encoding='utf-8')
             f.write(checker_html)
             f.close()
