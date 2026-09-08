@@ -1,7 +1,7 @@
 from lsprotocol import types as lsp
 from pygls import uris
-from ast_types import LexedUnit, Term, Declaration, PrimPred, Axiom, Theorem, DefPred, DefCon, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, InvalidDeclaration, Formula, AtomicFormula, Not, And, Or, Implies, Iff, Forall, Exists, ExistsUniq, PredTemplate, Var, FunTemplate, RefEquality, Compound, RefPrimPred, RefDefPred, RefDefCon, RefDefFun, RefDefFunTerm, VarTerm, PredTerm, FunTerm, Control, Any, Assume, Divide, Some, Deny, Case, Contradict, Explode, Apply, Lift, Characterize, Invoke, Expand, Fold, Pad, Split, Connect, Substitute, Show, Assert, InvalidControl, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq, RefFact, PredLambda, FunLambda, Bottom, Include, InvalidInclude, DeclarationContextNameSpace, RefStruct, Struct, RefStructCondition, StructVar, RefStructPred, StructPred, ElaboratedUnit
-from resolved_ast_types import ResolvedTerm, ResolvedFormula, ResolvedVarTerm, ResolvedVar, ResolvedRefDefCon, ResolvedFunTerm, ResolvedRefDefFun, ResolvedRefDefFunTerm, ResolvedFunTemplate, ResolvedFunLambda, ResolvedCompound, ResolvedPredTerm, ResolvedRefEquality, ResolvedRefPrimPred, ResolvedRefDefPred, ResolvedPredTemplate, ResolvedPredLambda, ResolvedAtomicFormula, ResolvedNot, ResolvedAnd, ResolvedOr, ResolvedImplies, ResolvedIff, ResolvedForall, ResolvedExists, ResolvedExistsUniq, ResolvedBottom, ResolvedRefFact, ResolvedRefAxiom, ResolvedRefTheorem, ResolvedRefDefConExist, ResolvedRefDefConUniq, ResolvedRefDefFunExist, ResolvedRefDefFunUniq, ResolvedControl, ResolvedInvalidControl, ResolvedAssume, ResolvedAny, ResolvedCase, ResolvedDivide, ResolvedSome, ResolvedDeny, ResolvedContradict, ResolvedExplode, ResolvedApply, ResolvedLift, ResolvedCharacterize, ResolvedInvoke, ResolvedExpand, ResolvedFold, ResolvedPad, ResolvedSplit, ResolvedConnect, ResolvedSubstitute, ResolvedShow, ResolvedAssert, ResolvedDeclaration, ResolvedInvalidDeclaration, ResolvedPrimPred, ResolvedAxiom, ResolvedTheorem, ResolvedDefPred, ResolvedDefConExist, ResolvedDefConUniq, ResolvedDefCon, ResolvedDefFunExist, ResolvedDefFunUniq, ResolvedDefFun, ResolvedDefFunTerm, ResolvedEquality, ResolvedInclude, ResolvedInvalidInclude, ResolvedRefStruct, ResolvedStructVar, ResolvedStructMemberField, ResolvedRefStructCondition, ResolvedRefStructMemberCondition, ResolvedStruct, ResolvedStructPred, ResolvedStructMemberPred, ResolvedRefStructPred, ResolvedUnit
+from ast_types import LexedUnit, Term, Declaration, PrimPred, Axiom, Theorem, DefPred, DefCon, DefConExist, DefConUniq, DefFun, DefFunExist, DefFunUniq, DefFunTerm, Equality, InvalidDeclaration, Formula, AtomicFormula, Not, And, Or, Implies, Iff, Forall, Exists, ExistsUniq, PredTemplate, Var, FunTemplate, RefEquality, Compound, RefPrimPred, RefDefPred, RefDefCon, RefDefFun, RefDefFunTerm, VarTerm, PredTerm, FunTerm, Control, Any, Assume, Divide, Some, Deny, Case, Contradict, Explode, Apply, Lift, Characterize, Invoke, Expand, Fold, Pad, Split, Connect, Substitute, Show, Assert, InvalidControl, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq, RefFact, PredLambda, FunLambda, Bottom, Include, InvalidInclude, DeclarationContextNameSpace, RefStruct, Struct, RefStructCondition, StructVar, RefStructPred, StructPred, ElaboratedUnit, StructCon, RefStructCon
+from resolved_ast_types import ResolvedTerm, ResolvedFormula, ResolvedVarTerm, ResolvedVar, ResolvedRefDefCon, ResolvedFunTerm, ResolvedRefDefFun, ResolvedRefDefFunTerm, ResolvedFunTemplate, ResolvedFunLambda, ResolvedCompound, ResolvedPredTerm, ResolvedRefEquality, ResolvedRefPrimPred, ResolvedRefDefPred, ResolvedPredTemplate, ResolvedPredLambda, ResolvedAtomicFormula, ResolvedNot, ResolvedAnd, ResolvedOr, ResolvedImplies, ResolvedIff, ResolvedForall, ResolvedExists, ResolvedExistsUniq, ResolvedBottom, ResolvedRefFact, ResolvedRefAxiom, ResolvedRefTheorem, ResolvedRefDefConExist, ResolvedRefDefConUniq, ResolvedRefDefFunExist, ResolvedRefDefFunUniq, ResolvedControl, ResolvedInvalidControl, ResolvedAssume, ResolvedAny, ResolvedCase, ResolvedDivide, ResolvedSome, ResolvedDeny, ResolvedContradict, ResolvedExplode, ResolvedApply, ResolvedLift, ResolvedCharacterize, ResolvedInvoke, ResolvedExpand, ResolvedFold, ResolvedPad, ResolvedSplit, ResolvedConnect, ResolvedSubstitute, ResolvedShow, ResolvedAssert, ResolvedDeclaration, ResolvedInvalidDeclaration, ResolvedPrimPred, ResolvedAxiom, ResolvedTheorem, ResolvedDefPred, ResolvedDefConExist, ResolvedDefConUniq, ResolvedDefCon, ResolvedDefFunExist, ResolvedDefFunUniq, ResolvedDefFun, ResolvedDefFunTerm, ResolvedEquality, ResolvedInclude, ResolvedInvalidInclude, ResolvedRefStruct, ResolvedStructVar, ResolvedStructMemberField, ResolvedRefStructCondition, ResolvedRefStructMemberCondition, ResolvedStruct, ResolvedStructPred, ResolvedStructMemberPred, ResolvedRefStructPred, ResolvedUnit, ResolvedStructCon, ResolvedRefStructCon
 from lexer import Token
 from logic_utils import Substitutor, DefExpander, strip_forall_vars, alpha_safe_formula
 
@@ -34,12 +34,12 @@ class Elaborator:
     def get_node_token(self, node: ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact) -> Token:
         return self.lexed_unit.tokens[self.resolved_unit.resolved_node_to_token[id(node)][0]]
 
-    def add_node_to_token(self, node: Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred, resolved: ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructCondition | ResolvedRefStructPred) -> None:
+    def add_node_to_token(self, node: Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon, resolved: ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructCondition | ResolvedRefStructPred | ResolvedRefStructCon) -> None:
         self.node_to_token[id(node)] = self.resolved_unit.resolved_node_to_token[id(resolved)]
         self.nodes.append(node)
 
-    def build_token_to_node(self) -> tuple[dict[int, Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred], dict[int, Control]]:
-        token_to_node: dict[int, Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred] = {}
+    def build_token_to_node(self) -> tuple[dict[int, Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon], dict[int, Control]]:
+        token_to_node: dict[int, Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon] = {}
         token_to_control: dict[int, Control] = {}
         for node in reversed(self.nodes):
             start, end = self.node_to_token[id(node)]
@@ -54,7 +54,7 @@ class Elaborator:
 
     def elaborate_unit(self) -> ElaboratedUnit:
         self.node_to_token: dict[int, tuple[int, int]] = {}
-        self.nodes: list[Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred] = []
+        self.nodes: list[Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon] = []
         self.diagnostics: list[lsp.Diagnostic] = []
         if isinstance(self.resolved_unit.resolved_ast, ResolvedInclude):
             ast = self.elaborate_include(self.resolved_unit.resolved_ast)
@@ -99,6 +99,8 @@ class Elaborator:
                 return self.elaborate_struct(node)
             elif isinstance(node, ResolvedStructPred):
                 return self.elaborate_struct_predicate(node)
+            elif isinstance(node, ResolvedStructCon):
+                return self.elaborate_struct_constant(node)
             elif isinstance(node, ResolvedInvalidDeclaration):
                 return self.elaborate_invalid_declaration(node)
             else:
@@ -238,6 +240,26 @@ class Elaborator:
         args = self.elaborate_vars(node.args)
         formula = self.elaborate_formula(node.formula)
         elaborated = StructPred(node.name, ref_struct, ref, args, formula)
+        self.add_node_to_token(elaborated, node)
+        return elaborated
+
+    def elaborate_struct_constant(self, node: ResolvedStructCon) -> StructCon:
+        formula = self.decl.get_resolved_ast(ResolvedTheorem, node.ref_theorem.name).conclusion
+        if not isinstance(formula, ResolvedForall):
+            raise ElaborateError(node.ref_theorem, f"conclusion of {node.ref_theorem.name} is not a form of \\forall ...")
+        if not isinstance(formula.var, ResolvedStructVar):
+            raise ElaborateError(node.ref_theorem, f"conclusion of {node.ref_theorem.name} is not a form of \\forall x: X ...")
+        if formula.var.ref_struct.name != node.ref_struct.name:
+            raise ElaborateError(node.ref_theorem, f"conclusion of {node.ref_theorem.name} is not a form of \\forall x: {node.ref_struct.name} ...")
+        if not isinstance(formula.body, ResolvedExistsUniq):
+            raise ElaborateError(node.ref_theorem, f"conclusion of {node.ref_theorem.name} is not a form of \\forall x: {node.ref_struct.name} \\exists! y ...")
+        ref_struct = RefStruct(node.ref_struct.name)
+        self.add_node_to_token(ref_struct, node.ref_struct)
+        ref = RefStructCon(node.ref.name)
+        self.add_node_to_token(ref, node.ref)
+        ref_theorem = RefTheorem(node.ref_theorem.name)
+        self.add_node_to_token(ref_theorem, node.ref_theorem)
+        elaborated = StructCon(node.name, ref_struct, ref, ref_theorem)
         self.add_node_to_token(elaborated, node)
         return elaborated
 

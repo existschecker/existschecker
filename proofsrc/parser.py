@@ -1,5 +1,5 @@
 from ast_types import LexedUnit, ContextError, TokenStreamError, ParseError
-from parsed_ast_types import ParsedExpr, ParsedIdent, ParsedIdentArgs, ParsedFunTemplate, ParsedFunLambda, ParsedPredTemplate, ParsedPredLambda, ParsedNot, ParsedAnd, ParsedOr, ParsedImplies, ParsedIff, ParsedForall, ParsedExists, ParsedExistsUniq, ParsedBottom, ParsedControl, ParsedInvalidControl, ParsedAny, ParsedAssume, ParsedDivide, ParsedSome, ParsedDeny, ParsedContradict, ParsedCase, ParsedExplode, ParsedApply, ParsedLift, ParsedCharacterize, ParsedInvoke, ParsedExpand, ParsedFold, ParsedPad, ParsedSplit, ParsedConnect, ParsedSubstitute, ParsedShow, ParsedAssert, ParsedDeclaration, ParsedInvalidDeclaration, ParsedPrimPred, ParsedAxiom, ParsedTheorem, ParsedDefPred, ParsedDefCon, ParsedDefFun, ParsedDefFunTerm, ParsedDefExist, ParsedDefUniq, ParsedEquality, ParsedInclude, ParsedInvalidInclude, ParsedUnit, ParsedStruct, ParsedTypedIdent, ParsedAccess, ParsedStructPred, ParsedCall
+from parsed_ast_types import ParsedExpr, ParsedIdent, ParsedIdentArgs, ParsedFunTemplate, ParsedFunLambda, ParsedPredTemplate, ParsedPredLambda, ParsedNot, ParsedAnd, ParsedOr, ParsedImplies, ParsedIff, ParsedForall, ParsedExists, ParsedExistsUniq, ParsedBottom, ParsedControl, ParsedInvalidControl, ParsedAny, ParsedAssume, ParsedDivide, ParsedSome, ParsedDeny, ParsedContradict, ParsedCase, ParsedExplode, ParsedApply, ParsedLift, ParsedCharacterize, ParsedInvoke, ParsedExpand, ParsedFold, ParsedPad, ParsedSplit, ParsedConnect, ParsedSubstitute, ParsedShow, ParsedAssert, ParsedDeclaration, ParsedInvalidDeclaration, ParsedPrimPred, ParsedAxiom, ParsedTheorem, ParsedDefPred, ParsedDefCon, ParsedDefFun, ParsedDefFunTerm, ParsedDefExist, ParsedDefUniq, ParsedEquality, ParsedInclude, ParsedInvalidInclude, ParsedUnit, ParsedStruct, ParsedTypedIdent, ParsedAccess, ParsedStructPred, ParsedCall, ParsedStructCon
 from lexer import Token
 from token_stream import TokenStream
 
@@ -280,7 +280,7 @@ class Parser:
         logger.debug(f"[equality] {name}")
         return equality
 
-    def parse_struct(self) -> ParsedStruct | ParsedStructPred:
+    def parse_struct(self) -> ParsedStruct | ParsedStructPred | ParsedStructCon:
         start_token = self.stream.consume("STRUCT")
         name_token = self.stream.consume("IDENT")
         name = name_token.value
@@ -291,6 +291,8 @@ class Parser:
             return self.parse_struct_main(start_token, ref)
         elif tok.type == "PREDICATE":
             return self.parse_struct_predicate(start_token, ref)
+        elif tok.type == "CONSTANT":
+            return self.parse_struct_constant(start_token, ref)
         else:
             raise ParseError(tok, f"Unexpected token type {tok.type}")
 
@@ -337,6 +339,22 @@ class Parser:
         self.add_node_to_token(defpred, start_token, self.stream.last_token)
         logger.debug(f"[struct predicate] {name}")
         return defpred
+
+    def parse_struct_constant(self, start_token: Token, ref_struct: ParsedIdent) -> ParsedStructCon:
+        self.stream.consume("CONSTANT")
+        name_token = self.stream.consume("IDENT")
+        name = name_token.value
+        ref = ParsedIdent(name)
+        self.add_node_to_token(ref, name_token, name_token)
+        self.stream.consume("BY")
+        theorem_token = self.stream.consume("IDENT")
+        theorem_name = theorem_token.value
+        ref_theorem = ParsedIdent(theorem_name)
+        self.add_node_to_token(ref_theorem, theorem_token, theorem_token)
+        defcon = ParsedStructCon(name=f"{ref_struct.name}.{ref.name}", ref_struct=ref_struct, ref=ref, ref_theorem=ref_theorem)
+        self.add_node_to_token(defcon, start_token, self.stream.last_token)
+        logger.debug(f"[struct constant] {name}")
+        return defcon
 
     def parse_include(self) -> ParsedInclude:
         start_token = self.stream.consume("INCLUDE")

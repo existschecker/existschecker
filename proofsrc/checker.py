@@ -1,5 +1,5 @@
 from lexer import Token
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, RefDefCon, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Control, Formula, Declaration, PredTemplate, Term, DefConExist, DefConUniq, DefFunExist, DefFunUniq, Assert, Fold, VarTerm, FunTemplate, RefDefPred, RefDefFun, InvalidDeclaration, InvalidControl, LexedUnit, RefFact, RefEquality, CheckError, ContextError, LogicError, FormatError, DeclarationContextNameSpace, Struct, StructPred, ElaboratedUnit, CheckedUnit
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, RefDefCon, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Control, Formula, Declaration, PredTemplate, Term, DefConExist, DefConUniq, DefFunExist, DefFunUniq, Assert, Fold, VarTerm, FunTemplate, RefDefPred, RefDefFun, InvalidDeclaration, InvalidControl, LexedUnit, RefFact, RefEquality, CheckError, ContextError, LogicError, FormatError, DeclarationContextNameSpace, Struct, StructPred, ElaboratedUnit, CheckedUnit, StructCon
 from logic_utils import Substitutor, DefExpander, strip_forall_vars, strip_exists_vars, make_forall_vars, make_exists_vars, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs, alpha_safe_formula
 from formatter import ExprFormatter
 from copy import deepcopy
@@ -103,6 +103,8 @@ class Checker:
                 self.check_struct(node, indent)
             elif isinstance(node, StructPred):
                 self.check_struct_predicate(node, indent)
+            elif isinstance(node, StructCon):
+                self.check_struct_constant(node, indent)
             elif isinstance(node, InvalidDeclaration):
                 msg = "InvalidDeclaration"
                 raise CheckError(node, msg)
@@ -249,6 +251,10 @@ class Checker:
         logger.debug(f"{debug_prefix}name: {node.name}")
 
     def check_struct_predicate(self, node: StructPred, indent: int) -> None:
+        debug_prefix = make_debug_prefix(node, indent)
+        logger.debug(f"{debug_prefix}name: {node.name}")
+
+    def check_struct_constant(self, node: StructCon, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}")
 

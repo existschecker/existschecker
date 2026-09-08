@@ -2,8 +2,8 @@ from lsprotocol import types as lsp
 from pygls import uris
 from typing import Sequence
 from ast_types import DeclarationContextNameSpace, LexedUnit, ContextError
-from resolved_ast_types import ResolvedTerm, ResolvedFormula, ResolvedVarTerm, ResolvedVar, ResolvedRefDefCon, ResolvedFunTerm, ResolvedRefDefFun, ResolvedRefDefFunTerm, ResolvedFunTemplate, ResolvedFunLambda, ResolvedCompound, ResolvedPredTerm, ResolvedRefEquality, ResolvedRefPrimPred, ResolvedRefDefPred, ResolvedPredTemplate, ResolvedPredLambda, ResolvedAtomicFormula, ResolvedNot, ResolvedAnd, ResolvedOr, ResolvedImplies, ResolvedIff, ResolvedForall, ResolvedExists, ResolvedExistsUniq, ResolvedBottom, ResolvedRefFact, ResolvedRefAxiom, ResolvedRefTheorem, ResolvedRefDefConExist, ResolvedRefDefConUniq, ResolvedRefDefFunExist, ResolvedRefDefFunUniq, ResolvedControl, ResolvedInvalidControl, ResolvedAssume, ResolvedAny, ResolvedCase, ResolvedDivide, ResolvedSome, ResolvedDeny, ResolvedContradict, ResolvedExplode, ResolvedApply, ResolvedLift, ResolvedCharacterize, ResolvedInvoke, ResolvedExpand, ResolvedFold, ResolvedPad, ResolvedSplit, ResolvedConnect, ResolvedSubstitute, ResolvedShow, ResolvedAssert, ResolvedDeclaration, ResolvedInvalidDeclaration, ResolvedPrimPred, ResolvedAxiom, ResolvedTheorem, ResolvedDefPred, ResolvedDefConExist, ResolvedDefConUniq, ResolvedDefCon, ResolvedDefFunExist, ResolvedDefFunUniq, ResolvedDefFun, ResolvedDefFunTerm, ResolvedEquality, ResolvedInclude, ResolvedInvalidInclude, ResolvedRefStruct, ResolvedStructVar, ResolvedRefStructField, ResolvedStructMemberField, ResolvedRefStructCondition, ResolvedRefStructMemberCondition, ResolvedStruct, ResolvedFormulaContext, ResolvedControlContext, ResolvedContext, ResolvedStructPred, ResolvedRefStructPred, ResolvedStructMemberPred, ResolvedUnit
-from parsed_ast_types import ParsedExpr, ParsedIdent, ParsedIdentArgs, ParsedFunTemplate, ParsedFunLambda, ParsedPredTemplate, ParsedPredLambda, ParsedNot, ParsedAnd, ParsedOr, ParsedImplies, ParsedIff, ParsedForall, ParsedExists, ParsedExistsUniq, ParsedBottom, ParsedControl, ParsedInvalidControl, ParsedAny, ParsedAssume, ParsedDivide, ParsedSome, ParsedDeny, ParsedContradict, ParsedCase, ParsedExplode, ParsedApply, ParsedLift, ParsedCharacterize, ParsedInvoke, ParsedExpand, ParsedFold, ParsedPad, ParsedSplit, ParsedConnect, ParsedSubstitute, ParsedShow, ParsedAssert, ParsedDeclaration, ParsedInvalidDeclaration, ParsedPrimPred, ParsedAxiom, ParsedTheorem, ParsedDefPred, ParsedDefCon, ParsedDefFun, ParsedDefFunTerm, ParsedDefExist, ParsedDefUniq, ParsedEquality, ParsedInclude, ParsedInvalidInclude, ParsedUnit, ParsedStruct, ParsedTypedIdent, ParsedAccess, ParsedStructPred, ParsedCall
+from resolved_ast_types import ResolvedTerm, ResolvedFormula, ResolvedVarTerm, ResolvedVar, ResolvedRefDefCon, ResolvedFunTerm, ResolvedRefDefFun, ResolvedRefDefFunTerm, ResolvedFunTemplate, ResolvedFunLambda, ResolvedCompound, ResolvedPredTerm, ResolvedRefEquality, ResolvedRefPrimPred, ResolvedRefDefPred, ResolvedPredTemplate, ResolvedPredLambda, ResolvedAtomicFormula, ResolvedNot, ResolvedAnd, ResolvedOr, ResolvedImplies, ResolvedIff, ResolvedForall, ResolvedExists, ResolvedExistsUniq, ResolvedBottom, ResolvedRefFact, ResolvedRefAxiom, ResolvedRefTheorem, ResolvedRefDefConExist, ResolvedRefDefConUniq, ResolvedRefDefFunExist, ResolvedRefDefFunUniq, ResolvedControl, ResolvedInvalidControl, ResolvedAssume, ResolvedAny, ResolvedCase, ResolvedDivide, ResolvedSome, ResolvedDeny, ResolvedContradict, ResolvedExplode, ResolvedApply, ResolvedLift, ResolvedCharacterize, ResolvedInvoke, ResolvedExpand, ResolvedFold, ResolvedPad, ResolvedSplit, ResolvedConnect, ResolvedSubstitute, ResolvedShow, ResolvedAssert, ResolvedDeclaration, ResolvedInvalidDeclaration, ResolvedPrimPred, ResolvedAxiom, ResolvedTheorem, ResolvedDefPred, ResolvedDefConExist, ResolvedDefConUniq, ResolvedDefCon, ResolvedDefFunExist, ResolvedDefFunUniq, ResolvedDefFun, ResolvedDefFunTerm, ResolvedEquality, ResolvedInclude, ResolvedInvalidInclude, ResolvedRefStruct, ResolvedStructVar, ResolvedRefStructField, ResolvedStructMemberField, ResolvedRefStructCondition, ResolvedRefStructMemberCondition, ResolvedStruct, ResolvedFormulaContext, ResolvedControlContext, ResolvedContext, ResolvedStructPred, ResolvedRefStructPred, ResolvedStructMemberPred, ResolvedUnit, ResolvedStructCon, ResolvedRefStructCon
+from parsed_ast_types import ParsedExpr, ParsedIdent, ParsedIdentArgs, ParsedFunTemplate, ParsedFunLambda, ParsedPredTemplate, ParsedPredLambda, ParsedNot, ParsedAnd, ParsedOr, ParsedImplies, ParsedIff, ParsedForall, ParsedExists, ParsedExistsUniq, ParsedBottom, ParsedControl, ParsedInvalidControl, ParsedAny, ParsedAssume, ParsedDivide, ParsedSome, ParsedDeny, ParsedContradict, ParsedCase, ParsedExplode, ParsedApply, ParsedLift, ParsedCharacterize, ParsedInvoke, ParsedExpand, ParsedFold, ParsedPad, ParsedSplit, ParsedConnect, ParsedSubstitute, ParsedShow, ParsedAssert, ParsedDeclaration, ParsedInvalidDeclaration, ParsedPrimPred, ParsedAxiom, ParsedTheorem, ParsedDefPred, ParsedDefCon, ParsedDefFun, ParsedDefFunTerm, ParsedDefExist, ParsedDefUniq, ParsedEquality, ParsedInclude, ParsedInvalidInclude, ParsedUnit, ParsedStruct, ParsedTypedIdent, ParsedAccess, ParsedStructPred, ParsedCall, ParsedStructCon
 from lexer import Token
 
 class ResolveError(Exception):
@@ -45,7 +45,7 @@ class NameResolver:
     def get_node_token(self, node: ParsedDeclaration | ParsedControl | ParsedExpr) -> Token:
         return self.lexed_unit.tokens[self.parsed_unit.node_to_token[id(node)][0]]
 
-    def add_node_to_token(self, node: ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred, parsed: ParsedDeclaration | ParsedControl | ParsedExpr) -> None:
+    def add_node_to_token(self, node: ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred | ResolvedRefStructCon, parsed: ParsedDeclaration | ParsedControl | ParsedExpr) -> None:
         self.resolved_node_to_token[id(node)] = self.parsed_unit.node_to_token[id(parsed)]
         self.resolved_nodes.append(node)
         if isinstance(node, (ResolvedRefFact, ResolvedRefEquality, ResolvedRefPrimPred, ResolvedRefDefPred, ResolvedRefDefCon, ResolvedRefDefFun, ResolvedRefDefFunTerm, ResolvedRefStruct, ResolvedRefStructField, ResolvedRefStructCondition)):
@@ -56,7 +56,7 @@ class NameResolver:
             self.resolved_decl_refs[name] = []
         self.resolved_decl_refs[name].append(token)
 
-    def add_ctrl_defs_refs(self, def_node: ResolvedTerm | ResolvedStructVar | ResolvedRefStructCondition | ResolvedStructPred | ResolvedRefStructPred, ref_node: ResolvedTerm | ResolvedStructVar | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedRefStructPred, unit_name: str | None = None) -> None:
+    def add_ctrl_defs_refs(self, def_node: ResolvedTerm | ResolvedStructVar | ResolvedRefStructCondition | ResolvedStructPred | ResolvedRefStructPred | ResolvedRefStructCon, ref_node: ResolvedTerm | ResolvedStructVar | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedRefStructPred | ResolvedRefStructCon, unit_name: str | None = None) -> None:
         if unit_name is None:
             if isinstance(self.parsed_unit.ast, ParsedDeclaration):
                 unit_name = self.parsed_unit.ast.name
@@ -67,8 +67,8 @@ class NameResolver:
             self.resolved_ctrl_refs[id(def_node)] = []
         self.resolved_ctrl_refs[id(def_node)].append(id(ref_node))
 
-    def build_token_to_node(self) -> tuple[dict[int, ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred], dict[int, ResolvedControl]]:
-        resolved_token_to_node: dict[int, ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred] = {}
+    def build_token_to_node(self) -> tuple[dict[int, ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred | ResolvedRefStructCon], dict[int, ResolvedControl]]:
+        resolved_token_to_node: dict[int, ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred | ResolvedRefStructCon] = {}
         resolved_token_to_control: dict[int, ResolvedControl] = {}
         for node in reversed(self.resolved_nodes):
             start, end = self.resolved_node_to_token[id(node)]
@@ -83,7 +83,7 @@ class NameResolver:
 
     def resolve_unit(self) -> ResolvedUnit:
         self.resolved_node_to_token: dict[int, tuple[int, int]] = {}
-        self.resolved_nodes: list[ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred] = []
+        self.resolved_nodes: list[ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred | ResolvedRefStructCon] = []
         self.resolved_decl_refs: dict[str, list[Token]] = {}
         self.resolved_ctrl_defs: dict[int, tuple[str, int]] = {}
         self.resolved_ctrl_refs: dict[int, list[int]] = {}
@@ -127,6 +127,8 @@ class NameResolver:
                 return self.resolve_struct(node)
             elif isinstance(node, ParsedStructPred):
                 return self.resolve_struct_predicate(node)
+            elif isinstance(node, ParsedStructCon):
+                return self.resolve_struct_constant(node)
             elif isinstance(node, ParsedInvalidDeclaration):
                 return self.resolve_invalid_declaration(node)
             else:
@@ -344,6 +346,28 @@ class NameResolver:
         local_ctx = context.add_ctrl(args, [], [], [])
         formula = self.resolve_formula(node.formula, local_ctx)
         resolved = ResolvedStructPred(node.name, ref_struct, ref, tuple(args), formula)
+        self.add_node_to_token(resolved, node)
+        return resolved
+
+    def resolve_struct_constant(self, node: ParsedStructCon) -> ResolvedStructCon:
+        if not self.decl.has_resolved_ast(ResolvedStruct, node.ref_struct.name):
+            raise ResolveError(node.ref_struct, f"{node.ref_struct.name} is unknown")
+        ref_struct = ResolvedRefStruct(node.ref_struct.name)
+        self.add_node_to_token(ref_struct, node.ref_struct)
+        struct = self.decl.get_resolved_ast(ResolvedStruct, node.ref_struct.name)
+        field_names = [field.name for field in struct.fields]
+        condition_names = [condition.name for condition in struct.conditions]
+        predicate_names = [name[len(node.ref_struct.name) + 1:] for name in self.decl.get_used_names() if name.startswith(node.ref_struct.name + ".")]
+        if node.ref.name in field_names + condition_names + predicate_names:
+            raise ResolveError(node.ref, f"{node.ref.name} is already used")
+        ref = ResolvedRefStructCon(node.ref.name)
+        self.add_node_to_token(ref, node.ref)
+        self.add_ctrl_defs_refs(ref, ref)
+        if not self.decl.has_resolved_ast(ResolvedTheorem, node.ref_theorem.name):
+            raise ResolveError(node, f"{node.ref_theorem.name} is unknown")
+        ref_theorem = ResolvedRefTheorem(node.ref_theorem.name)
+        self.add_node_to_token(ref_theorem, node.ref_theorem)
+        resolved = ResolvedStructCon(node.name, ref_struct, ref, ref_theorem)
         self.add_node_to_token(resolved, node)
         return resolved
 

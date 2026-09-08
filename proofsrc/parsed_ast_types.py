@@ -288,6 +288,12 @@ class ParsedStructPred(ParsedDeclaration):
     formula: ParsedExpr
 
 @dataclass
+class ParsedStructCon(ParsedDeclaration):
+    ref_struct: ParsedIdent
+    ref: ParsedIdent
+    ref_theorem: ParsedIdent
+
+@dataclass
 class ParsedInclude:
     file: str
     token: Token

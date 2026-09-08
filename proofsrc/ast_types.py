@@ -442,6 +442,16 @@ class StructPred(Declaration):
     formula: Formula
 
 @dataclass
+class RefStructCon:
+    name: str
+
+@dataclass
+class StructCon(Declaration):
+    ref_struct: RefStruct
+    ref: RefStructCon
+    ref_theorem: RefTheorem
+
+@dataclass
 class DeclarationContext:
     declarations: dict[str, "DeclarationUnit"]
 
@@ -610,8 +620,8 @@ class LexedUnit:
 class ElaboratedUnit:
     ast: Include | Declaration
     node_to_token: dict[int, tuple[int, int]]
-    nodes: list[Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred]
-    token_to_node: dict[int, Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred]
+    nodes: list[Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon]
+    token_to_node: dict[int, Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon]
     token_to_control: dict[int, Control]
     diagnostics: list[lsp.Diagnostic]
 
@@ -654,7 +664,7 @@ class Workspace:
         def_unit = None
         for path in order:
             for unit in self.file_units[path]:
-                if isinstance(unit.elaborated_unit.ast, (Equality, PrimPred, Axiom, Theorem, DefPred, DefConExist, DefConUniq, DefCon, DefFunExist, DefFunUniq, DefFun, DefFunTerm, Struct, StructPred)) and def_unit_name == unit.elaborated_unit.ast.name:
+                if isinstance(unit.elaborated_unit.ast, (Equality, PrimPred, Axiom, Theorem, DefPred, DefConExist, DefConUniq, DefCon, DefFunExist, DefFunUniq, DefFun, DefFunTerm, Struct, StructPred, StructCon)) and def_unit_name == unit.elaborated_unit.ast.name:
                     def_unit = unit
         if def_unit is None:
             return None

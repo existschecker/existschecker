@@ -226,8 +226,10 @@ class CompletionParser:
             return self.parse_struct_main()
         elif tok.type == "PREDICATE":
             return self.parse_struct_predicate()
+        elif tok.type == "CONSTANT":
+            return self.parse_struct_constant()
         else:
-            raise ExpectedTokenError(("LBRACE", "PREDICATE"))
+            raise ExpectedTokenError(("LBRACE", "PREDICATE", "CONSTANT"))
 
     def parse_struct_main(self) -> None:
         self.stream.consume("LBRACE")
@@ -256,6 +258,15 @@ class CompletionParser:
         self.stream.consume("RPAREN")
         self.stream.consume("AS")
         self.parse_formula(CompletionContext.init())
+
+    def parse_struct_constant(self) -> None:
+        self.stream.consume("CONSTANT")
+        self.stream.consume("IDENT")
+        self.stream.consume("BY")
+        if self.stream.peek().type == "IDENT":
+            self.stream.consume("IDENT")
+        else:
+            raise ExpectedTokenError(("IDENT",), (Theorem,))
 
     def parse_include(self) -> None:
         self.stream.consume("INCLUDE")

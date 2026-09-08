@@ -401,6 +401,16 @@ class ResolvedStructMemberPred(ResolvedPredTerm):
     parent: ResolvedStructVar | ResolvedStructMemberField
     struct_pred: ResolvedRefStructPred
 
+@dataclass(frozen=True)
+class ResolvedRefStructCon:
+    name: str
+
+@dataclass
+class ResolvedStructCon(ResolvedDeclaration):
+    ref_struct: ResolvedRefStruct
+    ref: ResolvedRefStructCon
+    ref_theorem: ResolvedRefTheorem
+
 @dataclass
 class ResolvedFormulaContext:
     vars: list[ResolvedVar]
@@ -466,8 +476,8 @@ class ResolvedContext:
 class ResolvedUnit:
     resolved_ast: ResolvedInclude | ResolvedDeclaration
     resolved_node_to_token: dict[int, tuple[int, int]]
-    resolved_nodes: list[ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred]
-    resolved_token_to_node: dict[int, ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred]
+    resolved_nodes: list[ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred | ResolvedRefStructCon]
+    resolved_token_to_node: dict[int, ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred | ResolvedRefStructCon]
     resolved_token_to_control: dict[int, ResolvedControl]
     resolved_decl_refs: dict[str, list[Token]]
     resolved_ctrl_defs: dict[int, tuple[str, int]]
