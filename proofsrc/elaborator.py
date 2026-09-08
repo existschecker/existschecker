@@ -526,13 +526,13 @@ class Elaborator:
         elaborated_refs: list[RefDefFunTerm | RefDefPred] = []
         indexes: dict[RefDefFunTerm | RefDefPred, list[int]] = {}
         for ref in node.refs:
-            if self.decl.has_deffunterm(ref.name):
+            if self.decl.has_ast(DefFunTerm, ref.name):
                 elaborated_ref = RefDefFunTerm(ref.name)
                 self.add_node_to_token(elaborated_ref, ref)
                 elaborated_refs.append(elaborated_ref)
                 if ref in node.indexes:
                     indexes[elaborated_ref] = node.indexes[ref]
-            elif self.decl.has_defpred(ref.name):
+            elif self.decl.has_ast(DefPred, ref.name):
                 elaborated_ref = RefDefPred(ref.name)
                 self.add_node_to_token(elaborated_ref, ref)
                 elaborated_refs.append(elaborated_ref)
@@ -542,9 +542,9 @@ class Elaborator:
                 msg = f"Unexpected name {ref.name}"
                 raise ElaborateError(node, msg)
         for k, v in node.indexes.items():
-            if self.decl.has_deffunterm(k.name):
+            if self.decl.has_ast(DefFunTerm, k.name):
                 indexes[RefDefFunTerm(k.name)] = v
-            elif self.decl.has_defpred(k.name):
+            elif self.decl.has_ast(DefPred, k.name):
                 indexes[RefDefPred(k.name)] = v
             else:
                 msg = f"Unexpected name {k.name}"
@@ -701,7 +701,7 @@ class Elaborator:
                 if not field.name.startswith(prefix + "."):
                     continue
                 mapping_field[Var(field.name[len(prefix) + 1:])] = field
-            structpred = self.decl.get_structpred(f"{ref_struct.name}.{node.pred.struct_pred.name}")
+            structpred = self.decl.get_ast(StructPred, f"{ref_struct.name}.{node.pred.struct_pred.name}")
             ref_args: list[VarTerm] = []
             for arg in node.args:
                 if not isinstance(arg, ResolvedVarTerm):
@@ -785,7 +785,7 @@ class Elaborator:
                 if not field.name.startswith(prefix + "."):
                     continue
                 mapping_field[Var(field.name[len(prefix) + 1:])] = field
-            structpred = self.decl.get_structpred(f"{ref_struct.name}.{node.struct_pred.name}")
+            structpred = self.decl.get_ast(StructPred, f"{ref_struct.name}.{node.struct_pred.name}")
             formula = Substitutor((mapping_field, {}, {})).substitute_formula(structpred.formula)
             elaborated = PredLambda(tuple(structpred.args), formula)
             self.add_node_to_token(elaborated, node)
@@ -865,7 +865,7 @@ class Elaborator:
 
     def collect_struct_members(self, var: ResolvedStructVar | ResolvedStructMemberField) -> tuple[list[Var], dict[RefStructCondition, Formula]]:
         if isinstance(var, ResolvedStructVar):
-            struct = self.decl.get_struct(var.ref_struct.name)
+            struct = self.decl.get_ast(Struct, var.ref_struct.name)
             fields: list[Var] = []
             conditions = dict(struct.conditions)
             for field in struct.fields:

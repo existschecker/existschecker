@@ -67,44 +67,42 @@ class Checker:
         )
         self.diagnostics.append(diag)
 
-    def check_unit(self) -> tuple[CheckedUnit, DeclarationContextNameSpace]:
+    def check_unit(self) -> CheckedUnit:
         self.diagnostics: list[lsp.Diagnostic] = []
         if isinstance(self.elaborated_unit.ast, Declaration):
-            decl = self.check_declaration(self.elaborated_unit.ast)
-            return CheckedUnit(self.diagnostics), decl
-        else:
-            return CheckedUnit(self.diagnostics), self.decl
+            self.check_declaration(self.elaborated_unit.ast)
+        return CheckedUnit(self.diagnostics)
 
-    def check_declaration(self, node: Declaration, indent: int = 0) -> DeclarationContextNameSpace:
+    def check_declaration(self, node: Declaration, indent: int = 0) -> None:
         try:
             if isinstance(node, PrimPred):
-                decl = self.check_primpred(node, indent)
+                self.check_primpred(node, indent)
             elif isinstance(node, Axiom):
-                decl = self.check_axiom(node, indent)
+                self.check_axiom(node, indent)
             elif isinstance(node, Theorem):
-                decl = self.check_theorem(node, indent)
+                self.check_theorem(node, indent)
             elif isinstance(node, DefPred):
-                decl = self.check_defpred(node, indent)
+                self.check_defpred(node, indent)
             elif isinstance(node, DefCon):
-                decl = self.check_defcon(node, indent)
+                self.check_defcon(node, indent)
             elif isinstance(node, DefConExist):
-                decl = self.check_defconexist(node, indent)
+                self.check_defconexist(node, indent)
             elif isinstance(node, DefConUniq):
-                decl = self.check_defconuniq(node, indent)
+                self.check_defconuniq(node, indent)
             elif isinstance(node, DefFun):
-                decl = self.check_deffun(node, indent)
+                self.check_deffun(node, indent)
             elif isinstance(node, DefFunExist):
-                decl = self.check_deffunexist(node, indent)
+                self.check_deffunexist(node, indent)
             elif isinstance(node, DefFunUniq):
-                decl = self.check_deffununiq(node, indent)
+                self.check_deffununiq(node, indent)
             elif isinstance(node, DefFunTerm):
-                decl = self.check_deffunterm(node, indent)
+                self.check_deffunterm(node, indent)
             elif isinstance(node, Equality):
-                decl = self.check_equality(node, indent)
+                self.check_equality(node, indent)
             elif isinstance(node, Struct):
-                decl = self.check_struct(node, indent)
+                self.check_struct(node, indent)
             elif isinstance(node, StructPred):
-                decl = self.check_struct_predicate(node, indent)
+                self.check_struct_predicate(node, indent)
             elif isinstance(node, InvalidDeclaration):
                 msg = "InvalidDeclaration"
                 raise CheckError(node, msg)
@@ -112,30 +110,25 @@ class Checker:
                 msg = f"Unsupported node {node}"
                 raise CheckError(node, msg)
             node.proofinfo.status = "✅Passed"
-            return decl
         except CheckError as e:
             self.add_lsp_error(self.get_node_token(e.node), e.msg)
             logger.debug(f"{self.make_error_prefix(node, indent)}{e.msg}")
             node.proofinfo.status = "❌Failed"
-            return self.decl
         except (ContextError, LogicError, FormatError) as e:
             msg = f"{e.__class__.__name__}: {e.msg}"
             self.add_lsp_error(self.get_node_token(node), msg)
             logger.debug(f"{self.make_error_prefix(node, indent)}{msg}")
             node.proofinfo.status = "❌Failed"
-            return self.decl
 
-    def check_primpred(self, node: PrimPred, indent: int) -> DeclarationContextNameSpace:
+    def check_primpred(self, node: PrimPred, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}, arity: {node.arity}")
-        return self.decl.add(self.lexed_unit.file, node)
 
-    def check_axiom(self, node: Axiom, indent: int) -> DeclarationContextNameSpace:
+    def check_axiom(self, node: Axiom, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}, conclusion: {ExprFormatter(self.decl).pretty_expr(node.conclusion)}")
-        return self.decl.add(self.lexed_unit.file, node)
 
-    def check_theorem(self, node: Theorem, indent: int) -> DeclarationContextNameSpace:
+    def check_theorem(self, node: Theorem, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}{node.name}: {ExprFormatter(self.decl).pretty_expr(node.conclusion)}")
         local_ctx = Context.init()
@@ -143,30 +136,27 @@ class Checker:
             local_ctx = self.check_control(stmt, local_ctx, indent+1)
         if goal_in_context(node.conclusion, local_ctx, self.decl):
             logger.debug(f"{debug_prefix}{node.name} proved: {ExprFormatter(self.decl).pretty_expr(node.conclusion)}")
-            return self.decl.add(self.lexed_unit.file, node)
         else:
             msg = f"{node.name} not proved: {ExprFormatter(self.decl).pretty_expr(node.conclusion)}"
             raise CheckError(node, msg)
 
-    def check_defpred(self, node: DefPred, indent: int) -> DeclarationContextNameSpace:
+    def check_defpred(self, node: DefPred, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}, args: {node.args}, formula: {ExprFormatter(self.decl).pretty_expr(node.formula)}")
-        return self.decl.add(self.lexed_unit.file, node)
 
-    def check_defcon(self, node: DefCon, indent: int) -> DeclarationContextNameSpace:
+    def check_defcon(self, node: DefCon, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}, theorem: {node.ref_theorem.name}")
-        existsuniq = self.decl.get_theorem(node.ref_theorem).conclusion
+        existsuniq = self.decl.get_ast(Theorem, node.ref_theorem.name).conclusion
         if not isinstance(existsuniq, ExistsUniq):
             msg = f"Not ExistsUniq object: {ExprFormatter(self.decl).pretty_expr(existsuniq)}"
             raise CheckError(node, msg)
         logger.debug(f"{debug_prefix}ExistsUniq object: {ExprFormatter(self.decl).pretty_expr(existsuniq)}")
-        return self.decl.add(self.lexed_unit.file, node)
 
-    def check_defconexist(self, node: DefConExist, indent: int) -> DeclarationContextNameSpace:
+    def check_defconexist(self, node: DefConExist, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}, con_name: {node.ref_con.name}")
-        existsuniq = self.decl.get_theorem(self.decl.get_defcon(node.ref_con).ref_theorem).conclusion
+        existsuniq = self.decl.get_ast(Theorem, self.decl.get_ast(DefCon, node.ref_con.name).ref_theorem.name).conclusion
         if not isinstance(existsuniq, ExistsUniq):
             msg = f"Not ExistsUniq object: {ExprFormatter(self.decl).pretty_expr(existsuniq)}"
             raise CheckError(node, msg)
@@ -176,12 +166,11 @@ class Checker:
             msg = f"existence_formula is not matched with theorem: {ExprFormatter(self.decl).pretty_expr(node.formula)}"
             raise CheckError(node, msg)
         logger.debug(f"{debug_prefix}existence_formula is matched with theorem: {ExprFormatter(self.decl).pretty_expr(node.formula)}")
-        return self.decl.add(self.lexed_unit.file, node)
 
-    def check_defconuniq(self, node: DefConUniq, indent: int) -> DeclarationContextNameSpace:
+    def check_defconuniq(self, node: DefConUniq, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}, con_name: {node.ref_con.name}")
-        existsuniq = self.decl.get_theorem(self.decl.get_defcon(node.ref_con).ref_theorem).conclusion
+        existsuniq = self.decl.get_ast(Theorem, self.decl.get_ast(DefCon, node.ref_con.name).ref_theorem.name).conclusion
         if not isinstance(existsuniq, ExistsUniq):
             msg = f"Not ExistsUniq object: {ExprFormatter(self.decl).pretty_expr(existsuniq)}"
             raise CheckError(node, msg)
@@ -198,17 +187,15 @@ class Checker:
             msg = f"uniqueness_formula is not matched with theorem: {ExprFormatter(self.decl).pretty_expr(node.formula)}"
             raise CheckError(node, msg)
         logger.debug(f"{debug_prefix}uniqueness_formula is matched with theorem: {ExprFormatter(self.decl).pretty_expr(node.formula)}")
-        return self.decl.add(self.lexed_unit.file, node)
 
-    def check_deffun(self, node: DefFun, indent: int) -> DeclarationContextNameSpace:
+    def check_deffun(self, node: DefFun, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}, theorem: {node.ref_theorem.name}")
-        return self.decl.add(self.lexed_unit.file, node)
 
-    def check_deffunexist(self, node: DefFunExist, indent: int) -> DeclarationContextNameSpace:
+    def check_deffunexist(self, node: DefFunExist, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}, fun_name: {node.ref_fun.name}")
-        args, body = strip_forall_vars(self.decl.get_theorem(self.decl.get_deffun(node.ref_fun).ref_theorem).conclusion)
+        args, body = strip_forall_vars(self.decl.get_ast(Theorem, self.decl.get_ast(DefFun, node.ref_fun.name).ref_theorem.name).conclusion)
         if isinstance(body, ExistsUniq):
             existence_formula = Substitutor(({body.var: Compound(RefDefFun(node.ref_fun.name), tuple(args))}, {}, {})).substitute_formula(body.body)
         elif isinstance(body, Implies) and isinstance(body.right, ExistsUniq):
@@ -221,16 +208,15 @@ class Checker:
             msg = f"existence_formula is not matched with theorem: {ExprFormatter(self.decl).pretty_expr(node.formula)}"
             raise CheckError(node, msg)
         logger.debug(f"{debug_prefix}existence_formula is matched with theorem: {ExprFormatter(self.decl).pretty_expr(node.formula)}")
-        return self.decl.add(self.lexed_unit.file, node)
 
-    def check_deffununiq(self, node: DefFunUniq, indent: int) -> DeclarationContextNameSpace:
+    def check_deffununiq(self, node: DefFunUniq, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}, fun_name: {node.ref_fun.name}")
         equality = self.decl.get_equality()
         if equality is None:
             msg = "equality has not been declared yet"
             raise CheckError(node, msg)
-        args, body = strip_forall_vars(self.decl.get_theorem(self.decl.get_deffun(node.ref_fun).ref_theorem).conclusion)
+        args, body = strip_forall_vars(self.decl.get_ast(Theorem, self.decl.get_ast(DefFun, node.ref_fun.name).ref_theorem.name).conclusion)
         if isinstance(body, ExistsUniq):
             uniqueness_formula = Forall(body.var, Implies(body.body, AtomicFormula(RefEquality(equality.ref.name), (Var(body.var.name), Compound(RefDefFun(node.ref_fun.name), tuple(args))))))
         elif isinstance(body, Implies) and isinstance(body.right, ExistsUniq):
@@ -243,9 +229,8 @@ class Checker:
             msg = f"uniqueness_formula is not matched with theorem: {ExprFormatter(self.decl).pretty_expr(node.formula)}"
             raise CheckError(node, msg)
         logger.debug(f"{debug_prefix}uniqueness_formula is matched with theorem: {ExprFormatter(self.decl).pretty_expr(node.formula)}")
-        return self.decl.add(self.lexed_unit.file, node)
 
-    def check_deffunterm(self, node: DefFunTerm, indent: int) -> DeclarationContextNameSpace:
+    def check_deffunterm(self, node: DefFunTerm, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}, args: {node.args}, term: {ExprFormatter(self.decl).pretty_expr(node.varterm)}")
         fv, _, fpt, _, fft, _ = collect_vars(node.varterm)
@@ -253,23 +238,19 @@ class Checker:
             msg = f"args are not matched with free vars: {set(fv) | set(fpt) | set(fft)}"
             raise CheckError(node, msg)
         logger.debug(f"{debug_prefix}args are mathced with free vars of term: {set(fv) | set(fpt) | set(fft)}")
-        return self.decl.add(self.lexed_unit.file, node)
 
-    def check_equality(self, node: Equality, indent: int) -> DeclarationContextNameSpace:
+    def check_equality(self, node: Equality, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.ref.name}")
         logger.debug(f"{debug_prefix}{node.ref.name} is registered as equality")
-        return self.decl.add(self.lexed_unit.file, node)
 
-    def check_struct(self, node: Struct, indent: int) -> DeclarationContextNameSpace:
+    def check_struct(self, node: Struct, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}")
-        return self.decl.add(self.lexed_unit.file, node)
 
-    def check_struct_predicate(self, node: StructPred, indent: int) -> DeclarationContextNameSpace:
+    def check_struct_predicate(self, node: StructPred, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}")
-        return self.decl.add(self.lexed_unit.file, node)
 
     def check_control(self, node: Control, context: Context, indent: int) -> Context:
 

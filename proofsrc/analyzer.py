@@ -161,8 +161,11 @@ def analyze_diff(lexed_units: list[LexedUnit], start_index: int, decl: Declarati
         parsed_unit = Parser(lexed_unit).parse_unit()
         resolved_unit = NameResolver(lexed_unit, parsed_unit, decl, dependency_resolver, file_units).resolve_unit()
         elaborated_unit = Elaborator(lexed_unit, resolved_unit, decl).elaborate_unit()
-        checked_unit, decl = Checker(lexed_unit, elaborated_unit, decl).check_unit()
-        file_units[file].append(DeclarationUnit(lexed_unit, parsed_unit, resolved_unit, elaborated_unit, checked_unit, decl))
+        checked_unit = Checker(lexed_unit, elaborated_unit, decl).check_unit()
+        unit = DeclarationUnit(lexed_unit, parsed_unit, resolved_unit, elaborated_unit, checked_unit, decl)
+        decl = decl.add(file, unit)
+        unit.decl = decl
+        file_units[file].append(unit)
     return decl
 
 class Analyzer:

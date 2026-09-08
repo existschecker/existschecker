@@ -1,4 +1,4 @@
-from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, AtomicFormula, Compound, RefDefCon, Var, Bottom, Term, Formula, PredTemplate, PredLambda, VarTerm, PredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, RefEquality, LogicError, DeclarationContextNameSpace
+from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, AtomicFormula, Compound, RefDefCon, Var, Bottom, Term, Formula, PredTemplate, PredLambda, VarTerm, PredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, RefEquality, LogicError, DeclarationContextNameSpace, DefFunTerm, DefPred
 from itertools import permutations
 from copy import deepcopy
 from typing import Mapping
@@ -330,7 +330,7 @@ class DefExpander:
             return expr
         elif isinstance(expr, Compound):
             if isinstance(expr.fun, RefDefFunTerm):
-                deffunterm = self.decl.get_deffunterm(expr.fun)
+                deffunterm = self.decl.get_ast(DefFunTerm, expr.fun.name)
                 should_expand = False
                 if expr.fun in self.refs:
                     target_indexes = self.indexes.get(expr.fun, [])
@@ -380,7 +380,7 @@ class DefExpander:
     def expand_defs_formula(self, expr: Formula) -> Formula:
         if isinstance(expr, AtomicFormula):
             if isinstance(expr.pred, RefDefPred):
-                defpred = self.decl.get_defpred(expr.pred)
+                defpred = self.decl.get_ast(DefPred, expr.pred.name)
                 should_expand = False
                 if len(self.refs) == 0 and defpred.autoexpand:
                     should_expand = True

@@ -1,6 +1,6 @@
 from typing import Literal
 
-from ast_types import Term, Formula, Var, RefDefCon, RefDefFun, RefDefFunTerm, FunTemplate, FunLambda, Compound, RefEquality, RefPrimPred, RefDefPred, PredTemplate, PredLambda, AtomicFormula, Not, And, Or, Implies, Iff, Forall, Exists, ExistsUniq, Bottom, RefFact, FormatError, DeclarationContextNameSpace
+from ast_types import Term, Formula, Var, RefDefCon, RefDefFun, RefDefFunTerm, FunTemplate, FunLambda, Compound, RefEquality, RefPrimPred, RefDefPred, PredTemplate, PredLambda, AtomicFormula, Not, And, Or, Implies, Iff, Forall, Exists, ExistsUniq, Bottom, RefFact, FormatError, DeclarationContextNameSpace, PrimPred, DefPred, DefFun, DefFunTerm, DefCon
 from logic_utils import flatten_op
 
 class ExprFormatter:
@@ -33,17 +33,17 @@ class ExprFormatter:
                     raise FormatError(f"equality has not been declared yet")
                 tex = equality.tex
             elif isinstance(expr.pred, RefPrimPred):
-                tex = self.decl.get_primpred(expr.pred).tex
+                tex = self.decl.get_ast(PrimPred, expr.pred.name).tex
             elif isinstance(expr.pred, RefDefPred):
-                tex = self.decl.get_defpred(expr.pred).tex
+                tex = self.decl.get_ast(DefPred, expr.pred.name).tex
             else:
                 raise FormatError(f"Unexpected type: {type(expr.pred)}")
             return tex
         elif isinstance(expr, Compound):
             if isinstance(expr.fun, RefDefFun):
-                tex = self.decl.get_deffun(expr.fun).tex
+                tex = self.decl.get_ast(DefFun, expr.fun.name).tex
             elif isinstance(expr.fun, RefDefFunTerm):
-                tex = self.decl.get_deffunterm(expr.fun).tex
+                tex = self.decl.get_ast(DefFunTerm, expr.fun.name).tex
             else:
                 raise FormatError(f"Unexpected type: {type(expr.fun)}")
             return tex
@@ -61,7 +61,7 @@ class ExprFormatter:
         elif isinstance(expr, (PredTemplate, FunTemplate)):
             return expr.name
         elif isinstance(expr, RefDefCon):
-            fragments = self.decl.get_defcon(expr).tex
+            fragments = self.decl.get_ast(DefCon, expr.name).tex
             if len(fragments) != 1:
                 raise FormatError("arity is different")
             return fragments[0]
