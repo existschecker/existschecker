@@ -153,13 +153,13 @@ def restore_cache(lexed_units: list[LexedUnit], old_all_units: list[DeclarationU
             break
     return decl, start_index
 
-def analyze_diff(lexed_units: list[LexedUnit], start_index: int, decl: DeclarationContextNameSpace, dependency_resolver: DependencyResolver, file_units: dict[str, list[DeclarationUnit]], file: str, cancel_analysis: threading.Event | None = None) -> DeclarationContextNameSpace | None:
+def analyze_diff(lexed_units: list[LexedUnit], start_index: int, decl: DeclarationContextNameSpace, file_units: dict[str, list[DeclarationUnit]], file: str, cancel_analysis: threading.Event | None = None) -> DeclarationContextNameSpace | None:
     for i in range(start_index, len(lexed_units)):
         if cancel_analysis is not None and cancel_analysis.is_set():
             return None
         lexed_unit = lexed_units[i]
         parsed_unit = Parser(lexed_unit).parse_unit()
-        resolved_unit = NameResolver(lexed_unit, parsed_unit, decl, dependency_resolver, file_units).resolve_unit()
+        resolved_unit = NameResolver(lexed_unit, parsed_unit, decl).resolve_unit()
         elaborated_unit = Elaborator(lexed_unit, resolved_unit, decl).elaborate_unit()
         checked_unit = Checker(lexed_unit, elaborated_unit, decl).check_unit()
         unit = DeclarationUnit(lexed_unit, parsed_unit, resolved_unit, elaborated_unit, checked_unit, decl)
@@ -200,7 +200,7 @@ class Analyzer:
             decl, start_index = restore_cache(lexed_units, old_all_units, decl, file_units, file)
             if start_index < len(lexed_units):
                 newly_analyzed.add(file)
-            decl = analyze_diff(lexed_units, start_index, decl, self.resolver, file_units, file, cancel_analysis)
+            decl = analyze_diff(lexed_units, start_index, decl, file_units, file, cancel_analysis)
             if decl is None:
                 return {}
             file_final_decls[file] = decl

@@ -1,11 +1,10 @@
 from lsprotocol import types as lsp
 from pygls import uris
 from typing import Sequence
-from ast_types import DeclarationUnit, DeclarationContextNameSpace, LexedUnit
+from ast_types import DeclarationContextNameSpace, LexedUnit, ContextError
 from resolved_ast_types import ResolvedTerm, ResolvedFormula, ResolvedVarTerm, ResolvedVar, ResolvedRefDefCon, ResolvedFunTerm, ResolvedRefDefFun, ResolvedRefDefFunTerm, ResolvedFunTemplate, ResolvedFunLambda, ResolvedCompound, ResolvedPredTerm, ResolvedRefEquality, ResolvedRefPrimPred, ResolvedRefDefPred, ResolvedPredTemplate, ResolvedPredLambda, ResolvedAtomicFormula, ResolvedNot, ResolvedAnd, ResolvedOr, ResolvedImplies, ResolvedIff, ResolvedForall, ResolvedExists, ResolvedExistsUniq, ResolvedBottom, ResolvedRefFact, ResolvedRefAxiom, ResolvedRefTheorem, ResolvedRefDefConExist, ResolvedRefDefConUniq, ResolvedRefDefFunExist, ResolvedRefDefFunUniq, ResolvedControl, ResolvedInvalidControl, ResolvedAssume, ResolvedAny, ResolvedCase, ResolvedDivide, ResolvedSome, ResolvedDeny, ResolvedContradict, ResolvedExplode, ResolvedApply, ResolvedLift, ResolvedCharacterize, ResolvedInvoke, ResolvedExpand, ResolvedFold, ResolvedPad, ResolvedSplit, ResolvedConnect, ResolvedSubstitute, ResolvedShow, ResolvedAssert, ResolvedDeclaration, ResolvedInvalidDeclaration, ResolvedPrimPred, ResolvedAxiom, ResolvedTheorem, ResolvedDefPred, ResolvedDefConExist, ResolvedDefConUniq, ResolvedDefCon, ResolvedDefFunExist, ResolvedDefFunUniq, ResolvedDefFun, ResolvedDefFunTerm, ResolvedEquality, ResolvedInclude, ResolvedInvalidInclude, ResolvedRefStruct, ResolvedStructVar, ResolvedRefStructField, ResolvedStructMemberField, ResolvedRefStructCondition, ResolvedRefStructMemberCondition, ResolvedStruct, ResolvedFormulaContext, ResolvedControlContext, ResolvedContext, ResolvedStructPred, ResolvedRefStructPred, ResolvedStructMemberPred, ResolvedUnit
 from parsed_ast_types import ParsedExpr, ParsedIdent, ParsedIdentArgs, ParsedFunTemplate, ParsedFunLambda, ParsedPredTemplate, ParsedPredLambda, ParsedNot, ParsedAnd, ParsedOr, ParsedImplies, ParsedIff, ParsedForall, ParsedExists, ParsedExistsUniq, ParsedBottom, ParsedControl, ParsedInvalidControl, ParsedAny, ParsedAssume, ParsedDivide, ParsedSome, ParsedDeny, ParsedContradict, ParsedCase, ParsedExplode, ParsedApply, ParsedLift, ParsedCharacterize, ParsedInvoke, ParsedExpand, ParsedFold, ParsedPad, ParsedSplit, ParsedConnect, ParsedSubstitute, ParsedShow, ParsedAssert, ParsedDeclaration, ParsedInvalidDeclaration, ParsedPrimPred, ParsedAxiom, ParsedTheorem, ParsedDefPred, ParsedDefCon, ParsedDefFun, ParsedDefFunTerm, ParsedDefExist, ParsedDefUniq, ParsedEquality, ParsedInclude, ParsedInvalidInclude, ParsedUnit, ParsedStruct, ParsedTypedIdent, ParsedAccess, ParsedStructPred, ParsedCall
 from lexer import Token
-from dependency import DependencyResolver
 
 class ResolveError(Exception):
     def __init__(self, node: ParsedDeclaration | ParsedControl | ParsedExpr, msg: str) -> None:
@@ -23,12 +22,10 @@ def strip_forall_vars(e: ResolvedFormula, node: ParsedIdent) -> tuple[list[Resol
     return vars_, body
 
 class NameResolver:
-    def __init__(self, lexed_unit: LexedUnit, parsed_unit: ParsedUnit, decl: DeclarationContextNameSpace, dependency_resolver: DependencyResolver, file_units: dict[str, list[DeclarationUnit]]) -> None:
+    def __init__(self, lexed_unit: LexedUnit, parsed_unit: ParsedUnit, decl: DeclarationContextNameSpace) -> None:
         self.lexed_unit = lexed_unit
         self.parsed_unit = parsed_unit
         self.decl = decl
-        self.dependency_resolver = dependency_resolver
-        self.file_units = file_units
 
     def add_lsp_error(self, token: Token, message: str) -> None:
         uri = uris.from_fs_path(token.file)
@@ -140,6 +137,11 @@ class NameResolver:
             resolved = ResolvedInvalidDeclaration(node.name)
             self.add_node_to_token(resolved, node)
             return resolved
+        except ContextError as e:
+            self.add_lsp_error(self.get_node_token(node), e.msg)
+            invalid = ResolvedInvalidDeclaration(node.name)
+            self.add_node_to_token(invalid, node)
+            return invalid
 
     def resolve_primpred(self, node: ParsedPrimPred) -> ResolvedPrimPred:
         if node.ref.name in self.decl.get_used_names():
@@ -419,6 +421,11 @@ class NameResolver:
                 raise ResolveError(node, msg)
         except ResolveError as e:
             self.add_lsp_error(self.get_node_token(e.node), e.msg)
+            invalid = ResolvedInvalidControl()
+            self.add_node_to_token(invalid, node)
+            return invalid
+        except ContextError as e:
+            self.add_lsp_error(self.get_node_token(node), e.msg)
             invalid = ResolvedInvalidControl()
             self.add_node_to_token(invalid, node)
             return invalid
@@ -732,16 +739,7 @@ class NameResolver:
                     raise ResolveError(node.parent, f"ref_struct of parent is unknown")
             else:
                 raise ResolveError(node.parent, f"Unexpected type {type(node.parent)}")
-            order = self.dependency_resolver.get_dependent_order(self.lexed_unit.file)
-            def_unit = None
-            def_struct = None
-            for path in order:
-                for unit in self.file_units[path]:
-                    if isinstance(unit.resolved_unit.resolved_ast, ResolvedStruct) and unit.resolved_unit.resolved_ast.name == ref_struct.name:
-                        def_unit = unit
-                        def_struct = unit.resolved_unit.resolved_ast
-            if def_unit is None or def_struct is None:
-                raise ResolveError(node, "unit is not found")
+            def_struct = self.decl.get_resolved_ast(ResolvedStruct, ref_struct.name)
             def_condition = None
             for condition in def_struct.conditions:
                 if condition.name == node.child.name:
@@ -831,7 +829,7 @@ class NameResolver:
     def resolve_term(self, node: ParsedExpr, context: ResolvedContext) -> ResolvedTerm:
         if isinstance(node, ParsedIdent):
             name = node.name
-            struct = None if context.ref_struct is None else self.get_struct(context.ref_struct.name)
+            struct = None if context.ref_struct is None else self.decl.get_resolved_ast(ResolvedStruct, context.ref_struct.name)
             if any(var.name == name for var in context.form.vars):
                 def_var = next(var for var in context.form.vars if var.name == name)
                 ref_var = ResolvedVar(name)
@@ -957,16 +955,7 @@ class NameResolver:
                     raise ResolveError(node.parent, f"ref_struct of parent is unknown")
             else:
                 raise ResolveError(node.parent, f"Unexpected type {type(node.parent)}")
-            order = self.dependency_resolver.get_dependent_order(self.lexed_unit.file)
-            def_unit = None
-            def_struct = None
-            for path in order:
-                for unit in self.file_units[path]:
-                    if isinstance(unit.resolved_unit.resolved_ast, ResolvedStruct) and unit.resolved_unit.resolved_ast.name == ref_struct.name:
-                        def_unit = unit
-                        def_struct = unit.resolved_unit.resolved_ast
-            if def_unit is None or def_struct is None:
-                raise ResolveError(node, "unit is not found")
+            def_struct = self.decl.get_resolved_ast(ResolvedStruct, ref_struct.name)
             def_field = None
             for field in def_struct.fields:
                 if field.name == node.child.name:
@@ -980,9 +969,7 @@ class NameResolver:
                 self.add_node_to_token(access, node)
                 return access
             struct_predicate_name = f"{ref_struct.name}.{node.child.name}"
-            def_predicate = self.get_struct_predicate(struct_predicate_name)
-            if def_predicate is None:
-                raise ResolveError(node, f"{struct_predicate_name} is not found")
+            def_predicate = self.decl.get_resolved_ast(ResolvedStructPred, struct_predicate_name)
             ref_predicate = ResolvedRefStructPred(node.child.name)
             self.add_node_to_token(ref_predicate, node.child)
             self.add_ctrl_defs_refs(def_predicate.ref, ref_predicate, def_predicate.name)
@@ -1151,21 +1138,3 @@ class NameResolver:
                 if not isinstance(subarg, ResolvedFunTerm):
                     msg = f"ResolvedFunTerm must be substituted into {defarg.name}, but {type(subarg)} is substituted"
                     raise ResolveError(node, msg)
-
-    def get_struct(self, name: str) -> ResolvedStruct | None:
-        order = self.dependency_resolver.get_dependent_order(self.lexed_unit.file)
-        for path in order:
-            for unit in self.file_units[path]:
-                resolved_ast = unit.resolved_unit.resolved_ast
-                if (isinstance(resolved_ast, ResolvedStruct) and resolved_ast.name == name):
-                    return resolved_ast
-        return None
-
-    def get_struct_predicate(self, struct_predicate_name: str) -> ResolvedStructPred | None:
-        order = self.dependency_resolver.get_dependent_order(self.lexed_unit.file)
-        for path in order:
-            for unit in self.file_units[path]:
-                resolved_ast = unit.resolved_unit.resolved_ast
-                if isinstance(resolved_ast, ResolvedStructPred) and resolved_ast.name == struct_predicate_name:
-                    return resolved_ast
-        return None
