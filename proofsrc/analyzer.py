@@ -6,7 +6,7 @@ import re
 from enum import IntEnum
 from typing import Sequence
 
-from dependency import DependencyResolver
+from dependency import DependencyResolver, DependencyResult
 from lexer import KEYWORDS, STRINGS, Token
 from ast_types import DeclarationUnit, Workspace, Declaration, Include, Control, Formula, Term, RefFact, FormatError, RenderError, Bottom, DeclarationContextNameSpace, RefStruct, RefStructCondition, StructVar, RefStructPred, Equality, PrimPred, DefPred, DefFunTerm, Var, PredTemplate, DefCon, DefFun, Struct, StructPred, LexedUnit, RefStructCon
 from resolved_ast_types import ResolvedInclude, ResolvedDeclaration, ResolvedControl, ResolvedFormula, ResolvedTerm, ResolvedRefFact, ResolvedRefStruct, ResolvedRefStructField, ResolvedRefStructCondition, ResolvedStructVar, ResolvedRefEquality, ResolvedRefPrimPred, ResolvedRefDefPred, ResolvedRefDefCon, ResolvedRefDefFun, ResolvedRefDefFunTerm, ResolvedPredLambda, ResolvedFunLambda, ResolvedRefStructPred, ResolvedRefStructCon
@@ -136,9 +136,9 @@ def tokens_to_locations(tokens: list[Token]) -> list[lsp.Location]:
             locations.append(location)
     return locations
 
-def prepare_context(file: str, resolver: DependencyResolver, file_final_decls: dict[str, DeclarationContextNameSpace]) -> DeclarationContextNameSpace:
+def prepare_context(file: str, dependency_result: DependencyResult, file_final_decls: dict[str, DeclarationContextNameSpace]) -> DeclarationContextNameSpace:
     decl = DeclarationContextNameSpace.init()
-    for dep in resolver.dependencies[file]:
+    for dep in dependency_result.dependencies[file]:
         decl = decl.merge(file_final_decls[dep])
     return decl
 
@@ -170,32 +170,27 @@ def analyze_diff(lexed_units: list[LexedUnit], start_index: int, decl: Declarati
 
 class Analyzer:
     def __init__(self):
-        self.old_workspace: Workspace | None = None
-        self.resolver: DependencyResolver | None = None
+        self.old_workspace = Workspace.empty()
 
     def analyze(self, path: str, editor_files: dict[str, str] | None = None, cancel_analysis: threading.Event | None = None) -> dict[str, list[lsp.Diagnostic]]:
-        if self.resolver is None:
-            self.resolver = DependencyResolver()
-        else:
-            self.resolver.prepare(path)
-        self.resolver.resolve(path, editor_files)
-        affected_files = self.resolver.get_affected_files(path)
-        order = self.resolver.get_full_order()
+        dependency_result = DependencyResolver(self.old_workspace.dependency_result).resolve(path, editor_files)
+        affected_files = dependency_result.get_affected_files(path)
+        order = dependency_result.get_full_order()
 
         file_units: dict[str, list[DeclarationUnit]] = {}
         file_final_decls: dict[str, DeclarationContextNameSpace] = {}
         newly_analyzed: set[str] = set()
         for file in order:
             is_affected = file in affected_files
-            dependency_changed = any(dep in newly_analyzed for dep in self.resolver.dependencies.get(file, []))
+            dependency_changed = any(dep in newly_analyzed for dep in dependency_result.dependencies.get(file, []))
             if not is_affected and not dependency_changed:
-                if self.old_workspace is not None and file in self.old_workspace.file_units and len(self.old_workspace.file_units[file]) > 0:
+                if file in self.old_workspace.file_units and len(self.old_workspace.file_units[file]) > 0:
                     file_units[file] = self.old_workspace.file_units[file]
                     file_final_decls[file] = file_units[file][-1].decl
                     continue
-            lexed_units = split(file, self.resolver.tokens_cache[file], self.resolver.source_cache[file])
-            decl = prepare_context(file, self.resolver, file_final_decls)
-            old_all_units = [] if self.old_workspace is None or dependency_changed else self.old_workspace.file_units.get(file, [])
+            lexed_units = split(file, dependency_result.tokens_cache[file], dependency_result.source_cache[file])
+            decl = prepare_context(file, dependency_result, file_final_decls)
+            old_all_units = [] if dependency_changed else self.old_workspace.file_units.get(file, [])
             file_units[file] = []
             decl, start_index = restore_cache(lexed_units, old_all_units, decl, file_units, file)
             if start_index < len(lexed_units):
@@ -205,28 +200,21 @@ class Analyzer:
                 return {}
             file_final_decls[file] = decl
 
-        workspace = Workspace(file_units)
-
-        if self.old_workspace is None:
-            self.old_workspace = workspace
-        else:
-            self.old_workspace.merge(workspace)
+        self.old_workspace = self.old_workspace.merge(file_units, dependency_result)
 
         final_diagnostics: dict[str, list[lsp.Diagnostic]] = {}
-        for file in workspace.file_units:
+        for file in file_units:
             uri = uris.from_fs_path(file)
             if uri is None:
                 continue
             final_diagnostics[uri] = []
-            for unit in workspace.file_units[file]:
+            for unit in file_units[file]:
                 final_diagnostics[uri].extend(unit.parsed_unit.diagnostics)
                 final_diagnostics[uri].extend(unit.resolved_unit.diagnostics)
                 final_diagnostics[uri].extend(unit.elaborated_unit.diagnostics)
                 final_diagnostics[uri].extend(unit.checked_unit.diagnostics)
-        for uri, diags in self.resolver.diagnostics.items():
-            if uri not in final_diagnostics:
-                continue
-            final_diagnostics[uri].extend(diags)
+        for uri, diags in dependency_result.diagnostics.items():
+            final_diagnostics.setdefault(uri, []).extend(diags)
 
         return final_diagnostics
 
@@ -238,11 +226,7 @@ class Analyzer:
         if ref_token is None:
             return None
         ref_name = ref_token.value
-        if self.old_workspace is None:
-            return None
-        if self.resolver is None:
-            return None
-        order = self.resolver.get_dependent_order(unit.lexed_unit.file)
+        order = self.old_workspace.dependency_result.get_dependent_order(unit.lexed_unit.file)
         ref_node = unit.resolved_unit.resolved_token_to_node[ref_token.index]
         if id(ref_node) in unit.resolved_unit.resolved_ctrl_defs:
             def_unit_name, def_node_id = unit.resolved_unit.resolved_ctrl_defs[id(ref_node)]
@@ -264,12 +248,8 @@ class Analyzer:
         if ref_token is None:
             return []
         ref_name = ref_token.value
-        if self.old_workspace is None:
-            return []
         ref_node = unit.resolved_unit.resolved_token_to_node[ref_token.index]
-        if self.resolver is None:
-            return []
-        affected_files = self.resolver.get_affected_files(unit.lexed_unit.file)
+        affected_files = self.old_workspace.dependency_result.get_affected_files(unit.lexed_unit.file)
         if id(ref_node) in unit.resolved_unit.resolved_ctrl_defs:
             def_unit_name, def_node_id = unit.resolved_unit.resolved_ctrl_defs[id(ref_node)]
             ctrl_ref_tokens = self.old_workspace.get_ctrl_refs(affected_files, def_unit_name, def_node_id)
@@ -292,19 +272,17 @@ class Analyzer:
 
     def find_struct(self, type_name: str, order: list[str]) -> Struct | None:
         for path in order:
-            if self.old_workspace is not None:
-                for unit in self.old_workspace.file_units[path]:
-                    if isinstance(unit.elaborated_unit.ast, Struct) and unit.elaborated_unit.ast.name == type_name:
-                        return unit.elaborated_unit.ast
+            for unit in self.old_workspace.file_units[path]:
+                if isinstance(unit.elaborated_unit.ast, Struct) and unit.elaborated_unit.ast.name == type_name:
+                    return unit.elaborated_unit.ast
         return None
 
     def find_struct_predicate(self, type_name: str, order: list[str]) -> list[StructPred]:
         preds: list[StructPred] = []
         for path in order:
-            if self.old_workspace is not None:
-                for unit in self.old_workspace.file_units[path]:
-                    if isinstance(unit.elaborated_unit.ast, StructPred) and unit.elaborated_unit.ast.name.startswith(f"{type_name}."):
-                        preds.append(unit.elaborated_unit.ast)
+            for unit in self.old_workspace.file_units[path]:
+                if isinstance(unit.elaborated_unit.ast, StructPred) and unit.elaborated_unit.ast.name.startswith(f"{type_name}."):
+                    preds.append(unit.elaborated_unit.ast)
         return preds
 
     def get_completion_expected(self, params: lsp.CompletionParams, source: str) -> list[tuple[str, lsp.CompletionItemKind]]:
@@ -350,16 +328,15 @@ class Analyzer:
                                 type_name = next((item.type_name for item in e.context.ctrl if isinstance(item, CompletionTypedVar) and item.name == name), None)
                                 if type_name is None:
                                     return []
-                            if self.resolver is not None:
-                                order = self.resolver.get_dependent_order(current_unit.lexed_unit.file)
-                                type_name = self.resolve_access_type(type_name, e.access.names[1:], order)
-                                if type_name is not None:
-                                    struct = self.find_struct(type_name, order)
-                                    if struct is not None:
-                                        candidates.extend((field.name, lsp.CompletionItemKind.Variable) for field in struct.fields)
-                                        candidates.extend((condition.name, lsp.CompletionItemKind.Function) for condition in struct.conditions)
-                                        preds = self.find_struct_predicate(type_name, order)
-                                        candidates.extend((pred.ref.name, lsp.CompletionItemKind.Variable) for pred in preds)
+                            order = self.old_workspace.dependency_result.get_dependent_order(current_unit.lexed_unit.file)
+                            type_name = self.resolve_access_type(type_name, e.access.names[1:], order)
+                            if type_name is not None:
+                                struct = self.find_struct(type_name, order)
+                                if struct is not None:
+                                    candidates.extend((field.name, lsp.CompletionItemKind.Variable) for field in struct.fields)
+                                    candidates.extend((condition.name, lsp.CompletionItemKind.Function) for condition in struct.conditions)
+                                    preds = self.find_struct_predicate(type_name, order)
+                                    candidates.extend((pred.ref.name, lsp.CompletionItemKind.Variable) for pred in preds)
                 else:
                     args = self.get_signature_help_args(e, path)
                     if e.call is None:
@@ -384,14 +361,13 @@ class Analyzer:
                             decl_types.extend([PrimPred, DefPred, Equality])
                         else:
                             decl_types.extend([DefFun, DefFunTerm])
-                    if self.old_workspace is not None and self.resolver is not None:
-                        current_unit = self.get_unit_at(params.text_document.uri, params.position)
-                        if current_unit is not None:
-                            order = self.resolver.get_dependent_order(current_unit.lexed_unit.file)
-                            for path in order:
-                                for unit in self.old_workspace.file_units[path]:
-                                    if isinstance(unit.elaborated_unit.ast, Declaration) and isinstance(unit.elaborated_unit.ast, e.decl_types) and isinstance(unit.elaborated_unit.ast, tuple(decl_types)):
-                                        candidates.append((unit.elaborated_unit.ast.name, lsp.CompletionItemKind.Function))
+                    current_unit = self.get_unit_at(params.text_document.uri, params.position)
+                    if current_unit is not None:
+                        order = self.old_workspace.dependency_result.get_dependent_order(current_unit.lexed_unit.file)
+                        for path in order:
+                            for unit in self.old_workspace.file_units[path]:
+                                if isinstance(unit.elaborated_unit.ast, Declaration) and isinstance(unit.elaborated_unit.ast, e.decl_types) and isinstance(unit.elaborated_unit.ast, tuple(decl_types)):
+                                    candidates.append((unit.elaborated_unit.ast.name, lsp.CompletionItemKind.Function))
         return candidates
 
     def get_completion(self, params: lsp.CompletionParams, source: str) -> list[lsp.CompletionItem]:
@@ -419,9 +395,9 @@ class Analyzer:
         if e.call is None:
             return ()
         if len(e.call.callee.names) > 1:
-            if self.resolver is None or e.context is None:
+            if e.context is None:
                 return ()
-            order = self.resolver.get_dependent_order(path)
+            order = self.old_workspace.dependency_result.get_dependent_order(path)
             root = e.call.callee.names[0]
             type_name = next((item.type_name for item in e.context.form + e.context.ctrl if isinstance(item, CompletionTypedVar) and item.name == root), None)
             if type_name is None:
@@ -451,11 +427,7 @@ class Analyzer:
                             found_item = item
                 if found_item is not None:
                     return tuple(CompletionVar(f"x{i}") for i in range(1, found_item.arity + 1))
-            if self.resolver is None:
-                return ()
-            order = self.resolver.get_dependent_order(path)
-            if self.old_workspace is None:
-                return ()
+            order = self.old_workspace.dependency_result.get_dependent_order(path)
             def_ast = None
             for dep_path in order:
                 for unit in self.old_workspace.file_units[dep_path]:
@@ -565,8 +537,6 @@ class Analyzer:
         path = uris.to_fs_path(uri)
         if path is None:
             return None
-        if self.old_workspace is None:
-            return None
         units = self.old_workspace.file_units.get(path, [])
         target_line = position.line + 1
         last_unit = None
@@ -626,8 +596,6 @@ class Analyzer:
     def semantic_tokens_full(self, params: lsp.SemanticTokensParams) -> lsp.SemanticTokens:
         path = uris.to_fs_path(params.text_document.uri)
         if path is None:
-            return lsp.SemanticTokens(data=[])
-        if self.old_workspace is None:
             return lsp.SemanticTokens(data=[])
         raw_tokens: list[tuple[int, int, int, int]] = []
         if path not in self.old_workspace.file_units:

@@ -761,15 +761,14 @@ if __name__ == "__main__":
 
     import os
 
-    if analyzer.old_workspace is not None:
-        for file, all_units in analyzer.old_workspace.file_units.items():
-            if not len(all_units) > 0:
-                continue
-            name = os.path.splitext(os.path.basename(file))[0]
-            title = f"{name}_checker_{mode}"
-            checker_html, error_found = to_html([unit.elaborated_unit.ast for unit in all_units], all_units[-1].decl, title, mode == "svg")
-            f = open(os.path.join("html", f"{title}.html"), 'w', encoding='utf-8')
-            f.write(checker_html)
-            f.close()
-            if error_found:
-                break
+    for file, all_units in analyzer.old_workspace.file_units.items():
+        if not len(all_units) > 0:
+            continue
+        name = os.path.splitext(os.path.basename(file))[0]
+        title = f"{name}_checker_{mode}"
+        checker_html, error_found = to_html([unit.elaborated_unit.ast for unit in all_units], all_units[-1].decl, title, mode == "svg")
+        f = open(os.path.join("html", f"{title}.html"), 'w', encoding='utf-8')
+        f.write(checker_html)
+        f.close()
+        if error_found:
+            break

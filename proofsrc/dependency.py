@@ -3,23 +3,17 @@ from token_stream import TokenStream
 import os
 from lsprotocol import types as lsp
 from pygls import uris
+from dataclasses import dataclass
 
 import sys
 
 class DependencyResolver:
-    def __init__(self):
-        self.dependencies: dict[str, list[str]] = {}
-        self.tokens_cache: dict[str, list[Token]] = {}
-        self.source_cache: dict[str, str] = {}
+    def __init__(self, result: "DependencyResult"):
+        self.dependencies = result.dependencies.copy()
+        self.tokens_cache = result.tokens_cache.copy()
+        self.source_cache = result.source_cache.copy()
         self.visiting_files: set[str] = set()
         self.diagnostics: dict[str, list[lsp.Diagnostic]] = {}
-
-    def prepare(self, path: str):
-        self.dependencies.pop(path, None)
-        self.tokens_cache.pop(path, None)
-        self.source_cache.pop(path, None)
-        self.visiting_files = set()
-        self.diagnostics = {}
 
     def add_lsp_error(self, token: Token, message: str):
         uri = uris.from_fs_path(token.file)
@@ -51,7 +45,7 @@ class DependencyResolver:
         tokens = lex(target_path, src)
         return src, tokens
 
-    def resolve(self, path: str, editor_files: dict[str, str] | None = None):
+    def resolve_recursive(self, path: str, editor_files: dict[str, str] | None = None):
         if path in self.dependencies:
             return
         self.visiting_files.add(path)
@@ -74,13 +68,27 @@ class DependencyResolver:
                         self.add_lsp_error(token, f"Cyclic dependency: {new_path}")
                     else:
                         dependency.append(new_path)
-                        self.resolve(new_path, editor_files)
+                        self.resolve_recursive(new_path, editor_files)
             elif token.type == "EOF":
                 break
             else:
                 stream.consume(token.type)
         self.visiting_files.remove(path)
         self.dependencies[path] = dependency
+
+    def resolve(self, path: str, editor_files: dict[str, str] | None = None):
+        self.dependencies.pop(path, None)
+        self.tokens_cache.pop(path, None)
+        self.source_cache.pop(path, None)
+        self.resolve_recursive(path, editor_files)
+        return DependencyResult(self.dependencies, self.tokens_cache, self.source_cache, self.diagnostics)
+
+@dataclass
+class DependencyResult:
+    dependencies: dict[str, list[str]]
+    tokens_cache: dict[str, list[Token]]
+    source_cache: dict[str, str]
+    diagnostics: dict[str, list[lsp.Diagnostic]]
 
     def create_reverse_deps(self) -> dict[str, set[str]]:
         reverse_dependencies: dict[str, set[str]] = {}
@@ -138,8 +146,7 @@ class DependencyResolver:
 if __name__ == "__main__":
     import sys
     path = sys.argv[1]
-    resolver = DependencyResolver()
-    resolver.resolve(path)
-    resolved_files = resolver.get_dependent_order(path)
+    dependency_result = DependencyResolver(DependencyResult({}, {}, {}, {})).resolve(path)
+    resolved_files = dependency_result.get_dependent_order(path)
     for file in resolved_files:
-        print(f"file: {file}, length of tokens: {len(resolver.tokens_cache[file])}")
+        print(f"file: {file}, length of tokens: {len(dependency_result.tokens_cache[file])}")

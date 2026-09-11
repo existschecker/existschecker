@@ -1,7 +1,7 @@
-from ast_types import LexedUnit, ContextError, TokenStreamError, ParseError
+from ast_types import LexedUnit, ContextError, ParseError
 from parsed_ast_types import ParsedExpr, ParsedIdent, ParsedIdentArgs, ParsedFunTemplate, ParsedFunLambda, ParsedPredTemplate, ParsedPredLambda, ParsedNot, ParsedAnd, ParsedOr, ParsedImplies, ParsedIff, ParsedForall, ParsedExists, ParsedExistsUniq, ParsedBottom, ParsedControl, ParsedInvalidControl, ParsedAny, ParsedAssume, ParsedDivide, ParsedSome, ParsedDeny, ParsedContradict, ParsedCase, ParsedExplode, ParsedApply, ParsedLift, ParsedCharacterize, ParsedInvoke, ParsedExpand, ParsedFold, ParsedPad, ParsedSplit, ParsedConnect, ParsedSubstitute, ParsedShow, ParsedAssert, ParsedDeclaration, ParsedInvalidDeclaration, ParsedPrimPred, ParsedAxiom, ParsedTheorem, ParsedDefPred, ParsedDefCon, ParsedDefFun, ParsedDefFunTerm, ParsedDefExist, ParsedDefUniq, ParsedEquality, ParsedInclude, ParsedInvalidInclude, ParsedUnit, ParsedStruct, ParsedTypedIdent, ParsedAccess, ParsedStructPred, ParsedCall, ParsedStructCon
 from lexer import Token
-from token_stream import TokenStream
+from token_stream import TokenStream, TokenStreamError
 
 from lsprotocol import types as lsp
 from pygls import uris

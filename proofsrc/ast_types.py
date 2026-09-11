@@ -4,6 +4,7 @@ from lsprotocol import types as lsp
 from typing import Sequence, Literal
 from resolved_ast_types import ResolvedUnit, ResolvedDeclaration, ResolvedEquality
 from parsed_ast_types import ParsedUnit
+from dependency import DependencyResult
 
 import logging
 logger = logging.getLogger("proof")
@@ -22,11 +23,6 @@ class FormatError(Exception):
 
 class RenderError(Exception):
     def __init__(self, msg: str) -> None:
-        self.msg = msg
-
-class TokenStreamError(Exception):
-    def __init__(self, token: Token, msg: str) -> None:
-        self.token = token
         self.msg = msg
 
 class ParseError(Exception):
@@ -642,8 +638,13 @@ class DeclarationUnit:
         return len(self.parsed_unit.diagnostics) == 0 and len(self.resolved_unit.diagnostics) == 0 and len(self.elaborated_unit.diagnostics) == 0 and len(self.checked_unit.diagnostics) == 0
 
 class Workspace:
-    def __init__(self, file_units: dict[str, list[DeclarationUnit]]):
+    def __init__(self, file_units: dict[str, list[DeclarationUnit]], dependency_result: DependencyResult) -> None:
         self.file_units: dict[str, list[DeclarationUnit]] = file_units
+        self.dependency_result: DependencyResult = dependency_result
+
+    @staticmethod
+    def empty() -> "Workspace":
+        return Workspace({}, DependencyResult({}, {}, {}, {}))
 
     def get_decl_def(self, name: str, order: list[str]) -> Token | None:
         for path in order:
@@ -682,6 +683,5 @@ class Workspace:
                         refs.append(unit.lexed_unit.tokens[ref_token_index])
         return refs
 
-    def merge(self, new: "Workspace") -> None:
-        for file, units in new.file_units.items():
-            self.file_units[file] = units
+    def merge(self, file_units: dict[str, list[DeclarationUnit]], dependency_result: DependencyResult) -> "Workspace":
+        return Workspace(self.file_units | file_units, dependency_result)
