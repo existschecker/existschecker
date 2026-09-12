@@ -12,7 +12,7 @@ theorem piterate_base_step \forall^P \phi[2] \forall c (piterate(\phi, emptyset,
     substitute dom(singleton(op(emptyset, c)), singleton(emptyset)) for singleton(emptyset): suc(emptyset)
     any k {
       assume in(k, emptyset) {
-        apply emptyset_existence for k
+        apply emptyset.existence for k
         contradict in(k, emptyset)
         explode \exists p \exists q (in(op(k, p), singleton(op(emptyset, c))) \wedge in(op(suc(k), q), singleton(op(emptyset, c))) \wedge \phi(p, q))
       }

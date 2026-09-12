@@ -45,7 +45,7 @@ theorem powerset_expanding \forall X \forall Y \forall m \forall n (natural(m) \
   any X, Y, m {
     assume natural(m) \wedge piterate(powerset, m, emptyset, X) \wedge piterate(powerset, emptyset, emptyset, Y) \wedge in(m, emptyset) {
       split natural(m) \wedge piterate(powerset, m, emptyset, X) \wedge piterate(powerset, emptyset, emptyset, Y) \wedge in(m, emptyset)
-      apply emptyset_existence for m
+      apply emptyset.existence for m
       contradict in(m, emptyset)
       explode subset(X, Y)
     }
@@ -106,7 +106,7 @@ theorem closed_in_implies_adj_in_powerset \forall X \forall Y \forall p \forall 
       split powerset(X, Y) \wedge closed(X, in) \wedge in(p, X) \wedge in(q, X)
       any r {
         assume in(r, adj(p, q)) {
-          apply invoke rightward adj_existence for p, q, r
+          apply invoke rightward adj.existence for p, q, r
           divide in(r, p) \vee equal(r, q)
             case in(r, p) {
               connect in(r, p) \wedge in(p, X)
@@ -132,7 +132,7 @@ theorem hfpower_implies_hf \forall x (hfpower(x) \to hf(x, in)) {
         split in(x, X) \wedge piterate(powerset, emptyset, emptyset, X)
         apply invoke piterate_is_unique_base_step for powerset, emptyset, X
         substitute in(x, X) for X: emptyset
-        apply emptyset_existence for x
+        apply emptyset.existence for x
         contradict in(x, emptyset)
         explode hf(x, in)
       }

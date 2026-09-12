@@ -10,14 +10,12 @@ theorem adjunction_exists_uniquely \forall x \forall y \exists! z \forall w (in(
 }
 
 definition function adj by adjunction_exists_uniquely
-existence adj_existence \forall x \forall y \forall w (in(w, adj(x, y)) \leftrightarrow in(w, x) \vee equal(w, y)) by adj
-uniqueness adj_uniqueness \forall x \forall y \forall z (\forall w (in(w, z) \leftrightarrow in(w, x) \vee equal(w, y)) \to equal(z, adj(x, y))) by adj
 
 theorem adj_cor1 \forall x \forall y \forall z (in(z, x) \to in(z, adj(x, y))) {
   any x, y, z {
     assume in(z, x) {
       pad in(z, x) conclude in(z, x) \vee equal(z, y)
-      apply invoke leftward adj_existence for x, y, z
+      apply invoke leftward adj.existence for x, y, z
     }
   }
 }
@@ -26,7 +24,7 @@ theorem adj_cor2 \forall x \forall y \forall z (equal(z, y) \to in(z, adj(x, y))
   any x, y, z {
     assume equal(z, y) {
       pad equal(z, y) conclude in(z, x) \vee equal(z, y)
-      apply invoke leftward adj_existence for x, y, z
+      apply invoke leftward adj.existence for x, y, z
     }
   }
 }
@@ -42,7 +40,7 @@ theorem adj_equal \forall x \forall y (in(y, x) \to equal(adj(x, y), x)) {
     assume in(y, x) {
       any z {
         assume in(z, adj(x, y)) {
-          apply invoke rightward adj_existence for x, y, z
+          apply invoke rightward adj.existence for x, y, z
           divide in(z, x) \vee equal(z, y)
             case in(z, x) {}
             case equal(z, y) {
@@ -65,10 +63,10 @@ theorem suc_characterization \forall x \forall y (in(y, suc(x)) \leftrightarrow 
   any x, y {
     assume in(y, suc(x)) {
       expand in(y, suc(x)) for suc
-      apply invoke rightward adj_existence for x, x, y
+      apply invoke rightward adj.existence for x, x, y
     }
     assume in(y, x) \vee equal(y, x) {
-      apply invoke leftward adj_existence for x, x, y
+      apply invoke leftward adj.existence for x, x, y
       fold for suc conclude in(y, suc(x))
     }
     connect in(y, suc(x)) \leftrightarrow in(y, x) \vee equal(y, x)
@@ -88,10 +86,10 @@ theorem singleton_characterization \forall x \forall y (in(y, singleton(x)) \lef
   any x, y {
     assume in(y, singleton(x)) {
       expand in(y, singleton(x)) for singleton
-      apply invoke rightward adj_existence for emptyset, x, y
+      apply invoke rightward adj.existence for emptyset, x, y
       divide in(y, emptyset) \vee equal(y, x)
         case in(y, emptyset) {
-          apply emptyset_existence for y
+          apply emptyset.existence for y
           contradict in(y, emptyset)
           explode equal(y, x)
         }
@@ -145,7 +143,7 @@ theorem suc_is_not_emptyset \forall x (neq(suc(x), emptyset)) {
     deny equal(suc(x), emptyset) {
       apply in_suc for x
       substitute in(x, suc(x)) for suc(x): emptyset
-      apply emptyset_existence for x
+      apply emptyset.existence for x
       contradict in(x, emptyset) 
     }
   }
@@ -157,7 +155,7 @@ theorem suc_emptyset_is_singleton_emptyset equal(suc(emptyset), singleton(emptys
       apply invoke rightward suc_characterization for emptyset, x
       divide in(x, emptyset) \vee equal(x, emptyset)
         case in(x, emptyset) {
-          apply emptyset_existence for x
+          apply emptyset.existence for x
           contradict in(x, emptyset)
           explode equal(x, emptyset)
         }
@@ -192,7 +190,7 @@ theorem subset_adj_notin \forall x \forall z \forall y (notin(z, y) \wedge subse
       any w {
         assume in(w, y) {
           apply invoke subset(y, adj(x, z)) for w
-          apply invoke rightward adj_existence for x, z, w
+          apply invoke rightward adj.existence for x, z, w
           divide in(w, x) \vee equal(w, z)
             case in(w, x) {}
             case equal(w, z) {
@@ -212,7 +210,7 @@ theorem subset_implies_subset_adj \forall x \forall y \forall z (subset(x, y) \t
     assume subset(x, y) {
       any w {
         assume in(w, adj(x, z)) {
-          apply invoke rightward adj_existence for x, z, w
+          apply invoke rightward adj.existence for x, z, w
           divide in(w, x) \vee equal(w, z)
             case in(w, x) {
               apply invoke subset(x, y) for w

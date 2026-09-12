@@ -18,14 +18,14 @@ theorem ordinal_is_pwellfounded pwellfounded(ordinal, in) {
         apply cap_is_subset_right for A, suc(\alpha)
         apply in_suc for \alpha
         connect in(\alpha, A) \wedge in(\alpha, suc(\alpha))
-        apply invoke leftward cap_characterization for A, suc(\alpha), \alpha
+        apply invoke leftward cap.existence for A, suc(\alpha), \alpha
         lift for \alpha conclude \exists \beta (in(\beta, cap(A, suc(\alpha))))
         apply invoke has_a_member_not_emptyset for cap(A, suc(\alpha))
         connect subset(cap(A, suc(\alpha)), suc(\alpha)) \wedge neq(cap(A, suc(\alpha)), emptyset)
         apply invoke wellfounded(suc(\alpha), in) for cap(A, suc(\alpha))
         some \beta such \exists \beta (minimal(in, cap(A, suc(\alpha)), \beta)) {
           split minimal(in, cap(A, suc(\alpha)), \beta)
-          apply invoke rightward cap_characterization for A, suc(\alpha), \beta
+          apply invoke rightward cap.existence for A, suc(\alpha), \beta
           split in(\beta, A) \wedge in(\beta, suc(\alpha))
           any \gamma {
             assume in(\gamma, A) \wedge neq(\gamma, \beta) {
@@ -34,7 +34,7 @@ theorem ordinal_is_pwellfounded pwellfounded(ordinal, in) {
               divide in(\gamma, suc(\alpha)) \vee notin(\gamma, suc(\alpha))
                 case in(\gamma, suc(\alpha)) {
                   connect in(\gamma, A) \wedge in(\gamma, suc(\alpha))
-                  apply invoke leftward cap_characterization for A, suc(\alpha), \gamma
+                  apply invoke leftward cap.existence for A, suc(\alpha), \gamma
                   connect in(\gamma, cap(A, suc(\alpha))) \wedge neq(\gamma, \beta)
                   apply invoke minimal_core(in, cap(A, suc(\alpha)), \beta) for \gamma
                 }

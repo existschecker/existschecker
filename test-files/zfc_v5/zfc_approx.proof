@@ -8,19 +8,17 @@ theorem res_exists_uniquely \forall R \forall X \exists! S \forall z (in(z, S) \
 }
 
 definition function res by res_exists_uniquely
-existence res_characterization \forall R \forall X \forall z (in(z, res(R, X)) \leftrightarrow in(z, R) \wedge \exists x \exists y (in(x, X) \wedge equal(z, op(x, y)))) by res
-uniqueness res_uniqueness \forall R \forall X \forall S (\forall z (in(z, S) \leftrightarrow in(z, R) \wedge \exists x \exists y (in(x, X) \wedge equal(z, op(x, y)))) \to equal(S, res(R, X))) by res
 
 theorem adding_op_res \forall R \forall X \forall x \forall y (notin(x, X) \to equal(res(adj(R, op(x, y)), X), res(R, X))) {
   any R, X, x, y {
     assume notin(x, X) {
       any z {
         assume in(z, res(adj(R, op(x, y)), X)) {
-          apply invoke rightward res_characterization for adj(R, op(x, y)), X, z
+          apply invoke rightward res.existence for adj(R, op(x, y)), X, z
           split in(z, adj(R, op(x, y))) \wedge \exists x' \exists y' (in(x', X) \wedge equal(z, op(x', y')))
           some x', y' such \exists x' \exists y' (in(x', X) \wedge equal(z, op(x', y'))) {
             split in(x', X) \wedge equal(z, op(x', y'))
-            apply invoke rightward adj_existence for R, op(x, y), z
+            apply invoke rightward adj.existence for R, op(x, y), z
             divide in(z, R) \vee equal(z, op(x, y))
               case in(z, R) {}
               case equal(z, op(x, y)) {
@@ -32,15 +30,15 @@ theorem adding_op_res \forall R \forall X \forall x \forall y (notin(x, X) \to e
                 explode in(z, R)
               }
             connect in(z, R) \wedge \exists x' \exists y' (in(x', X) \wedge equal(z, op(x', y')))
-            apply invoke leftward res_characterization for R, X, z
+            apply invoke leftward res.existence for R, X, z
           }
         }
         assume in(z, res(R, X)) {
-          apply invoke rightward res_characterization for R, X, z
+          apply invoke rightward res.existence for R, X, z
           split in(z, R) \wedge \exists x' \exists y' (in(x', X) \wedge equal(z, op(x', y')))
           apply invoke adj_cor1 for R, op(x, y), z
           connect in(z, adj(R, op(x, y))) \wedge \exists x' \exists y' (in(x', X) \wedge equal(z, op(x', y')))
-          apply invoke leftward res_characterization for adj(R, op(x, y)), X, z
+          apply invoke leftward res.existence for adj(R, op(x, y)), X, z
         }
         connect in(z, res(adj(R, op(x, y)), X)) \leftrightarrow in(z, res(R, X))
       }
@@ -55,7 +53,7 @@ theorem res_subset_equality \forall h \forall Z \forall t \forall s (fun(h) \wed
       split fun(h) \wedge fun(Z) \wedge subset(h, Z) \wedge dom(h, t) \wedge subset(s, t)
       any z {
         assume in(z, res(h, s)) {
-          apply invoke rightward res_characterization for h, s, z
+          apply invoke rightward res.existence for h, s, z
           split in(z, h) \wedge \exists x \exists y (in(x, s) \wedge equal(z, op(x, y)))
           apply invoke subset(h, Z) for z
           some x, y such \exists x \exists y (in(x, s) \wedge equal(z, op(x, y))) {
@@ -64,11 +62,11 @@ theorem res_subset_equality \forall h \forall Z \forall t \forall s (fun(h) \wed
             connect in(x, s) \wedge equal(z, op(x, y))
             lift for x, y conclude \exists x \exists y (in(x, s) \wedge equal(z, op(x, y)))
             connect in(z, Z) \wedge \exists x \exists y (in(x, s) \wedge equal(z, op(x, y)))
-            apply invoke leftward res_characterization for Z, s, z
+            apply invoke leftward res.existence for Z, s, z
           }
         }
         assume in(z, res(Z, s)) {
-          apply invoke rightward res_characterization for Z, s, z
+          apply invoke rightward res.existence for Z, s, z
           split in(z, Z) \wedge \exists x \exists y (in(x, s) \wedge equal(z, op(x, y)))
           some x, y such \exists x \exists y (in(x, s) \wedge equal(z, op(x, y))) {
             split in(x, s) \wedge equal(z, op(x, y))
@@ -83,7 +81,7 @@ theorem res_subset_equality \forall h \forall Z \forall t \forall s (fun(h) \wed
               substitute in(op(x, y'), h) for y': y
               substitute in(op(x, y), h) for op(x, y): z
               connect in(z, h) \wedge \exists x \exists y (in(x, s) \wedge equal(z, op(x, y)))
-              apply invoke leftward res_characterization for h, s, z
+              apply invoke leftward res.existence for h, s, z
             }
           }
         }
@@ -136,7 +134,7 @@ theorem approx_is_unique \forall X \forall^P \psi[2] \forall^P \phi[2] (closed(X
                     lift for v' conclude \exists v' (in(op(u, v'), h))
                     apply invoke leftward dom(h, t) for u
                     connect in(u, r) \wedge in(u, t)
-                    apply invoke leftward cap_characterization for r, t, u
+                    apply invoke leftward cap.existence for r, t, u
                     lift for v, v' conclude \exists v \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v'))
                     connect in(u, cap(r, t)) \wedge \exists v \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v'))
                     apply invoke leftward sep(cap(r, t), \lambda^P u. \exists v \exists v' (in(op(u, v), g) \wedge in(op(u, v'), h) \wedge neq(v, v')), q) for u
@@ -155,7 +153,7 @@ theorem approx_is_unique \forall X \forall^P \psi[2] \forall^P \phi[2] (closed(X
                         assume \psi(z, a) {
                           connect in(a, cap(r, t)) \wedge \psi(z, a)
                           apply invoke closed(cap(r, t), \psi) for a, z
-                          apply invoke rightward cap_characterization for r, t, z
+                          apply invoke rightward cap.existence for r, t, z
                           split in(z, r) \wedge in(z, t)
                           apply invoke rightward dom(g, r) for z
                           some w such \exists w (in(op(z, w), g)) {
@@ -204,7 +202,7 @@ theorem approx_is_unique \forall X \forall^P \psi[2] \forall^P \phi[2] (closed(X
                         }
                         any p {
                           assume in(p, res(g, s)) {
-                            apply invoke rightward res_characterization for g, s, p
+                            apply invoke rightward res.existence for g, s, p
                             split in(p, g) \wedge \exists x \exists y (in(x, s) \wedge equal(p, op(x, y)))
                             some z, w such \exists x \exists y (in(x, s) \wedge equal(p, op(x, y))) {
                               split in(z, s) \wedge equal(p, op(z, w))
@@ -221,10 +219,10 @@ theorem approx_is_unique \forall X \forall^P \psi[2] \forall^P \phi[2] (closed(X
                               substitute in(op(z, w), h) for op(z, w): p
                             }
                             connect in(p, h) \wedge \exists x \exists y (in(x, s) \wedge equal(p, op(x, y)))
-                            apply invoke leftward res_characterization for h, s, p
+                            apply invoke leftward res.existence for h, s, p
                           }
                           assume in(p, res(h, s)) {
-                            apply invoke rightward res_characterization for h, s, p
+                            apply invoke rightward res.existence for h, s, p
                             split in(p, h) \wedge \exists x \exists y (in(x, s) \wedge equal(p, op(x, y)))
                             some z, w such \exists x \exists y (in(x, s) \wedge equal(p, op(x, y))) {
                               split in(z, s) \wedge equal(p, op(z, w))
@@ -241,7 +239,7 @@ theorem approx_is_unique \forall X \forall^P \psi[2] \forall^P \phi[2] (closed(X
                               substitute in(op(z, w), g) for op(z, w): p
                             }
                             connect in(p, g) \wedge \exists x \exists y (in(x, s) \wedge equal(p, op(x, y)))
-                            apply invoke leftward res_characterization for g, s, p
+                            apply invoke leftward res.existence for g, s, p
                           }
                           connect in(p, res(g, s)) \leftrightarrow in(p, res(h, s))
                         }

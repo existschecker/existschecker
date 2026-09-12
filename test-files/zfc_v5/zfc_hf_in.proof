@@ -92,7 +92,7 @@ theorem hf_satisfies_axiom_of_emptyset \exists x (hf(x, in) \wedge \forall y (hf
   assert emptyset_is_hf
   any y {
     assume hf(y, in) {
-      apply emptyset_existence for y
+      apply emptyset.existence for y
     }
   }
   connect hf(emptyset, in) \wedge \forall y (hf(y, in) \to notin(y, emptyset))
@@ -142,7 +142,7 @@ theorem adj_of_hf_is_hf \forall x \forall y (hf(x, in) \wedge hf(y, in) \to hf(a
       apply invoke finite_adj for x, y
       any p {
         assume in(p, adj(x, y)) {
-          apply invoke rightward adj_existence for x, y, p
+          apply invoke rightward adj.existence for x, y, p
           divide in(p, x) \vee equal(p, y)
             case in(p, x) {
               connect hf(x, in) \wedge in(p, x)
@@ -165,7 +165,7 @@ theorem hf_satisfies_axiom_of_adjunction \forall x \forall y (hf(x, in) \wedge h
       apply invoke adj_of_hf_is_hf for x, y
       any w {
         assume hf(w, in) {
-          apply adj_existence for x, y, w
+          apply adj.existence for x, y, w
         }
       }
       connect hf(adj(x, y), in) \wedge \forall w (hf(w, in) \to (in(w, adj(x, y)) \leftrightarrow in(w, x) \vee equal(w, y)))

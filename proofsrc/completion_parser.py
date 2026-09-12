@@ -1,5 +1,5 @@
 from lexer import Token
-from ast_types import PrimPred, DefPred, Equality, DefCon, DefFun, DefFunTerm, Axiom, Theorem, DefConExist, DefConUniq, DefFunExist, DefFunUniq
+from ast_types import PrimPred, DefPred, Equality, DefCon, DefFun, DefFunTerm, Axiom, Theorem
 from dataclasses import dataclass
 
 @dataclass(frozen=True)
@@ -566,7 +566,7 @@ class CompletionParser:
             self.stream.consume("RPAREN")
 
         else:
-            raise ExpectedTokenError(("IDENT", "LPAREN", "NOT", "FORALL", "EXISTS", "EXISTS_UNIQ", "FORALL_PRED_TMPL", "FORALL_FUN_TMPL"), (PrimPred, DefPred, Equality, Axiom, Theorem, DefConExist, DefConUniq, DefFunExist, DefFunUniq), None, context)
+            raise ExpectedTokenError(("IDENT", "LPAREN", "NOT", "FORALL", "EXISTS", "EXISTS_UNIQ", "FORALL_PRED_TMPL", "FORALL_FUN_TMPL"), (PrimPred, DefPred, Equality, Axiom, Theorem), None, context)
 
     def parse_terms_or_none(self, context: CompletionContext) -> None:
         while True:
@@ -589,10 +589,17 @@ class CompletionParser:
     def parse_access(self, access: AccessState, context: CompletionContext, call: CallState | None) -> AccessState:
         while True:
             self.stream.consume("DOT")
-            if self.stream.peek().type == "IDENT":
+            token = self.stream.peek()
+            if token.type == "EXISTENCE":
+                self.stream.consume("EXISTENCE")
+                child = "existence"
+            elif token.type == "UNIQUENESS":
+                self.stream.consume("UNIQUENESS")
+                child = "uniqueness"
+            elif token.type == "IDENT":
                 child = self.stream.consume("IDENT").value
             else:
-                raise ExpectedTokenError(("IDENT",), None, call, context, access)
+                raise ExpectedTokenError(("EXISTENCE", "UNIQUENESS", "IDENT"), None, call, context, access)
             access = AccessState(access.names + (child,))
             if self.stream.peek().type != "DOT":
                 break

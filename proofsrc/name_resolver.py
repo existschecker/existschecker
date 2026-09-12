@@ -2,8 +2,8 @@ from lsprotocol import types as lsp
 from pygls import uris
 from typing import Sequence
 from ast_types import DeclarationContextNameSpace, LexedUnit, ContextError
-from resolved_ast_types import ResolvedTerm, ResolvedFormula, ResolvedVarTerm, ResolvedVar, ResolvedRefDefCon, ResolvedFunTerm, ResolvedRefDefFun, ResolvedRefDefFunTerm, ResolvedFunTemplate, ResolvedFunLambda, ResolvedCompound, ResolvedPredTerm, ResolvedRefEquality, ResolvedRefPrimPred, ResolvedRefDefPred, ResolvedPredTemplate, ResolvedPredLambda, ResolvedAtomicFormula, ResolvedNot, ResolvedAnd, ResolvedOr, ResolvedImplies, ResolvedIff, ResolvedForall, ResolvedExists, ResolvedExistsUniq, ResolvedBottom, ResolvedRefFact, ResolvedRefAxiom, ResolvedRefTheorem, ResolvedRefDefConExist, ResolvedRefDefConUniq, ResolvedRefDefFunExist, ResolvedRefDefFunUniq, ResolvedControl, ResolvedInvalidControl, ResolvedAssume, ResolvedAny, ResolvedCase, ResolvedDivide, ResolvedSome, ResolvedDeny, ResolvedContradict, ResolvedExplode, ResolvedApply, ResolvedLift, ResolvedCharacterize, ResolvedInvoke, ResolvedExpand, ResolvedFold, ResolvedPad, ResolvedSplit, ResolvedConnect, ResolvedSubstitute, ResolvedShow, ResolvedAssert, ResolvedDeclaration, ResolvedInvalidDeclaration, ResolvedPrimPred, ResolvedAxiom, ResolvedTheorem, ResolvedDefPred, ResolvedDefConExist, ResolvedDefConUniq, ResolvedDefCon, ResolvedDefFunExist, ResolvedDefFunUniq, ResolvedDefFun, ResolvedDefFunTerm, ResolvedEquality, ResolvedInclude, ResolvedInvalidInclude, ResolvedRefStruct, ResolvedStructVar, ResolvedRefStructField, ResolvedStructMemberField, ResolvedRefStructCondition, ResolvedRefStructMemberCondition, ResolvedStruct, ResolvedFormulaContext, ResolvedControlContext, ResolvedContext, ResolvedStructPred, ResolvedRefStructPred, ResolvedStructMemberPred, ResolvedUnit, ResolvedStructCon, ResolvedRefStructCon
-from parsed_ast_types import ParsedExpr, ParsedIdent, ParsedIdentArgs, ParsedFunTemplate, ParsedFunLambda, ParsedPredTemplate, ParsedPredLambda, ParsedNot, ParsedAnd, ParsedOr, ParsedImplies, ParsedIff, ParsedForall, ParsedExists, ParsedExistsUniq, ParsedBottom, ParsedControl, ParsedInvalidControl, ParsedAny, ParsedAssume, ParsedDivide, ParsedSome, ParsedDeny, ParsedContradict, ParsedCase, ParsedExplode, ParsedApply, ParsedLift, ParsedCharacterize, ParsedInvoke, ParsedExpand, ParsedFold, ParsedPad, ParsedSplit, ParsedConnect, ParsedSubstitute, ParsedShow, ParsedAssert, ParsedDeclaration, ParsedInvalidDeclaration, ParsedPrimPred, ParsedAxiom, ParsedTheorem, ParsedDefPred, ParsedDefCon, ParsedDefFun, ParsedDefFunTerm, ParsedDefExist, ParsedDefUniq, ParsedEquality, ParsedInclude, ParsedInvalidInclude, ParsedUnit, ParsedStruct, ParsedTypedIdent, ParsedAccess, ParsedStructPred, ParsedCall, ParsedStructCon
+from resolved_ast_types import ResolvedTerm, ResolvedFormula, ResolvedVarTerm, ResolvedVar, ResolvedRefDefCon, ResolvedFunTerm, ResolvedRefDefFun, ResolvedRefDefFunTerm, ResolvedFunTemplate, ResolvedFunLambda, ResolvedCompound, ResolvedPredTerm, ResolvedRefEquality, ResolvedRefPrimPred, ResolvedRefDefPred, ResolvedPredTemplate, ResolvedPredLambda, ResolvedAtomicFormula, ResolvedNot, ResolvedAnd, ResolvedOr, ResolvedImplies, ResolvedIff, ResolvedForall, ResolvedExists, ResolvedExistsUniq, ResolvedBottom, ResolvedRefFact, ResolvedRefAxiom, ResolvedRefTheorem, ResolvedRefDefConExist, ResolvedRefDefConUniq, ResolvedRefDefFunExist, ResolvedRefDefFunUniq, ResolvedControl, ResolvedInvalidControl, ResolvedAssume, ResolvedAny, ResolvedCase, ResolvedDivide, ResolvedSome, ResolvedDeny, ResolvedContradict, ResolvedExplode, ResolvedApply, ResolvedLift, ResolvedCharacterize, ResolvedInvoke, ResolvedExpand, ResolvedFold, ResolvedPad, ResolvedSplit, ResolvedConnect, ResolvedSubstitute, ResolvedShow, ResolvedAssert, ResolvedDeclaration, ResolvedInvalidDeclaration, ResolvedPrimPred, ResolvedAxiom, ResolvedTheorem, ResolvedDefPred, ResolvedDefCon, ResolvedDefFun, ResolvedDefFunTerm, ResolvedEquality, ResolvedInclude, ResolvedInvalidInclude, ResolvedRefStruct, ResolvedStructVar, ResolvedRefStructField, ResolvedStructMemberField, ResolvedRefStructCondition, ResolvedRefStructMemberCondition, ResolvedStruct, ResolvedFormulaContext, ResolvedControlContext, ResolvedContext, ResolvedStructPred, ResolvedRefStructPred, ResolvedStructMemberPred, ResolvedUnit, ResolvedStructCon, ResolvedRefStructCon
+from parsed_ast_types import ParsedExpr, ParsedIdent, ParsedIdentArgs, ParsedFunTemplate, ParsedFunLambda, ParsedPredTemplate, ParsedPredLambda, ParsedNot, ParsedAnd, ParsedOr, ParsedImplies, ParsedIff, ParsedForall, ParsedExists, ParsedExistsUniq, ParsedBottom, ParsedControl, ParsedInvalidControl, ParsedAny, ParsedAssume, ParsedDivide, ParsedSome, ParsedDeny, ParsedContradict, ParsedCase, ParsedExplode, ParsedApply, ParsedLift, ParsedCharacterize, ParsedInvoke, ParsedExpand, ParsedFold, ParsedPad, ParsedSplit, ParsedConnect, ParsedSubstitute, ParsedShow, ParsedAssert, ParsedDeclaration, ParsedInvalidDeclaration, ParsedPrimPred, ParsedAxiom, ParsedTheorem, ParsedDefPred, ParsedDefCon, ParsedDefFun, ParsedDefFunTerm, ParsedEquality, ParsedInclude, ParsedInvalidInclude, ParsedUnit, ParsedStruct, ParsedTypedIdent, ParsedAccess, ParsedStructPred, ParsedCall, ParsedStructCon, ParsedExistence, ParsedUniqueness
 from lexer import Token
 
 class ResolveError(Exception):
@@ -115,10 +115,6 @@ class NameResolver:
                 return self.resolve_defcon(node)
             elif isinstance(node, ParsedDefFun):
                 return self.resolve_deffun(node)
-            elif isinstance(node, ParsedDefExist):
-                return self.resolve_defexist(node)
-            elif isinstance(node, ParsedDefUniq):
-                return self.resolve_defuniq(node)
             elif isinstance(node, ParsedDefFunTerm):
                 return self.resolve_deffunterm(node)
             elif isinstance(node, ParsedEquality):
@@ -218,56 +214,6 @@ class NameResolver:
         resolved = ResolvedDefFun(node.name, ref, ref_theorem, tex)
         self.add_node_to_token(resolved, node)
         return resolved
-
-    def resolve_defexist(self, node: ParsedDefExist) -> ResolvedDefConExist | ResolvedDefFunExist:
-        if node.ref.name in self.decl.get_used_names():
-            raise ResolveError(node.ref, f"{node.ref.name} is already used")
-        if self.decl.has_resolved_ast(ResolvedDefCon, node.ref_term.name):
-            ref = ResolvedRefDefConExist(node.ref.name)
-            self.add_node_to_token(ref, node.ref)
-            formula = self.resolve_formula(node.formula, ResolvedContext.init())
-            ref_term = ResolvedRefDefCon(node.ref_term.name)
-            self.add_node_to_token(ref_term, node.ref_term)
-            resolved = ResolvedDefConExist(node.name, ref, formula, ref_term)
-            self.add_node_to_token(resolved, node)
-            return resolved
-        elif self.decl.has_resolved_ast(ResolvedDefFun, node.ref_term.name):
-            ref = ResolvedRefDefFunExist(node.ref.name)
-            self.add_node_to_token(ref, node.ref)
-            formula = self.resolve_formula(node.formula, ResolvedContext.init())
-            ref_term = ResolvedRefDefFun(node.ref_term.name)
-            self.add_node_to_token(ref_term, node.ref_term)
-            resolved = ResolvedDefFunExist(node.name, ref, formula, ref_term)
-            self.add_node_to_token(resolved, node)
-            return resolved
-        else:
-            msg = f"{node.ref_term.name} is unknown"
-            raise ResolveError(node, msg)
-
-    def resolve_defuniq(self, node: ParsedDefUniq) -> ResolvedDefConUniq | ResolvedDefFunUniq:
-        if node.ref.name in self.decl.get_used_names():
-            raise ResolveError(node.ref, f"{node.ref.name} is already used")
-        if self.decl.has_resolved_ast(ResolvedDefCon, node.ref_term.name):
-            ref = ResolvedRefDefConUniq(node.ref.name)
-            self.add_node_to_token(ref, node.ref)
-            formula = self.resolve_formula(node.formula, ResolvedContext.init())
-            ref_term = ResolvedRefDefCon(node.ref_term.name)
-            self.add_node_to_token(ref_term, node.ref_term)
-            resolved = ResolvedDefConUniq(node.name, ref, formula, ref_term)
-            self.add_node_to_token(resolved, node)
-            return resolved
-        elif self.decl.has_resolved_ast(ResolvedDefFun, node.ref_term.name):
-            ref = ResolvedRefDefFunUniq(node.ref.name)
-            self.add_node_to_token(ref, node.ref)
-            formula = self.resolve_formula(node.formula, ResolvedContext.init())
-            ref_term = ResolvedRefDefFun(node.ref_term.name)
-            self.add_node_to_token(ref_term, node.ref_term)
-            resolved = ResolvedDefFunUniq(node.name, ref, formula, ref_term)
-            self.add_node_to_token(resolved, node)
-            return resolved
-        else:
-            msg = f"{node.ref_term.name} is unknown"
-            raise ResolveError(node, msg)
 
     def resolve_deffunterm(self, node: ParsedDefFunTerm) -> ResolvedDefFunTerm:
         if node.ref.name in self.decl.get_used_names():
@@ -734,46 +680,47 @@ class NameResolver:
                 ref = ResolvedRefTheorem(name)
                 self.add_node_to_token(ref, node)
                 return ref
-            elif self.decl.has_resolved_ast(ResolvedDefConExist, name):
-                ref = ResolvedRefDefConExist(name)
-                self.add_node_to_token(ref, node)
-                return ref
-            elif self.decl.has_resolved_ast(ResolvedDefConUniq, name):
-                ref = ResolvedRefDefConUniq(name)
-                self.add_node_to_token(ref, node)
-                return ref
-            elif self.decl.has_resolved_ast(ResolvedDefFunExist, name):
-                ref = ResolvedRefDefFunExist(name)
-                self.add_node_to_token(ref, node)
-                return ref
-            elif self.decl.has_resolved_ast(ResolvedDefFunUniq, name):
-                ref = ResolvedRefDefFunUniq(name)
-                self.add_node_to_token(ref, node)
-                return ref
             else:
                 msg = f"Unexpected name: {name}"
                 raise ResolveError(node, msg)
         else:
             parent = self.resolve_term(node.parent, context)
-            if isinstance(parent, ResolvedStructVar):
-                ref_struct = parent.ref_struct
-            elif isinstance(parent, ResolvedStructMemberField):
-                ref_struct = parent.ref_struct
-                if ref_struct is None:
-                    raise ResolveError(node.parent, f"ref_struct of parent is unknown")
+            if isinstance(parent, ResolvedRefDefCon):
+                if isinstance(node.child, ParsedExistence):
+                    access = ResolvedRefDefConExist(f"{parent.name}.existence", parent)
+                elif isinstance(node.child, ParsedUniqueness):
+                    access = ResolvedRefDefConUniq(f"{parent.name}.uniqueness", parent)
+                else:
+                    raise ResolveError(node.child, f"existence or uniqueness is expected after constant {parent.name}")
+            elif isinstance(parent, ResolvedRefDefFun):
+                if isinstance(node.child, ParsedExistence):
+                    access = ResolvedRefDefFunExist(f"{parent.name}.existence", parent)
+                elif isinstance(node.child, ParsedUniqueness):
+                    access = ResolvedRefDefFunUniq(f"{parent.name}.uniqueness", parent)
+                else:
+                    raise ResolveError(node.child, f"existence or uniqueness is expected after constant {parent.name}")
+            elif isinstance(parent, (ResolvedStructVar, ResolvedStructMemberField)):
+                if isinstance(parent, ResolvedStructVar):
+                    ref_struct = parent.ref_struct
+                else:
+                    ref_struct = parent.ref_struct
+                    if ref_struct is None:
+                        raise ResolveError(node.parent, f"ref_struct of parent is unknown")
+                def_struct = self.decl.get_resolved_ast(ResolvedStruct, ref_struct.name)
+                if isinstance(node.child, (ParsedExistence, ParsedUniqueness)):
+                    raise ResolveError(node.child, f"existence or unqiueness is not expected after {parent}")
+                def_condition = None
+                for condition in def_struct.conditions:
+                    if condition.name == node.child.name:
+                        def_condition = condition
+                if def_condition is None:
+                    raise ResolveError(node.child, f"{node.child.name} is not found")
+                ref_condition = ResolvedRefStructCondition(node.child.name)
+                self.add_node_to_token(ref_condition, node.child)
+                self.add_ctrl_defs_refs(def_condition, ref_condition, ref_struct.name)
+                access = ResolvedRefStructMemberCondition("", parent, ref_condition)
             else:
                 raise ResolveError(node.parent, f"Unexpected type {type(node.parent)}")
-            def_struct = self.decl.get_resolved_ast(ResolvedStruct, ref_struct.name)
-            def_condition = None
-            for condition in def_struct.conditions:
-                if condition.name == node.child.name:
-                    def_condition = condition
-            if def_condition is None:
-                raise ResolveError(node.child, f"{node.child.name} is not found")
-            ref_condition = ResolvedRefStructCondition(node.child.name)
-            self.add_node_to_token(ref_condition, node.child)
-            self.add_ctrl_defs_refs(def_condition, ref_condition, ref_struct.name)
-            access = ResolvedRefStructMemberCondition("", parent, ref_condition)
             self.add_node_to_token(access, node)
             return access
 
@@ -903,6 +850,10 @@ class NameResolver:
                 ref = ResolvedRefDefCon(name)
                 self.add_node_to_token(ref, node)
                 return ref
+            elif self.decl.has_resolved_ast(ResolvedDefFun, name):
+                ref = ResolvedRefDefFun(name)
+                self.add_node_to_token(ref, node)
+                return ref
             elif self.decl.has_resolved_ast(ResolvedPrimPred, name):
                 ref = ResolvedRefPrimPred(name)
                 self.add_node_to_token(ref, node)
@@ -980,6 +931,8 @@ class NameResolver:
             else:
                 raise ResolveError(node.parent, f"Unexpected type {type(node.parent)}")
             def_struct = self.decl.get_resolved_ast(ResolvedStruct, ref_struct.name)
+            if isinstance(node.child, (ParsedExistence, ParsedUniqueness)):
+                raise ResolveError(node.child, "existence or uniqueness is not a term")
             def_field = None
             for field in def_struct.fields:
                 if field.name == node.child.name:

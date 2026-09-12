@@ -59,7 +59,7 @@ theorem singleton_emptyset_is_rtcset_in_of_emptyset rtcset(emptyset, in, singlet
       split in(x, singleton(emptyset)) \wedge in(y, x)
       apply invoke rightward singleton_characterization for emptyset, x
       substitute in(y, x) for x: emptyset
-      apply emptyset_existence for y
+      apply emptyset.existence for y
       contradict in(y, emptyset)
       explode in(y, singleton(emptyset))
     }
@@ -112,7 +112,7 @@ theorem tcset_in_adjunction \forall x \forall y \forall p \forall q \forall r (t
       any z, w {
         assume in(z, adj(r, y)) \wedge in(w, z) {
           split in(z, adj(r, y)) \wedge in(w, z)
-          apply invoke rightward adj_existence for r, y, z
+          apply invoke rightward adj.existence for r, y, z
           divide in(z, r) \vee equal(z, y)
             case in(z, r) {
               apply invoke rightward cup(p, q, r) for z
@@ -144,7 +144,7 @@ theorem tcset_in_adjunction \forall x \forall y \forall p \forall q \forall r (t
       fold for closed conclude closed(adj(r, y), in)
       any z {
         assume in(z, adj(x, y)) {
-          apply invoke rightward adj_existence for x, y, z
+          apply invoke rightward adj.existence for x, y, z
           divide in(z, x) \vee equal(z, y)
             case in(z, x) {
               apply invoke tcset_in_implies_subset for x, p
@@ -163,7 +163,7 @@ theorem tcset_in_adjunction \forall x \forall y \forall p \forall q \forall r (t
           split closed(s, in) \wedge \forall z (in(z, adj(x, y)) \to in(z, s))
           any z {
             assume in(z, adj(r, y)) {
-              apply invoke rightward adj_existence for r, y, z
+              apply invoke rightward adj.existence for r, y, z
               apply adj_cor3 for x, y
               apply invoke \forall z (in(z, adj(x, y)) \to in(z, s)) for y
               divide in(z, r) \vee equal(z, y)
@@ -216,7 +216,7 @@ theorem rtcset_is_cup_of_itself_and_bigcup_of_rtcset_of_element \forall^P \psi[2
         assume in(p, V) \wedge \psi(q, p) {
           split in(p, V) \wedge \psi(q, p)
           substitute in(p, V) for V: adj(W, Y)
-          apply invoke rightward adj_existence for W, Y, p
+          apply invoke rightward adj.existence for W, Y, p
           divide equal(p, Y) \vee in(p, W)
             case equal(p, Y) {
               substitute seg(Y, \psi, S) for Y: p
@@ -263,7 +263,7 @@ theorem rtcset_is_cup_of_itself_and_bigcup_of_rtcset_of_element \forall^P \psi[2
           any v {
             assume in(v, V) {
               substitute in(v, V) for V: adj(W, Y)
-              apply invoke rightward adj_existence for W, Y, v
+              apply invoke rightward adj.existence for W, Y, v
               divide equal(v, Y) \vee in(v, W)
                 case equal(v, Y) {
                   substitute in(Y, s) for Y: v

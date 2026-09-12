@@ -26,14 +26,14 @@ theorem any_set_times_emptyset_is_emptyset \forall X (times(X, emptyset, emptyse
   any X {
     any z {
       assume in(z, emptyset) {
-        apply emptyset_existence for z
+        apply emptyset.existence for z
         contradict in(z, emptyset)
         explode \exists x \exists y (in(x, X) \wedge in(y, emptyset) \wedge equal(z, op(x, y)))
       }
       assume \exists x \exists y (in(x, X) \wedge in(y, emptyset) \wedge equal(z, op(x, y))) {
         some x, y such \exists x \exists y ((in(x, X) \wedge in(y, emptyset) \wedge equal(z, op(x, y)))) {
           split 2 in(x, X) \wedge in(y, emptyset) \wedge equal(z, op(x, y))
-          apply emptyset_existence for y
+          apply emptyset.existence for y
           contradict in(y, emptyset)
           explode in(z, emptyset)
         }

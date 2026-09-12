@@ -127,7 +127,7 @@ theorem regular_satisfies_axiom_of_emptyset \exists x (regular(x, in) \wedge \fo
   assert emptyset_is_regular
   any y {
     assume regular(y, in) {
-      apply emptyset_existence for y
+      apply emptyset.existence for y
     }
   }
   connect regular(emptyset, in) \wedge \forall y (regular(y, in) \to notin(y, emptyset))

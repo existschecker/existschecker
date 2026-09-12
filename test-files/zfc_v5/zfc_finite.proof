@@ -62,7 +62,7 @@ theorem size_suc_decomposition \forall X \forall n (size(X, suc(n)) \to \exists 
           apply invoke leftward ran(f, X) for x
           apply invoke equal_adj_rem for X, x
           deny in(x, rem(X, x)) {
-            apply invoke rightward rem_existence for X, x, x
+            apply invoke rightward rem.existence for X, x, x
             split 2 in(x, X) \wedge neq(x, x)
             contradict equal(x, x)
           }
@@ -82,7 +82,7 @@ theorem finite_adj \forall Y \forall y (finite(Y) \to finite(adj(Y, y))) {
         case in(y, Y) {
           any z {
             assume in(z, adj(Y, y)) {
-              apply invoke rightward adj_existence for Y, y, z
+              apply invoke rightward adj.existence for Y, y, z
               divide in(z, Y) \vee equal(z, y)
                 case in(z, Y) {}
                 case equal(z, y) {
@@ -217,7 +217,7 @@ theorem finite_cup_exists_uniquely \forall X \forall Y (finite(X) \wedge finite(
             case in(z, X) {}
             case in(z, Y) {
               substitute in(z, Y) for Y: emptyset
-              apply emptyset_existence for z
+              apply emptyset.existence for z
               contradict in(z, emptyset)
               explode in(z, X)
             }
@@ -245,7 +245,7 @@ theorem finite_cup_exists_uniquely \forall X \forall Y (finite(X) \wedge finite(
                 apply invoke finite_adj for Z, y
                 any z {
                   assume in(z, adj(Z, y)) {
-                    apply invoke rightward adj_existence for Z, y, z
+                    apply invoke rightward adj.existence for Z, y, z
                     divide in(z, Z) \vee equal(z, y)
                       case in(z, Z) {
                         apply invoke rightward cup(X, Y', Z) for z
@@ -274,7 +274,7 @@ theorem finite_cup_exists_uniquely \forall X \forall Y (finite(X) \wedge finite(
                       }
                       case in(z, Y) {
                         substitute in(z, Y) for Y: adj(Y', y)
-                        apply invoke rightward adj_existence for Y', y, z
+                        apply invoke rightward adj.existence for Y', y, z
                         divide in(z, Y') \vee equal(z, y)
                           case in(z, Y') {
                             pad in(z, Y') conclude in(z, X) \vee in(z, Y')
@@ -377,7 +377,7 @@ theorem finite_segbigcup_exists_uniquely \forall X \forall^P \psi[2] (finite(X) 
       assert emptyset_is_finite
       any y {
         assume in(y, emptyset) {
-          apply emptyset_existence for y
+          apply emptyset.existence for y
           contradict in(y, emptyset)
           explode \exists x (\psi(y, x) \wedge in(x, X))
         }
@@ -385,7 +385,7 @@ theorem finite_segbigcup_exists_uniquely \forall X \forall^P \psi[2] (finite(X) 
           some x such \exists x (\psi(y, x) \wedge in(x, X)) {
             split 2 \psi(y, x) \wedge in(x, X)
             substitute in(x, X) for X: emptyset
-            apply emptyset_existence for x
+            apply emptyset.existence for x
             contradict in(x, emptyset)
             explode in(y, emptyset)
           }
@@ -450,7 +450,7 @@ theorem finite_segbigcup_exists_uniquely \forall X \forall^P \psi[2] (finite(X) 
                         some x' such \exists x (\psi(y, x) \wedge in(x, X)) {
                           split \psi(y, x') \wedge in(x', X)
                           substitute in(x', X) for X: adj(X', x)
-                          apply invoke rightward adj_existence for X', x, x'
+                          apply invoke rightward adj.existence for X', x, x'
                           divide in(x', X') \vee equal(x', x)
                             case in(x', X') {
                               connect \psi(y, x') \wedge in(x', X')
@@ -548,7 +548,7 @@ theorem finite_replacement_exists_uniquely \forall X \forall^P \psi[2] (finite(X
       assert emptyset_is_finite
       any y {
         assume in(y, emptyset) {
-          apply emptyset_existence for y
+          apply emptyset.existence for y
           contradict in(y, emptyset)
           explode \exists x (in(x, X) \wedge \psi(x, y))
         }
@@ -556,7 +556,7 @@ theorem finite_replacement_exists_uniquely \forall X \forall^P \psi[2] (finite(X
           some x such \exists x (in(x, X) \wedge \psi(x, y)) {
             split 1 in(x, X) \wedge \psi(x, y)
             substitute in(x, X) for X: emptyset
-            apply emptyset_existence for x
+            apply emptyset.existence for x
             contradict in(x, emptyset)
             explode in(y, emptyset)
           }
@@ -590,7 +590,7 @@ theorem finite_replacement_exists_uniquely \forall X \forall^P \psi[2] (finite(X
                       apply invoke finite_adj for Y, y
                       any y' {
                         assume in(y', adj(Y, y)) {
-                          apply invoke rightward adj_existence for Y, y, y'
+                          apply invoke rightward adj.existence for Y, y, y'
                           divide in(y', Y) \vee equal(y', y)
                             case in(y', Y) {
                               apply invoke rightward replacement(X', \psi, Y) for y'
@@ -612,7 +612,7 @@ theorem finite_replacement_exists_uniquely \forall X \forall^P \psi[2] (finite(X
                           some x' such \exists x' (in(x', X) \wedge \psi(x', y')) {
                             split in(x', X) \wedge \psi(x', y')
                             substitute in(x', X) for X: adj(X', x)
-                            apply invoke rightward adj_existence for X', x, x'
+                            apply invoke rightward adj.existence for X', x, x'
                             divide in(x', X') \vee equal(x', x)
                               case in(x', X') {
                                 connect in(x', X') \wedge \psi(x', y')
@@ -653,7 +653,7 @@ theorem finite_replacement_exists_uniquely \forall X \forall^P \psi[2] (finite(X
                         some x' such \exists x' (in(x', X) \wedge \psi(x', y)) {
                           split in(x', X) \wedge \psi(x', y)
                           substitute in(x', X) for X: adj(X', x)
-                          apply invoke rightward adj_existence for X', x, x'
+                          apply invoke rightward adj.existence for X', x, x'
                           divide in(x', X') \vee equal(x', x)
                             case in(x', X') {
                               connect in(x', X') \wedge \psi(x', y)
@@ -783,7 +783,7 @@ theorem finite_times_exists_uniquely \forall X \forall Y (finite(X) \wedge finit
                         some x, y such \exists x \exists y (in(x, X) \wedge in(y, Y) \wedge equal(z, op(x, y))) {
                           split in(x, X) \wedge in(y, Y) \wedge equal(z, op(x, y))
                           substitute in(y, Y) for Y: adj(Y', q)
-                          apply invoke rightward adj_existence for Y', q, y
+                          apply invoke rightward adj.existence for Y', q, y
                           divide in(y, Y') \vee equal(y, q)
                             case in(y, Y') {
                               connect in(x, X) \wedge in(y, Y') \wedge equal(z, op(x, y))
@@ -1059,14 +1059,14 @@ theorem finite_choice \forall x (finite(x) \to (\forall y (in(y, x) \to \exists 
         assert emptyset_is_finite
         any y {
           assume in(y, emptyset) {
-            apply emptyset_existence for y
+            apply emptyset.existence for y
             contradict in(y, emptyset)
             explode \exists! w (in(w, emptyset) \wedge in(w, y))
           }
         }
         any w {
           assume in(w, emptyset) {
-            apply emptyset_existence for w
+            apply emptyset.existence for w
             contradict in(w, emptyset)
             explode \exists y (in(y, emptyset) \wedge in(w, y))
           }
@@ -1121,7 +1121,7 @@ theorem finite_choice \forall x (finite(x) \to (\forall y (in(y, x) \to \exists 
                     any y {
                       assume in(y, x) {
                         substitute in(y, x) for x: adj(p, q)
-                        apply invoke rightward adj_existence for p, q, y
+                        apply invoke rightward adj.existence for p, q, y
                         divide in(y, p) \vee equal(y, q)
                           case in(y, p) {
                             apply invoke \forall y (in(y, p) \to \exists! w (in(w, r) \wedge in(w, y))) for y
@@ -1132,7 +1132,7 @@ theorem finite_choice \forall x (finite(x) \to (\forall y (in(y, x) \to \exists 
                               any w' {
                                 assume in(w', adj(r, s)) \wedge in(w', y) {
                                   split in(w', adj(r, s)) \wedge in(w', y)
-                                  apply invoke rightward adj_existence for r, s, w'
+                                  apply invoke rightward adj.existence for r, s, w'
                                   divide in(w', r) \vee equal(w', s)
                                     case in(w', r) {
                                       connect in(w', r) \wedge in(w', y)
@@ -1162,7 +1162,7 @@ theorem finite_choice \forall x (finite(x) \to (\forall y (in(y, x) \to \exists 
                             any w' {
                               assume in(w', adj(r, s)) \wedge in(w', q) {
                                 split in(w', adj(r, s)) \wedge in(w', q)
-                                apply invoke rightward adj_existence for r, s, w'
+                                apply invoke rightward adj.existence for r, s, w'
                                 divide in(w', r) \vee equal(w', s)
                                   case in(w', r) {
                                     apply invoke \forall w (in(w, r) \to \exists y (in(y, p) \wedge in(w, y))) for w'
@@ -1192,7 +1192,7 @@ theorem finite_choice \forall x (finite(x) \to (\forall y (in(y, x) \to \exists 
                     }
                     any w {
                       assume in(w, adj(r, s)) {
-                        apply invoke rightward adj_existence for r, s, w
+                        apply invoke rightward adj.existence for r, s, w
                         divide in(w, r) \vee equal(w, s)
                           case in(w, r) {
                             apply invoke \forall w (in(w, r) \to \exists y (in(y, p) \wedge in(w, y))) for w

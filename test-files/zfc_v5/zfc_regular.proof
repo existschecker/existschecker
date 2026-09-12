@@ -116,7 +116,7 @@ theorem generation_from_hwellfounded_is_hwellfounded \forall^P \psi[2] \forall Y
             divide \exists x (in(x, cap(A, W))) \vee \neg(\exists x (in(x, cap(A, W))))
               case \exists x (in(x, cap(A, W))) {
                 some x such \exists x (in(x, cap(A, W))) {
-                  apply invoke rightward cap_characterization for A, W, x
+                  apply invoke rightward cap.existence for A, W, x
                   split in(x, A) \wedge in(x, W)
                   apply invoke rightward bigcup(Z, W) for x
                   some z such \exists z (in(x, z) \wedge in(z, Z)) {
@@ -135,14 +135,14 @@ theorem generation_from_hwellfounded_is_hwellfounded \forall^P \psi[2] \forall Y
                       }
                       apply cap_is_subset_right for A, z
                       connect in(x, A) \wedge in(x, z)
-                      apply invoke leftward cap_characterization for A, z, x
+                      apply invoke leftward cap.existence for A, z, x
                       lift for x conclude \exists x (in(x, cap(A, z)))
                       apply invoke has_a_member_not_emptyset for cap(A, z)
                       connect subset(cap(A, z), z) \wedge neq(cap(A, z), emptyset)
                       apply invoke wellfounded(z, \psi) for cap(A, z)
                       some a such \exists a (minimal(\psi, cap(A, z), a)) {
                         split minimal(\psi, cap(A, z), a)
-                        apply invoke rightward cap_characterization for A, z, a
+                        apply invoke rightward cap.existence for A, z, a
                         split in(a, A) \wedge in(a, z)
                         any p {
                           assume in(p, A) \wedge neq(p, a) {
@@ -151,7 +151,7 @@ theorem generation_from_hwellfounded_is_hwellfounded \forall^P \psi[2] \forall Y
                             divide in(p, z) \vee notin(p, z)
                               case in(p, z) {
                                 connect in(p, A) \wedge in(p, z)
-                                apply invoke leftward cap_characterization for A, z, p
+                                apply invoke leftward cap.existence for A, z, p
                                 connect in(p, cap(A, z)) \wedge neq(p, a)
                                 apply invoke minimal_core(\psi, cap(A, z), a) for p
                               }
@@ -177,12 +177,12 @@ theorem generation_from_hwellfounded_is_hwellfounded \forall^P \psi[2] \forall Y
                 some y such \exists y (in(y, A)) {
                   apply invoke subset(A, V) for y
                   substitute in(y, V) for V: adj(W, Y)
-                  apply invoke rightward adj_existence for W, Y, y
+                  apply invoke rightward adj.existence for W, Y, y
                   divide equal(y, Y) \vee in(y, W)
                     case equal(y, Y) {}
                     case in(y, W) {
                       connect in(y, A) \wedge in(y, W)
-                      apply invoke leftward cap_characterization for A, W, y
+                      apply invoke leftward cap.existence for A, W, y
                       lift for y conclude \exists y (in(y, cap(A, W)))
                       contradict \exists y (in(y, cap(A, W)))
                       explode equal(y, Y)
@@ -199,11 +199,11 @@ theorem generation_from_hwellfounded_is_hwellfounded \forall^P \psi[2] \forall Y
                       split rtcset(Y, \psi, V)
                       apply invoke closed(V, \psi) for Y, p
                       substitute in(p, V) for V: adj(W, Y)
-                      apply invoke rightward adj_existence for W, Y, p
+                      apply invoke rightward adj.existence for W, Y, p
                       divide in(p, W) \vee equal(p, Y)
                         case in(p, W) {
                           connect in(p, A) \wedge in(p, W)
-                          apply invoke leftward cap_characterization for A, W, p
+                          apply invoke leftward cap.existence for A, W, p
                           lift for p conclude \exists x (in(x, cap(A, W)))
                           contradict \exists x (in(x, cap(A, W)))
                         }
@@ -334,7 +334,7 @@ theorem regular_is_pwellfounded \forall^P \psi[2] (pwellfounded(\lambda^P x. reg
                   connect in(x, r) \wedge \psi(z, x)
                   apply invoke closed(r, \psi) for x, z
                   connect in(z, A) \wedge in(z, r)
-                  apply invoke leftward cap_characterization for A, r, z
+                  apply invoke leftward cap.existence for A, r, z
                   lift for z conclude \exists z (in(z, cap(A, r)))
                   apply invoke has_a_member_not_emptyset for cap(A, r)
                   apply cap_is_subset_right for A, r
@@ -342,7 +342,7 @@ theorem regular_is_pwellfounded \forall^P \psi[2] (pwellfounded(\lambda^P x. reg
                   apply invoke wellfounded(r, \psi) for cap(A, r)
                   some a such \exists a (minimal(\psi, cap(A, r), a)) {
                     split minimal(\psi, cap(A, r), a)
-                    apply invoke rightward cap_characterization for A, r, a
+                    apply invoke rightward cap.existence for A, r, a
                     split in(a, A) \wedge in(a, r)
                     any w {
                       assume in(w, A) \wedge neq(w, a) {
@@ -351,7 +351,7 @@ theorem regular_is_pwellfounded \forall^P \psi[2] (pwellfounded(\lambda^P x. reg
                           connect in(a, r) \wedge \psi(w, a)
                           apply invoke closed(r, \psi) for a, w
                           connect in(w, A) \wedge in(w, r)
-                          apply invoke leftward cap_characterization for A, r, w
+                          apply invoke leftward cap.existence for A, r, w
                           connect in(w, cap(A, r)) \wedge neq(w, a)
                           apply invoke minimal_core(\psi, cap(A, r), a) for w
                           contradict \psi(w, a)

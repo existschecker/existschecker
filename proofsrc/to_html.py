@@ -1,6 +1,6 @@
 from datetime import datetime
 from html import escape
-from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, DefConExist, DefConUniq, DefFunExist, DefFunUniq, AtomicFormula, Compound, Control, Declaration, Bottom, Formula, Term, Var, Include, Assert, Fold, PredTemplate, RefDefPred, RefDefFunTerm, InvalidDeclaration, InvalidControl, RefFact, RefEquality, RefPrimPred, RefDefCon, RefDefFun, RenderError, DeclarationContextNameSpace
+from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, AtomicFormula, Compound, Control, Declaration, Bottom, Formula, Term, Var, Include, Assert, Fold, PredTemplate, RefDefPred, RefDefFunTerm, InvalidDeclaration, InvalidControl, RefFact, RefEquality, RefPrimPred, RefDefCon, RefDefFun, RenderError, DeclarationContextNameSpace
 from svg import output_svg
 from typing import Sequence, Mapping, TypeVar
 from formatter import ExprFormatter
@@ -208,36 +208,6 @@ class Renderer:
                            "により示された。"]
         return header_parts, header_parts_jp, ""
 
-    def render_defconexist(self, node: DefConExist):
-        header_parts = [self.bullet,
-                        self.render_keyword("existence"),
-                        self.render_identifier(node.ref),
-                        self.render_expr(node.formula),
-                        self.render_keyword("by"),
-                        self.render_identifier(node.ref_con)]
-        header_parts_jp = [self.bullet,
-                           self.render_keyword("存在"),
-                           self.render_identifier(node.ref),
-                           self.render_expr(node.formula),
-                           self.render_identifier(node.ref_con),
-                           "の定義による。"]
-        return header_parts, header_parts_jp, ""
-    
-    def render_defconuniq(self, node: DefConUniq):
-        header_parts = [self.bullet,
-                        self.render_keyword("uniqueness"),
-                        self.render_identifier(node.ref),
-                        self.render_expr(node.formula),
-                        self.render_keyword("by"),
-                        self.render_identifier(node.ref_con)]
-        header_parts_jp = [self.bullet,
-                           self.render_keyword("一意性"),
-                           self.render_identifier(node.ref),
-                           self.render_expr(node.formula),
-                           self.render_identifier(node.ref_con),
-                           "の定義による。"]
-        return header_parts, header_parts_jp, ""
-
     def render_deffun(self, node: DefFun):
         header_parts = [self.bullet,
                         self.render_keyword("definition"),
@@ -253,36 +223,6 @@ class Renderer:
                            "存在と一意性は",
                            self.render_identifier(node.ref_theorem),
                            "により示された。"]
-        return header_parts, header_parts_jp, ""
-
-    def render_deffunexist(self, node: DefFunExist):
-        header_parts = [self.bullet,
-                        self.render_keyword("existence"),
-                        self.render_identifier(node.ref),
-                        self.render_expr(node.formula),
-                        self.render_keyword("by"),
-                        self.render_identifier(node.ref_fun)]
-        header_parts_jp = [self.bullet,
-                           self.render_keyword("存在"),
-                           self.render_identifier(node.ref),
-                           self.render_expr(node.formula),
-                           self.render_identifier(node.ref_fun),
-                           "の定義による。"]
-        return header_parts, header_parts_jp, ""
-
-    def render_deffununiq(self, node: DefFunUniq):
-        header_parts = [self.bullet,
-                        self.render_keyword("uniqueness"),
-                        self.render_identifier(node.ref),
-                        self.render_expr(node.formula),
-                        self.render_keyword("by"),
-                        self.render_identifier(node.ref_fun)]
-        header_parts_jp = [self.bullet,
-                           self.render_keyword("一意性"),
-                           self.render_identifier(node.ref),
-                           self.render_expr(node.formula),
-                           self.render_identifier(node.ref_fun),
-                           "の定義による。"]
         return header_parts, header_parts_jp, ""
 
     def render_deffunterm(self, node: DefFunTerm):
@@ -331,16 +271,8 @@ class Renderer:
             return self.render_defpred(node)
         elif isinstance(node, DefCon):
             return self.render_defcon(node)
-        elif isinstance(node, DefConExist):
-            return self.render_defconexist(node)
-        elif isinstance(node, DefConUniq):
-            return self.render_defconuniq(node)
         elif isinstance(node, DefFun):
             return self.render_deffun(node)
-        elif isinstance(node, DefFunExist):
-            return self.render_deffunexist(node)
-        elif isinstance(node, DefFunUniq):
-            return self.render_deffununiq(node)
         elif isinstance(node, DefFunTerm):
             return self.render_deffunterm(node)
         elif isinstance(node, Equality):

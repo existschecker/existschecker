@@ -164,7 +164,7 @@ theorem finite_approx_exists \forall X \forall^P \psi[2] \forall^P \phi[2] (clos
                         }
                         assume \exists v (in(op(u, v), adj(Z, op(x, q)))) {
                           some v such \exists v (in(op(u, v), adj(Z, op(x, q)))) {
-                            apply invoke rightward adj_existence for Z, op(x, q), op(u, v)
+                            apply invoke rightward adj.existence for Z, op(x, q), op(u, v)
                             divide in(op(u, v), Z) \vee equal(op(u, v), op(x, q))
                               case in(op(u, v), Z) {
                                 apply invoke rightward bigcup(Y, Z) for op(u, v)
@@ -203,7 +203,7 @@ theorem finite_approx_exists \forall X \forall^P \psi[2] \forall^P \phi[2] (clos
                         assume in(op(u, v), adj(Z, op(x, q))) {
                           lift for v conclude \exists v (in(op(u, v), adj(Z, op(x, q))))
                           apply invoke leftward dom(adj(Z, op(x, q)), r) for u
-                          apply invoke rightward adj_existence for Z, op(x, q), op(u, v)
+                          apply invoke rightward adj.existence for Z, op(x, q), op(u, v)
                           divide in(op(u, v), Z) \vee equal(op(u, v), op(x, q))
                             case in(op(u, v), Z) {
                               apply invoke rightward bigcup(Y, Z) for op(u, v)

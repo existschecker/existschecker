@@ -28,8 +28,6 @@ theorem emptyset_exists_uniquely \exists! x \forall y (notin(y, x)) {
 }
 
 definition constant emptyset by emptyset_exists_uniquely tex "\emptyset"
-existence emptyset_existence \forall y (notin(y, emptyset)) by emptyset
-uniqueness emptyset_uniqueness \forall x (\forall y (notin(y, x)) \to equal(x, emptyset)) by emptyset
 
 theorem not_emptyset_has_a_member \forall x (neq(x, emptyset) \to \exists y (in(y, x))) {
   any x {
@@ -41,7 +39,7 @@ theorem not_emptyset_has_a_member \forall x (neq(x, emptyset) \to \exists y (in(
             contradict \exists y (in(y, x))
           }
         }
-        apply emptyset_uniqueness for x
+        apply emptyset.uniqueness for x
         invoke \forall y (notin(y, x)) \to equal(x, emptyset)
         contradict equal(x, emptyset)
       }
@@ -55,7 +53,7 @@ theorem has_a_member_not_emptyset \forall x (\exists y (in(y, x)) \to neq(x, emp
       deny equal(x, emptyset) {
         substitute \exists y (in(y, x)) for x:emptyset
         some y such \exists y (in(y, emptyset)) {
-          apply emptyset_existence for y
+          apply emptyset.existence for y
           contradict in(y, emptyset)
         }
       }
@@ -67,7 +65,7 @@ theorem emptyset_is_subset_of_any_set \forall x (subset(emptyset, x)) {
   any x {
     any y {
       assume in(y, emptyset) {
-        apply emptyset_existence for y
+        apply emptyset.existence for y
         contradict in(y, emptyset)
         explode in(y, x)
       }
@@ -84,11 +82,11 @@ theorem subset_of_emptyset_is_emptyset \forall x (subset(x, emptyset) \to equal(
         deny in(y, x) {
           apply \forall z (in(z, x) \to in(z, emptyset)) for y
           invoke in(y, x) \to in(y, emptyset)
-          apply emptyset_existence for y
+          apply emptyset.existence for y
           contradict in(y, emptyset)
         }
       }
-      apply emptyset_uniqueness for x
+      apply emptyset.uniqueness for x
       invoke \forall y (notin(y, x)) \to equal(x, emptyset)
     }
   }

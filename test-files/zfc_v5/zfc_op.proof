@@ -6,7 +6,7 @@ theorem pair_characterization \forall x \forall y \forall z (in(z, pair(x, y)) \
   any x, y, z {
     assume in(z, pair(x, y)) {
       expand in(z, pair(x, y)) for pair
-      apply invoke rightward adj_existence for singleton(x), y, z
+      apply invoke rightward adj.existence for singleton(x), y, z
       divide in(z, singleton(x)) \vee equal(z, y)
         case in(z, singleton(x)) {
           apply invoke rightward singleton_characterization for x, z

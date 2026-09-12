@@ -1,10 +1,11 @@
 from lexer import Token
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, Compound, RefDefCon, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Control, Formula, Declaration, PredTemplate, Term, DefConExist, DefConUniq, DefFunExist, DefFunUniq, Assert, Fold, VarTerm, FunTemplate, RefDefPred, RefDefFun, InvalidDeclaration, InvalidControl, LexedUnit, RefFact, RefEquality, CheckError, ContextError, LogicError, FormatError, DeclarationContextNameSpace, Struct, StructPred, ElaboratedUnit, CheckedUnit, StructCon
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Control, Formula, Declaration, PredTemplate, Term, Assert, Fold, VarTerm, FunTemplate, RefDefPred, InvalidDeclaration, InvalidControl, LexedUnit, RefFact, RefEquality, CheckError, ContextError, LogicError, FormatError, DeclarationContextNameSpace, Struct, StructPred, ElaboratedUnit, CheckedUnit, StructCon
 from logic_utils import Substitutor, DefExpander, strip_forall_vars, strip_exists_vars, make_forall_vars, make_exists_vars, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs, alpha_safe_formula
 from formatter import ExprFormatter
 from copy import deepcopy
 from lsprotocol import types as lsp
 from pygls import uris
+from decl_logic import make_formula_from_fact, DeclLogicError
 
 import logging
 logger = logging.getLogger("proof")
@@ -20,7 +21,7 @@ def goal_in_context(goal: Bottom | Formula, context: Context, decl: DeclarationC
 
 def get_fact(fact: RefFact | Formula, node: Declaration | Control, decl: DeclarationContextNameSpace, expand_symbol: bool = False) -> Formula:
     if isinstance(fact, RefFact):
-        fact = decl.get_fact(fact)
+        fact = make_formula_from_fact(fact, decl)
     elif not isinstance(fact, Formula):
         msg = f"Expected Formula, got {type(fact)}"
         raise CheckError(node, msg)
@@ -85,16 +86,8 @@ class Checker:
                 self.check_defpred(node, indent)
             elif isinstance(node, DefCon):
                 self.check_defcon(node, indent)
-            elif isinstance(node, DefConExist):
-                self.check_defconexist(node, indent)
-            elif isinstance(node, DefConUniq):
-                self.check_defconuniq(node, indent)
             elif isinstance(node, DefFun):
                 self.check_deffun(node, indent)
-            elif isinstance(node, DefFunExist):
-                self.check_deffunexist(node, indent)
-            elif isinstance(node, DefFunUniq):
-                self.check_deffununiq(node, indent)
             elif isinstance(node, DefFunTerm):
                 self.check_deffunterm(node, indent)
             elif isinstance(node, Equality):
@@ -116,7 +109,7 @@ class Checker:
             self.add_lsp_error(self.get_node_token(e.node), e.msg)
             logger.debug(f"{self.make_error_prefix(node, indent)}{e.msg}")
             node.proofinfo.status = "❌Failed"
-        except (ContextError, LogicError, FormatError) as e:
+        except (DeclLogicError, ContextError, LogicError, FormatError) as e:
             msg = f"{e.__class__.__name__}: {e.msg}"
             self.add_lsp_error(self.get_node_token(node), msg)
             logger.debug(f"{self.make_error_prefix(node, indent)}{msg}")
@@ -155,82 +148,9 @@ class Checker:
             raise CheckError(node, msg)
         logger.debug(f"{debug_prefix}ExistsUniq object: {ExprFormatter(self.decl).pretty_expr(existsuniq)}")
 
-    def check_defconexist(self, node: DefConExist, indent: int) -> None:
-        debug_prefix = make_debug_prefix(node, indent)
-        logger.debug(f"{debug_prefix}name: {node.name}, con_name: {node.ref_con.name}")
-        existsuniq = self.decl.get_ast(Theorem, self.decl.get_ast(DefCon, node.ref_con.name).ref_theorem.name).conclusion
-        if not isinstance(existsuniq, ExistsUniq):
-            msg = f"Not ExistsUniq object: {ExprFormatter(self.decl).pretty_expr(existsuniq)}"
-            raise CheckError(node, msg)
-        logger.debug(f"{debug_prefix}ExistsUniq object: {ExprFormatter(self.decl).pretty_expr(existsuniq)}")
-        existence_formula = Substitutor(({existsuniq.var: RefDefCon(node.ref_con.name)}, {}, {})).substitute_formula(existsuniq.body)
-        if not alpha_equiv_with_defs(node.formula, existence_formula, self.decl):
-            msg = f"existence_formula is not matched with theorem: {ExprFormatter(self.decl).pretty_expr(node.formula)}"
-            raise CheckError(node, msg)
-        logger.debug(f"{debug_prefix}existence_formula is matched with theorem: {ExprFormatter(self.decl).pretty_expr(node.formula)}")
-
-    def check_defconuniq(self, node: DefConUniq, indent: int) -> None:
-        debug_prefix = make_debug_prefix(node, indent)
-        logger.debug(f"{debug_prefix}name: {node.name}, con_name: {node.ref_con.name}")
-        existsuniq = self.decl.get_ast(Theorem, self.decl.get_ast(DefCon, node.ref_con.name).ref_theorem.name).conclusion
-        if not isinstance(existsuniq, ExistsUniq):
-            msg = f"Not ExistsUniq object: {ExprFormatter(self.decl).pretty_expr(existsuniq)}"
-            raise CheckError(node, msg)
-        logger.debug(f"{debug_prefix}ExistsUniq object: {ExprFormatter(self.decl).pretty_expr(existsuniq)}")
-        fv, bv, fpt, bpt, fft, bft = collect_vars(existsuniq.body)
-        var = fresh_var(existsuniq.var, fv | bv | fpt | bpt | fft | bft)
-        body = Substitutor(({existsuniq.var: var}, {}, {})).substitute_formula(existsuniq.body)
-        equality = self.decl.get_equality()
-        if equality is None:
-            msg = "equality has not been declared yet"
-            raise CheckError(node, msg)
-        uniqueness_formula = Forall(var, Implies(body, AtomicFormula(RefEquality(equality.ref.name), (var, RefDefCon(node.ref_con.name)))))
-        if not alpha_equiv_with_defs(node.formula, uniqueness_formula, self.decl):
-            msg = f"uniqueness_formula is not matched with theorem: {ExprFormatter(self.decl).pretty_expr(node.formula)}"
-            raise CheckError(node, msg)
-        logger.debug(f"{debug_prefix}uniqueness_formula is matched with theorem: {ExprFormatter(self.decl).pretty_expr(node.formula)}")
-
     def check_deffun(self, node: DefFun, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}name: {node.name}, theorem: {node.ref_theorem.name}")
-
-    def check_deffunexist(self, node: DefFunExist, indent: int) -> None:
-        debug_prefix = make_debug_prefix(node, indent)
-        logger.debug(f"{debug_prefix}name: {node.name}, fun_name: {node.ref_fun.name}")
-        args, body = strip_forall_vars(self.decl.get_ast(Theorem, self.decl.get_ast(DefFun, node.ref_fun.name).ref_theorem.name).conclusion)
-        if isinstance(body, ExistsUniq):
-            existence_formula = Substitutor(({body.var: Compound(RefDefFun(node.ref_fun.name), tuple(args))}, {}, {})).substitute_formula(body.body)
-        elif isinstance(body, Implies) and isinstance(body.right, ExistsUniq):
-            existence_formula = Implies(body.left, Substitutor(({body.right.var: Compound(RefDefFun(node.ref_fun.name), tuple(args))}, {}, {})).substitute_formula(body.right.body))
-        else:
-            msg = f"Unexpected formula: {ExprFormatter(self.decl).pretty_expr(body)}"
-            raise CheckError(node, msg)
-        existence_formula = make_forall_vars(existence_formula, args)
-        if not alpha_equiv_with_defs(node.formula, existence_formula, self.decl):
-            msg = f"existence_formula is not matched with theorem: {ExprFormatter(self.decl).pretty_expr(node.formula)}"
-            raise CheckError(node, msg)
-        logger.debug(f"{debug_prefix}existence_formula is matched with theorem: {ExprFormatter(self.decl).pretty_expr(node.formula)}")
-
-    def check_deffununiq(self, node: DefFunUniq, indent: int) -> None:
-        debug_prefix = make_debug_prefix(node, indent)
-        logger.debug(f"{debug_prefix}name: {node.name}, fun_name: {node.ref_fun.name}")
-        equality = self.decl.get_equality()
-        if equality is None:
-            msg = "equality has not been declared yet"
-            raise CheckError(node, msg)
-        args, body = strip_forall_vars(self.decl.get_ast(Theorem, self.decl.get_ast(DefFun, node.ref_fun.name).ref_theorem.name).conclusion)
-        if isinstance(body, ExistsUniq):
-            uniqueness_formula = Forall(body.var, Implies(body.body, AtomicFormula(RefEquality(equality.ref.name), (Var(body.var.name), Compound(RefDefFun(node.ref_fun.name), tuple(args))))))
-        elif isinstance(body, Implies) and isinstance(body.right, ExistsUniq):
-            uniqueness_formula = Implies(body.left, Forall(body.right.var, Implies(body.right.body, AtomicFormula(RefEquality(equality.ref.name), (Var(body.right.var.name), Compound(RefDefFun(node.ref_fun.name), tuple(args)))))))
-        else:
-            msg = f"Unexpected formula: {ExprFormatter(self.decl).pretty_expr(body)}"
-            raise CheckError(node, msg)
-        uniqueness_formula = make_forall_vars(uniqueness_formula, args)
-        if not alpha_equiv_with_defs(node.formula, uniqueness_formula, self.decl):
-            msg = f"uniqueness_formula is not matched with theorem: {ExprFormatter(self.decl).pretty_expr(node.formula)}"
-            raise CheckError(node, msg)
-        logger.debug(f"{debug_prefix}uniqueness_formula is matched with theorem: {ExprFormatter(self.decl).pretty_expr(node.formula)}")
 
     def check_deffunterm(self, node: DefFunTerm, indent: int) -> None:
         debug_prefix = make_debug_prefix(node, indent)
@@ -315,7 +235,7 @@ class Checker:
             logger.error(f"{self.make_error_prefix(node, indent)}{e.msg}")
             node.proofinfo.status = "❌Failed"
             raise
-        except (ContextError, LogicError, FormatError) as e:
+        except (DeclLogicError, ContextError, LogicError, FormatError) as e:
             msg = f"{e.__class__.__name__}: {e.msg}"
             logger.error(f"{self.make_error_prefix(node, indent)}{msg}")
             node.proofinfo.status = "❌Failed"

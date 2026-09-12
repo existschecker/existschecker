@@ -203,7 +203,7 @@ theorem generation_from_genbase_is_genbase \forall^P \psi[2] \forall^P \phi[1] \
         any v {
           assume in(v, V) {
             substitute in(v, V) for V: adj(W, Y)
-            apply invoke rightward adj_existence for W, Y, v
+            apply invoke rightward adj.existence for W, Y, v
             divide in(v, W) \vee equal(v, Y)
               case in(v, W) {
                 apply invoke rightward bigcup(Z, W) for v

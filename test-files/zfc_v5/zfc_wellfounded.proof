@@ -34,7 +34,7 @@ theorem adj_of_irrefrel_is_irrefrel \forall x \forall y \forall^P \psi[2] (irref
       split irrefrel(x, \psi) \wedge \neg(\psi(y, y))
       any z {
         assume in(z, adj(x, y)) {
-          apply invoke rightward adj_existence for x, y, z
+          apply invoke rightward adj.existence for x, y, z
           divide in(z, x) \vee equal(z, y)
             case in(z, x) {
               apply invoke irrefrel(x, \psi) for z
@@ -98,7 +98,7 @@ theorem adj_of_closed_is_closed \forall x \forall t \forall^P \psi[2] (closed(t,
       any y, z {
         assume in(y, adj(t, x)) \wedge \psi(z, y) {
           split in(y, adj(t, x)) \wedge \psi(z, y)
-          apply invoke rightward adj_existence for t, x, y
+          apply invoke rightward adj.existence for t, x, y
           divide in(y, t) \vee equal(y, x)
             case in(y, t) {
               connect in(y, t) \wedge \psi(z, y)
@@ -123,14 +123,14 @@ theorem cap_of_closed_is_closed \forall X \forall Y \forall^P \psi[2] (closed(X,
       any u, v {
         assume in(u, cap(X, Y)) \wedge \psi(v, u) {
           split in(u, cap(X, Y)) \wedge \psi(v, u)
-          apply invoke rightward cap_characterization for X, Y, u
+          apply invoke rightward cap.existence for X, Y, u
           split in(u, X) \wedge in(u, Y)
           connect in(u, X) \wedge \psi(v, u)
           apply invoke closed(X, \psi) for u, v
           connect in(u, Y) \wedge \psi(v, u)
           apply invoke closed(Y, \psi) for u, v
           connect in(v, X) \wedge in(v, Y)
-          apply invoke leftward cap_characterization for X, Y, v
+          apply invoke leftward cap.existence for X, Y, v
         }
       }
       fold for closed conclude closed(cap(X, Y), \psi)
@@ -167,7 +167,7 @@ theorem adj_of_closed_wellfounded_is_wellfounded \forall x \forall y \forall^P \
                   apply invoke wellfounded(x, \psi) for rem(A, y)
                   some a such \exists a (minimal(\psi, rem(A, y), a)) {
                     split minimal(\psi, rem(A, y), a)
-                    apply invoke rightward rem_existence for A, y, a
+                    apply invoke rightward rem.existence for A, y, a
                     split in(a, A) \wedge neq(a, y)
                     deny \neg(minimal_core(\psi, A, a)) {
                       expand \neg(minimal_core(\psi, A, a)) for minimal_core
@@ -182,7 +182,7 @@ theorem adj_of_closed_wellfounded_is_wellfounded \forall x \forall y \forall^P \
                           contradict in(y, x)
                         }
                         connect in(b, A) \wedge neq(b, y)
-                        apply invoke leftward rem_existence for A, y, b
+                        apply invoke leftward rem.existence for A, y, b
                         connect in(b, rem(A, y)) \wedge neq(b, a)
                         apply invoke minimal_core(\psi, rem(A, y), a) for b
                         contradict \psi(b, a)
@@ -594,7 +594,7 @@ theorem adj_of_tcset_is_rtcset \forall x \forall^P \psi[2] \forall t (tcset(x, \
           split closed(s, \psi) \wedge in(x, s)
           any y {
             assume in(y, adj(t, x)) {
-              apply invoke rightward adj_existence for t, x, y
+              apply invoke rightward adj.existence for t, x, y
               divide in(y, t) \vee equal(y, x)
                 case in(y, t) {
                   any z {

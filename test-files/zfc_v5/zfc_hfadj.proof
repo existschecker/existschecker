@@ -152,7 +152,7 @@ theorem adjstep_expanding \forall X \forall Y \forall m \forall n (natural(m) \w
   any X, Y, m {
     assume natural(m) \wedge piterate(adjstep, m, singleton(emptyset), X) \wedge piterate(adjstep, emptyset, singleton(emptyset), Y) \wedge in(m, emptyset) {
       split natural(m) \wedge piterate(adjstep, m, singleton(emptyset), X) \wedge piterate(adjstep, emptyset, singleton(emptyset), Y) \wedge in(m, emptyset)
-      apply emptyset_existence for m
+      apply emptyset.existence for m
       contradict in(m, emptyset)
       explode subset(X, Y)
     }

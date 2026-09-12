@@ -9,7 +9,7 @@ from typing import Sequence
 from dependency import DependencyResolver, DependencyResult
 from lexer import KEYWORDS, STRINGS, Token
 from ast_types import DeclarationUnit, Workspace, Declaration, Include, Control, Formula, Term, RefFact, FormatError, RenderError, Bottom, DeclarationContextNameSpace, RefStruct, RefStructCondition, StructVar, RefStructPred, Equality, PrimPred, DefPred, DefFunTerm, Var, PredTemplate, DefCon, DefFun, Struct, StructPred, LexedUnit, RefStructCon
-from resolved_ast_types import ResolvedInclude, ResolvedDeclaration, ResolvedControl, ResolvedFormula, ResolvedTerm, ResolvedRefFact, ResolvedRefStruct, ResolvedRefStructField, ResolvedRefStructCondition, ResolvedStructVar, ResolvedRefEquality, ResolvedRefPrimPred, ResolvedRefDefPred, ResolvedRefDefCon, ResolvedRefDefFun, ResolvedRefDefFunTerm, ResolvedPredLambda, ResolvedFunLambda, ResolvedRefStructPred, ResolvedRefStructCon
+from resolved_ast_types import ResolvedInclude, ResolvedDeclaration, ResolvedControl, ResolvedFormula, ResolvedTerm, ResolvedRefFact, ResolvedRefStruct, ResolvedRefStructField, ResolvedRefStructCondition, ResolvedStructVar, ResolvedRefEquality, ResolvedRefPrimPred, ResolvedRefDefPred, ResolvedRefDefCon, ResolvedRefDefFun, ResolvedRefDefFunTerm, ResolvedPredLambda, ResolvedFunLambda, ResolvedRefStructPred, ResolvedRefStructCon, ResolvedRefAxiom, ResolvedRefTheorem
 from splitter import split
 from to_html import Renderer
 from parser import Parser
@@ -603,7 +603,7 @@ class Analyzer:
         for unit in self.old_workspace.file_units[path]:
             for index, node in unit.resolved_unit.resolved_token_to_node.items():
                 token = unit.lexed_unit.tokens[index]
-                if isinstance(node, (ResolvedRefFact, ResolvedRefStructCondition)):
+                if isinstance(node, (ResolvedRefAxiom, ResolvedRefTheorem, ResolvedRefStructCondition)):
                     t_type = TokenType.FUNCTION
                 elif isinstance(node, (ResolvedRefEquality, ResolvedRefPrimPred, ResolvedRefDefPred, ResolvedRefDefCon, ResolvedRefDefFun, ResolvedRefDefFunTerm)):
                     t_type = TokenType.CONSTANT

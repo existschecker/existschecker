@@ -39,7 +39,7 @@ theorem suc_of_natural_is_natural \forall n (natural(n) \to natural(suc(n))) {
             case in(m, n) {
               divide natural(n)
                 case equal(n, emptyset) {
-                  apply emptyset_existence for m
+                  apply emptyset.existence for m
                   substitute in(m, n) for n: emptyset
                   contradict in(m, emptyset)
                   explode equal(m, emptyset) \vee sucordinal(m)
@@ -74,7 +74,7 @@ theorem element_of_natural_is_natural \forall n \forall m (in(m, n) \wedge natur
       split in(m, n) \wedge natural(n)
       divide natural(n)
         case equal(n, emptyset) {
-          apply emptyset_existence for m
+          apply emptyset.existence for m
           substitute notin(m, emptyset) for emptyset: n
           contradict in(m, n)
           explode natural(m)

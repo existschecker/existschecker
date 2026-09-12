@@ -8,14 +8,12 @@ theorem cap_exists_uniquely \forall x \forall y \exists! z \forall w (in(w, z) \
 }
 
 definition function cap by cap_exists_uniquely tex infix "\cap"
-existence cap_characterization \forall x \forall y \forall w (in(w, cap(x, y)) \leftrightarrow in(w, x) \wedge in(w, y)) by cap
-uniqueness cap_uniqueness \forall x \forall y \forall z (\forall w (in(w, z) \leftrightarrow in(w, x) \wedge in(w, y)) \to equal(z, cap(x, y))) by cap
 
 theorem cap_is_subset_left \forall x \forall y (subset(cap(x, y), x)) {
   any x, y {
     any z {
       assume in(z, cap(x, y)) {
-        apply invoke rightward cap_characterization for x, y, z
+        apply invoke rightward cap.existence for x, y, z
         split 1 in(z, x) \wedge in(z, y)
       }
     }
@@ -27,7 +25,7 @@ theorem cap_is_subset_right \forall x \forall y (subset(cap(x, y), y)) {
   any x, y {
     any z {
       assume in(z, cap(x, y)) {
-        apply invoke rightward cap_characterization for x, y, z
+        apply invoke rightward cap.existence for x, y, z
         split 2 in(z, x) \wedge in(z, y)
       }
     }

@@ -7,7 +7,7 @@ theorem emptyset_is_base_for_issuc \neg(\exists y (issuc(y, emptyset))) {
     some y such \exists y (issuc(y, emptyset)) {
       apply in_suc for y
       substitute in(y, suc(y)) for suc(y): emptyset
-      apply emptyset_existence for y
+      apply emptyset.existence for y
       contradict in(y, emptyset)
     }
   }
@@ -162,7 +162,7 @@ theorem issuc_is_finitesetlike_on_naturalgenbase finitesetlike(issuc, naturalgen
           case equal(n, emptyset) {
             any m {
               assume in(m, emptyset) {
-                apply emptyset_existence for m
+                apply emptyset.existence for m
                 contradict in(m, emptyset)
                 explode issuc(m, n)
               }
@@ -170,7 +170,7 @@ theorem issuc_is_finitesetlike_on_naturalgenbase finitesetlike(issuc, naturalgen
                 substitute issuc(m, n) for n: emptyset
                 apply in_suc for m
                 substitute in(m, suc(m)) for suc(m): emptyset
-                apply emptyset_existence for m
+                apply emptyset.existence for m
                 contradict in(m, emptyset)
                 explode in(m, emptyset)
               }

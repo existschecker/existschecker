@@ -192,19 +192,19 @@ class RefTheorem(RefFact):
 
 @dataclass(frozen=True)
 class RefDefConExist(RefFact):
-    pass
+    parent: RefDefCon
 
 @dataclass(frozen=True)
 class RefDefConUniq(RefFact):
-    pass
+    parent: RefDefCon
 
 @dataclass(frozen=True)
 class RefDefFunExist(RefFact):
-    pass
+    parent: RefDefFun
 
 @dataclass(frozen=True)
 class RefDefFunUniq(RefFact):
-    pass
+    parent: RefDefFun
 
 @dataclass
 class ProofInfo:
@@ -360,34 +360,10 @@ class DefPred(Declaration):
     tex: list[str]
 
 @dataclass
-class DefConExist(Declaration):
-    ref: RefDefConExist
-    formula: Formula
-    ref_con: RefDefCon
-
-@dataclass
-class DefConUniq(Declaration):
-    ref: RefDefConUniq
-    formula: Formula
-    ref_con: RefDefCon
-
-@dataclass
 class DefCon(Declaration):
     ref: RefDefCon
     ref_theorem: RefTheorem
     tex: list[str]
-
-@dataclass
-class DefFunExist(Declaration):
-    ref: RefDefFunExist
-    formula: Formula
-    ref_fun: RefDefFun
-
-@dataclass
-class DefFunUniq(Declaration):
-    ref: RefDefFunUniq
-    formula: Formula
-    ref_fun: RefDefFun
 
 @dataclass
 class DefFun(Declaration):
@@ -569,23 +545,6 @@ class DeclarationContextNameSpace:
             names.update(ctx.declarations.keys())
         return names
 
-    def get_fact(self, ref: RefFact) -> Formula:
-        if isinstance(ref, RefAxiom):
-            return self.get_ast(Axiom, ref.name).conclusion
-        elif isinstance(ref, RefTheorem):
-            return self.get_ast(Theorem, ref.name).conclusion
-        elif isinstance(ref, RefDefConExist):
-            return self.get_ast(DefConExist, ref.name).formula
-        elif isinstance(ref, RefDefConUniq):
-            return self.get_ast(DefConUniq, ref.name).formula
-        elif isinstance(ref, RefDefFunExist):
-            return self.get_ast(DefFunExist, ref.name).formula
-        elif isinstance(ref, RefDefFunUniq):
-            return self.get_ast(DefFunUniq, ref.name).formula
-        else:
-            msg = f"Unexpected type {type(ref)}"
-            raise ContextError(msg)
-
 @dataclass
 class Context:
     ctrl: ControlContext
@@ -649,7 +608,7 @@ class Workspace:
     def get_decl_def(self, name: str, order: list[str]) -> Token | None:
         for path in order:
             for unit in self.file_units[path]:
-                if isinstance(unit.elaborated_unit.ast, (Equality, PrimPred, Axiom, Theorem, DefPred, DefConExist, DefConUniq, DefCon, DefFunExist, DefFunUniq, DefFun, DefFunTerm, Struct)) and name == unit.elaborated_unit.ast.name:
+                if isinstance(unit.elaborated_unit.ast, (Equality, PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Struct)) and name == unit.elaborated_unit.ast.name:
                     return unit.lexed_unit.tokens[unit.elaborated_unit.node_to_token[id(unit.elaborated_unit.ast.ref)][0]]
         return None
 
@@ -665,7 +624,7 @@ class Workspace:
         def_unit = None
         for path in order:
             for unit in self.file_units[path]:
-                if isinstance(unit.elaborated_unit.ast, (Equality, PrimPred, Axiom, Theorem, DefPred, DefConExist, DefConUniq, DefCon, DefFunExist, DefFunUniq, DefFun, DefFunTerm, Struct, StructPred, StructCon)) and def_unit_name == unit.elaborated_unit.ast.name:
+                if isinstance(unit.elaborated_unit.ast, (Equality, PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Struct, StructPred, StructCon)) and def_unit_name == unit.elaborated_unit.ast.name:
                     def_unit = unit
         if def_unit is None:
             return None

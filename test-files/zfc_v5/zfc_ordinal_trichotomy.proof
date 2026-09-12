@@ -65,7 +65,7 @@ theorem ordinal_subsetneq_of_ordinal_is_element \forall \alpha \forall \beta (or
       apply invoke wellfounded(\alpha, in) for setminus(\alpha, \beta)
       some \gamma such \exists \gamma (minimal(in, setminus(\alpha, \beta), \gamma)) {
         split minimal(in, setminus(\alpha, \beta), \gamma)
-        apply invoke rightward setminus_characterization for \alpha, \beta, \gamma
+        apply invoke rightward setminus.existence for \alpha, \beta, \gamma
         split in(\gamma, \alpha) \wedge notin(\gamma, \beta)
         any \delta {
           assume in(\delta, \gamma) {
@@ -78,7 +78,7 @@ theorem ordinal_subsetneq_of_ordinal_is_element \forall \alpha \forall \beta (or
                 contradict in(\gamma, \gamma)
               }
               connect in(\delta, \alpha) \wedge notin(\delta, \beta)
-              apply invoke leftward setminus_characterization for \alpha, \beta, \delta
+              apply invoke leftward setminus.existence for \alpha, \beta, \delta
               connect in(\delta, setminus(\alpha, \beta)) \wedge neq(\delta, \gamma)
               apply invoke minimal_core(in, setminus(\alpha, \beta), \gamma) for \delta
               contradict in(\delta, \gamma)
@@ -207,7 +207,7 @@ theorem ordinals_comparable_subset \forall \alpha \forall \beta (ordinal(\alpha)
           divide in(cap(\alpha, \beta), \beta) \vee equal(cap(\alpha, \beta), \beta)
             case in(cap(\alpha, \beta), \beta) {
               connect in(cap(\alpha, \beta), \alpha) \wedge in(cap(\alpha, \beta), \beta)
-              apply invoke leftward cap_characterization for \alpha, \beta, cap(\alpha, \beta)
+              apply invoke leftward cap.existence for \alpha, \beta, cap(\alpha, \beta)
               apply invoke ordinal_not_contain_itself for cap(\alpha, \beta)
               contradict in(cap(\alpha, \beta), cap(\alpha, \beta))
               explode subset(\alpha, \beta) \vee subset(\beta, \alpha)

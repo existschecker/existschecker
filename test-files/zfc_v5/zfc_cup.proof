@@ -101,9 +101,9 @@ theorem subset_of_cup_disjoint_left_is_subset_of_right \forall X \forall Y \fora
           divide in(y, X) \vee in(y, Y)
             case in(y, X) {
               connect in(y, A) \wedge in(y, X)
-              apply invoke leftward cap_characterization for A, X, y
+              apply invoke leftward cap.existence for A, X, y
               substitute in(y, cap(A, X)) for cap(A, X): emptyset
-              apply emptyset_existence for y
+              apply emptyset.existence for y
               contradict in(y, emptyset)
               explode in(y, Y)
             }
@@ -136,7 +136,7 @@ theorem cup_of_closed_wellfounded_is_wellfounded_left \forall X \forall Y \foral
               apply invoke wellfounded(X, in) for cap(A, X)
               some a such \exists a (minimal(in, cap(A, X), a)) {
                 split minimal(in, cap(A, X), a)
-                apply invoke rightward cap_characterization for A, X, a
+                apply invoke rightward cap.existence for A, X, a
                 split in(a, A) \wedge in(a, X)
                 any x {
                   assume in(x, A) \wedge neq(x, a) {
@@ -145,7 +145,7 @@ theorem cup_of_closed_wellfounded_is_wellfounded_left \forall X \forall Y \foral
                       connect in(a, X) \wedge in(x, a)
                       apply invoke closed(X, in) for a, x
                       connect in(x, A) \wedge in(x, X)
-                      apply invoke leftward cap_characterization for A, X, x
+                      apply invoke leftward cap.existence for A, X, x
                       connect in(x, cap(A, X)) \wedge neq(x, a)
                       apply invoke minimal_core(in, cap(A, X), a) for x
                       contradict in(x, a)

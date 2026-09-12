@@ -138,19 +138,19 @@ class ResolvedRefTheorem(ResolvedRefFact):
 
 @dataclass(frozen=True)
 class ResolvedRefDefConExist(ResolvedRefFact):
-    pass
+    parent: ResolvedRefDefCon
 
 @dataclass(frozen=True)
 class ResolvedRefDefConUniq(ResolvedRefFact):
-    pass
+    parent: ResolvedRefDefCon
 
 @dataclass(frozen=True)
 class ResolvedRefDefFunExist(ResolvedRefFact):
-    pass
+    parent: ResolvedRefDefFun
 
 @dataclass(frozen=True)
 class ResolvedRefDefFunUniq(ResolvedRefFact):
-    pass
+    parent: ResolvedRefDefFun
 
 @dataclass
 class ResolvedControl:

@@ -5,7 +5,7 @@ theorem emptyset_is_closed \forall^P \psi[2] (closed(emptyset, \psi)) {
     any x, y {
       assume in(x, emptyset) \wedge \psi(y, x) {
         split 1 in(x, emptyset) \wedge \psi(y, x)
-        apply emptyset_existence for x
+        apply emptyset.existence for x
         contradict in(x, emptyset)
         explode in(y, emptyset)
       }
@@ -17,7 +17,7 @@ theorem emptyset_is_closed \forall^P \psi[2] (closed(emptyset, \psi)) {
 theorem emptyset_is_irrefrel irrefrel(emptyset, in) {
   any n {
     assume in(n, emptyset) {
-      apply emptyset_existence for n
+      apply emptyset.existence for n
       contradict in(n, emptyset)
       explode notin(n, n)
     }
@@ -41,7 +41,7 @@ theorem emptyset_is_transrel transrel(emptyset, in) {
   any n, m, l {
     assume in(n, emptyset) \wedge in(m, emptyset) \wedge in(l, emptyset) \wedge in(n, m) \wedge in(m, l) {
       split 1 in(n, emptyset) \wedge in(m, emptyset) \wedge in(l, emptyset) \wedge in(n, m) \wedge in(m, l)
-      apply emptyset_existence for n
+      apply emptyset.existence for n
       contradict in(n, emptyset)
       explode in(n, l)
     }
@@ -61,7 +61,7 @@ theorem emptyset_is_linorder linorder(emptyset, in) {
   any n, m {
     assume in(n, emptyset) \wedge in(m, emptyset) {
       split 1 in(n, emptyset) \wedge in(m, emptyset)
-      apply emptyset_existence for n
+      apply emptyset.existence for n
       contradict in(n, emptyset)
       explode in(n, m) \vee equal(n, m) \vee in(m, n)
     }

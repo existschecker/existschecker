@@ -1,5 +1,5 @@
 from ast_types import LexedUnit, ContextError, ParseError
-from parsed_ast_types import ParsedExpr, ParsedIdent, ParsedIdentArgs, ParsedFunTemplate, ParsedFunLambda, ParsedPredTemplate, ParsedPredLambda, ParsedNot, ParsedAnd, ParsedOr, ParsedImplies, ParsedIff, ParsedForall, ParsedExists, ParsedExistsUniq, ParsedBottom, ParsedControl, ParsedInvalidControl, ParsedAny, ParsedAssume, ParsedDivide, ParsedSome, ParsedDeny, ParsedContradict, ParsedCase, ParsedExplode, ParsedApply, ParsedLift, ParsedCharacterize, ParsedInvoke, ParsedExpand, ParsedFold, ParsedPad, ParsedSplit, ParsedConnect, ParsedSubstitute, ParsedShow, ParsedAssert, ParsedDeclaration, ParsedInvalidDeclaration, ParsedPrimPred, ParsedAxiom, ParsedTheorem, ParsedDefPred, ParsedDefCon, ParsedDefFun, ParsedDefFunTerm, ParsedDefExist, ParsedDefUniq, ParsedEquality, ParsedInclude, ParsedInvalidInclude, ParsedUnit, ParsedStruct, ParsedTypedIdent, ParsedAccess, ParsedStructPred, ParsedCall, ParsedStructCon
+from parsed_ast_types import ParsedExpr, ParsedIdent, ParsedIdentArgs, ParsedFunTemplate, ParsedFunLambda, ParsedPredTemplate, ParsedPredLambda, ParsedNot, ParsedAnd, ParsedOr, ParsedImplies, ParsedIff, ParsedForall, ParsedExists, ParsedExistsUniq, ParsedBottom, ParsedControl, ParsedInvalidControl, ParsedAny, ParsedAssume, ParsedDivide, ParsedSome, ParsedDeny, ParsedContradict, ParsedCase, ParsedExplode, ParsedApply, ParsedLift, ParsedCharacterize, ParsedInvoke, ParsedExpand, ParsedFold, ParsedPad, ParsedSplit, ParsedConnect, ParsedSubstitute, ParsedShow, ParsedAssert, ParsedDeclaration, ParsedInvalidDeclaration, ParsedPrimPred, ParsedAxiom, ParsedTheorem, ParsedDefPred, ParsedDefCon, ParsedDefFun, ParsedDefFunTerm, ParsedEquality, ParsedInclude, ParsedInvalidInclude, ParsedUnit, ParsedStruct, ParsedTypedIdent, ParsedAccess, ParsedStructPred, ParsedCall, ParsedStructCon, ParsedExistence, ParsedUniqueness
 from lexer import Token
 from token_stream import TokenStream, TokenStreamError
 
@@ -81,10 +81,6 @@ class Parser:
                 return self.parse_theorem()
             elif tok.type == "DEFINITION":
                 return self.parse_definition()
-            elif tok.type == "EXISTENCE":
-                return self.parse_existence()
-            elif tok.type == "UNIQUENESS":
-                return self.parse_uniqueness()
             elif tok.type == "EQUALITY":
                 return self.parse_equality()
             elif tok.type == "STRUCT":
@@ -235,38 +231,6 @@ class Parser:
         self.add_node_to_token(deffunterm, start_token, self.stream.last_token)
         logger.debug(f"[deffunterm] {name}")
         return deffunterm
-
-    def parse_existence(self) -> ParsedDefExist:
-        start_token = self.stream.consume("EXISTENCE")
-        existence_name_token = self.stream.consume("IDENT")
-        existence_name = existence_name_token.value
-        existence_formula = self.parse_formula()
-        self.stream.consume("BY")
-        name_token = self.stream.consume("IDENT")
-        name = name_token.value
-        ref = ParsedIdent(existence_name)
-        ref_term = ParsedIdent(name)
-        defexist = ParsedDefExist(name=existence_name, ref=ref, formula=existence_formula, ref_term=ref_term)
-        self.add_node_to_token(ref, existence_name_token, existence_name_token)
-        self.add_node_to_token(ref_term, name_token, name_token)
-        self.add_node_to_token(defexist, start_token, self.stream.last_token)
-        return defexist
-
-    def parse_uniqueness(self) -> ParsedDefUniq:
-        start_token = self.stream.consume("UNIQUENESS")
-        uniqueness_name_token = self.stream.consume("IDENT")
-        uniqueness_name = uniqueness_name_token.value
-        uniqueness_formula = self.parse_formula()
-        self.stream.consume("BY")
-        name_token = self.stream.consume("IDENT")
-        name = name_token.value
-        ref = ParsedIdent(uniqueness_name)
-        ref_term = ParsedIdent(name)
-        defuniq = ParsedDefUniq(name=uniqueness_name, ref=ref, formula=uniqueness_formula, ref_term=ref_term)
-        self.add_node_to_token(ref, uniqueness_name_token, uniqueness_name_token)
-        self.add_node_to_token(ref_term, name_token, name_token)
-        self.add_node_to_token(defuniq, start_token, self.stream.last_token)
-        return defuniq
 
     def parse_equality(self) -> ParsedEquality:
         start_token = self.stream.consume("EQUALITY")
@@ -821,8 +785,18 @@ class Parser:
         current_expr = parent
         while True:
             self.stream.consume("DOT")
-            child_tok = self.stream.consume("IDENT")
-            child = ParsedIdent(child_tok.value)
+            child_tok = self.stream.peek()
+            if child_tok.type == "EXISTENCE":
+                self.stream.consume("EXISTENCE")
+                child = ParsedExistence()
+            elif child_tok.type == "UNIQUENESS":
+                self.stream.consume("UNIQUENESS")
+                child = ParsedUniqueness()
+            elif child_tok.type == "IDENT":
+                child_tok = self.stream.consume("IDENT")
+                child = ParsedIdent(child_tok.value)
+            else:
+                raise ParseError(child_tok, "existence, uniqueness or ident is expected after dot")
             self.add_node_to_token(child, child_tok, child_tok)
             current_expr = ParsedAccess(current_expr, child)
             self.add_node_to_token(current_expr, start_token, child_tok)

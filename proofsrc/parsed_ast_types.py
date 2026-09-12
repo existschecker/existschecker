@@ -18,9 +18,17 @@ class ParsedTypedIdent(ParsedExpr):
     type: ParsedIdent
 
 @dataclass(frozen=True)
+class ParsedExistence(ParsedExpr):
+    pass
+
+@dataclass(frozen=True)
+class ParsedUniqueness(ParsedExpr):
+    pass
+
+@dataclass(frozen=True)
 class ParsedAccess(ParsedExpr):
     parent: "ParsedIdent | ParsedAccess"
-    child: ParsedIdent
+    child: ParsedIdent | ParsedExistence | ParsedUniqueness
 
 @dataclass(frozen=True)
 class ParsedFunLambda(ParsedExpr):
@@ -236,18 +244,6 @@ class ParsedDefPred(ParsedDeclaration):
     formula: ParsedExpr
     autoexpand: bool
     tex: list[str]
-
-@dataclass
-class ParsedDefExist(ParsedDeclaration):
-    ref: ParsedIdent
-    formula: ParsedExpr
-    ref_term: ParsedIdent
-
-@dataclass
-class ParsedDefUniq(ParsedDeclaration):
-    ref: ParsedIdent
-    formula: ParsedExpr
-    ref_term: ParsedIdent
 
 @dataclass
 class ParsedDefCon(ParsedDeclaration):
