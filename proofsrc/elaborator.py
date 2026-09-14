@@ -3,7 +3,7 @@ from pygls import uris
 from ast_types import LexedUnit, Term, Declaration, PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, InvalidDeclaration, Formula, AtomicFormula, Not, And, Or, Implies, Iff, Forall, Exists, ExistsUniq, PredTemplate, Var, FunTemplate, RefEquality, Compound, RefPrimPred, RefDefPred, RefDefCon, RefDefFun, RefDefFunTerm, VarTerm, PredTerm, FunTerm, Control, Any, Assume, Divide, Some, Deny, Case, Contradict, Explode, Apply, Lift, Characterize, Invoke, Expand, Fold, Pad, Split, Connect, Substitute, Show, Assert, InvalidControl, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq, RefFact, PredLambda, FunLambda, Bottom, Include, InvalidInclude, DeclarationContextNameSpace, RefStruct, Struct, RefStructCondition, StructVar, RefStructPred, StructPred, ElaboratedUnit, StructCon, RefStructCon, ContextError
 from resolved_ast_types import ResolvedTerm, ResolvedFormula, ResolvedVarTerm, ResolvedVar, ResolvedRefDefCon, ResolvedFunTerm, ResolvedRefDefFun, ResolvedRefDefFunTerm, ResolvedFunTemplate, ResolvedFunLambda, ResolvedCompound, ResolvedPredTerm, ResolvedRefEquality, ResolvedRefPrimPred, ResolvedRefDefPred, ResolvedPredTemplate, ResolvedPredLambda, ResolvedAtomicFormula, ResolvedNot, ResolvedAnd, ResolvedOr, ResolvedImplies, ResolvedIff, ResolvedForall, ResolvedExists, ResolvedExistsUniq, ResolvedBottom, ResolvedRefFact, ResolvedRefAxiom, ResolvedRefTheorem, ResolvedRefDefConExist, ResolvedRefDefConUniq, ResolvedRefDefFunExist, ResolvedRefDefFunUniq, ResolvedControl, ResolvedInvalidControl, ResolvedAssume, ResolvedAny, ResolvedCase, ResolvedDivide, ResolvedSome, ResolvedDeny, ResolvedContradict, ResolvedExplode, ResolvedApply, ResolvedLift, ResolvedCharacterize, ResolvedInvoke, ResolvedExpand, ResolvedFold, ResolvedPad, ResolvedSplit, ResolvedConnect, ResolvedSubstitute, ResolvedShow, ResolvedAssert, ResolvedDeclaration, ResolvedInvalidDeclaration, ResolvedPrimPred, ResolvedAxiom, ResolvedTheorem, ResolvedDefPred, ResolvedDefCon, ResolvedDefFun, ResolvedDefFunTerm, ResolvedEquality, ResolvedInclude, ResolvedInvalidInclude, ResolvedRefStruct, ResolvedStructVar, ResolvedStructMemberField, ResolvedRefStructCondition, ResolvedRefStructMemberCondition, ResolvedStruct, ResolvedStructPred, ResolvedStructMemberPred, ResolvedRefStructPred, ResolvedUnit, ResolvedStructCon, ResolvedRefStructCon
 from lexer import Token
-from logic_utils import Substitutor, DefExpander, strip_forall_vars, alpha_safe_formula, LogicError
+from logic_utils import Substitutor, DefExpander, strip_forall_vars, alpha_safe_formula, LogicError, beta_reduction_formula, mapping_adapter
 from decl_logic import make_formula_from_fact, DeclLogicError
 
 class ElaborateError(Exception):
@@ -433,8 +433,8 @@ class Elaborator:
                     raise ElaborateError(node, f"Expected Forall, got {type(fact)}")
                 mapping[fact.var] = term
                 fact = fact.body
-            fact, renamed_mapping = alpha_safe_formula(fact, mapping)
-            fact = Substitutor(renamed_mapping).substitute_formula(fact)
+            fact = alpha_safe_formula(fact, mapping)
+            fact = beta_reduction_formula(Substitutor(mapping_adapter(mapping)).substitute_formula(fact))
             for _ in range(len(conditions)):
                 if not isinstance(fact, Implies):
                     raise ElaborateError(node, f"Expected Implies, got {type(fact)}")
@@ -693,7 +693,7 @@ class Elaborator:
                     raise ElaborateError(arg, f"Unexpected type {type(arg)}")
                 ref_args.append(self.elaborate_var_term(arg))
             mapping_args: dict[VarTerm, VarTerm] = {def_arg: ref_arg for def_arg, ref_arg in zip(structpred.args, ref_args)}
-            elaborated = Substitutor((mapping_field | mapping_args, {}, {})).substitute_formula(structpred.formula)
+            elaborated = beta_reduction_formula(Substitutor((mapping_field | mapping_args, {}, {})).substitute_formula(structpred.formula))
             self.add_node_to_token(elaborated, node)
             return elaborated
         else:
@@ -776,7 +776,7 @@ class Elaborator:
                     continue
                 mapping_field[Var(field.name[len(prefix) + 1:])] = field
             structpred = self.decl.get_ast(StructPred, f"{ref_struct.name}.{node.struct_pred.name}")
-            formula = Substitutor((mapping_field, {}, {})).substitute_formula(structpred.formula)
+            formula = beta_reduction_formula(Substitutor((mapping_field, {}, {})).substitute_formula(structpred.formula))
             elaborated = PredLambda(tuple(structpred.args), formula)
             self.add_node_to_token(elaborated, node)
             return elaborated
@@ -875,7 +875,7 @@ class Elaborator:
             for ref, condition in conditions.items():
                 full_ref = RefStructCondition(f"{var.name}.{ref.name}")
                 mapping: dict[VarTerm, VarTerm] = {field: Var(f"{var.name}.{field.name}") for field in fields}
-                full_conditions[full_ref] = Substitutor((mapping, {}, {})).substitute_formula(condition)
+                full_conditions[full_ref] = beta_reduction_formula(Substitutor((mapping, {}, {})).substitute_formula(condition))
             return full_fields, full_conditions
         else:
             return self.collect_struct_members(var.parent)

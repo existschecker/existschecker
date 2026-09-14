@@ -1,6 +1,6 @@
 from lexer import Token
 from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Control, Formula, Declaration, PredTemplate, Term, Assert, Fold, VarTerm, FunTemplate, RefDefPred, InvalidDeclaration, InvalidControl, LexedUnit, RefFact, RefEquality, CheckError, ContextError, LogicError, FormatError, DeclarationContextNameSpace, Struct, StructPred, ElaboratedUnit, CheckedUnit, StructCon
-from logic_utils import Substitutor, DefExpander, strip_forall_vars, strip_exists_vars, make_forall_vars, make_exists_vars, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs, alpha_safe_formula
+from logic_utils import Substitutor, DefExpander, strip_forall_vars, strip_exists_vars, make_forall_vars, make_exists_vars, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs, alpha_safe_formula, beta_reduction_formula, mapping_adapter
 from formatter import ExprFormatter
 from copy import deepcopy
 from lsprotocol import types as lsp
@@ -383,14 +383,14 @@ class Checker:
                 msg = f"{ExprFormatter(self.decl).pretty_expr(item)} is already used"
                 raise CheckError(node, msg)
         mapping: dict[Term, Term] = {bound: free for bound, free in zip(vars, node.items) if free is not None}
-        renamed_body, renamed_mapping = alpha_safe_formula(body, mapping)
-        existence = Substitutor(renamed_mapping).substitute_formula(renamed_body)
+        renamed_body = alpha_safe_formula(body, mapping)
+        existence = beta_reduction_formula(Substitutor(mapping_adapter(mapping)).substitute_formula(renamed_body))
         if isinstance(fact, Exists):
             premises: list[Bottom | Formula] = [existence]
         else:
             fv, bv, fpt, bpt, fft, bft = collect_vars(existence)
             var = fresh_var(vars[0], fv | bv | fpt | bpt | fft | bft)
-            body = Substitutor(({vars[0]: var}, {}, {})).substitute_formula(existence)
+            body = beta_reduction_formula(Substitutor(({vars[0]: var}, {}, {})).substitute_formula(existence))
             equality = self.decl.get_equality()
             if equality is None:
                 msg = "equality has not been declared yet"
@@ -492,9 +492,9 @@ class Checker:
             if term is None:
                 continue
             mapping[item] = term
-        renamed_body, renamed_map = alpha_safe_formula(body, mapping)
+        renamed_body = alpha_safe_formula(body, mapping)
         logger.debug(f"{debug_prefix}Instantiable: mapping={mapping}")
-        instantiation = Substitutor(renamed_map).substitute_formula(renamed_body)
+        instantiation = beta_reduction_formula(Substitutor(mapping_adapter(mapping)).substitute_formula(renamed_body))
         logger.debug(f"{debug_prefix}\\forall-elimination is done: instantiation={ExprFormatter(self.decl).pretty_expr(instantiation)}")
         if node.invoke == "none":
             node.proofinfo.premises = [node.fact]
@@ -557,8 +557,8 @@ class Checker:
             raise CheckError(node, msg)
         body = make_exists_vars(body, Exists, [item for item, term in zip(items, node.varterms) if term is None])
         mapping: dict[Term, Term] = {item: term for item, term in zip(items, node.varterms) if term is not None}
-        renamed_body, renamed_mapping = alpha_safe_formula(body, mapping)
-        fact = Substitutor(renamed_mapping).substitute_formula(renamed_body)
+        renamed_body = alpha_safe_formula(body, mapping)
+        fact = beta_reduction_formula(Substitutor(mapping_adapter(mapping)).substitute_formula(renamed_body))
         if not goal_in_context(fact, context, self.decl):
             msg = f"Not fact: {ExprFormatter(self.decl).pretty_expr(fact)}"
             raise CheckError(node, msg)
@@ -572,12 +572,12 @@ class Checker:
         used_free_vars, used_bound_vars, used_free_pred_tmpls, used_bound_pred_tmpls, used_free_fun_tmpls, used_bound_fun_tmpls = collect_vars(node.conclusion.body)
         fv, bv, fpt, bpt, fft, bft = collect_vars(node.varterm)
         vardash = fresh_var(Var(node.conclusion.var.name + "'"), used_free_vars | used_bound_vars | used_free_pred_tmpls | used_bound_pred_tmpls | used_free_fun_tmpls | used_bound_fun_tmpls | fv | bv | fpt | bpt | fft | bft)
-        renamed_conclusion, _ = alpha_safe_formula(node.conclusion, {node.conclusion.var: node.varterm})
+        renamed_conclusion = alpha_safe_formula(node.conclusion, {node.conclusion.var: node.varterm})
         if not isinstance(renamed_conclusion, ExistsUniq):
             msg = f"renamed_conclusion is not ExistsUniq object: {ExprFormatter(self.decl).pretty_expr(renamed_conclusion)}"
             raise CheckError(node, msg)
-        existence = Substitutor(({renamed_conclusion.var: node.varterm}, {}, {})).substitute_formula(renamed_conclusion.body)
-        existence_dash = Substitutor(({renamed_conclusion.var: vardash}, {}, {})).substitute_formula(renamed_conclusion.body)
+        existence = beta_reduction_formula(Substitutor(({renamed_conclusion.var: node.varterm}, {}, {})).substitute_formula(renamed_conclusion.body))
+        existence_dash = beta_reduction_formula(Substitutor(({renamed_conclusion.var: vardash}, {}, {})).substitute_formula(renamed_conclusion.body))
         equality = self.decl.get_equality()
         if equality is None:
             msg = "equality has not been declared yet"
@@ -784,8 +784,8 @@ class Checker:
                 raise CheckError(node, msg)
             logger.debug(f"{debug_prefix}Fact: {ExprFormatter(self.decl).pretty_expr(equation)}")
             premises_equal.append(equation)
-        renamed_fact, mapping = alpha_safe_formula(fact, node.env, True)
-        conclusion = Substitutor(mapping, node.indexes).substitute_formula(renamed_fact)
+        renamed_fact = alpha_safe_formula(fact, node.env)
+        conclusion = beta_reduction_formula(Substitutor(mapping_adapter(node.env), node.indexes).substitute_formula(renamed_fact))
         logger.debug(f"{debug_prefix}conclusion: {ExprFormatter(self.decl).pretty_expr(conclusion)}")
         logger.debug(f"{debug_prefix}Matched")
         node.proofinfo.premises = [node.fact] + premises_equal

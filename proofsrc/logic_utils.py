@@ -340,12 +340,14 @@ class DefExpander:
                     elif self.counter[expr.fun] in target_indexes:
                         should_expand = True
                 if should_expand:
-                    renamed_term, renamed_mapping = alpha_safe_var_term(deffunterm.varterm, dict(zip(deffunterm.args, expr.args)))
-                    expanded = Substitutor(renamed_mapping).substitute_var_term(renamed_term)
+                    mapping: dict[Term, Term] = dict(zip(deffunterm.args, expr.args))
+                    renamed_term = alpha_safe_var_term(deffunterm.varterm, mapping)
+                    expanded = Substitutor(mapping_adapter(mapping)).substitute_var_term(renamed_term)
                     return self.expand_defs_var_term(expanded)
             elif isinstance(expr.fun, FunLambda):
-                renamed_body, renamed_mapping = alpha_safe_var_term(expr.fun.body, dict(zip(expr.fun.args, expr.args)))
-                beta_reduced = Substitutor(renamed_mapping).substitute_var_term(renamed_body)
+                mapping: dict[Term, Term] = dict(zip(expr.fun.args, expr.args))
+                renamed_body = alpha_safe_var_term(expr.fun.body, mapping)
+                beta_reduced = Substitutor(mapping_adapter(mapping)).substitute_var_term(renamed_body)
                 return self.expand_defs_var_term(beta_reduced)
             return Compound(expr.fun, tuple(self.expand_defs_term(arg) for arg in expr.args))
         else:
@@ -392,8 +394,9 @@ class DefExpander:
                     elif self.counter[expr.pred] in target_indexes:
                         should_expand = True
                 if should_expand:
-                    renamed_formula, renamed_mapping = alpha_safe_formula(defpred.formula, dict(zip(defpred.args, expr.args)))
-                    expanded = Substitutor(renamed_mapping).substitute_formula(renamed_formula)
+                    mapping: dict[Term, Term] = dict(zip(defpred.args, expr.args))
+                    renamed_formula = alpha_safe_formula(defpred.formula, mapping)
+                    expanded = beta_reduction_formula(Substitutor(mapping_adapter(mapping)).substitute_formula(renamed_formula))
                     return self.expand_defs_formula(expanded)
             return AtomicFormula(expr.pred, tuple(self.expand_defs_term(arg) for arg in expr.args))
         elif isinstance(expr, Not):
@@ -522,14 +525,7 @@ class Substitutor:
             if isinstance(new_pred, (PredTemplate, RefEquality, RefPrimPred, RefDefPred)):
                 return AtomicFormula(new_pred, tuple(self.substitute_term(arg) for arg in expr.args))
             elif isinstance(new_pred, PredLambda):
-                lambda_mapping: dict[VarTerm, VarTerm] = {}
-                for a, b in zip(new_pred.args, expr.args):
-                    if not isinstance(b, VarTerm):
-                        raise LogicError(f"Unexpected type: {type(b)}")
-                    lambda_mapping[a] = b
-                subst = Substitutor((lambda_mapping, {}, {}))
-                lambda_mapped = subst.substitute_formula(new_pred.body)
-                return self.substitute_formula(lambda_mapped)
+                return AtomicFormula(new_pred, tuple(self.substitute_term(arg) for arg in expr.args))
             else:
                 raise LogicError(f"Unexpected type: {type(new_pred)}")
 
@@ -547,6 +543,42 @@ class Substitutor:
 
         else:
             raise LogicError(f"Unexpected type: {type(expr)}")
+
+def beta_reduction_term(term: Term) -> Term:
+    if isinstance(term, Compound):
+        if isinstance(term.fun, FunLambda):
+            mapping: dict[VarTerm, VarTerm] = {}
+            for a, b in zip(term.fun.args, term.args):
+                if not isinstance(b, VarTerm):
+                    raise LogicError(f"Unexpected type: {type(b)}")
+                mapping[a] = b
+            return beta_reduction_term(Substitutor((mapping, {}, {})).substitute_term(term.fun.body))
+        else:
+            return Compound(term.fun, tuple(beta_reduction_term(arg) for arg in term.args))
+    else:
+        return term
+
+def beta_reduction_formula(formula: Formula) -> Formula:
+    if isinstance(formula, AtomicFormula):
+        if isinstance(formula.pred, PredLambda):
+            mapping: dict[VarTerm, VarTerm] = {}
+            for a, b in zip(formula.pred.args, formula.args):
+                if not isinstance(b, VarTerm):
+                    raise LogicError(f"Unexpected type: {type(b)}")
+                mapping[a] = b
+            return beta_reduction_formula(Substitutor((mapping, {}, {})).substitute_formula(formula.pred.body))
+        else:
+            return AtomicFormula(formula.pred, tuple(beta_reduction_term(arg) for arg in formula.args))
+    elif isinstance(formula, Not):
+        return Not(beta_reduction_formula(formula.body))
+    elif isinstance(formula, (And, Or, Implies, Iff)):
+        return type(formula)(beta_reduction_formula(formula.left), beta_reduction_formula(formula.right))
+    elif isinstance(formula, Forall):
+        return Forall(formula.var, beta_reduction_formula(formula.body))
+    elif isinstance(formula, (Exists, ExistsUniq)):
+        return type(formula)(formula.var, beta_reduction_formula(formula.body))
+    else:
+        raise LogicError(f"Unexpected type: {type(formula)}")
 
 class AlphaRename:
     def __init__(self, rename_map_var: dict[Var, Var], rename_map_pred_tmpl: dict[PredTemplate, PredTemplate], rename_map_fun_tmpl: dict[FunTemplate, FunTemplate]) -> None:
@@ -627,18 +659,17 @@ class AlphaRename:
         else:
             raise LogicError(f"Unexpected type: {type(expr)}")
 
-def alpha_safe(expr: Formula | Term, mapping: dict[Term, Term], skip_key: bool = False) -> tuple[AlphaRename, tuple[dict[VarTerm, VarTerm], dict[PredTerm, PredTerm], dict[FunTerm, FunTerm]]]:
+def alpha_safe(expr: Formula | Term, mapping: dict[Term, Term]) -> AlphaRename:
     items_to_substitute: set[Var | PredTemplate | FunTemplate] = set()
     for term in mapping.values():
         fv, bv, fpt, bpt, fft, bft = collect_vars(term)
         items_to_substitute.update(fv | bv | fpt | bpt | fft | bft)
     used_free_vars, used_bound_vars, used_free_pred_tmpls, used_bound_pred_tmpls, used_free_fun_tmpls, used_bound_fun_tmpls = collect_vars(expr)
     items_to_substitute.update(used_free_vars | used_free_pred_tmpls | used_free_fun_tmpls)
-    keys: set[Term] = set() if skip_key else set(mapping.keys())
     rename_map_var: dict[Var, Var] = {}
     rename_map_pred_tmpl: dict[PredTemplate, PredTemplate] = {}
     rename_map_fun_tmpl: dict[FunTemplate, FunTemplate] = {}
-    for target in keys | used_bound_vars | used_bound_pred_tmpls | used_bound_fun_tmpls:
+    for target in used_bound_vars | used_bound_pred_tmpls | used_bound_fun_tmpls:
         if isinstance(target, Var):
             new_v = fresh_var(target, items_to_substitute)
             if new_v != target:
@@ -656,55 +687,34 @@ def alpha_safe(expr: Formula | Term, mapping: dict[Term, Term], skip_key: bool =
             items_to_substitute.add(new_ft)
         else:
             raise LogicError(f"Unexpected type: {type(target)}")
-    renamer = AlphaRename(rename_map_var, rename_map_pred_tmpl, rename_map_fun_tmpl)
+    return AlphaRename(rename_map_var, rename_map_pred_tmpl, rename_map_fun_tmpl)
+
+def alpha_safe_var_term(expr: VarTerm, mapping: dict[Term, Term]) -> VarTerm:
+    return alpha_safe(expr, mapping).alpha_rename_var_term(expr)
+
+def alpha_safe_term(expr: Term, mapping: dict[Term, Term]) -> Term:
+    return alpha_safe(expr, mapping).alpha_rename_term(expr)
+
+def alpha_safe_formula(expr: Formula, mapping: dict[Term, Term]) -> Formula:
+    return alpha_safe(expr, mapping).alpha_rename_formula(expr)
+
+def mapping_adapter(mapping: dict[Term, Term]) -> tuple[dict[VarTerm, VarTerm], dict[PredTerm, PredTerm], dict[FunTerm, FunTerm]]:
     new_mapping_var: dict[VarTerm, VarTerm] = {}
     new_mapping_pred: dict[PredTerm, PredTerm] = {}
     new_mapping_fun: dict[FunTerm, FunTerm] = {}
-    if skip_key:
-        for k, v in mapping.items():
-            if isinstance(k, VarTerm):
-                if not isinstance(v, VarTerm):
-                    raise LogicError(f"Unexpected type: {type(v)}")
-                new_mapping_var[k] = v
-            elif isinstance(k, PredTerm):
-                if not isinstance(v, PredTerm):
-                    raise LogicError(f"Unexpected type: {type(v)}")
-                new_mapping_pred[k] = v
-            elif isinstance(k, FunTerm):
-                if not isinstance(v, FunTerm):
-                    raise LogicError(f"Unexpected type: {type(v)}")
-                new_mapping_fun[k] = v
-            else:
-                raise LogicError(f"Unexpected type: {type(k)}")
-    else:
-        for k, v in mapping.items():
-            if isinstance(k, Var):
-                if not isinstance(v, VarTerm):
-                    raise LogicError(f"Unexpected type: {type(v)}")
-                new_k = rename_map_var.get(k, k)
-                new_mapping_var[new_k] = v
-            elif isinstance(k, PredTemplate):
-                if not isinstance(v, PredTerm):
-                    raise LogicError(f"Unexpected type: {type(v)}")
-                new_k = rename_map_pred_tmpl.get(k, k)
-                new_mapping_pred[new_k] = v
-            elif isinstance(k, FunTemplate):
-                if not isinstance(v, FunTerm):
-                    raise LogicError(f"Unexpected type: {type(v)}")
-                new_k = rename_map_fun_tmpl.get(k, k)
-                new_mapping_fun[new_k] = v
-            else:
-                raise LogicError(f"Unexpected type: {type(k)}")
-    return renamer, (new_mapping_var, new_mapping_pred, new_mapping_fun)
-
-def alpha_safe_var_term(expr: VarTerm, mapping: dict[Term, Term], skip_key: bool = False) -> tuple[VarTerm, tuple[dict[VarTerm, VarTerm], dict[PredTerm, PredTerm], dict[FunTerm, FunTerm]]]:
-    renamer, renamed_mapping = alpha_safe(expr, mapping, skip_key)
-    return renamer.alpha_rename_var_term(expr), renamed_mapping
-
-def alpha_safe_term(expr: Term, mapping: dict[Term, Term], skip_key: bool = False) -> tuple[Term, tuple[dict[VarTerm, VarTerm], dict[PredTerm, PredTerm], dict[FunTerm, FunTerm]]]:
-    renamer, renamed_mapping = alpha_safe(expr, mapping, skip_key)
-    return renamer.alpha_rename_term(expr), renamed_mapping
-
-def alpha_safe_formula(expr: Formula, mapping: dict[Term, Term], skip_key: bool = False) -> tuple[Formula, tuple[dict[VarTerm, VarTerm], dict[PredTerm, PredTerm], dict[FunTerm, FunTerm]]]:
-    renamer, renamed_mapping = alpha_safe(expr, mapping, skip_key)
-    return renamer.alpha_rename_formula(expr), renamed_mapping
+    for k, v in mapping.items():
+        if isinstance(k, VarTerm):
+            if not isinstance(v, VarTerm):
+                raise LogicError(f"Unexpected type: {type(v)}")
+            new_mapping_var[k] = v
+        elif isinstance(k, PredTerm):
+            if not isinstance(v, PredTerm):
+                raise LogicError(f"Unexpected type: {type(v)}")
+            new_mapping_pred[k] = v
+        elif isinstance(k, FunTerm):
+            if not isinstance(v, FunTerm):
+                raise LogicError(f"Unexpected type: {type(v)}")
+            new_mapping_fun[k] = v
+        else:
+            raise LogicError(f"Unexpected type: {type(k)}")
+    return new_mapping_var, new_mapping_pred, new_mapping_fun
