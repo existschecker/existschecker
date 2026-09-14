@@ -399,12 +399,6 @@ class DefExpander:
         elif isinstance(expr, (And, Or, Implies, Iff)):
             return type(expr)(self.expand_defs_formula(expr.left), self.expand_defs_formula(expr.right))
         elif isinstance(expr, Forall):
-            pred_tmpls: list[PredTemplate] = []
-            fun_tmpls: list[FunTemplate] = []
-            if isinstance(expr.var, PredTemplate):
-                pred_tmpls.append(expr.var)
-            elif isinstance(expr.var, FunTemplate):
-                fun_tmpls.append(expr.var)
             return Forall(expr.var, self.expand_defs_formula(expr.body))
         elif isinstance(expr, (Exists, ExistsUniq)):
             return type(expr)(expr.var, self.expand_defs_formula(expr.body))
