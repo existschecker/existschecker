@@ -510,13 +510,7 @@ class Substitutor:
 
     def substitute_formula(self, expr: Formula) -> Formula:
         if isinstance(expr, AtomicFormula):
-            new_pred = self.substitute_pred_term(expr.pred)
-            if isinstance(new_pred, (PredTemplate, RefEquality, RefPrimPred, RefDefPred)):
-                return AtomicFormula(new_pred, tuple(self.substitute_term(arg) for arg in expr.args))
-            elif isinstance(new_pred, PredLambda):
-                return AtomicFormula(new_pred, tuple(self.substitute_term(arg) for arg in expr.args))
-            else:
-                raise LogicError(f"Unexpected type: {type(new_pred)}")
+            return AtomicFormula(self.substitute_pred_term(expr.pred), tuple(self.substitute_term(arg) for arg in expr.args))
 
         elif isinstance(expr, Not):
             return Not(self.substitute_formula(expr.body))
