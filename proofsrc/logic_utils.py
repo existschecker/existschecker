@@ -344,11 +344,6 @@ class DefExpander:
                     renamed_term = alpha_safe_var_term(deffunterm.varterm, mapping)
                     expanded = Substitutor(mapping_adapter(mapping)).substitute_var_term(renamed_term)
                     return self.expand_defs_var_term(expanded)
-            elif isinstance(expr.fun, FunLambda):
-                mapping: dict[Term, Term] = dict(zip(expr.fun.args, expr.args))
-                renamed_body = alpha_safe_var_term(expr.fun.body, mapping)
-                beta_reduced = Substitutor(mapping_adapter(mapping)).substitute_var_term(renamed_body)
-                return self.expand_defs_var_term(beta_reduced)
             return Compound(expr.fun, tuple(self.expand_defs_term(arg) for arg in expr.args))
         else:
             raise LogicError(f"Unexpected type: {type(expr)}")
