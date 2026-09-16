@@ -163,20 +163,13 @@ class ControlContext:
     pred_tmpls: list[PredTemplate]
     fun_tmpls: list[FunTemplate]
     symbols: list[Var | PredTemplate | FunTemplate]
-    used_names: set[str]
 
     @staticmethod
     def init() -> "ControlContext":
-        return ControlContext(vars=[], formulas=[], pred_tmpls=[], fun_tmpls=[], symbols=[], used_names=set())
+        return ControlContext(vars=[], formulas=[], pred_tmpls=[], fun_tmpls=[], symbols=[])
 
     def add(self, new_vars: list[Var], new_formulas: list[Bottom | Formula], new_pred_tmpls: list[PredTemplate], new_fun_tmpls: list[FunTemplate], new_symbols: list[Var | PredTemplate | FunTemplate]) -> "ControlContext":
-        new_used_names = self.used_names.copy()
-        for item in new_vars + new_pred_tmpls + new_fun_tmpls:
-            if item.name in new_used_names:
-                msg = f"{item.name} is already used"
-                raise ContextError(msg)
-            new_used_names.add(item.name)
-        return ControlContext(list(self.vars + new_vars), list(self.formulas + new_formulas), list(self.pred_tmpls + new_pred_tmpls), list(self.fun_tmpls + new_fun_tmpls), list(self.symbols + new_symbols), new_used_names)
+        return ControlContext(list(self.vars + new_vars), list(self.formulas + new_formulas), list(self.pred_tmpls + new_pred_tmpls), list(self.fun_tmpls + new_fun_tmpls), list(self.symbols + new_symbols))
 
 @dataclass(frozen=True)
 class RefFact:
