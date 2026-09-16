@@ -242,10 +242,6 @@ class Checker:
 
     def check_any(self, node: Any, context: Context, indent: int) -> Context:
         debug_prefix = make_debug_prefix(node, indent)
-        for item in node.items:
-            if item.name in context.ctrl.used_names or item.name in self.decl.get_used_names():
-                msg = f"{ExprFormatter(self.decl).pretty_expr(item)} is already used"
-                raise CheckError(node, msg)
         logger.debug(f"{debug_prefix}Taking {node.items}")
         local_vars = [item for item in node.items if isinstance(item, Var)]
         local_pred_tmpls = [item for item in node.items if isinstance(item, PredTemplate)]
@@ -375,12 +371,6 @@ class Checker:
         if len(vars) != len(node.items):
             msg = f"len(vars): {len(vars)}, len(node.items): {len(node.items)}"
             raise CheckError(node, msg)
-        for item in node.items:
-            if item is None:
-                continue
-            if item.name in context.ctrl.used_names or item.name in self.decl.get_used_names():
-                msg = f"{ExprFormatter(self.decl).pretty_expr(item)} is already used"
-                raise CheckError(node, msg)
         mapping: dict[Term, Term] = {bound: free for bound, free in zip(vars, node.items) if free is not None}
         renamed_body = alpha_safe_formula(body, mapping)
         existence = beta_reduction_formula(Substitutor(mapping_adapter(mapping)).substitute_formula(renamed_body))
