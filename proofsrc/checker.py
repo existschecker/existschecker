@@ -2,7 +2,6 @@ from lexer import Token
 from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Control, Formula, Declaration, PredTemplate, Term, Assert, Fold, VarTerm, FunTemplate, RefDefPred, InvalidDeclaration, InvalidControl, LexedUnit, RefFact, RefEquality, CheckError, ContextError, LogicError, FormatError, DeclarationContextNameSpace, Struct, StructPred, ElaboratedUnit, CheckedUnit, StructCon
 from logic_utils import Substitutor, DefExpander, strip_forall_vars, strip_exists_vars, make_forall_vars, make_exists_vars, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs, alpha_safe_formula, beta_reduction_formula, mapping_adapter
 from formatter import ExprFormatter
-from copy import deepcopy
 from lsprotocol import types as lsp
 from pygls import uris
 from decl_logic import make_formula_from_fact, DeclLogicError
@@ -180,7 +179,7 @@ class Checker:
 
     def check_control(self, node: Control, context: Context, indent: int) -> Context:
 
-        node.proofinfo.ctrl_ctx = deepcopy(context.ctrl)
+        node.proofinfo.ctrl_ctx = context.ctrl
 
         try:
             if isinstance(node, Any):
