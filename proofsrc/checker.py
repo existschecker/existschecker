@@ -1,5 +1,5 @@
 from lexer import Token
-from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Control, Formula, Declaration, PredTemplate, Term, Assert, Fold, VarTerm, FunTemplate, RefDefPred, InvalidDeclaration, InvalidControl, LexedUnit, RefFact, RefEquality, CheckError, ContextError, LogicError, FormatError, DeclarationContextNameSpace, Struct, StructPred, ElaboratedUnit, CheckedUnit, StructCon
+from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Control, Formula, Declaration, Term, Assert, Fold, VarTerm, RefDefPred, InvalidDeclaration, InvalidControl, LexedUnit, RefFact, RefEquality, CheckError, ContextError, LogicError, FormatError, DeclarationContextNameSpace, Struct, StructPred, ElaboratedUnit, CheckedUnit, StructCon
 from logic_utils import Substitutor, DefExpander, strip_forall_vars, strip_exists_vars, make_forall_vars, make_exists_vars, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs, alpha_safe_formula, beta_reduction_formula, mapping_adapter
 from formatter import ExprFormatter
 from lsprotocol import types as lsp
@@ -243,10 +243,7 @@ class Checker:
     def check_any(self, node: Any, context: Context, indent: int) -> Context:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}Taking {node.items}")
-        local_vars = [item for item in node.items if isinstance(item, Var)]
-        local_pred_tmpls = [item for item in node.items if isinstance(item, PredTemplate)]
-        local_fun_tmpls = [item for item in node.items if isinstance(item, FunTemplate)]
-        local_ctx = context.add_ctrl(local_vars, [], local_pred_tmpls, local_fun_tmpls, node.items)
+        local_ctx = context.add_ctrl([], node.items)
         for stmt in node.body:
             local_ctx = self.check_control(stmt, local_ctx, indent+1)
         if not (len(context.ctrl.formulas) < len(local_ctx.ctrl.formulas) and context.ctrl.formulas == local_ctx.ctrl.formulas[:len(context.ctrl.formulas)]):
@@ -266,12 +263,12 @@ class Checker:
         node.proofinfo.local_premise = []
         node.proofinfo.local_conclusion = [local_goal]
         logger.debug(f"{debug_prefix}Generalized to {ExprFormatter(self.decl).pretty_expr(goal)}")
-        return context.add_ctrl([], [goal], [], [], [])
+        return context.add_ctrl([goal], [])
 
     def check_assume(self, node: Assume, context: Context, indent: int) -> Context:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}premise={ExprFormatter(self.decl).pretty_expr(node.premise)}")
-        local_ctx = context.add_ctrl([], [node.premise], [], [], [])
+        local_ctx = context.add_ctrl([node.premise], [])
         for stmt in node.body:
             local_ctx = self.check_control(stmt, local_ctx, indent+1)
         if not (len(context.ctrl.formulas) < len(local_ctx.ctrl.formulas) and context.ctrl.formulas == local_ctx.ctrl.formulas[:len(context.ctrl.formulas)]):
@@ -289,7 +286,7 @@ class Checker:
         node.proofinfo.local_premise = [node.premise]
         node.proofinfo.local_conclusion = [goal]
         logger.debug(f"{debug_prefix}Added implication {ExprFormatter(self.decl).pretty_expr(implication)}")
-        return context.add_ctrl([], [implication], [], [], [])
+        return context.add_ctrl([implication], [])
 
     def check_divide(self, node: Divide, context: Context, indent: int) -> Context:
         debug_prefix = make_debug_prefix(node, indent)
@@ -328,12 +325,12 @@ class Checker:
         node.proofinfo.local_premise = []
         node.proofinfo.local_conclusion = [goals[0]]
         logger.debug(f"{debug_prefix}derived in all cases: {ExprFormatter(self.decl).pretty_expr(goals[0])}")
-        return context.add_ctrl([], [goals[0]], [], [], [])
+        return context.add_ctrl([goals[0]], [])
 
     def check_case(self, node: Case, context: Context, indent: int) -> Context:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}premise={ExprFormatter(self.decl).pretty_expr(node.premise)}")
-        local_ctx = context.add_ctrl([], [node.premise], [], [], [])
+        local_ctx = context.add_ctrl([node.premise], [])
         for stmt in node.body:
             local_ctx = self.check_control(stmt, local_ctx, indent+1)
         if not (len(context.ctrl.formulas) < len(local_ctx.ctrl.formulas) and context.ctrl.formulas == local_ctx.ctrl.formulas[:len(context.ctrl.formulas)]):
@@ -347,7 +344,7 @@ class Checker:
         node.proofinfo.local_premise = [node.premise]
         node.proofinfo.local_conclusion = [goal]
         logger.debug(f"{debug_prefix}Added goal {ExprFormatter(self.decl).pretty_expr(goal)}")
-        return context.add_ctrl([], [goal], [], [], [])
+        return context.add_ctrl([goal], [])
 
     def check_some(self, node: Some, context: Context, indent: int) -> Context:
         debug_prefix = make_debug_prefix(node, indent)
@@ -388,8 +385,7 @@ class Checker:
             premises: list[Bottom | Formula] = [existence, uniqueness]
         logger.debug(f"{debug_prefix}Taking {node.items}, premise={ExprFormatter(self.decl).pretty_expr(existence)}")
         local_vars = [item for item in node.items if isinstance(item, Var)]
-        local_symbols: list[Var | PredTemplate | FunTemplate] = list(local_vars)
-        local_ctx = context.add_ctrl(local_vars, premises, [], [], local_symbols)
+        local_ctx = context.add_ctrl(premises, list(local_vars))
         for stmt in node.body:
             local_ctx = self.check_control(stmt, local_ctx, indent+1)
         if not (len(context.ctrl.formulas) < len(local_ctx.ctrl.formulas) and context.ctrl.formulas == local_ctx.ctrl.formulas[:len(context.ctrl.formulas)]):
@@ -409,12 +405,12 @@ class Checker:
         node.proofinfo.local_premise = premises
         node.proofinfo.local_conclusion = [goal]
         logger.debug(f"{debug_prefix}Added goal {ExprFormatter(self.decl).pretty_expr(goal)}")
-        return context.add_ctrl([], [goal], [], [], [])
+        return context.add_ctrl([goal], [])
 
     def check_deny(self, node: Deny, context: Context, indent: int) -> Context:
         debug_prefix = make_debug_prefix(node, indent)
         logger.debug(f"{debug_prefix}premise={ExprFormatter(self.decl).pretty_expr(node.premise)}")
-        local_ctx = context.add_ctrl([], [node.premise], [], [], [])
+        local_ctx = context.add_ctrl([node.premise], [])
         for stmt in node.body:
             local_ctx = self.check_control(stmt, local_ctx, indent+1)
         if not (len(context.ctrl.formulas) < len(local_ctx.ctrl.formulas) and context.ctrl.formulas == local_ctx.ctrl.formulas[:len(context.ctrl.formulas)]):
@@ -433,7 +429,7 @@ class Checker:
             node.proofinfo.local_premise = [node.premise]
             node.proofinfo.local_conclusion = [goal]
             logger.debug(f"{debug_prefix}contradiction is derived; added {ExprFormatter(self.decl).pretty_expr(conclusion)}")
-            return context.add_ctrl([], [conclusion], [], [], [])
+            return context.add_ctrl([conclusion], [])
         else:
             msg = "conradiction has not been deried"
             raise CheckError(node, msg)
@@ -450,7 +446,7 @@ class Checker:
         conclusion = Bottom()
         node.proofinfo.premises = [node.contradiction, Not(node.contradiction)]
         node.proofinfo.conclusions = [conclusion]
-        return context.add_ctrl([], [conclusion], [], [], [])
+        return context.add_ctrl([conclusion], [])
 
     def check_explode(self, node: Explode, context: Context, indent: int) -> Context:
         debug_prefix = make_debug_prefix(node, indent)
@@ -458,7 +454,7 @@ class Checker:
             node.proofinfo.premises = [Bottom()]
             node.proofinfo.conclusions = [node.conclusion]
             logger.debug(f"{debug_prefix}added {ExprFormatter(self.decl).pretty_expr(node.conclusion)}")
-            return context.add_ctrl([], [node.conclusion], [], [], [])
+            return context.add_ctrl([node.conclusion], [])
         else:
             msg = "contradiction has not been derived"
             raise CheckError(node, msg)
@@ -489,7 +485,7 @@ class Checker:
             node.proofinfo.premises = [node.fact]
             node.proofinfo.conclusions = [instantiation]
             logger.debug(f"{debug_prefix}Added {ExprFormatter(self.decl).pretty_expr(instantiation)}")
-            return context.add_ctrl([], [instantiation], [], [], [])
+            return context.add_ctrl([instantiation], [])
         elif node.invoke == "invoke":
             if not isinstance(instantiation, Implies):
                 msg = "instantiation is not Implies object"
@@ -502,7 +498,7 @@ class Checker:
             node.proofinfo.premises = [node.fact, instantiation.left]
             node.proofinfo.conclusions = [instantiation.right]
             logger.debug(f"{debug_prefix}Added {ExprFormatter(self.decl).pretty_expr(instantiation.right)}")
-            return context.add_ctrl([], [instantiation.right], [], [], [])
+            return context.add_ctrl([instantiation.right], [])
         elif node.invoke == "invoke-rightward":
             if not isinstance(instantiation, Iff):
                 msg = "instantiation is not Iff object"
@@ -515,7 +511,7 @@ class Checker:
             node.proofinfo.premises = [node.fact, instantiation.left]
             node.proofinfo.conclusions = [instantiation.right]
             logger.debug(f"{debug_prefix}Added {ExprFormatter(self.decl).pretty_expr(instantiation.right)}")
-            return context.add_ctrl([], [instantiation.right], [], [], [])
+            return context.add_ctrl([instantiation.right], [])
         elif node.invoke == "invoke-leftward":
             if not isinstance(instantiation, Iff):
                 msg = "instantiation is not Iff object"
@@ -528,7 +524,7 @@ class Checker:
             node.proofinfo.premises = [node.fact, instantiation.right]
             node.proofinfo.conclusions = [instantiation.left]
             logger.debug(f"{debug_prefix}Added {ExprFormatter(self.decl).pretty_expr(instantiation.left)}")
-            return context.add_ctrl([], [instantiation.left], [], [], [])
+            return context.add_ctrl([instantiation.left], [])
         else:
             msg = f"Unexpected invoke option {node.invoke}"
             raise CheckError(node, msg)
@@ -554,7 +550,7 @@ class Checker:
         logger.debug(f"{debug_prefix}Fact: {ExprFormatter(self.decl).pretty_expr(fact)}")
         node.proofinfo.premises = [fact]
         node.proofinfo.conclusions = [node.conclusion]
-        return context.add_ctrl([], [node.conclusion], [], [], [])
+        return context.add_ctrl([node.conclusion], [])
 
     def check_characterize(self, node: Characterize, context: Context, indent: int) -> Context:
         debug_prefix = make_debug_prefix(node, indent)
@@ -578,7 +574,7 @@ class Checker:
         logger.debug(f"{debug_prefix}Fact: {ExprFormatter(self.decl).pretty_expr(fact)}")
         node.proofinfo.premises = [fact]
         node.proofinfo.conclusions = [node.conclusion]
-        return context.add_ctrl([], [node.conclusion], [], [], [])
+        return context.add_ctrl([node.conclusion], [])
 
     def check_invoke(self, node: Invoke, context: Context, indent: int) -> Context:
         debug_prefix = make_debug_prefix(node, indent)
@@ -598,7 +594,7 @@ class Checker:
             node.proofinfo.premises = [node.fact, node.fact.left]
             node.proofinfo.conclusions = [node.fact.right]
             logger.debug(f"{debug_prefix}Right of Implies object added: {ExprFormatter(self.decl).pretty_expr(node.fact.right)}")
-            return context.add_ctrl([], [node.fact.right], [], [], [])
+            return context.add_ctrl([node.fact.right], [])
         elif node.direction == "rightward":
             if not isinstance(node.fact, Iff):
                 msg = f"Not Iff object: {ExprFormatter(self.decl).pretty_expr(node.fact)}"
@@ -611,7 +607,7 @@ class Checker:
             node.proofinfo.premises = [node.fact, node.fact.left]
             node.proofinfo.conclusions = [node.fact.right]
             logger.debug(f"{debug_prefix}Right of Iff object added: {ExprFormatter(self.decl).pretty_expr(node.fact.right)}")
-            return context.add_ctrl([], [node.fact.right], [], [], [])
+            return context.add_ctrl([node.fact.right], [])
         elif node.direction == "leftward":
             if not isinstance(node.fact, Iff):
                 msg = f"Not Iff object: {ExprFormatter(self.decl).pretty_expr(node.fact)}"
@@ -624,7 +620,7 @@ class Checker:
             node.proofinfo.premises = [node.fact, node.fact.right]
             node.proofinfo.conclusions = [node.fact.left]
             logger.debug(f"{debug_prefix}Left of Iff object added: {ExprFormatter(self.decl).pretty_expr(node.fact.left)}")
-            return context.add_ctrl([], [node.fact.left], [], [], [])
+            return context.add_ctrl([node.fact.left], [])
         else:
             msg = f"Unexpected direction: {node.direction}"
             raise CheckError(node, msg)
@@ -641,7 +637,7 @@ class Checker:
         node.proofinfo.premises = [node.fact]
         node.proofinfo.conclusions = [conclusion]
         logger.debug(f"{debug_prefix}Added: {ExprFormatter(self.decl).pretty_expr(conclusion)}")
-        return context.add_ctrl([], [conclusion], [], [], [])
+        return context.add_ctrl([conclusion], [])
 
     def check_fold(self, node: Fold, context: Context, indent: int) -> Context:
         debug_prefix = make_debug_prefix(node, indent)
@@ -653,7 +649,7 @@ class Checker:
         node.proofinfo.premises = [fact]
         node.proofinfo.conclusions = [node.conclusion]
         logger.debug(f"{debug_prefix}Added: {ExprFormatter(self.decl).pretty_expr(node.conclusion)}")
-        return context.add_ctrl([], [node.conclusion], [], [], [])
+        return context.add_ctrl([node.conclusion], [])
 
     def check_pad(self, node: Pad, context: Context, indent: int) -> Context:
         debug_prefix = make_debug_prefix(node, indent)
@@ -675,7 +671,7 @@ class Checker:
         node.proofinfo.premises = [node.fact]
         node.proofinfo.conclusions = [node.conclusion]
         logger.debug(f"{debug_prefix}Derivable, added {ExprFormatter(self.decl).pretty_expr(node.conclusion)}")
-        return context.add_ctrl([], [node.conclusion], [], [], [])
+        return context.add_ctrl([node.conclusion], [])
 
     def check_split(self, node: Split, context: Context, indent: int) -> Context:
         debug_prefix = make_debug_prefix(node, indent)
@@ -693,7 +689,7 @@ class Checker:
                 node.proofinfo.conclusions = fact_parts
                 for f in fact_parts:
                     logger.debug(f"{debug_prefix}added {ExprFormatter(self.decl).pretty_expr(f)}")
-                return context.add_ctrl([], list(fact_parts), [], [], [])
+                return context.add_ctrl(list(fact_parts), [])
             else:
                 if node.index <= 0 or node.index > len(fact_parts):
                     msg = f"index out of range, index: {node.index}, len(fact_parts): {len(fact_parts)}"
@@ -701,7 +697,7 @@ class Checker:
                 f = fact_parts[node.index - 1]
                 node.proofinfo.conclusions = [f]
                 logger.debug(f"{debug_prefix}added {ExprFormatter(self.decl).pretty_expr(f)}")
-                return context.add_ctrl([], [f], [], [], [])
+                return context.add_ctrl([f], [])
         elif isinstance(fact, Iff):
             logger.debug(f"{debug_prefix}Iff object: {ExprFormatter(self.decl).pretty_expr(fact)}")
             implication_rightward = Implies(fact.left, fact.right)
@@ -710,7 +706,7 @@ class Checker:
             node.proofinfo.conclusions = [implication_rightward, implication_leftward]
             logger.debug(f"{debug_prefix}added {ExprFormatter(self.decl).pretty_expr(implication_rightward)}")
             logger.debug(f"{debug_prefix}added {ExprFormatter(self.decl).pretty_expr(implication_leftward)}")
-            return context.add_ctrl([], [implication_rightward, implication_leftward], [], [], [])
+            return context.add_ctrl([implication_rightward, implication_leftward], [])
         else:
             msg = f"Not And or Iff object: {ExprFormatter(self.decl).pretty_expr(fact)}"
             raise CheckError(node, msg)
@@ -728,7 +724,7 @@ class Checker:
             node.proofinfo.premises = conclusion_parts
             node.proofinfo.conclusions = [node.conclusion]
             logger.debug(f"{debug_prefix}Derivable, added {ExprFormatter(self.decl).pretty_expr(node.conclusion)}")
-            return context.add_ctrl([], [node.conclusion], [], [], [])
+            return context.add_ctrl([node.conclusion], [])
         elif isinstance(conclusion, Iff):
             logger.debug(f"{debug_prefix}Iff object: {ExprFormatter(self.decl).pretty_expr(conclusion)}")
             implication_rightward = Implies(conclusion.left, conclusion.right)
@@ -742,7 +738,7 @@ class Checker:
             node.proofinfo.premises = [implication_rightward, implication_leftward]
             node.proofinfo.conclusions = [node.conclusion]
             logger.debug(f"{debug_prefix}derivable, added {ExprFormatter(self.decl).pretty_expr(node.conclusion)}")
-            return context.add_ctrl([], [node.conclusion], [], [], [])
+            return context.add_ctrl([node.conclusion], [])
         else:
             msg = f"Not And or Iff object: {ExprFormatter(self.decl).pretty_expr(node.conclusion)}"
             raise CheckError(node, msg)
@@ -780,7 +776,7 @@ class Checker:
         node.proofinfo.premises = [node.fact] + premises_equal
         node.proofinfo.conclusions = [conclusion]
         logger.debug(f"{debug_prefix}Added {ExprFormatter(self.decl).pretty_expr(conclusion)}")
-        return context.add_ctrl([], [conclusion], [], [], [])
+        return context.add_ctrl([conclusion], [])
 
     def check_show(self, node: Show, context: Context, indent: int) -> Context:
         debug_prefix = make_debug_prefix(node, indent)
@@ -803,7 +799,7 @@ class Checker:
         node.proofinfo.local_premise = []
         node.proofinfo.local_conclusion = [goal]
         logger.debug(f"{debug_prefix}Added {ExprFormatter(self.decl).pretty_expr(goal)}")
-        return context.add_ctrl([], [goal], [], [], [])
+        return context.add_ctrl([goal], [])
 
     def check_assert(self, node: Assert, context: Context, indent: int) -> Context:
         debug_prefix = make_debug_prefix(node, indent)
@@ -816,7 +812,7 @@ class Checker:
         node.proofinfo.premises = []
         node.proofinfo.conclusions = [formula]
         logger.debug(f"{debug_prefix}Added {ExprFormatter(self.decl).pretty_expr(formula)}")
-        return context.add_ctrl([], [formula], [], [], [])
+        return context.add_ctrl([formula], [])
 
 if __name__ == "__main__":
     import sys

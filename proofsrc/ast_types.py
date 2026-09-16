@@ -158,18 +158,15 @@ class Bottom:
 
 @dataclass
 class ControlContext:
-    vars: list[Var]
     formulas: list[Bottom | Formula]
-    pred_tmpls: list[PredTemplate]
-    fun_tmpls: list[FunTemplate]
     symbols: list[Var | PredTemplate | FunTemplate]
 
     @staticmethod
     def init() -> "ControlContext":
-        return ControlContext(vars=[], formulas=[], pred_tmpls=[], fun_tmpls=[], symbols=[])
+        return ControlContext(formulas=[], symbols=[])
 
-    def add(self, new_vars: list[Var], new_formulas: list[Bottom | Formula], new_pred_tmpls: list[PredTemplate], new_fun_tmpls: list[FunTemplate], new_symbols: list[Var | PredTemplate | FunTemplate]) -> "ControlContext":
-        return ControlContext(list(self.vars + new_vars), list(self.formulas + new_formulas), list(self.pred_tmpls + new_pred_tmpls), list(self.fun_tmpls + new_fun_tmpls), list(self.symbols + new_symbols))
+    def add(self, new_formulas: list[Bottom | Formula], new_symbols: list[Var | PredTemplate | FunTemplate]) -> "ControlContext":
+        return ControlContext(list(self.formulas + new_formulas), list(self.symbols + new_symbols))
 
 @dataclass(frozen=True)
 class RefFact:
@@ -546,8 +543,8 @@ class Context:
     def init() -> "Context":
         return Context(ControlContext.init())
 
-    def add_ctrl(self, new_vars: list[Var], new_formulas: list[Bottom | Formula], new_pred_tmpls: list[PredTemplate], new_fun_tmpls: list[FunTemplate], new_symbols: list[Var | PredTemplate | FunTemplate]):
-        return Context(self.ctrl.add(new_vars, new_formulas, new_pred_tmpls, new_fun_tmpls, new_symbols))
+    def add_ctrl(self, new_formulas: list[Bottom | Formula], new_symbols: list[Var | PredTemplate | FunTemplate]):
+        return Context(self.ctrl.add(new_formulas, new_symbols))
 
 @dataclass
 class Include:

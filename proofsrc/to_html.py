@@ -621,12 +621,10 @@ class Renderer:
     def render_proofinfo(self, node: Declaration | Control):
         status = node.proofinfo.status
         status_html = f"<div class='status' hidden>{status}</div>"
-        context_vars = self.render_expr_list(node.proofinfo.ctrl_ctx.vars)
+        context_vars = self.render_expr_list(node.proofinfo.ctrl_ctx.symbols)
         context_vars_html = f"<div class='context-vars' hidden>{context_vars}</div>"
         context_formulas = self.render_expr_list(node.proofinfo.ctrl_ctx.formulas)
         context_formulas_html = f"<div class='context-formulas' hidden>{context_formulas}</div>"
-        context_pred_tmpls = self.render_expr_list(node.proofinfo.ctrl_ctx.pred_tmpls)
-        context_pred_tmpls_html = f"<div class='context-pred-tmpls' hidden>{context_pred_tmpls}</div>"
         premises = self.render_expr_list(node.proofinfo.premises)
         premises_html = f"<div class='premises' hidden>{premises}</div>"
         conclusions = self.render_expr_list(node.proofinfo.conclusions)
@@ -637,7 +635,7 @@ class Renderer:
         local_premise_html = f"<div class='local_premise' hidden>{local_premise}</div>"
         local_conclusion = self.render_expr_list(node.proofinfo.local_conclusion)
         local_conclusion_html = f"<div class='local_conclusion' hidden>{local_conclusion}</div>"
-        return f"{status_html}{context_vars_html}{context_formulas_html}{context_pred_tmpls_html}{premises_html}{conclusions_html}{local_vars_html}{local_premise_html}{local_conclusion_html}"
+        return f"{status_html}{context_vars_html}{context_formulas_html}{premises_html}{conclusions_html}{local_vars_html}{local_premise_html}{local_conclusion_html}"
 
     def render_node(self, node: Include | Declaration | Control) -> str:
         if isinstance(node, Include):

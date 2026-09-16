@@ -38,7 +38,6 @@ function updateInfoPanel(header) {
   let status_label;
   let context_vars_label;
   let context_formulas_label;
-  let context_pred_tmpls_label;
   let premises_label;
   let conclusions_label;
   let local_vars_label;
@@ -49,7 +48,6 @@ function updateInfoPanel(header) {
     status_label = "status";
     context_vars_label = "context_vars";
     context_formulas_label = "context_formulas";
-    context_pred_tmpls_label = "context_pred_tmpls";
     premises_label = "premises";
     conclusions_label = "conclusions";
     local_vars_label = "local_vars";
@@ -59,7 +57,6 @@ function updateInfoPanel(header) {
     status_label = "状態";
     context_vars_label = "現在使える変数";
     context_formulas_label = "現在使える論理式";
-    context_pred_tmpls_label = "現在使えるテンプレート";
     premises_label = "この文の前提";
     conclusions_label = "この文の結論";
     local_vars_label = "この文のブロック内に追加する変数";
@@ -74,8 +71,7 @@ function updateInfoPanel(header) {
   }
   const context_vars = status.nextElementSibling;
   const context_formulas = context_vars.nextElementSibling;
-  const context_pred_tmpls = context_formulas.nextElementSibling;
-  const premises = context_pred_tmpls.nextElementSibling;
+  const premises = context_formulas.nextElementSibling;
   const conclusions = premises.nextElementSibling;
   const local_vars = conclusions.nextElementSibling;
   const local_premise = local_vars.nextElementSibling;
@@ -84,7 +80,6 @@ function updateInfoPanel(header) {
     ${status_label}: ${status.innerHTML}<br>
     ${context_vars_label}: ${context_vars.innerHTML}<br>
     ${context_formulas_label}: ${context_formulas.innerHTML}<br>
-    ${context_pred_tmpls_label}: ${context_pred_tmpls.innerHTML}<br>
     ${premises_label}: ${premises.innerHTML}<br>
     ${conclusions_label}: ${conclusions.innerHTML}<br>
     ${local_vars_label}: ${local_vars.innerHTML}<br>
