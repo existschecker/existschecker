@@ -157,17 +157,17 @@ class ExistsUniq(Formula):
 class Bottom:
     pass
 
-@dataclass
+@dataclass(frozen=True)
 class ControlContext:
-    formulas: list[Bottom | Formula]
-    symbols: list[Var | PredTemplate | FunTemplate]
+    formulas: tuple[Bottom | Formula, ...]
+    symbols: tuple[Var | PredTemplate | FunTemplate, ...]
 
     @staticmethod
     def init() -> "ControlContext":
-        return ControlContext(formulas=[], symbols=[])
+        return ControlContext(formulas=(), symbols=())
 
-    def add(self, new_formulas: list[Bottom | Formula], new_symbols: list[Var | PredTemplate | FunTemplate]) -> "ControlContext":
-        return ControlContext(list(self.formulas + new_formulas), list(self.symbols + new_symbols))
+    def add(self, new_formulas: tuple[Bottom | Formula, ...], new_symbols: tuple[Var | PredTemplate | FunTemplate, ...]) -> "ControlContext":
+        return ControlContext(self.formulas + new_formulas, self.symbols + new_symbols)
 
 @dataclass(frozen=True)
 class RefFact:
@@ -540,7 +540,7 @@ class DeclarationContextNameSpace:
             names.update(ctx.declarations.keys())
         return names
 
-@dataclass
+@dataclass(frozen=True)
 class Context:
     ctrl: ControlContext
 
@@ -548,7 +548,7 @@ class Context:
     def init() -> "Context":
         return Context(ControlContext.init())
 
-    def add_ctrl(self, new_formulas: list[Bottom | Formula], new_symbols: list[Var | PredTemplate | FunTemplate]):
+    def add_ctrl(self, new_formulas: tuple[Bottom | Formula, ...], new_symbols: tuple[Var | PredTemplate | FunTemplate, ...]):
         return Context(self.ctrl.add(new_formulas, new_symbols))
 
 @dataclass
