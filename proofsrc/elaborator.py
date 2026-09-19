@@ -114,7 +114,7 @@ class Elaborator:
     def elaborate_primpred(self, node: ResolvedPrimPred) -> PrimPred:
         ref = RefPrimPred(node.ref.name)
         self.add_node_to_token(ref, node.ref)
-        elaborated = PrimPred(node.name, ref, node.arity, node.tex)
+        elaborated = PrimPred(node.name, ref, node.arity, tuple(node.tex))
         self.add_node_to_token(elaborated, node)
         return elaborated
 
@@ -131,7 +131,7 @@ class Elaborator:
         self.add_node_to_token(ref, node.ref)
         conclusion = self.elaborate_formula(node.conclusion)
         proof = self.elaborate_block(node.proof)
-        elaborated = Theorem(node.name, ref, conclusion, proof)
+        elaborated = Theorem(node.name, ref, conclusion, tuple(proof))
         self.add_node_to_token(elaborated, node)
         return elaborated
 
@@ -140,7 +140,7 @@ class Elaborator:
         self.add_node_to_token(ref, node.ref)
         _, _, _, args = self.elaborate_vars_or_pred_tmpls_or_fun_tmpls(node.args)
         formula = self.elaborate_formula(node.formula)
-        elaborated = DefPred(node.name, ref, args, formula, node.autoexpand, node.tex)
+        elaborated = DefPred(node.name, ref, tuple(args), formula, node.autoexpand, tuple(node.tex))
         self.add_node_to_token(elaborated, node)
         return elaborated
 
@@ -149,7 +149,7 @@ class Elaborator:
         self.add_node_to_token(ref, node.ref)
         ref_theorem = RefTheorem(node.ref_theorem.name)
         self.add_node_to_token(ref_theorem, node.ref_theorem)
-        elaborated = DefCon(node.name, ref, ref_theorem, node.tex)
+        elaborated = DefCon(node.name, ref, ref_theorem, tuple(node.tex))
         self.add_node_to_token(elaborated, node)
         return elaborated
 
@@ -158,7 +158,7 @@ class Elaborator:
         self.add_node_to_token(ref, node.ref)
         ref_theorem = RefTheorem(node.ref_theorem.name)
         self.add_node_to_token(ref_theorem, node.ref_theorem)
-        elaborated = DefFun(node.name, ref, ref_theorem, node.tex)
+        elaborated = DefFun(node.name, ref, ref_theorem, tuple(node.tex))
         self.add_node_to_token(elaborated, node)
         return elaborated
 
@@ -167,14 +167,14 @@ class Elaborator:
         self.add_node_to_token(ref, node.ref)
         _, _, _, args = self.elaborate_vars_or_pred_tmpls_or_fun_tmpls(node.args)
         varterm = self.elaborate_var_term(node.varterm)
-        elaborated = DefFunTerm(node.name, ref, args, varterm, node.tex)
+        elaborated = DefFunTerm(node.name, ref, tuple(args), varterm, tuple(node.tex))
         self.add_node_to_token(elaborated, node)
         return elaborated
 
     def elaborate_equality(self, node: ResolvedEquality) -> Equality:
         ref = RefEquality(node.ref.name)
         self.add_node_to_token(ref, node.ref)
-        elaborated = Equality(node.name, ref, node.tex)
+        elaborated = Equality(node.name, ref, tuple(node.tex))
         self.add_node_to_token(elaborated, node)
         return elaborated
 
@@ -187,7 +187,7 @@ class Elaborator:
             ref_condition = RefStructCondition(k.name)
             self.add_node_to_token(ref_condition, k)
             conditions[ref_condition] = self.elaborate_formula(v)
-        elaboated = Struct(node.name, ref, fields, conditions)
+        elaboated = Struct(node.name, ref, tuple(fields), Map(conditions))
         self.add_node_to_token(elaboated, node)
         return elaboated
 
@@ -198,7 +198,7 @@ class Elaborator:
         self.add_node_to_token(ref, node.ref)
         args = self.elaborate_vars(node.args)
         formula = self.elaborate_formula(node.formula)
-        elaborated = StructPred(node.name, ref_struct, ref, args, formula)
+        elaborated = StructPred(node.name, ref_struct, ref, tuple(args), formula)
         self.add_node_to_token(elaborated, node)
         return elaborated
 

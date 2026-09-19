@@ -322,62 +322,62 @@ class Show(Control):
 class Assert(Control):
     reference: RefFact | Formula
 
-@dataclass
+@dataclass(frozen=True)
 class Declaration:
     name: str
 
-@dataclass
+@dataclass(frozen=True)
 class InvalidDeclaration(Declaration):
     pass
 
-@dataclass
+@dataclass(frozen=True)
 class PrimPred(Declaration):
     ref: RefPrimPred
     arity: int
-    tex: list[str]
+    tex: tuple[str, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class Axiom(Declaration):
     ref: RefAxiom
     conclusion: Formula
 
-@dataclass
+@dataclass(frozen=True)
 class Theorem(Declaration):
     ref: RefTheorem
     conclusion: Formula
-    proof: list[Control]
+    proof: tuple[Control, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class DefPred(Declaration):
     ref: RefDefPred
-    args: list[Var | PredTemplate | FunTemplate]
+    args: tuple[Var | PredTemplate | FunTemplate, ...]
     formula: Formula
     autoexpand: bool
-    tex: list[str]
+    tex: tuple[str, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class DefCon(Declaration):
     ref: RefDefCon
     ref_theorem: RefTheorem
-    tex: list[str]
+    tex: tuple[str, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class DefFun(Declaration):
     ref: RefDefFun
     ref_theorem: RefTheorem
-    tex: list[str]
+    tex: tuple[str, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class DefFunTerm(Declaration):
     ref: RefDefFunTerm
-    args: list[Var | PredTemplate | FunTemplate]
+    args: tuple[Var | PredTemplate | FunTemplate, ...]
     varterm: VarTerm
-    tex: list[str]
+    tex: tuple[str, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class Equality(Declaration):
     ref: RefEquality
-    tex: list[str]
+    tex: tuple[str, ...]
 
 @dataclass(frozen=True)
 class RefStruct:
@@ -387,33 +387,33 @@ class RefStruct:
 class RefStructCondition:
     name: str
 
-@dataclass
+@dataclass(frozen=True)
 class StructVar:
     name: str
     ref_struct: RefStruct
 
-@dataclass
+@dataclass(frozen=True)
 class Struct(Declaration):
     ref: RefStruct
-    fields: list[Var | StructVar]
-    conditions: dict[RefStructCondition, Formula]
+    fields: tuple[Var | StructVar, ...]
+    conditions: Map[RefStructCondition, Formula]
 
-@dataclass
+@dataclass(frozen=True)
 class RefStructPred:
     name: str
 
-@dataclass
+@dataclass(frozen=True)
 class StructPred(Declaration):
     ref_struct: RefStruct
     ref: RefStructPred
-    args: list[Var]
+    args: tuple[Var, ...]
     formula: Formula
 
-@dataclass
+@dataclass(frozen=True)
 class RefStructCon:
     name: str
 
-@dataclass
+@dataclass(frozen=True)
 class StructCon(Declaration):
     ref_struct: RefStruct
     ref: RefStructCon

@@ -99,7 +99,7 @@ class Renderer:
         parts = [f"{escape(f"\\({ExprFormatter(self.decl, "tex").pretty_expr(k)}\\)")}:{escape(f"\\({ExprFormatter(self.decl, "tex").pretty_expr(v)}\\)")}" for k, v in expr_dict.items()]
         return ",".join(parts)
 
-    def render_tex_mathjax(self, tex: list[str]):
+    def render_tex_mathjax(self, tex: tuple[str, ...]):
         return escape(f"\\({"".join(tex)}\\)")
 
     def img_tag(self, svg_path: str, latex_code: str) -> str:
@@ -120,7 +120,7 @@ class Renderer:
         parts = [f"{self.render_expr_svg(k)}:{self.render_expr_svg(v)}" for k, v in expr_dict.items()]
         return f"{",".join(parts)}"
 
-    def render_tex_svg(self, tex: list[str]):
+    def render_tex_svg(self, tex: tuple[str, ...]):
         latex_code = "".join(tex)
         svg_path = output_svg(latex_code)
         return self.img_tag(svg_path, latex_code)

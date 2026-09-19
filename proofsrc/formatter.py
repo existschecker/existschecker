@@ -25,7 +25,7 @@ class ExprFormatter:
         self.decl = decl
         self.mode = mode
 
-    def get_tex_fragments(self, expr: AtomicFormula | Compound) -> list[str]:
+    def get_tex_fragments(self, expr: AtomicFormula | Compound) -> tuple[str, ...]:
         if isinstance(expr, AtomicFormula):
             if isinstance(expr.pred, RefEquality):
                 equality = self.decl.get_equality()
