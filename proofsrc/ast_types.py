@@ -571,8 +571,8 @@ class LexedUnit:
 class ElaboratedUnit:
     ast: Include | Declaration
     node_to_token: dict[int, tuple[int, int]]
-    nodes: list[Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon]
-    token_to_node: dict[int, Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon]
+    nodes: list[Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon]
+    token_to_node: dict[int, Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon]
     token_to_control: dict[int, Control]
     diagnostics: list[lsp.Diagnostic]
 

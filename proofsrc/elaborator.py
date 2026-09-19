@@ -40,8 +40,8 @@ class Elaborator:
         self.node_to_token[id(node)] = self.resolved_unit.resolved_node_to_token[id(resolved)]
         self.nodes.append(node)
 
-    def build_token_to_node(self) -> tuple[dict[int, Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon], dict[int, Control]]:
-        token_to_node: dict[int, Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon] = {}
+    def build_token_to_node(self) -> tuple[dict[int, Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon], dict[int, Control]]:
+        token_to_node: dict[int, Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon] = {}
         token_to_control: dict[int, Control] = {}
         for node in reversed(self.nodes):
             start, end = self.node_to_token[id(node)]
@@ -56,7 +56,7 @@ class Elaborator:
 
     def elaborate_unit(self) -> ElaboratedUnit:
         self.node_to_token: dict[int, tuple[int, int]] = {}
-        self.nodes: list[Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon] = []
+        self.nodes: list[Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon] = []
         self.diagnostics: list[lsp.Diagnostic] = []
         if isinstance(self.resolved_unit.resolved_ast, ResolvedInclude):
             ast = self.elaborate_include(self.resolved_unit.resolved_ast)
