@@ -43,7 +43,8 @@ class Checker:
     def get_node_token(self, node: Declaration | Control) -> Token:
         return self.lexed_unit.tokens[self.elaborated_unit.node_to_token[id(node)][0]]
 
-    def add_lsp_error(self, token: Token, message: str):
+    def add_lsp_error(self, node: Declaration | Control, message: str):
+        token = self.get_node_token(node)
         uri = uris.from_fs_path(token.file)
         if uri is None:
             return
@@ -89,63 +90,68 @@ class Checker:
             elif isinstance(node, StructCon):
                 self.check_struct_constant(node)
             elif isinstance(node, InvalidDeclaration):
-                msg = "InvalidDeclaration"
-                raise CheckError(node, msg)
+                self.add_lsp_error(node, "InvalidDeclaration")
+                node.proofinfo.status = "❌Failed"
             else:
-                msg = f"Unsupported node {node}"
-                raise CheckError(node, msg)
-            node.proofinfo.status = "✅Passed"
+                self.add_lsp_error(node, f"Unsupported node {node}")
+                node.proofinfo.status = "❌Failed"
         except CheckError as e:
-            self.add_lsp_error(self.get_node_token(e.node), e.msg)
+            self.add_lsp_error(e.node, e.msg)
             node.proofinfo.status = "❌Failed"
         except (DeclLogicError, ContextError, LogicError, FormatError) as e:
             msg = f"{e.__class__.__name__}: {e.msg}"
-            self.add_lsp_error(self.get_node_token(node), msg)
+            self.add_lsp_error(node, msg)
             node.proofinfo.status = "❌Failed"
 
     def check_primpred(self, node: PrimPred) -> None:
-        pass
+        node.proofinfo.status = "✅Passed"
 
     def check_axiom(self, node: Axiom) -> None:
-        pass
+        node.proofinfo.status = "✅Passed"
 
     def check_theorem(self, node: Theorem) -> None:
         local_ctx = Context.init()
         for stmt in node.proof:
             local_ctx = self.check_control(stmt, local_ctx)
         if not goal_in_context(node.conclusion, local_ctx, self.decl):
-            msg = f"{node.name} not proved: {ExprFormatter(self.decl).pretty_expr(node.conclusion)}"
-            raise CheckError(node, msg)
+            self.add_lsp_error(node, f"{node.name} not proved: {ExprFormatter(self.decl).pretty_expr(node.conclusion)}")
+            node.proofinfo.status = "❌Failed"
+            return
+        node.proofinfo.status = "✅Passed"
 
     def check_defpred(self, node: DefPred) -> None:
-        pass
+        node.proofinfo.status = "✅Passed"
 
     def check_defcon(self, node: DefCon) -> None:
         existsuniq = self.decl.get_ast(Theorem, node.ref_theorem.name).conclusion
         if not isinstance(existsuniq, ExistsUniq):
-            msg = f"Not ExistsUniq object: {ExprFormatter(self.decl).pretty_expr(existsuniq)}"
-            raise CheckError(node, msg)
+            self.add_lsp_error(node, f"Not ExistsUniq object: {ExprFormatter(self.decl).pretty_expr(existsuniq)}")
+            node.proofinfo.status = "❌Failed"
+            return
+        node.proofinfo.status = "✅Passed"
 
     def check_deffun(self, node: DefFun) -> None:
-        pass
+        node.proofinfo.status = "✅Passed"
 
     def check_deffunterm(self, node: DefFunTerm) -> None:
         fv, _, fpt, _, fft, _ = collect_vars(node.varterm)
         if set(node.args) != set(fv) | set(fpt) | set(fft):
-            msg = f"args are not matched with free vars: {set(fv) | set(fpt) | set(fft)}"
-            raise CheckError(node, msg)
+            self.add_lsp_error(node, f"args are not matched with free vars: {set(fv) | set(fpt) | set(fft)}")
+            node.proofinfo.status = "❌Failed"
+            return
+        node.proofinfo.status = "✅Passed"
 
     def check_equality(self, node: Equality) -> None:
-        pass
+        node.proofinfo.status = "✅Passed"
 
     def check_struct(self, node: Struct) -> None:
-        pass
+        node.proofinfo.status = "✅Passed"
 
     def check_struct_predicate(self, node: StructPred) -> None:
-        pass
+        node.proofinfo.status = "✅Passed"
 
     def check_struct_constant(self, node: StructCon) -> None:
-        pass
+        node.proofinfo.status = "✅Passed"
 
     def check_control(self, node: Control, context: Context) -> Context:
 
@@ -193,35 +199,38 @@ class Checker:
             elif isinstance(node, Assert):
                 context = self.check_assert(node, context)
             elif isinstance(node, InvalidControl):
-                msg = "InvalidControl"
-                raise CheckError(node, msg)
+                self.add_lsp_error(node, "InvalidControl")
+                node.proofinfo.status = "❌Failed"
             else:
-                msg = f"Unsupported node {node}"
-                raise CheckError(node, msg)
-            node.proofinfo.status = "✅Passed"
+                self.add_lsp_error(node, f"Unsupported node {node}")
+                node.proofinfo.status = "❌Failed"
             return context
         except CheckError as e:
+            self.add_lsp_error(e.node, e.msg)
             node.proofinfo.status = "❌Failed"
-            raise
+            return context
         except (DeclLogicError, ContextError, LogicError, FormatError) as e:
-            msg = f"{e.__class__.__name__}: {e.msg}"
+            self.add_lsp_error(node, f"{e.__class__.__name__}: {e.msg}")
             node.proofinfo.status = "❌Failed"
-            raise CheckError(node, msg)
+            return context
 
     def check_any(self, node: Any, context: Context) -> Context:
         local_ctx = context.add_ctrl([], node.items)
         for stmt in node.body:
             local_ctx = self.check_control(stmt, local_ctx)
         if not (len(context.ctrl.formulas) < len(local_ctx.ctrl.formulas) and context.ctrl.formulas == local_ctx.ctrl.formulas[:len(context.ctrl.formulas)]):
-            msg = "Local context must extend the parent context"
-            raise CheckError(node, msg)
+            self.add_lsp_error(node, "Local context must extend the parent context")
+            node.proofinfo.status = "❌Failed"
+            return context
         local_goal = local_ctx.ctrl.formulas[-1]
         if isinstance(local_goal, Bottom):
-            msg = "Bottom cannot be generalized"
-            raise CheckError(node, msg)
+            self.add_lsp_error(node, "Bottom cannot be generalized")
+            node.proofinfo.status = "❌Failed"
+            return context
         goal = local_goal
         for item in reversed(node.items):
             goal = Forall(item, goal)
+        node.proofinfo.status = "✅Passed"
         node.proofinfo.premises = []
         node.proofinfo.conclusions = [goal]
         node.proofinfo.local_vars = node.items
@@ -234,13 +243,16 @@ class Checker:
         for stmt in node.body:
             local_ctx = self.check_control(stmt, local_ctx)
         if not (len(context.ctrl.formulas) < len(local_ctx.ctrl.formulas) and context.ctrl.formulas == local_ctx.ctrl.formulas[:len(context.ctrl.formulas)]):
-            msg = "Local context must extend the parent context"
-            raise CheckError(node, msg)
+            self.add_lsp_error(node, "Local context must extend the parent context")
+            node.proofinfo.status = "❌Failed"
+            return context
         goal = local_ctx.ctrl.formulas[-1]
         if isinstance(goal, Bottom):
-            msg = "Bottom is not allowed as goal"
-            raise CheckError(node, msg)
+            self.add_lsp_error(node, "Bottom is not allowed as goal")
+            node.proofinfo.status = "❌Failed"
+            return context
         implication = Implies(node.premise, goal)
+        node.proofinfo.status = "✅Passed"
         node.proofinfo.premises = []
         node.proofinfo.conclusions = [implication]
         node.proofinfo.local_vars = []
@@ -251,8 +263,9 @@ class Checker:
     def check_divide(self, node: Divide, context: Context) -> Context:
         if isinstance(node.fact, (Bottom, Formula)):
             if not goal_in_context(node.fact, context, self.decl):
-                msg = f"Not fact: {ExprFormatter(self.decl).pretty_expr(node.fact)}"
-                raise CheckError(node, msg)
+                self.add_lsp_error(node, f"Not fact: {ExprFormatter(self.decl).pretty_expr(node.fact)}")
+                node.proofinfo.status = "❌Failed"
+                return context
         fact = get_fact(node.fact, node, self.decl, True)
         connected_premise = Or(node.cases[0].premise, node.cases[1].premise)
         i = 2
@@ -260,20 +273,24 @@ class Checker:
             connected_premise = Or(connected_premise, node.cases[i].premise)
             i += 1
         if not alpha_equiv_with_defs(connected_premise, fact, self.decl):
-            msg = f"not matched: fact={ExprFormatter(self.decl).pretty_expr(fact)}, conected_premise={ExprFormatter(self.decl).pretty_expr(connected_premise)}"
-            raise CheckError(node, msg)
+            self.add_lsp_error(node, f"not matched: fact={ExprFormatter(self.decl).pretty_expr(fact)}, conected_premise={ExprFormatter(self.decl).pretty_expr(connected_premise)}")
+            node.proofinfo.status = "❌Failed"
+            return context
         goals: list[Bottom | Formula] = []
         for stmt in node.cases:
             local_ctx = self.check_control(stmt, context)
             if not (len(context.ctrl.formulas) < len(local_ctx.ctrl.formulas) and context.ctrl.formulas == local_ctx.ctrl.formulas[:len(context.ctrl.formulas)]):
-                msg = "Local context must extend the parent context"
-                raise CheckError(node, msg)
+                self.add_lsp_error(node, "Local context must extend the parent context")
+                node.proofinfo.status = "❌Failed"
+                return context
             goal = local_ctx.ctrl.formulas[-1]
             goals.append(goal)
         for i in range(len(goals) - 1):
             if not alpha_equiv_with_defs(goals[i], goals[i + 1], self.decl):
-                msg = f"Not matched: goals[{i}]: {ExprFormatter(self.decl).pretty_expr(goals[i])}, goals[{i + 1}]: {ExprFormatter(self.decl).pretty_expr(goals[i + 1])}"
-                raise CheckError(node, msg)
+                self.add_lsp_error(node, f"Not matched: goals[{i}]: {ExprFormatter(self.decl).pretty_expr(goals[i])}, goals[{i + 1}]: {ExprFormatter(self.decl).pretty_expr(goals[i + 1])}")
+                node.proofinfo.status = "❌Failed"
+                return context
+        node.proofinfo.status = "✅Passed"
         node.proofinfo.premises = [node.fact]
         node.proofinfo.conclusions = [goals[0]]
         node.proofinfo.local_vars = []
@@ -286,9 +303,11 @@ class Checker:
         for stmt in node.body:
             local_ctx = self.check_control(stmt, local_ctx)
         if not (len(context.ctrl.formulas) < len(local_ctx.ctrl.formulas) and context.ctrl.formulas == local_ctx.ctrl.formulas[:len(context.ctrl.formulas)]):
-            msg = "Local context must extend the parent context"
-            raise CheckError(node, msg)
+            self.add_lsp_error(node, "Local context must extend the parent context")
+            node.proofinfo.status = "❌Failed"
+            return context
         goal = local_ctx.ctrl.formulas[-1]
+        node.proofinfo.status = "✅Passed"
         node.proofinfo.premises = []
         node.proofinfo.conclusions = [goal]
         node.proofinfo.local_vars = []
@@ -299,8 +318,9 @@ class Checker:
     def check_some(self, node: Some, context: Context) -> Context:
         if isinstance(node.fact, (Bottom, Formula)):
             if not goal_in_context(node.fact, context, self.decl):
-                msg = f"not derivable: {ExprFormatter(self.decl).pretty_expr(node.fact)}"
-                raise CheckError(node, msg)
+                self.add_lsp_error(node, f"not derivable: {ExprFormatter(self.decl).pretty_expr(node.fact)}")
+                node.proofinfo.status = "❌Failed"
+                return context
         fact = get_fact(node.fact, node, self.decl, True)
         if isinstance(fact, Exists):
             vars, body = strip_exists_vars(fact, Exists)
@@ -308,14 +328,17 @@ class Checker:
         elif isinstance(fact, ExistsUniq):
             vars, body= strip_exists_vars(fact, ExistsUniq)
             if len(vars) != 1:
-                msg = f"Unexpected len(vars): {len(vars)}"
-                raise CheckError(node, msg)
+                self.add_lsp_error(node, f"Unexpected len(vars): {len(vars)}")
+                node.proofinfo.status = "❌Failed"
+                return context
         else:
-            msg = f"Unexpected type: {type(fact)}"
-            raise CheckError(node, msg)
+            self.add_lsp_error(node, f"Unexpected type: {type(fact)}")
+            node.proofinfo.status = "❌Failed"
+            return context
         if len(vars) != len(node.items):
-            msg = f"len(vars): {len(vars)}, len(node.items): {len(node.items)}"
-            raise CheckError(node, msg)
+            self.add_lsp_error(node, f"len(vars): {len(vars)}, len(node.items): {len(node.items)}")
+            node.proofinfo.status = "❌Failed"
+            return context
         mapping: dict[Term, Term] = {bound: free for bound, free in zip(vars, node.items) if free is not None}
         renamed_body = alpha_safe_formula(body, mapping)
         existence = beta_reduction_formula(Substitutor(mapping_adapter(mapping)).substitute_formula(renamed_body))
@@ -327,8 +350,9 @@ class Checker:
             body = beta_reduction_formula(Substitutor(({vars[0]: var}, {}, {})).substitute_formula(existence))
             equality = self.decl.get_equality()
             if equality is None:
-                msg = "equality has not been declared yet"
-                raise CheckError(node, msg)
+                self.add_lsp_error(node, "equality has not been declared yet")
+                node.proofinfo.status = "❌Failed"
+                return context
             uniqueness = Forall(var, Implies(body, AtomicFormula(RefEquality(equality.ref.name), (var, vars[0]))))
             premises: list[Bottom | Formula] = [existence, uniqueness]
         local_vars = [item for item in node.items if isinstance(item, Var)]
@@ -336,15 +360,18 @@ class Checker:
         for stmt in node.body:
             local_ctx = self.check_control(stmt, local_ctx)
         if not (len(context.ctrl.formulas) < len(local_ctx.ctrl.formulas) and context.ctrl.formulas == local_ctx.ctrl.formulas[:len(context.ctrl.formulas)]):
-            msg = "Local context must extend the parent context"
-            raise CheckError(node, msg)
+            self.add_lsp_error(node, "Local context must extend the parent context")
+            node.proofinfo.status = "❌Failed"
+            return context
         goal = local_ctx.ctrl.formulas[-1]
         if isinstance(goal, Formula):
             goal_fv, _, _, _, _, _ = collect_vars(goal)
             for fv in goal_fv:
                 if fv in local_vars:
-                    msg = f"Conclusion depends on local variable {ExprFormatter(self.decl).pretty_expr(fv)}"
-                    raise CheckError(node, msg)
+                    self.add_lsp_error(node, f"Conclusion depends on local variable {ExprFormatter(self.decl).pretty_expr(fv)}")
+                    node.proofinfo.status = "❌Failed"
+                    return context
+        node.proofinfo.status = "✅Passed"
         node.proofinfo.premises = [node.fact]
         node.proofinfo.conclusions = [goal]
         node.proofinfo.local_vars = list(local_vars)
@@ -357,14 +384,16 @@ class Checker:
         for stmt in node.body:
             local_ctx = self.check_control(stmt, local_ctx)
         if not (len(context.ctrl.formulas) < len(local_ctx.ctrl.formulas) and context.ctrl.formulas == local_ctx.ctrl.formulas[:len(context.ctrl.formulas)]):
-            msg = "Local context must extend the parent context"
-            raise CheckError(node, msg)
+            self.add_lsp_error(node, "Local context must extend the parent context")
+            node.proofinfo.status = "❌Failed"
+            return context
         goal = local_ctx.ctrl.formulas[-1]
         if isinstance(goal, Bottom):
             if isinstance(node.premise, Not):
                 conclusion = node.premise.body
             else:
                 conclusion = Not(node.premise)
+            node.proofinfo.status = "✅Passed"
             node.proofinfo.premises = []
             node.proofinfo.conclusions = [conclusion]
             node.proofinfo.local_vars = []
@@ -372,40 +401,48 @@ class Checker:
             node.proofinfo.local_conclusion = [goal]
             return context.add_ctrl([conclusion], [])
         else:
-            msg = "conradiction has not been deried"
-            raise CheckError(node, msg)
+            self.add_lsp_error(node, "conradiction has not been deried")
+            node.proofinfo.status = "❌Failed"
+            return context
 
     def check_contradict(self, node: Contradict, context: Context) -> Context:
         if not goal_in_context(node.contradiction, context, self.decl):
-            msg = f"Cannot derive {ExprFormatter(self.decl).pretty_expr(node.contradiction)}"
-            raise CheckError(node, msg)
+            self.add_lsp_error(node, f"Cannot derive {ExprFormatter(self.decl).pretty_expr(node.contradiction)}")
+            node.proofinfo.status = "❌Failed"
+            return context
         if not goal_in_context(Not(node.contradiction), context, self.decl):
-            msg = f"Cannot derive {ExprFormatter(self.decl).pretty_expr(Not(node.contradiction))}"
-            raise CheckError(node, msg)
+            self.add_lsp_error(node, f"Cannot derive {ExprFormatter(self.decl).pretty_expr(Not(node.contradiction))}")
+            node.proofinfo.status = "❌Failed"
+            return context
         conclusion = Bottom()
+        node.proofinfo.status = "✅Passed"
         node.proofinfo.premises = [node.contradiction, Not(node.contradiction)]
         node.proofinfo.conclusions = [conclusion]
         return context.add_ctrl([conclusion], [])
 
     def check_explode(self, node: Explode, context: Context) -> Context:
         if goal_in_context(Bottom(), context, self.decl):
+            node.proofinfo.status = "✅Passed"
             node.proofinfo.premises = [Bottom()]
             node.proofinfo.conclusions = [node.conclusion]
             return context.add_ctrl([node.conclusion], [])
         else:
-            msg = "contradiction has not been derived"
-            raise CheckError(node, msg)
+            self.add_lsp_error(node, "contradiction has not been derived")
+            node.proofinfo.status = "❌Failed"
+            return context
 
     def check_apply(self, node: Apply, context: Context) -> Context:
         if isinstance(node.fact, (Bottom, Formula)):
             if not goal_in_context(node.fact, context, self.decl):
-                msg = f"Cannot derive fact: {ExprFormatter(self.decl).pretty_expr(node.fact)}"
-                raise CheckError(node, msg)
+                self.add_lsp_error(node, f"Cannot derive fact: {ExprFormatter(self.decl).pretty_expr(node.fact)}")
+                node.proofinfo.status = "❌Failed"
+                return context
         fact = get_fact(node.fact, node, self.decl, True)
         items, body = strip_forall_vars(fact)
         if len(items) != len(node.terms):
-            msg = f"Formula has {len(items)} forall vars, but {len(node.terms)} terms are given"
-            raise CheckError(node, msg)
+            self.add_lsp_error(node, f"Formula has {len(items)} forall vars, but {len(node.terms)} terms are given")
+            node.proofinfo.status = "❌Failed"
+            return context
         body = make_forall_vars(body, [item for item, term in zip(items, node.terms) if term is None])
         mapping: dict[Term, Term] = {}
         for item, term in zip(items, node.terms):
@@ -415,59 +452,74 @@ class Checker:
         renamed_body = alpha_safe_formula(body, mapping)
         instantiation = beta_reduction_formula(Substitutor(mapping_adapter(mapping)).substitute_formula(renamed_body))
         if node.invoke == "none":
+            node.proofinfo.status = "✅Passed"
             node.proofinfo.premises = [node.fact]
             node.proofinfo.conclusions = [instantiation]
             return context.add_ctrl([instantiation], [])
         elif node.invoke == "invoke":
             if not isinstance(instantiation, Implies):
-                msg = "instantiation is not Implies object"
-                raise CheckError(node, msg)
+                self.add_lsp_error(node, "instantiation is not Implies object")
+                node.proofinfo.status = "❌Failed"
+                return context
             if not goal_in_context(instantiation.left, context, self.decl):
-                msg = f"Left of instantiation is not derivable: {ExprFormatter(self.decl).pretty_expr(instantiation.left)}"
-                raise CheckError(node, msg)
+                self.add_lsp_error(node, f"Left of instantiation is not derivable: {ExprFormatter(self.decl).pretty_expr(instantiation.left)}")
+                node.proofinfo.status = "❌Failed"
+                return context
+            node.proofinfo.status = "✅Passed"
             node.proofinfo.premises = [node.fact, instantiation.left]
             node.proofinfo.conclusions = [instantiation.right]
             return context.add_ctrl([instantiation.right], [])
         elif node.invoke == "invoke-rightward":
             if not isinstance(instantiation, Iff):
-                msg = "instantiation is not Iff object"
-                raise CheckError(node, msg)
+                self.add_lsp_error(node, "instantiation is not Iff object")
+                node.proofinfo.status = "❌Failed"
+                return context
             if not goal_in_context(instantiation.left, context, self.decl):
-                msg = f"Left of instantiation is not derivable: {ExprFormatter(self.decl).pretty_expr(instantiation.left)}"
-                raise CheckError(node, msg)
+                self.add_lsp_error(node, f"Left of instantiation is not derivable: {ExprFormatter(self.decl).pretty_expr(instantiation.left)}")
+                node.proofinfo.status = "❌Failed"
+                return context
+            node.proofinfo.status = "✅Passed"
             node.proofinfo.premises = [node.fact, instantiation.left]
             node.proofinfo.conclusions = [instantiation.right]
             return context.add_ctrl([instantiation.right], [])
         elif node.invoke == "invoke-leftward":
             if not isinstance(instantiation, Iff):
-                msg = "instantiation is not Iff object"
-                raise CheckError(node, msg)
+                self.add_lsp_error(node, "instantiation is not Iff object")
+                node.proofinfo.status = "❌Failed"
+                return context
             if not goal_in_context(instantiation.right, context, self.decl):
-                msg = f"Right of instantiation is not derivable: {ExprFormatter(self.decl).pretty_expr(instantiation.right)}"
-                raise CheckError(node, msg)
+                self.add_lsp_error(node, f"Right of instantiation is not derivable: {ExprFormatter(self.decl).pretty_expr(instantiation.right)}")
+                node.proofinfo.status = "❌Failed"
+                return context
+            node.proofinfo.status = "✅Passed"
             node.proofinfo.premises = [node.fact, instantiation.right]
             node.proofinfo.conclusions = [instantiation.left]
             return context.add_ctrl([instantiation.left], [])
         else:
-            msg = f"Unexpected invoke option {node.invoke}"
-            raise CheckError(node, msg)
+            self.add_lsp_error(node, f"Unexpected invoke option {node.invoke}")
+            node.proofinfo.status = "❌Failed"
+            return context
 
     def check_lift(self, node: Lift, context: Context) -> Context:
         conclusion = expand_if_atomic(node.conclusion, node, self.decl)
         if not isinstance(conclusion, Exists):
-            msg = f"Expected Exists, got {type(conclusion)}"
-            raise CheckError(node, msg)
+            self.add_lsp_error(node, f"Expected Exists, got {type(conclusion)}")
+            node.proofinfo.status = "❌Failed"
+            return context
         items, body = strip_exists_vars(conclusion, Exists)
         if len(items) != len(node.varterms):
-            msg = f"Formula has {len(items)} exists vars, but {len(node.varterms)} terms are given"
-            raise CheckError(node, msg)
+            self.add_lsp_error(node, f"Formula has {len(items)} exists vars, but {len(node.varterms)} terms are given")
+            node.proofinfo.status = "❌Failed"
+            return context
         body = make_exists_vars(body, Exists, [item for item, term in zip(items, node.varterms) if term is None])
         mapping: dict[Term, Term] = {item: term for item, term in zip(items, node.varterms) if term is not None}
         renamed_body = alpha_safe_formula(body, mapping)
         fact = beta_reduction_formula(Substitutor(mapping_adapter(mapping)).substitute_formula(renamed_body))
         if not goal_in_context(fact, context, self.decl):
-            msg = f"Not fact: {ExprFormatter(self.decl).pretty_expr(fact)}"
-            raise CheckError(node, msg)
+            self.add_lsp_error(node, f"Not fact: {ExprFormatter(self.decl).pretty_expr(fact)}")
+            node.proofinfo.status = "❌Failed"
+            return context
+        node.proofinfo.status = "✅Passed"
         node.proofinfo.premises = [fact]
         node.proofinfo.conclusions = [node.conclusion]
         return context.add_ctrl([node.conclusion], [])
@@ -478,67 +530,84 @@ class Checker:
         vardash = fresh_var(Var(node.conclusion.var.name + "'"), used_free_vars | used_bound_vars | used_free_pred_tmpls | used_bound_pred_tmpls | used_free_fun_tmpls | used_bound_fun_tmpls | fv | bv | fpt | bpt | fft | bft)
         renamed_conclusion = alpha_safe_formula(node.conclusion, {node.conclusion.var: node.varterm})
         if not isinstance(renamed_conclusion, ExistsUniq):
-            msg = f"renamed_conclusion is not ExistsUniq object: {ExprFormatter(self.decl).pretty_expr(renamed_conclusion)}"
-            raise CheckError(node, msg)
+            self.add_lsp_error(node, f"renamed_conclusion is not ExistsUniq object: {ExprFormatter(self.decl).pretty_expr(renamed_conclusion)}")
+            node.proofinfo.status = "❌Failed"
+            return context
         existence = beta_reduction_formula(Substitutor(({renamed_conclusion.var: node.varterm}, {}, {})).substitute_formula(renamed_conclusion.body))
         existence_dash = beta_reduction_formula(Substitutor(({renamed_conclusion.var: vardash}, {}, {})).substitute_formula(renamed_conclusion.body))
         equality = self.decl.get_equality()
         if equality is None:
-            msg = "equality has not been declared yet"
-            raise CheckError(node, msg)
+            self.add_lsp_error(node, "equality has not been declared yet")
+            node.proofinfo.status = "❌Failed"
+            return context
         fact = And(existence, Forall(vardash, Implies(existence_dash, AtomicFormula(RefEquality(equality.ref.name), (vardash, node.varterm)))))
         if not goal_in_context(fact, context, self.decl):
-            msg = f"Not fact: {ExprFormatter(self.decl).pretty_expr(fact)}"
-            raise CheckError(node, msg)
+            self.add_lsp_error(node, f"Not fact: {ExprFormatter(self.decl).pretty_expr(fact)}")
+            node.proofinfo.status = "❌Failed"
+            return context
+        node.proofinfo.status = "✅Passed"
         node.proofinfo.premises = [fact]
         node.proofinfo.conclusions = [node.conclusion]
         return context.add_ctrl([node.conclusion], [])
 
     def check_invoke(self, node: Invoke, context: Context) -> Context:
         if not goal_in_context(node.fact, context, self.decl):
-            msg = f"Not fact: {ExprFormatter(self.decl).pretty_expr(node.fact)}"
-            raise CheckError(node, msg)
+            self.add_lsp_error(node, f"Not fact: {ExprFormatter(self.decl).pretty_expr(node.fact)}")
+            node.proofinfo.status = "❌Failed"
+            return context
         if node.direction == "none":
             if not isinstance(node.fact, Implies):
-                msg = f"Not Implies object: {ExprFormatter(self.decl).pretty_expr(node.fact)}"
-                raise CheckError(node, msg)
+                self.add_lsp_error(node, f"Not Implies object: {ExprFormatter(self.decl).pretty_expr(node.fact)}")
+                node.proofinfo.status = "❌Failed"
+                return context
             if not goal_in_context(node.fact.left, context, self.decl):
-                msg = f"Left of Implies object not derived: {ExprFormatter(self.decl).pretty_expr(node.fact.left)}"
-                raise CheckError(node, msg)
+                self.add_lsp_error(node, f"Left of Implies object not derived: {ExprFormatter(self.decl).pretty_expr(node.fact.left)}")
+                node.proofinfo.status = "❌Failed"
+                return context
+            node.proofinfo.status = "✅Passed"
             node.proofinfo.premises = [node.fact, node.fact.left]
             node.proofinfo.conclusions = [node.fact.right]
             return context.add_ctrl([node.fact.right], [])
         elif node.direction == "rightward":
             if not isinstance(node.fact, Iff):
-                msg = f"Not Iff object: {ExprFormatter(self.decl).pretty_expr(node.fact)}"
-                raise CheckError(node, msg)
+                self.add_lsp_error(node, f"Not Iff object: {ExprFormatter(self.decl).pretty_expr(node.fact)}")
+                node.proofinfo.status = "❌Failed"
+                return context
             if not goal_in_context(node.fact.left, context, self.decl):
-                msg = f"Left of Iff object not derived: {ExprFormatter(self.decl).pretty_expr(node.fact.left)}"
-                raise CheckError(node, msg)
+                self.add_lsp_error(node, f"Left of Iff object not derived: {ExprFormatter(self.decl).pretty_expr(node.fact.left)}")
+                node.proofinfo.status = "❌Failed"
+                return context
+            node.proofinfo.status = "✅Passed"
             node.proofinfo.premises = [node.fact, node.fact.left]
             node.proofinfo.conclusions = [node.fact.right]
             return context.add_ctrl([node.fact.right], [])
         elif node.direction == "leftward":
             if not isinstance(node.fact, Iff):
-                msg = f"Not Iff object: {ExprFormatter(self.decl).pretty_expr(node.fact)}"
-                raise CheckError(node, msg)
+                self.add_lsp_error(node, f"Not Iff object: {ExprFormatter(self.decl).pretty_expr(node.fact)}")
+                node.proofinfo.status = "❌Failed"
+                return context
             if not goal_in_context(node.fact.right, context, self.decl):
-                msg = f"Right of Iff object not derived: {ExprFormatter(self.decl).pretty_expr(node.fact.right)}"
-                raise CheckError(node, msg)
+                self.add_lsp_error(node, f"Right of Iff object not derived: {ExprFormatter(self.decl).pretty_expr(node.fact.right)}")
+                node.proofinfo.status = "❌Failed"
+                return context
+            node.proofinfo.status = "✅Passed"
             node.proofinfo.premises = [node.fact, node.fact.right]
             node.proofinfo.conclusions = [node.fact.left]
             return context.add_ctrl([node.fact.left], [])
         else:
-            msg = f"Unexpected direction: {node.direction}"
-            raise CheckError(node, msg)
+            self.add_lsp_error(node, f"Unexpected direction: {node.direction}")
+            node.proofinfo.status = "❌Failed"
+            return context
 
     def check_expand(self, node: Expand, context: Context) -> Context:
         if isinstance(node.fact, (Bottom, Formula)):
             if not goal_in_context(node.fact, context, self.decl):
-                msg = f"Not fact: {ExprFormatter(self.decl).pretty_expr(node.fact)}"
-                raise CheckError(node, msg)
+                self.add_lsp_error(node, f"Not fact: {ExprFormatter(self.decl).pretty_expr(node.fact)}")
+                node.proofinfo.status = "❌Failed"
+                return context
         fact = get_fact(node.fact, node, self.decl)
         conclusion = DefExpander(node.refs, self.decl, node.indexes).expand_defs_formula(fact)
+        node.proofinfo.status = "✅Passed"
         node.proofinfo.premises = [node.fact]
         node.proofinfo.conclusions = [conclusion]
         return context.add_ctrl([conclusion], [])
@@ -546,8 +615,10 @@ class Checker:
     def check_fold(self, node: Fold, context: Context) -> Context:
         fact = DefExpander(node.refs, self.decl, node.indexes).expand_defs_formula(node.conclusion)
         if not goal_in_context(fact, context, self.decl):
-            msg = f"Not fact: {ExprFormatter(self.decl).pretty_expr(fact)}"
-            raise CheckError(node, msg)
+            self.add_lsp_error(node, f"Not fact: {ExprFormatter(self.decl).pretty_expr(fact)}")
+            node.proofinfo.status = "❌Failed"
+            return context
+        node.proofinfo.status = "✅Passed"
         node.proofinfo.premises = [fact]
         node.proofinfo.conclusions = [node.conclusion]
         return context.add_ctrl([node.conclusion], [])
@@ -555,18 +626,22 @@ class Checker:
     def check_pad(self, node: Pad, context: Context) -> Context:
         if isinstance(node.fact, (Bottom, Formula)):
             if not goal_in_context(node.fact, context, self.decl):
-                msg = f"Not derivable: {ExprFormatter(self.decl).pretty_expr(node.fact)}"
-                raise CheckError(node, msg)
+                self.add_lsp_error(node, f"Not derivable: {ExprFormatter(self.decl).pretty_expr(node.fact)}")
+                node.proofinfo.status = "❌Failed"
+                return context
         fact = get_fact(node.fact, node, self.decl)
         fact_parts = flatten_op(fact, Or)
         conclusion = expand_if_atomic(node.conclusion, node, self.decl)
         if not isinstance(conclusion, Or):
-            msg = f"Expected Or, got {type(conclusion)}"
-            raise CheckError(node, msg)
+            self.add_lsp_error(node, f"Expected Or, got {type(conclusion)}")
+            node.proofinfo.status = "❌Failed"
+            return context
         conclusion_parts = flatten_op(conclusion, Or)
         if not all(any(alpha_equiv_with_defs(c, f, self.decl) for c in conclusion_parts) for f in fact_parts):
-            msg = f"neither left or right not derivable: {ExprFormatter(self.decl).pretty_expr(node.conclusion)}"
-            raise CheckError(node, msg)
+            self.add_lsp_error(node, f"neither left or right not derivable: {ExprFormatter(self.decl).pretty_expr(node.conclusion)}")
+            node.proofinfo.status = "❌Failed"
+            return context
+        node.proofinfo.status = "✅Passed"
         node.proofinfo.premises = [node.fact]
         node.proofinfo.conclusions = [node.conclusion]
         return context.add_ctrl([node.conclusion], [])
@@ -574,31 +649,37 @@ class Checker:
     def check_split(self, node: Split, context: Context) -> Context:
         if isinstance(node.fact, (Bottom, Formula)):
             if not goal_in_context(node.fact, context, self.decl):
-                msg = f"Not derivable: {ExprFormatter(self.decl).pretty_expr(node.fact)}"
-                raise CheckError(node, msg)
+                self.add_lsp_error(node, f"Not derivable: {ExprFormatter(self.decl).pretty_expr(node.fact)}")
+                node.proofinfo.status = "❌Failed"
+                return context
         fact = get_fact(node.fact, node, self.decl, True)
         if isinstance(fact, And):
             fact_parts = flatten_op(fact, And)
             node.proofinfo.premises = [node.fact]
             if node.index is None:
+                node.proofinfo.status = "✅Passed"
                 node.proofinfo.conclusions = fact_parts
                 return context.add_ctrl(list(fact_parts), [])
             else:
                 if node.index <= 0 or node.index > len(fact_parts):
-                    msg = f"index out of range, index: {node.index}, len(fact_parts): {len(fact_parts)}"
-                    raise CheckError(node, msg)
+                    self.add_lsp_error(node, f"index out of range, index: {node.index}, len(fact_parts): {len(fact_parts)}")
+                    node.proofinfo.status = "❌Failed"
+                    return context
                 f = fact_parts[node.index - 1]
+                node.proofinfo.status = "✅Passed"
                 node.proofinfo.conclusions = [f]
                 return context.add_ctrl([f], [])
         elif isinstance(fact, Iff):
             implication_rightward = Implies(fact.left, fact.right)
             implication_leftward = Implies(fact.right, fact.left)
+            node.proofinfo.status = "✅Passed"
             node.proofinfo.premises = [node.fact]
             node.proofinfo.conclusions = [implication_rightward, implication_leftward]
             return context.add_ctrl([implication_rightward, implication_leftward], [])
         else:
-            msg = f"Not And or Iff object: {ExprFormatter(self.decl).pretty_expr(fact)}"
-            raise CheckError(node, msg)
+            self.add_lsp_error(node, f"Not And or Iff object: {ExprFormatter(self.decl).pretty_expr(fact)}")
+            node.proofinfo.status = "❌Failed"
+            return context
 
     def check_connect(self, node: Connect, context: Context) -> Context:
         conclusion = expand_if_atomic(node.conclusion, node, self.decl)
@@ -606,52 +687,64 @@ class Checker:
             conclusion_parts = flatten_op(conclusion, And)
             for c in conclusion_parts:
                 if not goal_in_context(c, context, self.decl):
-                    msg = f"Not derivable: {ExprFormatter(self.decl).pretty_expr(c)}"
-                    raise CheckError(node, msg)
+                    self.add_lsp_error(node, f"Not derivable: {ExprFormatter(self.decl).pretty_expr(c)}")
+                    node.proofinfo.status = "❌Failed"
+                    return context
+            node.proofinfo.status = "✅Passed"
             node.proofinfo.premises = conclusion_parts
             node.proofinfo.conclusions = [node.conclusion]
             return context.add_ctrl([node.conclusion], [])
         elif isinstance(conclusion, Iff):
             implication_rightward = Implies(conclusion.left, conclusion.right)
             if not goal_in_context(implication_rightward, context, self.decl):
-                msg = f"Not derivable: {ExprFormatter(self.decl).pretty_expr(implication_rightward)}"
-                raise CheckError(node, msg)
+                self.add_lsp_error(node, f"Not derivable: {ExprFormatter(self.decl).pretty_expr(implication_rightward)}")
+                node.proofinfo.status = "❌Failed"
+                return context
             implication_leftward = Implies(conclusion.right, conclusion.left)
             if not goal_in_context(implication_leftward, context, self.decl):
-                msg = f"Not derivable: {ExprFormatter(self.decl).pretty_expr(implication_leftward)}"
-                raise CheckError(node, msg)
+                self.add_lsp_error(node, f"Not derivable: {ExprFormatter(self.decl).pretty_expr(implication_leftward)}")
+                node.proofinfo.status = "❌Failed"
+                return context
+            node.proofinfo.status = "✅Passed"
             node.proofinfo.premises = [implication_rightward, implication_leftward]
             node.proofinfo.conclusions = [node.conclusion]
             return context.add_ctrl([node.conclusion], [])
         else:
-            msg = f"Not And or Iff object: {ExprFormatter(self.decl).pretty_expr(node.conclusion)}"
-            raise CheckError(node, msg)
+            self.add_lsp_error(node, f"Not And or Iff object: {ExprFormatter(self.decl).pretty_expr(node.conclusion)}")
+            node.proofinfo.status = "❌Failed"
+            return context
 
     def check_substitute(self, node: Substitute, context: Context) -> Context:
         if isinstance(node.fact, (Bottom, Formula)):
             if not goal_in_context(node.fact, context, self.decl):
-                msg = f"Not fact: {ExprFormatter(self.decl).pretty_expr(node.fact)}"
-                raise CheckError(node, msg)
+                self.add_lsp_error(node, f"Not fact: {ExprFormatter(self.decl).pretty_expr(node.fact)}")
+                node.proofinfo.status = "❌Failed"
+                return context
         fact = get_fact(node.fact, node, self.decl)
         equality = self.decl.get_equality()
         if equality is None:
-            msg = "equality has not been declared yet"
-            raise CheckError(node, msg)
+            self.add_lsp_error(node, "equality has not been declared yet")
+            node.proofinfo.status = "❌Failed"
+            return context
         premises_equal: list[AtomicFormula] = []
         for k, v in node.env.items():
             if not isinstance(k, VarTerm):
-                msg = f"Expected VarTerm, got {type(k)}"
-                raise CheckError(node, msg)
+                self.add_lsp_error(node, f"Expected VarTerm, got {type(k)}")
+                node.proofinfo.status = "❌Failed"
+                return context
             if not isinstance(v, VarTerm):
-                msg = f"Expected VarTerm, got {type(v)}"
-                raise CheckError(node, msg)
+                self.add_lsp_error(node, f"Expected VarTerm, got {type(v)}")
+                node.proofinfo.status = "❌Failed"
+                return context
             equation = AtomicFormula(RefEquality(equality.ref.name), (k, v))
             if not goal_in_context(equation, context, self.decl):
-                msg = f"Not fact: {ExprFormatter(self.decl).pretty_expr(equation)}"
-                raise CheckError(node, msg)
+                self.add_lsp_error(node, f"Not fact: {ExprFormatter(self.decl).pretty_expr(equation)}")
+                node.proofinfo.status = "❌Failed"
+                return context
             premises_equal.append(equation)
         renamed_fact = alpha_safe_formula(fact, node.env)
         conclusion = beta_reduction_formula(Substitutor(mapping_adapter(node.env), node.indexes).substitute_formula(renamed_fact))
+        node.proofinfo.status = "✅Passed"
         node.proofinfo.premises = [node.fact] + premises_equal
         node.proofinfo.conclusions = [conclusion]
         return context.add_ctrl([conclusion], [])
@@ -661,12 +754,15 @@ class Checker:
         for stmt in node.body:
             local_ctx = self.check_control(stmt, local_ctx)
         if not (len(context.ctrl.formulas) < len(local_ctx.ctrl.formulas) and context.ctrl.formulas == local_ctx.ctrl.formulas[:len(context.ctrl.formulas)]):
-            msg = "Local context must extend the parent context"
-            raise CheckError(node, msg)
+            self.add_lsp_error(node, "Local context must extend the parent context")
+            node.proofinfo.status = "❌Failed"
+            return context
         goal = local_ctx.ctrl.formulas[-1]
         if not alpha_equiv_with_defs(node.conclusion, goal, self.decl):
-            msg = f"Not matched with target conclusion: {ExprFormatter(self.decl).pretty_expr(node.conclusion)}"
-            raise CheckError(node, msg)
+            self.add_lsp_error(node, f"Not matched with target conclusion: {ExprFormatter(self.decl).pretty_expr(node.conclusion)}")
+            node.proofinfo.status = "❌Failed"
+            return context
+        node.proofinfo.status = "✅Passed"
         node.proofinfo.premises = []
         node.proofinfo.conclusions = [goal]
         node.proofinfo.local_vars = []
@@ -677,9 +773,11 @@ class Checker:
     def check_assert(self, node: Assert, context: Context) -> Context:
         if isinstance(node.reference, (Bottom, Formula)):
             if not goal_in_context(node.reference, context, self.decl):
-                msg = f"Not fact: {ExprFormatter(self.decl).pretty_expr(node.reference)}"
-                raise CheckError(node, msg)
+                self.add_lsp_error(node, f"Not fact: {ExprFormatter(self.decl).pretty_expr(node.reference)}")
+                node.proofinfo.status = "❌Failed"
+                return context
         formula = get_fact(node.reference, node, self.decl)
+        node.proofinfo.status = "✅Passed"
         node.proofinfo.premises = []
         node.proofinfo.conclusions = [formula]
         return context.add_ctrl([formula], [])
