@@ -54,7 +54,7 @@ SVG_HEAD = """
 """
 
 class Renderer:
-    def __init__(self, decl: DeclarationContextNameSpace, proofs: dict[int, ProofInfo], use_svg: bool = False):
+    def __init__(self, decl: DeclarationContextNameSpace, proofs: dict[Declaration | Control, ProofInfo], use_svg: bool = False):
         self.decl = decl
         self.proofs = proofs
         if use_svg:
@@ -620,7 +620,7 @@ class Renderer:
             raise RenderError(f"Unexpected type: {type(node)}")
 
     def render_proofinfo(self, node: Declaration | Control):
-        proofinfo = self.proofs.get(id(node), ProofInfo())
+        proofinfo = self.proofs.get(node, ProofInfo())
         status = proofinfo.status
         status_html = f"<div class='status' hidden>{status}</div>"
         context_vars = self.render_expr_list(proofinfo.ctrl_ctx.symbols)

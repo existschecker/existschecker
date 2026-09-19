@@ -579,7 +579,7 @@ class ElaboratedUnit:
 @dataclass
 class CheckedUnit:
     diagnostics: list[lsp.Diagnostic]
-    proofs: dict[int, ProofInfo]
+    proofs: dict[Declaration | Control, ProofInfo]
 
 @dataclass
 class DeclarationUnit:
