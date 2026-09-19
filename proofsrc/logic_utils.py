@@ -1,7 +1,7 @@
 from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, AtomicFormula, Compound, RefDefCon, Var, Bottom, Term, Formula, PredTemplate, PredLambda, VarTerm, PredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, RefEquality, LogicError, DeclarationContextNameSpace, DefFunTerm, DefPred
 from itertools import permutations
 from copy import deepcopy
-from typing import Mapping
+from typing import Mapping, Sequence
 from dataclasses import dataclass, field
 import re
 
@@ -320,9 +320,9 @@ def alpha_equiv_with_defs(e1: Bottom | Formula, e2: Bottom | Formula, decl: Decl
 
 @dataclass
 class DefExpander:
-    refs: list[RefDefFunTerm | RefDefPred]
+    refs: Sequence[RefDefFunTerm | RefDefPred]
     decl: DeclarationContextNameSpace
-    indexes: dict[RefDefFunTerm | RefDefPred, list[int]] = field(default_factory=dict[RefDefFunTerm | RefDefPred, list[int]])
+    indexes: Mapping[RefDefFunTerm | RefDefPred, Sequence[int]] = field(default_factory=dict[RefDefFunTerm | RefDefPred, list[int]])
     counter: dict[RefDefFunTerm | RefDefPred, int] = field(init=False, default_factory=dict[RefDefFunTerm | RefDefPred, int])
 
     def expand_defs_var_term(self, expr: VarTerm) -> VarTerm:
@@ -451,7 +451,7 @@ def fresh_fun_tmpl(fun_tmpl: FunTemplate, used_items: set[Var | PredTemplate | F
 @dataclass
 class Substitutor:
     mapping: tuple[Mapping[VarTerm, VarTerm], Mapping[PredTerm, PredTerm], Mapping[FunTerm, FunTerm]]
-    indexes: Mapping[Term, list[int]] = field(default_factory=dict[Term, list[int]])
+    indexes: Mapping[Term, Sequence[int]] = field(default_factory=dict[Term, list[int]])
     counter: dict[Term, int] = field(init=False, default_factory=dict[Term, int])
 
     def _apply_substitute[T: Term](self, expr: T, mapping: Mapping[T, T]) -> T | None:
@@ -642,7 +642,7 @@ class AlphaRename:
         else:
             raise LogicError(f"Unexpected type: {type(expr)}")
 
-def alpha_safe(expr: Formula | Term, mapping: dict[Term, Term]) -> AlphaRename:
+def alpha_safe(expr: Formula | Term, mapping: Mapping[Term, Term]) -> AlphaRename:
     items_to_substitute: set[Var | PredTemplate | FunTemplate] = set()
     for term in mapping.values():
         fv, bv, fpt, bpt, fft, bft = collect_vars(term)
@@ -678,10 +678,10 @@ def alpha_safe_var_term(expr: VarTerm, mapping: dict[Term, Term]) -> VarTerm:
 def alpha_safe_term(expr: Term, mapping: dict[Term, Term]) -> Term:
     return alpha_safe(expr, mapping).alpha_rename_term(expr)
 
-def alpha_safe_formula(expr: Formula, mapping: dict[Term, Term]) -> Formula:
+def alpha_safe_formula(expr: Formula, mapping: Mapping[Term, Term]) -> Formula:
     return alpha_safe(expr, mapping).alpha_rename_formula(expr)
 
-def mapping_adapter(mapping: dict[Term, Term]) -> tuple[dict[VarTerm, VarTerm], dict[PredTerm, PredTerm], dict[FunTerm, FunTerm]]:
+def mapping_adapter(mapping: Mapping[Term, Term]) -> tuple[dict[VarTerm, VarTerm], dict[PredTerm, PredTerm], dict[FunTerm, FunTerm]]:
     new_mapping_var: dict[VarTerm, VarTerm] = {}
     new_mapping_pred: dict[PredTerm, PredTerm] = {}
     new_mapping_fun: dict[FunTerm, FunTerm] = {}

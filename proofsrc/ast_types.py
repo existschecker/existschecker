@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from lsprotocol import types as lsp
 from typing import Literal
 from enum import StrEnum
+from immutables import Map
 from resolved_ast_types import ResolvedUnit, ResolvedDeclaration, ResolvedEquality
 from parsed_ast_types import ParsedUnit
 from dependency import DependencyResult
@@ -212,112 +213,112 @@ class ProofInfo:
     local_premise: tuple[Bottom | Formula, ...] = ()
     local_conclusion: tuple[Bottom | Formula, ...] = ()
 
-@dataclass
+@dataclass(frozen=True)
 class Control:
     pass
 
-@dataclass
+@dataclass(frozen=True)
 class InvalidControl(Control):
     pass
 
-@dataclass
+@dataclass(frozen=True)
 class Assume(Control):
     premise: Formula
-    body: list[Control]
+    body: tuple[Control, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class Any(Control):
-    items: list[Var | PredTemplate | FunTemplate]
-    body: list[Control]
+    items: tuple[Var | PredTemplate | FunTemplate, ...]
+    body: tuple[Control, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class Case(Control):
     premise: Formula
-    body: list[Control]
+    body: tuple[Control, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class Divide(Control):
     fact: RefFact | Formula
-    cases: list[Case]
+    cases: tuple[Case, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class Some(Control):
-    items: list[Var | None]
+    items: tuple[Var | None, ...]
     fact: RefFact | Formula
-    body: list[Control]
+    body: tuple[Control, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class Deny(Control):
     premise: Formula
-    body: list[Control]
+    body: tuple[Control, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class Contradict(Control):
     contradiction: Formula
 
-@dataclass
+@dataclass(frozen=True)
 class Explode(Control):
     conclusion: Formula
 
-@dataclass
+@dataclass(frozen=True)
 class Apply(Control):
     invoke: Literal["none", "invoke", "invoke-rightward", "invoke-leftward"]
     fact: RefFact | Formula
-    terms: list[Term | None]
+    terms: tuple[Term | None, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class Lift(Control):
-    varterms: list[VarTerm | None]
+    varterms: tuple[VarTerm | None, ...]
     conclusion: Formula
 
-@dataclass
+@dataclass(frozen=True)
 class Characterize(Control):
     varterm: VarTerm
     conclusion: ExistsUniq
 
-@dataclass
+@dataclass(frozen=True)
 class Invoke(Control):
     direction: Literal["none", "rightward", "leftward"]
     fact: Implies | Iff
 
-@dataclass
+@dataclass(frozen=True)
 class Expand(Control):
     fact: RefFact | Formula
-    refs: list[RefDefFunTerm | RefDefPred]
-    indexes: dict[RefDefFunTerm | RefDefPred, list[int]]
+    refs: tuple[RefDefFunTerm | RefDefPred, ...]
+    indexes: Map[RefDefFunTerm | RefDefPred, tuple[int, ...]]
 
-@dataclass
+@dataclass(frozen=True)
 class Fold(Control):
-    refs: list[RefDefFunTerm | RefDefPred]
-    indexes: dict[RefDefFunTerm | RefDefPred, list[int]]
+    refs: tuple[RefDefFunTerm | RefDefPred, ...]
+    indexes: Map[RefDefFunTerm | RefDefPred, tuple[int, ...]]
     conclusion: Formula
 
-@dataclass
+@dataclass(frozen=True)
 class Pad(Control):
     fact: RefFact | Formula
     conclusion: Formula
 
-@dataclass
+@dataclass(frozen=True)
 class Split(Control):
     index: int | None
     fact: RefFact | Formula
 
-@dataclass
+@dataclass(frozen=True)
 class Connect(Control):
     conclusion: Formula
 
-@dataclass
+@dataclass(frozen=True)
 class Substitute(Control):
     fact: RefFact | Formula
-    env: dict[Term, Term]
-    indexes: dict[Term, list[int]]
+    env: Map[Term, Term]
+    indexes: Map[Term, tuple[int, ...]]
 
-@dataclass
+@dataclass(frozen=True)
 class Show(Control):
     conclusion: Bottom | Formula
-    body: list[Control]
+    body: tuple[Control, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class Assert(Control):
     reference: RefFact | Formula
 

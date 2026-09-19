@@ -1,5 +1,6 @@
 from lsprotocol import types as lsp
 from pygls import uris
+from immutables import Map
 from ast_types import LexedUnit, Term, Declaration, PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, InvalidDeclaration, Formula, AtomicFormula, Not, And, Or, Implies, Iff, Forall, Exists, ExistsUniq, PredTemplate, Var, FunTemplate, RefEquality, Compound, RefPrimPred, RefDefPred, RefDefCon, RefDefFun, RefDefFunTerm, VarTerm, PredTerm, FunTerm, Control, Any, Assume, Divide, Some, Deny, Case, Contradict, Explode, Apply, Lift, Characterize, Invoke, Expand, Fold, Pad, Split, Connect, Substitute, Show, Assert, InvalidControl, RefAxiom, RefTheorem, RefDefConExist, RefDefConUniq, RefDefFunExist, RefDefFunUniq, RefFact, PredLambda, FunLambda, Bottom, Include, InvalidInclude, DeclarationContextNameSpace, RefStruct, Struct, RefStructCondition, StructVar, RefStructPred, StructPred, ElaboratedUnit, StructCon, RefStructCon, ContextError
 from resolved_ast_types import ResolvedTerm, ResolvedFormula, ResolvedVarTerm, ResolvedVar, ResolvedRefDefCon, ResolvedFunTerm, ResolvedRefDefFun, ResolvedRefDefFunTerm, ResolvedFunTemplate, ResolvedFunLambda, ResolvedCompound, ResolvedPredTerm, ResolvedRefEquality, ResolvedRefPrimPred, ResolvedRefDefPred, ResolvedPredTemplate, ResolvedPredLambda, ResolvedAtomicFormula, ResolvedNot, ResolvedAnd, ResolvedOr, ResolvedImplies, ResolvedIff, ResolvedForall, ResolvedExists, ResolvedExistsUniq, ResolvedBottom, ResolvedRefFact, ResolvedRefAxiom, ResolvedRefTheorem, ResolvedRefDefConExist, ResolvedRefDefConUniq, ResolvedRefDefFunExist, ResolvedRefDefFunUniq, ResolvedControl, ResolvedInvalidControl, ResolvedAssume, ResolvedAny, ResolvedCase, ResolvedDivide, ResolvedSome, ResolvedDeny, ResolvedContradict, ResolvedExplode, ResolvedApply, ResolvedLift, ResolvedCharacterize, ResolvedInvoke, ResolvedExpand, ResolvedFold, ResolvedPad, ResolvedSplit, ResolvedConnect, ResolvedSubstitute, ResolvedShow, ResolvedAssert, ResolvedDeclaration, ResolvedInvalidDeclaration, ResolvedPrimPred, ResolvedAxiom, ResolvedTheorem, ResolvedDefPred, ResolvedDefCon, ResolvedDefFun, ResolvedDefFunTerm, ResolvedEquality, ResolvedInclude, ResolvedInvalidInclude, ResolvedRefStruct, ResolvedStructVar, ResolvedStructMemberField, ResolvedRefStructCondition, ResolvedRefStructMemberCondition, ResolvedStruct, ResolvedStructPred, ResolvedStructMemberPred, ResolvedRefStructPred, ResolvedUnit, ResolvedStructCon, ResolvedRefStructCon
 from lexer import Token
@@ -302,32 +303,32 @@ class Elaborator:
             return [invalid]
 
     def elaborate_any(self, node: ResolvedAny) -> list[Control]:
-        body: list[Control] = self.elaborate_block(node.body)
+        body = tuple(self.elaborate_block(node.body))
         for item in reversed(node.items):
             if isinstance(item, ResolvedVar):
                 var = self.elaborate_var(item)
-                control = Any([var], body)
+                control = Any((var,), body)
                 self.add_node_to_token(control, node)
-                body = [control]
+                body = (control,)
             elif isinstance(item, ResolvedStructVar):
                 fields, conditions = self.collect_struct_members(item)
                 for condition in reversed(conditions.values()):
                     control = Assume(condition, body)
                     self.add_node_to_token(control, node)
-                    body = [control]
-                control = Any(list(fields), body)
+                    body = (control,)
+                control = Any(tuple(fields), body)
                 self.add_node_to_token(control, node)
-                body = [control]
+                body = (control,)
             elif isinstance(item, ResolvedPredTemplate):
                 var = self.elaborate_pred_tmpl(item)
-                control = Any([var], body)
+                control = Any((var,), body)
                 self.add_node_to_token(control, node)
-                body = [control]
+                body = (control,)
             elif isinstance(item, ResolvedFunTemplate):
                 var = self.elaborate_fun_tmpl(item)
-                control = Any([var], body)
+                control = Any((var,), body)
                 self.add_node_to_token(control, node)
-                body = [control]
+                body = (control,)
             else:
                 raise ElaborateError(node, f"Unexpected type {type(item)}")
         result = body[0]
@@ -337,7 +338,7 @@ class Elaborator:
 
     def elaborate_assume(self, node: ResolvedAssume) -> list[Control]:
         premise = self.elaborate_formula(node.premise)
-        body = self.elaborate_block(node.body)
+        body = tuple(self.elaborate_block(node.body))
         elaborated = Assume(premise, body)
         self.add_node_to_token(elaborated, node)
         return [elaborated]
@@ -347,14 +348,14 @@ class Elaborator:
         if len(node.cases) < 2:
             msg = "At least two cases are required"
             raise ElaborateError(node, msg)
-        cases = [self.elaborate_case(case) for case in node.cases]
+        cases = tuple(self.elaborate_case(case) for case in node.cases)
         elaborated = Divide(fact, cases)
         self.add_node_to_token(elaborated, node)
         return [elaborated]
 
     def elaborate_case(self, node: ResolvedCase) -> Case:
         premise = self.elaborate_formula(node.premise)
-        body = self.elaborate_block(node.body)
+        body = tuple(self.elaborate_block(node.body))
         elaborated = Case(premise, body)
         self.add_node_to_token(elaborated, node)
         return elaborated
@@ -362,14 +363,14 @@ class Elaborator:
     def elaborate_some(self, node: ResolvedSome) -> list[Control]:
         fact = self.elaborate_reference_or_formula(node.fact)
         items, _ = self.elaborate_vars_or_none(node.items)
-        body = self.elaborate_block(node.body)
-        elaborated = Some(items, fact, body)
+        body = tuple(self.elaborate_block(node.body))
+        elaborated = Some(tuple(items), fact, body)
         self.add_node_to_token(elaborated, node)
         return [elaborated]
 
     def elaborate_deny(self, node: ResolvedDeny) -> list[Control]:
         premise = self.elaborate_formula(node.premise)
-        body = self.elaborate_block(node.body)
+        body = tuple(self.elaborate_block(node.body))
         elaborated = Deny(premise, body)
         self.add_node_to_token(elaborated, node)
         return [elaborated]
@@ -398,7 +399,7 @@ class Elaborator:
                 break
         if not struct_used:
             terms_or_none = [None if term is None else self.elaborate_term(term) for term in node.terms]
-            apply = Apply(node.invoke, reference_or_formula, terms_or_none)
+            apply = Apply(node.invoke, reference_or_formula, tuple(terms_or_none))
             self.add_node_to_token(apply, node)
             return [apply]
         first = True
@@ -423,7 +424,7 @@ class Elaborator:
             vars_, _ = strip_forall_vars(fact)
             if len(vars_) < len(terms):
                 raise ElaborateError(node, f"{len(terms)} terms are given to {len(vars_)} forall vars")
-            apply = Apply("none", reference_or_formula if first else fact, list(terms + [None] * (len(vars_) - len(terms))))
+            apply = Apply("none", reference_or_formula if first else fact, tuple(terms + [None] * (len(vars_) - len(terms))))
             first = False
             self.add_node_to_token(apply, node)
             controls.append(apply)
@@ -466,7 +467,7 @@ class Elaborator:
             else:
                 raise ElaborateError(node, "Unexpected type")
         conclusion = self.elaborate_formula(node.conclusion)
-        elaborated = Lift(varterms, conclusion)
+        elaborated = Lift(tuple(varterms), conclusion)
         self.add_node_to_token(elaborated, node)
         return [elaborated]
 
@@ -507,34 +508,34 @@ class Elaborator:
         self.add_node_to_token(elaborated, node)
         return [elaborated]
 
-    def elaborate_refs_indexes(self, node: ResolvedExpand | ResolvedFold) -> tuple[list[RefDefFunTerm | RefDefPred], dict[RefDefFunTerm | RefDefPred, list[int]]]:
+    def elaborate_refs_indexes(self, node: ResolvedExpand | ResolvedFold) -> tuple[tuple[RefDefFunTerm | RefDefPred, ...], Map[RefDefFunTerm | RefDefPred, tuple[int, ...]]]:
         elaborated_refs: list[RefDefFunTerm | RefDefPred] = []
-        indexes: dict[RefDefFunTerm | RefDefPred, list[int]] = {}
+        indexes: dict[RefDefFunTerm | RefDefPred, tuple[int, ...]] = {}
         for ref in node.refs:
             if self.decl.has_ast(DefFunTerm, ref.name):
                 elaborated_ref = RefDefFunTerm(ref.name)
                 self.add_node_to_token(elaborated_ref, ref)
                 elaborated_refs.append(elaborated_ref)
                 if ref in node.indexes:
-                    indexes[elaborated_ref] = node.indexes[ref]
+                    indexes[elaborated_ref] = tuple(node.indexes[ref])
             elif self.decl.has_ast(DefPred, ref.name):
                 elaborated_ref = RefDefPred(ref.name)
                 self.add_node_to_token(elaborated_ref, ref)
                 elaborated_refs.append(elaborated_ref)
                 if ref in node.indexes:
-                    indexes[elaborated_ref] = node.indexes[ref]
+                    indexes[elaborated_ref] = tuple(node.indexes[ref])
             else:
                 msg = f"Unexpected name {ref.name}"
                 raise ElaborateError(node, msg)
         for k, v in node.indexes.items():
             if self.decl.has_ast(DefFunTerm, k.name):
-                indexes[RefDefFunTerm(k.name)] = v
+                indexes[RefDefFunTerm(k.name)] = tuple(v)
             elif self.decl.has_ast(DefPred, k.name):
-                indexes[RefDefPred(k.name)] = v
+                indexes[RefDefPred(k.name)] = tuple(v)
             else:
                 msg = f"Unexpected name {k.name}"
                 raise ElaborateError(node, msg)
-        return elaborated_refs, indexes
+        return tuple(elaborated_refs), Map(indexes)
 
     def elaborate_pad(self, node: ResolvedPad) -> list[Control]:
         fact = self.elaborate_reference_or_formula(node.fact)
@@ -558,7 +559,7 @@ class Elaborator:
     def elaborate_substitute(self, node: ResolvedSubstitute) -> list[Control]:
         fact = self.elaborate_reference_or_formula(node.fact)
         env: dict[Term, Term] = {}
-        indexes: dict[Term, list[int]] = {}
+        indexes: dict[Term, tuple[int, ...]] = {}
         for k, v in node.env.items():
             new_k = self.elaborate_term(k)
             self.add_node_to_token(new_k, k)
@@ -566,14 +567,14 @@ class Elaborator:
             self.add_node_to_token(new_v, v)
             env[new_k] = new_v
             if k in node.indexes:
-                indexes[new_k] = node.indexes[k]
-        elaborated = Substitute(fact, env, indexes)
+                indexes[new_k] = tuple(node.indexes[k])
+        elaborated = Substitute(fact, Map(env), Map(indexes))
         self.add_node_to_token(elaborated, node)
         return [elaborated]
 
     def elaborate_show(self, node: ResolvedShow) -> list[Control]:
         conclusion = self.elaborate_bot_or_formula(node.conclusion)
-        body = self.elaborate_block(node.body)
+        body = tuple(self.elaborate_block(node.body))
         elaborated = Show(conclusion, body)
         self.add_node_to_token(elaborated, node)
         return [elaborated]
