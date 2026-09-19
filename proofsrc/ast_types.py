@@ -2,6 +2,7 @@ from lexer import Token
 from dataclasses import dataclass, field
 from lsprotocol import types as lsp
 from typing import Sequence, Literal
+from enum import StrEnum
 from resolved_ast_types import ResolvedUnit, ResolvedDeclaration, ResolvedEquality
 from parsed_ast_types import ParsedUnit
 from dependency import DependencyResult
@@ -196,19 +197,24 @@ class RefDefFunExist(RefFact):
 class RefDefFunUniq(RefFact):
     parent: RefDefFun
 
+class ProofStatus(StrEnum):
+    UNCHECKED = "⚠️Unchecked"
+    PASSED = "✅Passed"
+    FAILED = "❌Failed"
+
 @dataclass
 class ProofInfo:
-    status: Literal["⚠️Unchecked", "✅Passed", "❌Failed"] = field(init=False, default="⚠️Unchecked")
-    ctrl_ctx: ControlContext = field(init=False, default_factory=ControlContext.init)
-    premises: Sequence[RefFact | Bottom | Formula] = field(init=False, default_factory=list[RefFact | Bottom | Formula])
-    conclusions: Sequence[Bottom | Formula] = field(init=False, default_factory=list[Bottom | Formula])
-    local_vars: Sequence[Var | PredTemplate | FunTemplate] = field(init=False, default_factory=list[Var | PredTemplate | FunTemplate])
-    local_premise: Sequence[Bottom | Formula] = field(init=False, default_factory=list[Formula])
-    local_conclusion: Sequence[Bottom | Formula] = field(init=False, default_factory=list[Bottom | Formula])
+    status: ProofStatus = ProofStatus.UNCHECKED
+    ctrl_ctx: ControlContext = field(default_factory=ControlContext.init)
+    premises: Sequence[RefFact | Bottom | Formula] = field(default_factory=list[RefFact | Bottom | Formula])
+    conclusions: Sequence[Bottom | Formula] = field(default_factory=list[Bottom | Formula])
+    local_vars: Sequence[Var | PredTemplate | FunTemplate] = field(default_factory=list[Var | PredTemplate | FunTemplate])
+    local_premise: Sequence[Bottom | Formula] = field(default_factory=list[Formula])
+    local_conclusion: Sequence[Bottom | Formula] = field(default_factory=list[Bottom | Formula])
 
 @dataclass
 class Control:
-    proofinfo: ProofInfo = field(init=False, default_factory=ProofInfo)
+    pass
 
 @dataclass
 class InvalidControl(Control):
@@ -318,7 +324,6 @@ class Assert(Control):
 @dataclass
 class Declaration:
     name: str
-    proofinfo: ProofInfo = field(init=False, default_factory=ProofInfo)
 
 @dataclass
 class InvalidDeclaration(Declaration):
@@ -573,6 +578,7 @@ class ElaboratedUnit:
 @dataclass
 class CheckedUnit:
     diagnostics: list[lsp.Diagnostic]
+    proofs: dict[int, ProofInfo]
 
 @dataclass
 class DeclarationUnit:

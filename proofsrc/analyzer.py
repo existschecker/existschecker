@@ -8,7 +8,7 @@ from typing import Sequence
 
 from dependency import DependencyResolver, DependencyResult
 from lexer import KEYWORDS, STRINGS, Token
-from ast_types import DeclarationUnit, Workspace, Declaration, Include, Control, Formula, Term, RefFact, FormatError, RenderError, Bottom, DeclarationContextNameSpace, RefStruct, RefStructCondition, StructVar, RefStructPred, Equality, PrimPred, DefPred, DefFunTerm, Var, PredTemplate, DefCon, DefFun, Struct, StructPred, LexedUnit, RefStructCon
+from ast_types import DeclarationUnit, Workspace, Declaration, Include, Control, Formula, Term, RefFact, FormatError, RenderError, Bottom, DeclarationContextNameSpace, RefStruct, RefStructCondition, StructVar, RefStructPred, Equality, PrimPred, DefPred, DefFunTerm, Var, PredTemplate, DefCon, DefFun, Struct, StructPred, LexedUnit, RefStructCon, ProofInfo
 from resolved_ast_types import ResolvedInclude, ResolvedDeclaration, ResolvedControl, ResolvedFormula, ResolvedTerm, ResolvedRefFact, ResolvedRefStruct, ResolvedRefStructField, ResolvedRefStructCondition, ResolvedStructVar, ResolvedRefEquality, ResolvedRefPrimPred, ResolvedRefDefPred, ResolvedRefDefCon, ResolvedRefDefFun, ResolvedRefDefFunTerm, ResolvedPredLambda, ResolvedFunLambda, ResolvedRefStructPred, ResolvedRefStructCon, ResolvedRefAxiom, ResolvedRefTheorem
 from splitter import split
 from to_html import Renderer
@@ -57,14 +57,15 @@ class CursorState:
     uri: str
     position: lsp.Position
 
-def get_hover(resolved_node: ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred | ResolvedRefStructCon, node: Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon) -> str:
+def get_hover(resolved_node: ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred | ResolvedRefStructCon, node: Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon, proofs: dict[int, ProofInfo]) -> str:
     if isinstance(node, (Declaration, Control)):
-        return f"{resolved_node.__class__.__name__} -> {node.__class__.__name__}: {node.proofinfo.status}"
+        status = proofs.get(id(node), ProofInfo()).status
+        return f"{resolved_node.__class__.__name__} -> {node.__class__.__name__}: {status}"
     else:
         return f"{resolved_node.__class__.__name__} -> {node.__class__.__name__}"
 
-def render_statement(node: Declaration | Control, decl: DeclarationContextNameSpace) -> str:
-    renderer = Renderer(decl)
+def render_statement(node: Declaration | Control, decl: DeclarationContextNameSpace, proofs: dict[int, ProofInfo]) -> str:
+    renderer = Renderer(decl, proofs)
     method_name = f"render_{node.__class__.__name__.lower()}"
     renderer_method = getattr(renderer, method_name, None)
     if renderer_method is None:
@@ -81,26 +82,29 @@ def render_expr_list(renderer: Renderer, formulas: Sequence[RefFact | Bottom | F
     except (FormatError, RenderError) as e:
         return f"{e.__class__.__name__}: {e.msg}"
 
-def render_proofinfo(node: Include | Declaration | Control, decl: DeclarationContextNameSpace) -> str:
+def render_proofinfo(node: Include | Declaration | Control, decl: DeclarationContextNameSpace, proofs: dict[int, ProofInfo]) -> str:
     if isinstance(node, Declaration):
-        statement = render_statement(node, decl)
+        statement = render_statement(node, decl, proofs)
+        status = proofs.get(id(node), ProofInfo()).status
         return f"""<div class="statement">
-    <span class="status-icon">{node.proofinfo.status}</span>
+    <span class="status-icon">{status}</span>
     {statement}
 </div>
 """
     elif isinstance(node, Control):
-        statement = render_statement(node, decl)
-        renderer = Renderer(decl)
-        context_symbols = render_expr_list(renderer, node.proofinfo.ctrl_ctx.symbols)
-        context_formulas = render_expr_list(renderer, node.proofinfo.ctrl_ctx.formulas)
-        premises = render_expr_list(renderer, node.proofinfo.premises)
-        conclusions = render_expr_list(renderer, node.proofinfo.conclusions)
-        local_vars = render_expr_list(renderer, node.proofinfo.local_vars)
-        local_premises = render_expr_list(renderer, node.proofinfo.local_premise)
-        local_conclusions = render_expr_list(renderer, node.proofinfo.local_conclusion)
+        statement = render_statement(node, decl, proofs)
+        renderer = Renderer(decl, proofs)
+        proofinfo = proofs.get(id(node), ProofInfo())
+        status = proofinfo.status
+        context_symbols = render_expr_list(renderer, proofinfo.ctrl_ctx.symbols)
+        context_formulas = render_expr_list(renderer, proofinfo.ctrl_ctx.formulas)
+        premises = render_expr_list(renderer, proofinfo.premises)
+        conclusions = render_expr_list(renderer, proofinfo.conclusions)
+        local_vars = render_expr_list(renderer, proofinfo.local_vars)
+        local_premises = render_expr_list(renderer, proofinfo.local_premise)
+        local_conclusions = render_expr_list(renderer, proofinfo.local_conclusion)
         return f"""<div class="statement">
-    <span class="status-icon">{node.proofinfo.status}</span>
+    <span class="status-icon">{status}</span>
     {statement}
 </div>
 <table>
@@ -564,7 +568,7 @@ class Analyzer:
         return lsp.Hover(
             contents=lsp.MarkupContent(
                 kind=lsp.MarkupKind.Markdown,
-                value=get_hover(resolved_node, node)
+                value=get_hover(resolved_node, node, unit.checked_unit.proofs)
             )
         )
 
@@ -589,8 +593,8 @@ class Analyzer:
         path = uris.from_fs_path(current_cursor.uri)
         if path is None:
             return "path is not found"
-        decl_info = render_proofinfo(unit.elaborated_unit.ast, unit.decl)
-        ctrl_info = "" if node is None else render_proofinfo(node, unit.decl)
+        decl_info = render_proofinfo(unit.elaborated_unit.ast, unit.decl, unit.checked_unit.proofs)
+        ctrl_info = "" if node is None else render_proofinfo(node, unit.decl, unit.checked_unit.proofs)
         return HTML_TEMPLATE.format(decl_info=decl_info, ctrl_info=ctrl_info)
 
     def semantic_tokens_full(self, params: lsp.SemanticTokensParams) -> lsp.SemanticTokens:

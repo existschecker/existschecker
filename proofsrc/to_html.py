@@ -1,6 +1,6 @@
 from datetime import datetime
 from html import escape
-from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, AtomicFormula, Compound, Control, Declaration, Bottom, Formula, Term, Var, Include, Assert, Fold, PredTemplate, RefDefPred, RefDefFunTerm, InvalidDeclaration, InvalidControl, RefFact, RefEquality, RefPrimPred, RefDefCon, RefDefFun, RenderError, DeclarationContextNameSpace
+from ast_types import PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Equality, Any, Assume, Connect, Expand, Split, Apply, Invoke, Deny, Some, Contradict, Lift, Pad, Divide, Case, Explode, Characterize, Substitute, Show, AtomicFormula, Compound, Control, Declaration, Bottom, Formula, Term, Var, Include, Assert, Fold, PredTemplate, RefDefPred, RefDefFunTerm, InvalidDeclaration, InvalidControl, RefFact, RefEquality, RefPrimPred, RefDefCon, RefDefFun, RenderError, DeclarationContextNameSpace, ProofInfo, DeclarationUnit
 from svg import output_svg
 from typing import Sequence, Mapping, TypeVar
 from formatter import ExprFormatter
@@ -54,8 +54,9 @@ SVG_HEAD = """
 """
 
 class Renderer:
-    def __init__(self, decl: DeclarationContextNameSpace, use_svg: bool = False):
+    def __init__(self, decl: DeclarationContextNameSpace, proofs: dict[int, ProofInfo], use_svg: bool = False):
         self.decl = decl
+        self.proofs = proofs
         if use_svg:
             self.render_expr = self.render_expr_svg
             self.render_expr_list = self.render_expr_list_svg
@@ -619,21 +620,22 @@ class Renderer:
             raise RenderError(f"Unexpected type: {type(node)}")
 
     def render_proofinfo(self, node: Declaration | Control):
-        status = node.proofinfo.status
+        proofinfo = self.proofs.get(id(node), ProofInfo())
+        status = proofinfo.status
         status_html = f"<div class='status' hidden>{status}</div>"
-        context_vars = self.render_expr_list(node.proofinfo.ctrl_ctx.symbols)
+        context_vars = self.render_expr_list(proofinfo.ctrl_ctx.symbols)
         context_vars_html = f"<div class='context-vars' hidden>{context_vars}</div>"
-        context_formulas = self.render_expr_list(node.proofinfo.ctrl_ctx.formulas)
+        context_formulas = self.render_expr_list(proofinfo.ctrl_ctx.formulas)
         context_formulas_html = f"<div class='context-formulas' hidden>{context_formulas}</div>"
-        premises = self.render_expr_list(node.proofinfo.premises)
+        premises = self.render_expr_list(proofinfo.premises)
         premises_html = f"<div class='premises' hidden>{premises}</div>"
-        conclusions = self.render_expr_list(node.proofinfo.conclusions)
+        conclusions = self.render_expr_list(proofinfo.conclusions)
         conclusions_html = f"<div class='conclusions' hidden>{conclusions}</div>"
-        local_vars = self.render_expr_list(node.proofinfo.local_vars)
+        local_vars = self.render_expr_list(proofinfo.local_vars)
         local_vars_html = f"<div class='local_vars' hidden>{local_vars}</div>"
-        local_premise = self.render_expr_list(node.proofinfo.local_premise)
+        local_premise = self.render_expr_list(proofinfo.local_premise)
         local_premise_html = f"<div class='local_premise' hidden>{local_premise}</div>"
-        local_conclusion = self.render_expr_list(node.proofinfo.local_conclusion)
+        local_conclusion = self.render_expr_list(proofinfo.local_conclusion)
         local_conclusion_html = f"<div class='local_conclusion' hidden>{local_conclusion}</div>"
         return f"{status_html}{context_vars_html}{context_formulas_html}{premises_html}{conclusions_html}{local_vars_html}{local_premise_html}{local_conclusion_html}"
 
@@ -658,15 +660,11 @@ class Renderer:
         content_html = f"<div class='block-content'>{body_html}</div>"
         return f"  <div class='block'>{header_html}{proofinfo_html}{content_html}</div>"
 
-def to_html(ast: list[Include | Declaration], decl: DeclarationContextNameSpace, title: str, use_svg: bool) -> tuple[str, bool]:
-    error_found = False
+def to_html(all_units: list[DeclarationUnit], title: str, use_svg: bool) -> str:
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     parts: list[str] = []
-    for node in ast:
-        parts.append(Renderer(decl, use_svg).render_node(node))
-        if isinstance(node, Declaration) and node.proofinfo.status == "❌Failed":
-            error_found = True
-            break
+    for unit in all_units:
+        parts.append(Renderer(unit.decl, unit.checked_unit.proofs, use_svg).render_node(unit.elaborated_unit.ast))
     body_html = "\n".join(parts)
     if use_svg:
         extra_head = SVG_HEAD.format()
@@ -674,7 +672,7 @@ def to_html(ast: list[Include | Declaration], decl: DeclarationContextNameSpace,
     else:
         extra_head = MATHJAX_HEAD.format()
         header_right = MATHJAX_HEADER_RIGHT
-    return HTML_TEMPLATE.format(title=escape(title), now_str=now_str, extra_head=extra_head, body=body_html, header_right=header_right), error_found
+    return HTML_TEMPLATE.format(title=escape(title), now_str=now_str, extra_head=extra_head, body=body_html, header_right=header_right)
 
 if __name__ == "__main__":
     import sys
@@ -696,9 +694,7 @@ if __name__ == "__main__":
             continue
         name = os.path.splitext(os.path.basename(file))[0]
         title = f"{name}_checker_{mode}"
-        checker_html, error_found = to_html([unit.elaborated_unit.ast for unit in all_units], all_units[-1].decl, title, mode == "svg")
+        checker_html = to_html(all_units, title, mode == "svg")
         f = open(os.path.join("html", f"{title}.html"), 'w', encoding='utf-8')
         f.write(checker_html)
         f.close()
-        if error_found:
-            break
