@@ -37,25 +37,25 @@ class Elaborator:
         return self.lexed_unit.tokens[self.resolved_unit.resolved_node_to_token[id(node)][0]]
 
     def add_node_to_token(self, node: Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon, resolved: ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructCondition | ResolvedRefStructPred | ResolvedRefStructCon) -> None:
-        self.node_to_token[id(node)] = self.resolved_unit.resolved_node_to_token[id(resolved)]
+        self.node_to_token[node] = self.resolved_unit.resolved_node_to_token[id(resolved)]
         self.nodes.append(node)
 
     def build_token_to_node(self) -> tuple[dict[int, Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon], dict[int, Control]]:
         token_to_node: dict[int, Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon] = {}
         token_to_control: dict[int, Control] = {}
         for node in reversed(self.nodes):
-            start, end = self.node_to_token[id(node)]
+            start, end = self.node_to_token[node]
             for index in range(start, end + 1):
                 token_to_node[index] = node
         for node in reversed(self.nodes):
             if isinstance(node, Control):
-                start, end = self.node_to_token[id(node)]
+                start, end = self.node_to_token[node]
                 for index in range(start, end + 1):
                     token_to_control[index] = node
         return token_to_node, token_to_control
 
     def elaborate_unit(self) -> ElaboratedUnit:
-        self.node_to_token: dict[int, tuple[int, int]] = {}
+        self.node_to_token: dict[Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon, tuple[int, int]] = {}
         self.nodes: list[Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon] = []
         self.diagnostics: list[lsp.Diagnostic] = []
         if isinstance(self.resolved_unit.resolved_ast, ResolvedInclude):

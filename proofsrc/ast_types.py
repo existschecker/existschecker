@@ -570,7 +570,7 @@ class LexedUnit:
 @dataclass
 class ElaboratedUnit:
     ast: Include | Declaration
-    node_to_token: dict[int, tuple[int, int]]
+    node_to_token: dict[Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon, tuple[int, int]]
     nodes: list[Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon]
     token_to_node: dict[int, Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon]
     token_to_control: dict[int, Control]
@@ -606,7 +606,7 @@ class Workspace:
         for path in order:
             for unit in self.file_units[path]:
                 if isinstance(unit.elaborated_unit.ast, (Equality, PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Struct)) and name == unit.elaborated_unit.ast.name:
-                    return unit.lexed_unit.tokens[unit.elaborated_unit.node_to_token[id(unit.elaborated_unit.ast.ref)][0]]
+                    return unit.lexed_unit.tokens[unit.elaborated_unit.node_to_token[unit.elaborated_unit.ast.ref][0]]
         return None
 
     def get_all_decl_refs(self, name: str, affected_files: set[str]) -> list[Token]:
