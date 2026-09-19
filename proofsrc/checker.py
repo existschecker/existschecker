@@ -231,7 +231,7 @@ class Checker:
         goal = local_goal
         for item in reversed(node.items):
             goal = Forall(item, goal)
-        self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, [], [goal], node.items, [], [local_goal]))
+        self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, (), (goal,), tuple(node.items), (), (local_goal,)))
         return context.add_ctrl((goal,), ())
 
     def check_assume(self, node: Assume, context: Context) -> Context:
@@ -248,7 +248,7 @@ class Checker:
             self.add_proofinfo(node, ProofInfo(ProofStatus.FAILED, context.ctrl))
             return context
         implication = Implies(node.premise, goal)
-        self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, [], [implication], [], [node.premise], [goal]))
+        self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, (), (implication,), (), (node.premise,), (goal,)))
         return context.add_ctrl((implication,), ())
 
     def check_divide(self, node: Divide, context: Context) -> Context:
@@ -281,7 +281,7 @@ class Checker:
                 self.add_lsp_error(node, f"Not matched: goals[{i}]: {ExprFormatter(self.decl).pretty_expr(goals[i])}, goals[{i + 1}]: {ExprFormatter(self.decl).pretty_expr(goals[i + 1])}")
                 self.add_proofinfo(node, ProofInfo(ProofStatus.FAILED, context.ctrl))
                 return context
-        self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, [node.fact], [goals[0]], [], [], [goals[0]]))
+        self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, (node.fact,), (goals[0],), (), (), (goals[0],)))
         return context.add_ctrl((goals[0],), ())
 
     def check_case(self, node: Case, context: Context) -> Context:
@@ -293,7 +293,7 @@ class Checker:
             self.add_proofinfo(node, ProofInfo(ProofStatus.FAILED, context.ctrl))
             return context
         goal = local_ctx.ctrl.formulas[-1]
-        self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, [], [goal], [], [node.premise], [goal]))
+        self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, (), (goal,), (), (node.premise,), (goal,)))
         return context.add_ctrl((goal,), ())
 
     def check_some(self, node: Some, context: Context) -> Context:
@@ -352,7 +352,7 @@ class Checker:
                     self.add_lsp_error(node, f"Conclusion depends on local variable {ExprFormatter(self.decl).pretty_expr(fv)}")
                     self.add_proofinfo(node, ProofInfo(ProofStatus.FAILED, context.ctrl))
                     return context
-        self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, [node.fact], [goal], local_vars, premises, [goal]))
+        self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, (node.fact,), (goal,), local_vars, premises, (goal,)))
         return context.add_ctrl((goal,), ())
 
     def check_deny(self, node: Deny, context: Context) -> Context:
@@ -369,7 +369,7 @@ class Checker:
                 conclusion = node.premise.body
             else:
                 conclusion = Not(node.premise)
-            self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, [], [conclusion], [], [node.premise], [goal]))
+            self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, (), (conclusion,), (), (node.premise,), (goal,)))
             return context.add_ctrl((conclusion,), ())
         else:
             self.add_lsp_error(node, "conradiction has not been deried")
@@ -386,12 +386,12 @@ class Checker:
             self.add_proofinfo(node, ProofInfo(ProofStatus.FAILED, context.ctrl))
             return context
         conclusion = Bottom()
-        self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, [node.contradiction, Not(node.contradiction)], [conclusion]))
+        self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, (node.contradiction, Not(node.contradiction)), (conclusion,)))
         return context.add_ctrl((conclusion,), ())
 
     def check_explode(self, node: Explode, context: Context) -> Context:
         if goal_in_context(Bottom(), context, self.decl):
-            self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, [Bottom()], [node.conclusion]))
+            self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, (Bottom(),), (node.conclusion,)))
             return context.add_ctrl((node.conclusion,), ())
         else:
             self.add_lsp_error(node, "contradiction has not been derived")
@@ -419,7 +419,7 @@ class Checker:
         renamed_body = alpha_safe_formula(body, mapping)
         instantiation = beta_reduction_formula(Substitutor(mapping_adapter(mapping)).substitute_formula(renamed_body))
         if node.invoke == "none":
-            self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, [node.fact], [instantiation]))
+            self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, (node.fact,), (instantiation,)))
             return context.add_ctrl((instantiation,), ())
         elif node.invoke == "invoke":
             if not isinstance(instantiation, Implies):
@@ -430,7 +430,7 @@ class Checker:
                 self.add_lsp_error(node, f"Left of instantiation is not derivable: {ExprFormatter(self.decl).pretty_expr(instantiation.left)}")
                 self.add_proofinfo(node, ProofInfo(ProofStatus.FAILED, context.ctrl))
                 return context
-            self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, [node.fact, instantiation.left], [instantiation.right]))
+            self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, (node.fact, instantiation.left), (instantiation.right,)))
             return context.add_ctrl((instantiation.right,), ())
         elif node.invoke == "invoke-rightward":
             if not isinstance(instantiation, Iff):
@@ -441,7 +441,7 @@ class Checker:
                 self.add_lsp_error(node, f"Left of instantiation is not derivable: {ExprFormatter(self.decl).pretty_expr(instantiation.left)}")
                 self.add_proofinfo(node, ProofInfo(ProofStatus.FAILED, context.ctrl))
                 return context
-            self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, [node.fact, instantiation.left], [instantiation.right]))
+            self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, (node.fact, instantiation.left), (instantiation.right,)))
             return context.add_ctrl((instantiation.right,), ())
         elif node.invoke == "invoke-leftward":
             if not isinstance(instantiation, Iff):
@@ -452,7 +452,7 @@ class Checker:
                 self.add_lsp_error(node, f"Right of instantiation is not derivable: {ExprFormatter(self.decl).pretty_expr(instantiation.right)}")
                 self.add_proofinfo(node, ProofInfo(ProofStatus.FAILED, context.ctrl))
                 return context
-            self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, [node.fact, instantiation.right], [instantiation.left]))
+            self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, (node.fact, instantiation.right), (instantiation.left,)))
             return context.add_ctrl((instantiation.left,), ())
         else:
             self.add_lsp_error(node, f"Unexpected invoke option {node.invoke}")
@@ -478,7 +478,7 @@ class Checker:
             self.add_lsp_error(node, f"Not fact: {ExprFormatter(self.decl).pretty_expr(fact)}")
             self.add_proofinfo(node, ProofInfo(ProofStatus.FAILED, context.ctrl))
             return context
-        self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, [fact], [node.conclusion]))
+        self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, (fact,), (node.conclusion,)))
         return context.add_ctrl((node.conclusion,), ())
 
     def check_characterize(self, node: Characterize, context: Context) -> Context:
@@ -502,7 +502,7 @@ class Checker:
             self.add_lsp_error(node, f"Not fact: {ExprFormatter(self.decl).pretty_expr(fact)}")
             self.add_proofinfo(node, ProofInfo(ProofStatus.FAILED, context.ctrl))
             return context
-        self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, [fact], [node.conclusion]))
+        self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, (fact,), (node.conclusion,)))
         return context.add_ctrl((node.conclusion,), ())
 
     def check_invoke(self, node: Invoke, context: Context) -> Context:
@@ -519,7 +519,7 @@ class Checker:
                 self.add_lsp_error(node, f"Left of Implies object not derived: {ExprFormatter(self.decl).pretty_expr(node.fact.left)}")
                 self.add_proofinfo(node, ProofInfo(ProofStatus.FAILED, context.ctrl))
                 return context
-            self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, [node.fact, node.fact.left], [node.fact.right]))
+            self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, (node.fact, node.fact.left), (node.fact.right,)))
             return context.add_ctrl((node.fact.right,), ())
         elif node.direction == "rightward":
             if not isinstance(node.fact, Iff):
@@ -530,7 +530,7 @@ class Checker:
                 self.add_lsp_error(node, f"Left of Iff object not derived: {ExprFormatter(self.decl).pretty_expr(node.fact.left)}")
                 self.add_proofinfo(node, ProofInfo(ProofStatus.FAILED, context.ctrl))
                 return context
-            self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, [node.fact, node.fact.left], [node.fact.right]))
+            self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, (node.fact, node.fact.left), (node.fact.right,)))
             return context.add_ctrl((node.fact.right,), ())
         elif node.direction == "leftward":
             if not isinstance(node.fact, Iff):
@@ -541,7 +541,7 @@ class Checker:
                 self.add_lsp_error(node, f"Right of Iff object not derived: {ExprFormatter(self.decl).pretty_expr(node.fact.right)}")
                 self.add_proofinfo(node, ProofInfo(ProofStatus.FAILED, context.ctrl))
                 return context
-            self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, [node.fact, node.fact.right], [node.fact.left]))
+            self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, (node.fact, node.fact.right), (node.fact.left,)))
             return context.add_ctrl((node.fact.left,), ())
         else:
             self.add_lsp_error(node, f"Unexpected direction: {node.direction}")
@@ -556,7 +556,7 @@ class Checker:
                 return context
         fact = get_fact(node.fact, node, self.decl)
         conclusion = DefExpander(node.refs, self.decl, node.indexes).expand_defs_formula(fact)
-        self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, [node.fact], [conclusion]))
+        self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, (node.fact,), (conclusion,)))
         return context.add_ctrl((conclusion,), ())
 
     def check_fold(self, node: Fold, context: Context) -> Context:
@@ -565,7 +565,7 @@ class Checker:
             self.add_lsp_error(node, f"Not fact: {ExprFormatter(self.decl).pretty_expr(fact)}")
             self.add_proofinfo(node, ProofInfo(ProofStatus.FAILED, context.ctrl))
             return context
-        self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, [fact], [node.conclusion]))
+        self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, (fact,), (node.conclusion,)))
         return context.add_ctrl((node.conclusion,), ())
 
     def check_pad(self, node: Pad, context: Context) -> Context:
@@ -586,7 +586,7 @@ class Checker:
             self.add_lsp_error(node, f"neither left or right not derivable: {ExprFormatter(self.decl).pretty_expr(node.conclusion)}")
             self.add_proofinfo(node, ProofInfo(ProofStatus.FAILED, context.ctrl))
             return context
-        self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, [node.fact], [node.conclusion]))
+        self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, (node.fact,), (node.conclusion,)))
         return context.add_ctrl((node.conclusion,), ())
 
     def check_split(self, node: Split, context: Context) -> Context:
@@ -599,7 +599,7 @@ class Checker:
         if isinstance(fact, And):
             fact_parts = flatten_op(fact, And)
             if node.index is None:
-                self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, [node.fact], fact_parts))
+                self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, (node.fact,), tuple(fact_parts)))
                 return context.add_ctrl(tuple(fact_parts), ())
             else:
                 if node.index <= 0 or node.index > len(fact_parts):
@@ -607,12 +607,12 @@ class Checker:
                     self.add_proofinfo(node, ProofInfo(ProofStatus.FAILED, context.ctrl))
                     return context
                 f = fact_parts[node.index - 1]
-                self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, [node.fact], [f]))
+                self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, (node.fact,), (f,)))
                 return context.add_ctrl((f,), ())
         elif isinstance(fact, Iff):
             implication_rightward = Implies(fact.left, fact.right)
             implication_leftward = Implies(fact.right, fact.left)
-            self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, [node.fact], [implication_rightward, implication_leftward]))
+            self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, (node.fact,), (implication_rightward, implication_leftward)))
             return context.add_ctrl((implication_rightward, implication_leftward), ())
         else:
             self.add_lsp_error(node, f"Not And or Iff object: {ExprFormatter(self.decl).pretty_expr(fact)}")
@@ -628,7 +628,7 @@ class Checker:
                     self.add_lsp_error(node, f"Not derivable: {ExprFormatter(self.decl).pretty_expr(c)}")
                     self.add_proofinfo(node, ProofInfo(ProofStatus.FAILED, context.ctrl))
                     return context
-            self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, conclusion_parts, [node.conclusion]))
+            self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, tuple(conclusion_parts), (node.conclusion,)))
             return context.add_ctrl((node.conclusion,), ())
         elif isinstance(conclusion, Iff):
             implication_rightward = Implies(conclusion.left, conclusion.right)
@@ -641,7 +641,7 @@ class Checker:
                 self.add_lsp_error(node, f"Not derivable: {ExprFormatter(self.decl).pretty_expr(implication_leftward)}")
                 self.add_proofinfo(node, ProofInfo(ProofStatus.FAILED, context.ctrl))
                 return context
-            self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, [implication_rightward, implication_leftward], [node.conclusion]))
+            self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, (implication_rightward, implication_leftward), (node.conclusion,)))
             return context.add_ctrl((node.conclusion,), ())
         else:
             self.add_lsp_error(node, f"Not And or Iff object: {ExprFormatter(self.decl).pretty_expr(node.conclusion)}")
@@ -678,7 +678,7 @@ class Checker:
             premises_equal.append(equation)
         renamed_fact = alpha_safe_formula(fact, node.env)
         conclusion = beta_reduction_formula(Substitutor(mapping_adapter(node.env), node.indexes).substitute_formula(renamed_fact))
-        self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, [node.fact] + premises_equal, [conclusion]))
+        self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, (node.fact,) + tuple(premises_equal), (conclusion,)))
         return context.add_ctrl((conclusion,), ())
 
     def check_show(self, node: Show, context: Context) -> Context:
@@ -694,7 +694,7 @@ class Checker:
             self.add_lsp_error(node, f"Not matched with target conclusion: {ExprFormatter(self.decl).pretty_expr(node.conclusion)}")
             self.add_proofinfo(node, ProofInfo(ProofStatus.FAILED, context.ctrl))
             return context
-        self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, [], [goal], [], [], [goal]))
+        self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, (), (goal,), (), (), (goal,)))
         return context.add_ctrl((goal,), ())
 
     def check_assert(self, node: Assert, context: Context) -> Context:
@@ -704,5 +704,5 @@ class Checker:
                 self.add_proofinfo(node, ProofInfo(ProofStatus.FAILED, context.ctrl))
                 return context
         formula = get_fact(node.reference, node, self.decl)
-        self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, [], [formula]))
+        self.add_proofinfo(node, ProofInfo(ProofStatus.PASSED, context.ctrl, (), (formula,)))
         return context.add_ctrl((formula,), ())

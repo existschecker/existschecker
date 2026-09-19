@@ -1,7 +1,7 @@
 from lexer import Token
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from lsprotocol import types as lsp
-from typing import Sequence, Literal
+from typing import Literal
 from enum import StrEnum
 from resolved_ast_types import ResolvedUnit, ResolvedDeclaration, ResolvedEquality
 from parsed_ast_types import ParsedUnit
@@ -202,15 +202,15 @@ class ProofStatus(StrEnum):
     PASSED = "✅Passed"
     FAILED = "❌Failed"
 
-@dataclass
+@dataclass(frozen=True)
 class ProofInfo:
     status: ProofStatus = ProofStatus.UNCHECKED
-    ctrl_ctx: ControlContext = field(default_factory=ControlContext.init)
-    premises: Sequence[RefFact | Bottom | Formula] = field(default_factory=list[RefFact | Bottom | Formula])
-    conclusions: Sequence[Bottom | Formula] = field(default_factory=list[Bottom | Formula])
-    local_vars: Sequence[Var | PredTemplate | FunTemplate] = field(default_factory=list[Var | PredTemplate | FunTemplate])
-    local_premise: Sequence[Bottom | Formula] = field(default_factory=list[Formula])
-    local_conclusion: Sequence[Bottom | Formula] = field(default_factory=list[Bottom | Formula])
+    ctrl_ctx: ControlContext = ControlContext.init()
+    premises: tuple[RefFact | Bottom | Formula, ...] = ()
+    conclusions: tuple[Bottom | Formula, ...] = ()
+    local_vars: tuple[Var | PredTemplate | FunTemplate, ...] = ()
+    local_premise: tuple[Bottom | Formula, ...] = ()
+    local_conclusion: tuple[Bottom | Formula, ...] = ()
 
 @dataclass
 class Control:
