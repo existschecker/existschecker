@@ -2,6 +2,7 @@ from lexer import Token
 from dataclasses import dataclass
 from typing import Literal
 from lsprotocol import types as lsp
+from immutables import Map
 
 @dataclass(frozen=True)
 class ResolvedTerm:
@@ -152,195 +153,195 @@ class ResolvedRefDefFunExist(ResolvedRefFact):
 class ResolvedRefDefFunUniq(ResolvedRefFact):
     parent: ResolvedRefDefFun
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedControl:
     pass
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedInvalidControl(ResolvedControl):
     pass
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedAssume(ResolvedControl):
     premise: ResolvedFormula
-    body: list[ResolvedControl]
+    body: tuple[ResolvedControl, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedAny(ResolvedControl):
-    items: list["ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate"]
-    body: list[ResolvedControl]
+    items: tuple["ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate", ...]
+    body: tuple[ResolvedControl, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedCase(ResolvedControl):
     premise: ResolvedFormula
-    body: list[ResolvedControl]
+    body: tuple[ResolvedControl, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedDivide(ResolvedControl):
     fact: ResolvedRefFact | ResolvedFormula
-    cases: list[ResolvedCase]
+    cases: tuple[ResolvedCase, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedSome(ResolvedControl):
-    items: list[ResolvedVar | None]
+    items: tuple[ResolvedVar | None, ...]
     fact: ResolvedRefFact | ResolvedFormula
-    body: list[ResolvedControl]
+    body: tuple[ResolvedControl, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedDeny(ResolvedControl):
     premise: ResolvedFormula
-    body: list[ResolvedControl]
+    body: tuple[ResolvedControl, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedContradict(ResolvedControl):
     contradiction: ResolvedFormula
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedExplode(ResolvedControl):
     conclusion: ResolvedFormula
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedApply(ResolvedControl):
     invoke: Literal["none", "invoke", "invoke-rightward", "invoke-leftward"]
     fact: ResolvedRefFact | ResolvedFormula
-    terms: list[ResolvedTerm | None]
+    terms: tuple[ResolvedTerm | None, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedLift(ResolvedControl):
-    varterms: list[ResolvedVarTerm | None]
+    varterms: tuple[ResolvedVarTerm | None, ...]
     conclusion: ResolvedFormula
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedCharacterize(ResolvedControl):
     varterm: ResolvedVarTerm
     conclusion: ResolvedExistsUniq
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedInvoke(ResolvedControl):
     direction: Literal["none", "rightward", "leftward"]
     fact: ResolvedImplies | ResolvedIff
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedExpand(ResolvedControl):
     fact: ResolvedRefFact | ResolvedFormula
-    refs: list[ResolvedRefDefFunTerm | ResolvedRefDefPred]
-    indexes: dict[ResolvedRefDefFunTerm | ResolvedRefDefPred, list[int]]
+    refs: tuple[ResolvedRefDefFunTerm | ResolvedRefDefPred, ...]
+    indexes: Map[ResolvedRefDefFunTerm | ResolvedRefDefPred, tuple[int, ...]]
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedFold(ResolvedControl):
-    refs: list[ResolvedRefDefFunTerm | ResolvedRefDefPred]
-    indexes: dict[ResolvedRefDefFunTerm | ResolvedRefDefPred, list[int]]
+    refs: tuple[ResolvedRefDefFunTerm | ResolvedRefDefPred, ...]
+    indexes: Map[ResolvedRefDefFunTerm | ResolvedRefDefPred, tuple[int, ...]]
     conclusion: ResolvedFormula
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedPad(ResolvedControl):
     fact: ResolvedRefFact | ResolvedFormula
     conclusion: ResolvedFormula
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedSplit(ResolvedControl):
     index: int | None
     fact: ResolvedRefFact | ResolvedFormula
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedConnect(ResolvedControl):
     conclusion: ResolvedFormula
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedSubstitute(ResolvedControl):
     fact: ResolvedRefFact | ResolvedFormula
-    env: dict[ResolvedTerm, ResolvedTerm]
-    indexes: dict[ResolvedTerm, list[int]]
+    env: Map[ResolvedTerm, ResolvedTerm]
+    indexes: Map[ResolvedTerm, tuple[int, ...]]
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedShow(ResolvedControl):
     conclusion: ResolvedBottom | ResolvedFormula
-    body: list[ResolvedControl]
+    body: tuple[ResolvedControl, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedAssert(ResolvedControl):
     reference: ResolvedRefFact | ResolvedFormula
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedDeclaration:
     name: str
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedInvalidDeclaration(ResolvedDeclaration):
     pass
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedPrimPred(ResolvedDeclaration):
     ref: ResolvedRefPrimPred
     arity: int
-    tex: list[str]
+    tex: tuple[str, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedAxiom(ResolvedDeclaration):
     ref: ResolvedRefAxiom
     conclusion: ResolvedFormula
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedTheorem(ResolvedDeclaration):
     ref: ResolvedRefTheorem
     conclusion: ResolvedFormula
-    proof: list[ResolvedControl]
+    proof: tuple[ResolvedControl, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedDefPred(ResolvedDeclaration):
     ref: ResolvedRefDefPred
-    args: list[ResolvedVar | ResolvedPredTemplate | ResolvedFunTemplate]
+    args: tuple[ResolvedVar | ResolvedPredTemplate | ResolvedFunTemplate, ...]
     formula: ResolvedFormula
     autoexpand: bool
-    tex: list[str]
+    tex: tuple[str, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedDefConExist(ResolvedDeclaration):
     ref: ResolvedRefDefConExist
     formula: ResolvedFormula
     ref_con: ResolvedRefDefCon
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedDefConUniq(ResolvedDeclaration):
     ref: ResolvedRefDefConUniq
     formula: ResolvedFormula
     ref_con: ResolvedRefDefCon
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedDefCon(ResolvedDeclaration):
     ref: ResolvedRefDefCon
     ref_theorem: ResolvedRefTheorem
-    tex: list[str]
+    tex: tuple[str, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedDefFunExist(ResolvedDeclaration):
     ref: ResolvedRefDefFunExist
     formula: ResolvedFormula
     ref_fun: ResolvedRefDefFun
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedDefFunUniq(ResolvedDeclaration):
     ref: ResolvedRefDefFunUniq
     formula: ResolvedFormula
     ref_fun: ResolvedRefDefFun
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedDefFun(ResolvedDeclaration):
     ref: ResolvedRefDefFun
     ref_theorem: ResolvedRefTheorem
-    tex: list[str]
+    tex: tuple[str, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedDefFunTerm(ResolvedDeclaration):
     ref: ResolvedRefDefFunTerm
-    args: list[ResolvedVar | ResolvedPredTemplate | ResolvedFunTemplate]
+    args: tuple[ResolvedVar | ResolvedPredTemplate | ResolvedFunTemplate, ...]
     varterm: ResolvedVarTerm
-    tex: list[str]
+    tex: tuple[str, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedEquality(ResolvedDeclaration):
     ref: ResolvedRefEquality
-    tex: list[str]
+    tex: tuple[str, ...]
 
 @dataclass
 class ResolvedInclude:
@@ -379,17 +380,17 @@ class ResolvedRefStructMemberCondition(ResolvedRefFact):
     parent: ResolvedStructVar | ResolvedStructMemberField
     struct_condition: ResolvedRefStructCondition
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedStruct(ResolvedDeclaration):
     ref: ResolvedRefStruct
     fields: tuple["ResolvedVar | ResolvedStructVar", ...]
-    conditions: dict[ResolvedRefStructCondition, ResolvedFormula]
+    conditions: Map[ResolvedRefStructCondition, ResolvedFormula]
 
 @dataclass(frozen=True)
 class ResolvedRefStructPred:
     name: str
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedStructPred(ResolvedDeclaration):
     ref_struct: ResolvedRefStruct
     ref: ResolvedRefStructPred
@@ -405,35 +406,35 @@ class ResolvedStructMemberPred(ResolvedPredTerm):
 class ResolvedRefStructCon:
     name: str
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedStructCon(ResolvedDeclaration):
     ref_struct: ResolvedRefStruct
     ref: ResolvedRefStructCon
     ref_theorem: ResolvedRefTheorem
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedFormulaContext:
-    items: list[ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate]
+    items: tuple[ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate, ...]
 
     @staticmethod
     def init() -> "ResolvedFormulaContext":
-        return ResolvedFormulaContext([])
+        return ResolvedFormulaContext(())
 
-    def add(self, new_items: list[ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate]) -> "ResolvedFormulaContext":
+    def add(self, new_items: tuple[ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate, ...]) -> "ResolvedFormulaContext":
         return ResolvedFormulaContext(self.items + new_items)
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedControlContext:
-    items: list[ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate]
+    items: tuple[ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate, ...]
 
     @staticmethod
     def init() -> "ResolvedControlContext":
-        return ResolvedControlContext([])
+        return ResolvedControlContext(())
 
-    def add(self, new_items: list[ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate]) -> "ResolvedControlContext":
+    def add(self, new_items: tuple[ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate, ...]) -> "ResolvedControlContext":
         return ResolvedControlContext(self.items + new_items)
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedContext:
     ctrl: ResolvedControlContext
     form: ResolvedFormulaContext
@@ -443,10 +444,10 @@ class ResolvedContext:
     def init() -> "ResolvedContext":
         return ResolvedContext(ResolvedControlContext.init(), ResolvedFormulaContext.init(), None)
 
-    def add_ctrl(self, new_items: list[ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate]):
+    def add_ctrl(self, new_items: tuple[ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate, ...]):
         return ResolvedContext(self.ctrl.add(new_items), self.form, self.ref_struct)
 
-    def add_form(self, new_items: list[ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate]):
+    def add_form(self, new_items: tuple[ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate, ...]):
         return ResolvedContext(self.ctrl, self.form.add(new_items), self.ref_struct)
 
     def add_ref_struct(self, ref_struct: ResolvedRefStruct):

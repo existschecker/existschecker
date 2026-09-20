@@ -1,6 +1,7 @@
 from lsprotocol import types as lsp
 from pygls import uris
 from typing import Sequence
+from immutables import Map
 from ast_types import DeclarationContextNameSpace, LexedUnit, ContextError
 from resolved_ast_types import ResolvedTerm, ResolvedFormula, ResolvedVarTerm, ResolvedVar, ResolvedRefDefCon, ResolvedFunTerm, ResolvedRefDefFun, ResolvedRefDefFunTerm, ResolvedFunTemplate, ResolvedFunLambda, ResolvedCompound, ResolvedPredTerm, ResolvedRefEquality, ResolvedRefPrimPred, ResolvedRefDefPred, ResolvedPredTemplate, ResolvedPredLambda, ResolvedAtomicFormula, ResolvedNot, ResolvedAnd, ResolvedOr, ResolvedImplies, ResolvedIff, ResolvedForall, ResolvedExists, ResolvedExistsUniq, ResolvedBottom, ResolvedRefFact, ResolvedRefAxiom, ResolvedRefTheorem, ResolvedRefDefConExist, ResolvedRefDefConUniq, ResolvedRefDefFunExist, ResolvedRefDefFunUniq, ResolvedControl, ResolvedInvalidControl, ResolvedAssume, ResolvedAny, ResolvedCase, ResolvedDivide, ResolvedSome, ResolvedDeny, ResolvedContradict, ResolvedExplode, ResolvedApply, ResolvedLift, ResolvedCharacterize, ResolvedInvoke, ResolvedExpand, ResolvedFold, ResolvedPad, ResolvedSplit, ResolvedConnect, ResolvedSubstitute, ResolvedShow, ResolvedAssert, ResolvedDeclaration, ResolvedInvalidDeclaration, ResolvedPrimPred, ResolvedAxiom, ResolvedTheorem, ResolvedDefPred, ResolvedDefCon, ResolvedDefFun, ResolvedDefFunTerm, ResolvedEquality, ResolvedInclude, ResolvedInvalidInclude, ResolvedRefStruct, ResolvedStructVar, ResolvedRefStructField, ResolvedStructMemberField, ResolvedRefStructCondition, ResolvedRefStructMemberCondition, ResolvedStruct, ResolvedFormulaContext, ResolvedControlContext, ResolvedContext, ResolvedStructPred, ResolvedRefStructPred, ResolvedStructMemberPred, ResolvedUnit, ResolvedStructCon, ResolvedRefStructCon
 from parsed_ast_types import ParsedExpr, ParsedIdent, ParsedIdentArgs, ParsedFunTemplate, ParsedFunLambda, ParsedPredTemplate, ParsedPredLambda, ParsedNot, ParsedAnd, ParsedOr, ParsedImplies, ParsedIff, ParsedForall, ParsedExists, ParsedExistsUniq, ParsedBottom, ParsedControl, ParsedInvalidControl, ParsedAny, ParsedAssume, ParsedDivide, ParsedSome, ParsedDeny, ParsedContradict, ParsedCase, ParsedExplode, ParsedApply, ParsedLift, ParsedCharacterize, ParsedInvoke, ParsedExpand, ParsedFold, ParsedPad, ParsedSplit, ParsedConnect, ParsedSubstitute, ParsedShow, ParsedAssert, ParsedDeclaration, ParsedInvalidDeclaration, ParsedPrimPred, ParsedAxiom, ParsedTheorem, ParsedDefPred, ParsedDefCon, ParsedDefFun, ParsedDefFunTerm, ParsedEquality, ParsedInclude, ParsedInvalidInclude, ParsedUnit, ParsedStruct, ParsedTypedIdent, ParsedAccess, ParsedStructPred, ParsedCall, ParsedStructCon, ParsedExistence, ParsedUniqueness
@@ -147,7 +148,7 @@ class NameResolver:
         ref = ResolvedRefPrimPred(node.ref.name)
         self.add_node_to_token(ref, node.ref)
         tex = self.create_or_check_tex(node.tex, node.name, node.arity, node)
-        resolved = ResolvedPrimPred(node.name, ref, node.arity, tex)
+        resolved = ResolvedPrimPred(node.name, ref, node.arity, tuple(tex))
         self.add_node_to_token(resolved, node)
         return resolved
 
@@ -179,7 +180,7 @@ class NameResolver:
         self.add_node_to_token(ref, node.ref)
         context = ResolvedContext.init()
         args = self.resolve_vars_or_pred_tmpls_or_fun_tmpls(node.args, context.ctrl)
-        local_ctx = context.add_ctrl(list(args))
+        local_ctx = context.add_ctrl(args)
         formula = self.resolve_formula(node.formula, local_ctx)
         tex = self.create_or_check_tex(node.tex, node.name, len(node.args), node)
         resolved = ResolvedDefPred(node.name, ref, args, formula, node.autoexpand, tex)
@@ -222,7 +223,7 @@ class NameResolver:
         self.add_node_to_token(ref, node.ref)
         context = ResolvedContext.init()
         args = self.resolve_vars_or_pred_tmpls_or_fun_tmpls(node.args, context.ctrl)
-        local_ctx = context.add_ctrl(list(args))
+        local_ctx = context.add_ctrl(args)
         varterm = self.resolve_term(node.varterm, local_ctx)
         if not isinstance(varterm, ResolvedVarTerm):
             raise ResolveError(node, "Unexpected type")
@@ -257,14 +258,14 @@ class NameResolver:
             else:
                 struct_var = self.resolve_struct_var(v, context.ctrl)
                 symbols.append(struct_var)
-        local_ctx = context.add_ctrl(list(symbols))
+        local_ctx = context.add_ctrl(tuple(symbols))
         formulas: dict[ResolvedRefStructCondition, ResolvedFormula] = {}
         for k, v in node.formulas.items():
             ref_formula = ResolvedRefStructCondition(k.name)
             self.add_node_to_token(ref_formula, k)
             self.add_ctrl_defs_refs(ref_formula, ref_formula)
             formulas[ref_formula] = self.resolve_formula(v, local_ctx)
-        resolved = ResolvedStruct(node.name, ref, tuple(symbols), formulas)
+        resolved = ResolvedStruct(node.name, ref, tuple(symbols), Map(formulas))
         self.add_node_to_token(resolved, node)
         return resolved
 
@@ -285,7 +286,7 @@ class NameResolver:
         context = ResolvedContext.init()
         context = context.add_ref_struct(ref_struct)
         args = self.resolve_vars(node.args, context.ctrl)
-        local_ctx = context.add_ctrl(list(args))
+        local_ctx = context.add_ctrl(args)
         formula = self.resolve_formula(node.formula, local_ctx)
         resolved = ResolvedStructPred(node.name, ref_struct, ref, tuple(args), formula)
         self.add_node_to_token(resolved, node)
@@ -318,25 +319,25 @@ class NameResolver:
         self.add_node_to_token(resolved, node)
         return resolved
 
-    def create_or_check_tex(self, tex: list[str], name: str, arity: int, node: ParsedPrimPred | ParsedDefPred | ParsedDefCon | ParsedDefFun | ParsedDefFunTerm | ParsedEquality) -> list[str]:
+    def create_or_check_tex(self, tex: list[str], name: str, arity: int, node: ParsedPrimPred | ParsedDefPred | ParsedDefCon | ParsedDefFun | ParsedDefFunTerm | ParsedEquality) -> tuple[str, ...]:
         if len(tex) == 0:
             return self.create_tex(name, arity)
         elif len(tex) == arity + 1:
-            return tex
+            return tuple(tex)
         else:
             raise ResolveError(node, f"arity of {name} is {arity}, but length of tex is {len(tex)}")
 
-    def create_tex(self, name: str, arity: int) -> list[str]:
+    def create_tex(self, name: str, arity: int) -> tuple[str, ...]:
         if arity == 0:
             tex = [f"\\mathrm{{{name}}}"]
         else:
             tex = [f"\\mathrm{{{name}}}("]
             tex.extend(["," for _ in range(arity - 1)])
             tex.append(")")
-        return tex
+        return tuple(tex)
 
-    def resolve_block(self, node: list[ParsedControl], context: ResolvedContext) -> list[ResolvedControl]:
-        return [self.resolve_control(control, context) for control in node]
+    def resolve_block(self, node: list[ParsedControl], context: ResolvedContext) -> tuple[ResolvedControl, ...]:
+        return tuple(self.resolve_control(control, context) for control in node)
 
     def resolve_control(self, node: ParsedControl, context: ResolvedContext) -> ResolvedControl:
         try:
@@ -416,7 +417,7 @@ class NameResolver:
         if len(node.cases) < 2:
             msg = "At least two cases are required"
             raise ResolveError(node, msg)
-        cases = [self.resolve_case(case, context) for case in node.cases]
+        cases = tuple(self.resolve_case(case, context) for case in node.cases)
         resolved = ResolvedDivide(fact, cases)
         self.add_node_to_token(resolved, node)
         return resolved
@@ -431,7 +432,7 @@ class NameResolver:
     def resolve_some(self, node: ParsedSome, context: ResolvedContext) -> ResolvedSome:
         fact = self.resolve_reference_or_formula(node.fact, context)
         items, local_vars = self.resolve_vars_or_none(node.items, context.ctrl)
-        local_ctx = context.add_ctrl(list(local_vars))
+        local_ctx = context.add_ctrl(local_vars)
         body = self.resolve_block(node.body, local_ctx)
         resolved = ResolvedSome(items, fact, body)
         self.add_node_to_token(resolved, node)
@@ -458,7 +459,7 @@ class NameResolver:
 
     def resolve_apply(self, node: ParsedApply, context: ResolvedContext) -> ResolvedApply:
         fact = self.resolve_reference_or_formula(node.fact, context)
-        terms = [self.resolve_term(term, context) if isinstance(term, ParsedExpr) else None for term in node.terms]
+        terms = tuple(self.resolve_term(term, context) if isinstance(term, ParsedExpr) else None for term in node.terms)
         resolved = ResolvedApply(node.invoke, fact, terms)
         self.add_node_to_token(resolved, node)
         return resolved
@@ -476,7 +477,7 @@ class NameResolver:
             else:
                 raise ResolveError(node, "Unexpected type")
         conclusion = self.resolve_formula(node.conclusion, context)
-        resolved = ResolvedLift(varterms, conclusion)
+        resolved = ResolvedLift(tuple(varterms), conclusion)
         self.add_node_to_token(resolved, node)
         return resolved
 
@@ -521,34 +522,34 @@ class NameResolver:
         self.add_node_to_token(resolved, node)
         return resolved
 
-    def resolve_refs_indexes(self, node: ParsedExpand | ParsedFold, context: ResolvedContext) -> tuple[list[ResolvedRefDefFunTerm | ResolvedRefDefPred], dict[ResolvedRefDefFunTerm | ResolvedRefDefPred, list[int]]]:
+    def resolve_refs_indexes(self, node: ParsedExpand | ParsedFold, context: ResolvedContext) -> tuple[tuple[ResolvedRefDefFunTerm | ResolvedRefDefPred, ...], Map[ResolvedRefDefFunTerm | ResolvedRefDefPred, tuple[int, ...]]]:
         resolved_refs: list[ResolvedRefDefFunTerm | ResolvedRefDefPred] = []
-        indexes: dict[ResolvedRefDefFunTerm | ResolvedRefDefPred, list[int]] = {}
+        indexes: dict[ResolvedRefDefFunTerm | ResolvedRefDefPred, tuple[int, ...]] = {}
         for ref in node.refs:
             if self.decl.has_resolved_ast(ResolvedDefFunTerm, ref.name):
                 resolved_ref = ResolvedRefDefFunTerm(ref.name)
                 self.add_node_to_token(resolved_ref, ref)
                 resolved_refs.append(resolved_ref)
                 if ref in node.indexes:
-                    indexes[resolved_ref] = node.indexes[ref]
+                    indexes[resolved_ref] = tuple(node.indexes[ref])
             elif self.decl.has_resolved_ast(ResolvedDefPred, ref.name):
                 resolved_ref = ResolvedRefDefPred(ref.name)
                 self.add_node_to_token(resolved_ref, ref)
                 resolved_refs.append(resolved_ref)
                 if ref in node.indexes:
-                    indexes[resolved_ref] = node.indexes[ref]
+                    indexes[resolved_ref] = tuple(node.indexes[ref])
             else:
                 msg = f"Unexpected name {ref.name}"
                 raise ResolveError(node, msg)
         for k, v in node.indexes.items():
             if self.decl.has_resolved_ast(ResolvedDefFunTerm, k.name):
-                indexes[ResolvedRefDefFunTerm(k.name)] = v
+                indexes[ResolvedRefDefFunTerm(k.name)] = tuple(v)
             elif self.decl.has_resolved_ast(ResolvedDefPred, k.name):
-                indexes[ResolvedRefDefPred(k.name)] = v
+                indexes[ResolvedRefDefPred(k.name)] = tuple(v)
             else:
                 msg = f"Unexpected name {k.name}"
                 raise ResolveError(node, msg)
-        return resolved_refs, indexes
+        return tuple(resolved_refs), Map(indexes)
 
     def resolve_pad(self, node: ParsedPad, context: ResolvedContext) -> ResolvedPad:
         fact = self.resolve_reference_or_formula(node.fact, context)
@@ -572,7 +573,7 @@ class NameResolver:
     def resolve_substitute(self, node: ParsedSubstitute, context: ResolvedContext) -> ResolvedSubstitute:
         fact = self.resolve_reference_or_formula(node.fact, context)
         env: dict[ResolvedTerm, ResolvedTerm] = {}
-        indexes: dict[ResolvedTerm, list[int]] = {}
+        indexes: dict[ResolvedTerm, tuple[int, ...]] = {}
         for k, v in node.env.items():
             new_k = self.resolve_term(k, context)
             self.add_node_to_token(new_k, k)
@@ -580,8 +581,8 @@ class NameResolver:
             self.add_node_to_token(new_v, v)
             env[new_k] = new_v
             if k in node.indexes:
-                indexes[new_k] = node.indexes[k]
-        resolved = ResolvedSubstitute(fact, env, indexes)
+                indexes[new_k] = tuple(node.indexes[k])
+        resolved = ResolvedSubstitute(fact, Map(env), Map(indexes))
         self.add_node_to_token(resolved, node)
         return resolved
 
@@ -630,17 +631,17 @@ class NameResolver:
             resolved = ResolvedIff(self.resolve_formula(node.left, context), self.resolve_formula(node.right, context))
         elif isinstance(node, ParsedForall):
             item = self.resolve_var_or_struct_var_or_pred_tmpl_or_fun_tmpl(node.var, context)
-            local_ctx = context.add_form([item])
+            local_ctx = context.add_form((item,))
             formula = self.resolve_formula(node.body, local_ctx)
             resolved = ResolvedForall(item, formula)
         elif isinstance(node, ParsedExists):
             var = self.resolve_var(node.var, context.form)
-            local_ctx = context.add_form([var])
+            local_ctx = context.add_form((var,))
             formula = self.resolve_formula(node.body, local_ctx)
             resolved = ResolvedExists(var, formula)
         elif isinstance(node, ParsedExistsUniq):
             var = self.resolve_var(node.var, context.form)
-            local_ctx = context.add_form([var])
+            local_ctx = context.add_form((var,))
             formula = self.resolve_formula(node.body, local_ctx)
             resolved = ResolvedExistsUniq(var, formula)
         else:
@@ -904,13 +905,13 @@ class NameResolver:
                 raise ResolveError(node, msg)
         elif isinstance(node, ParsedPredLambda):
             args = self.resolve_vars(node.args, context.form)
-            body = self.resolve_formula(node.body, context.add_form(list(args)))
+            body = self.resolve_formula(node.body, context.add_form(args))
             resolved = ResolvedPredLambda(tuple(args), body)
             self.add_node_to_token(resolved, node)
             return resolved
         elif isinstance(node, ParsedFunLambda):
             args = self.resolve_vars(node.args, context.form)
-            body = self.resolve_term(node.body, context.add_form(list(args)))
+            body = self.resolve_term(node.body, context.add_form(args))
             if not isinstance(body, ResolvedVarTerm):
                 raise ResolveError(node, "Unexpected type")
             resolved = ResolvedFunLambda(tuple(args), body)
@@ -952,7 +953,7 @@ class NameResolver:
         else:
             raise ResolveError(node, "Unexpected type")
 
-    def resolve_vars_or_struct_vars_or_pred_tmpls_or_fun_tmpls(self, node: list[ParsedIdent | ParsedTypedIdent | ParsedPredTemplate | ParsedFunTemplate], context: ResolvedContext) -> list[ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate]:
+    def resolve_vars_or_struct_vars_or_pred_tmpls_or_fun_tmpls(self, node: list[ParsedIdent | ParsedTypedIdent | ParsedPredTemplate | ParsedFunTemplate], context: ResolvedContext) -> tuple[ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate, ...]:
         items: list[ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate] = []
         for item in node:
             if item.name in [used.name for used in items]:
@@ -971,9 +972,9 @@ class NameResolver:
                 items.append(fun_tmpl)
             else:
                 raise ResolveError(item, f"Unexpected type {type(item)}")
-        return items
+        return tuple(items)
 
-    def resolve_vars_or_pred_tmpls_or_fun_tmpls(self, node: list[ParsedIdent | ParsedPredTemplate | ParsedFunTemplate], context: ResolvedControlContext | ResolvedFormulaContext) -> list[ResolvedVar | ResolvedPredTemplate | ResolvedFunTemplate]:
+    def resolve_vars_or_pred_tmpls_or_fun_tmpls(self, node: list[ParsedIdent | ParsedPredTemplate | ParsedFunTemplate], context: ResolvedControlContext | ResolvedFormulaContext) -> tuple[ResolvedVar | ResolvedPredTemplate | ResolvedFunTemplate, ...]:
         items: list[ResolvedVar | ResolvedPredTemplate | ResolvedFunTemplate] = []
         for item in node:
             if item.name in [used.name for used in items]:
@@ -989,7 +990,7 @@ class NameResolver:
                 items.append(fun_tmpl)
             else:
                 raise ResolveError(item, f"Unexpected type {type(item)}")
-        return items
+        return tuple(items)
 
     def resolve_var_or_struct_var_or_pred_tmpl_or_fun_tmpl(self, node: ParsedIdent | ParsedTypedIdent | ParsedPredTemplate | ParsedFunTemplate, context: ResolvedContext) -> ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate:
         if isinstance(node, ParsedIdent):
@@ -1003,7 +1004,7 @@ class NameResolver:
         else:
             raise ResolveError(node, f"Unexpected type {type(node)}")
 
-    def resolve_vars_or_none(self, node: list[ParsedIdent | None], context: ResolvedControlContext | ResolvedFormulaContext) -> tuple[list[ResolvedVar | None], list[ResolvedVar]]:
+    def resolve_vars_or_none(self, node: list[ParsedIdent | None], context: ResolvedControlContext | ResolvedFormulaContext) -> tuple[tuple[ResolvedVar | None, ...], tuple[ResolvedVar, ...]]:
         vars_or_none: list[ResolvedVar | None] = []
         vars: list[ResolvedVar] = []
         for item in node:
@@ -1015,15 +1016,15 @@ class NameResolver:
                 vars.append(var)
             else:
                 vars_or_none.append(None)
-        return vars_or_none, vars
+        return tuple(vars_or_none), tuple(vars)
 
-    def resolve_vars(self, node: tuple[ParsedIdent, ...], context: ResolvedControlContext | ResolvedFormulaContext) -> list[ResolvedVar]:
+    def resolve_vars(self, node: tuple[ParsedIdent, ...], context: ResolvedControlContext | ResolvedFormulaContext) -> tuple[ResolvedVar, ...]:
         vars: list[ResolvedVar] = []
         for item in node:
             if item.name in [used.name for used in vars]:
                 raise ResolveError(item, f"{item.name} is duplicated")
             vars.append(self.resolve_var(item, context))
-        return vars
+        return tuple(vars)
 
     def resolve_var_or_struct_var(self, node: ParsedIdent | ParsedTypedIdent, context: ResolvedContext) -> ResolvedVar | ResolvedStructVar:
         if isinstance(node, ParsedIdent):

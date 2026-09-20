@@ -240,7 +240,7 @@ class Elaborator:
         self.add_node_to_token(elaborated, node)
         return elaborated
 
-    def elaborate_block(self, node: list[ResolvedControl]) -> list[Control]:
+    def elaborate_block(self, node: tuple[ResolvedControl, ...]) -> list[Control]:
         controls: list[Control] = []
         for control in node:
             controls.extend(self.elaborate_control(control))
@@ -807,7 +807,7 @@ class Elaborator:
         self.add_node_to_token(elaborated, node)
         return elaborated
 
-    def elaborate_vars_or_pred_tmpls_or_fun_tmpls(self, node: list[ResolvedVar | ResolvedPredTemplate | ResolvedFunTemplate]) -> tuple[list[Var], list[PredTemplate], list[FunTemplate], list[Var | PredTemplate | FunTemplate]]:
+    def elaborate_vars_or_pred_tmpls_or_fun_tmpls(self, node: tuple[ResolvedVar | ResolvedPredTemplate | ResolvedFunTemplate, ...]) -> tuple[list[Var], list[PredTemplate], list[FunTemplate], list[Var | PredTemplate | FunTemplate]]:
         vars: list[Var] = []
         pred_tmpls: list[PredTemplate] = []
         fun_tmpls: list[FunTemplate] = []
@@ -829,7 +829,7 @@ class Elaborator:
                 raise ElaborateError(item, f"Unexpected type {type(item)}")
         return vars, pred_tmpls, fun_tmpls, items
 
-    def elaborate_vars_or_none(self, node: list[ResolvedVar | None]) -> tuple[list[Var | None], list[Var]]:
+    def elaborate_vars_or_none(self, node: tuple[ResolvedVar | None, ...]) -> tuple[list[Var | None], list[Var]]:
         vars_or_none: list[Var | None] = []
         vars: list[Var] = []
         for item in node:
