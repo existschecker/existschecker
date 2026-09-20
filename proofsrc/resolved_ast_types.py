@@ -319,12 +319,12 @@ class ResolvedEquality(ResolvedDeclaration):
     ref: ResolvedRefEquality
     tex: tuple[str, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedInclude:
     file: str
     token: Token
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedInvalidInclude(ResolvedInclude):
     pass
 

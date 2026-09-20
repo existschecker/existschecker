@@ -552,12 +552,12 @@ class Context:
     def add_ctrl(self, new_formulas: tuple[Bottom | Formula, ...], new_symbols: tuple[Var | PredTemplate | FunTemplate, ...]):
         return Context(self.ctrl.add(new_formulas, new_symbols))
 
-@dataclass
+@dataclass(frozen=True)
 class Include:
     file: str
     token: Token
 
-@dataclass
+@dataclass(frozen=True)
 class InvalidInclude(Include):
     pass
 

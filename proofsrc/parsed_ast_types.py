@@ -288,12 +288,12 @@ class ParsedStructCon(ParsedDeclaration):
     ref: ParsedIdent
     ref_theorem: ParsedIdent
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedInclude:
     file: str
     token: Token
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedInvalidInclude(ParsedInclude):
     pass
 
