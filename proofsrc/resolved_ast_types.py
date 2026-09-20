@@ -296,34 +296,10 @@ class ResolvedDefPred(ResolvedDeclaration):
     tex: tuple[str, ...]
 
 @dataclass(frozen=True)
-class ResolvedDefConExist(ResolvedDeclaration):
-    ref: ResolvedRefDefConExist
-    formula: ResolvedFormula
-    ref_con: ResolvedRefDefCon
-
-@dataclass(frozen=True)
-class ResolvedDefConUniq(ResolvedDeclaration):
-    ref: ResolvedRefDefConUniq
-    formula: ResolvedFormula
-    ref_con: ResolvedRefDefCon
-
-@dataclass(frozen=True)
 class ResolvedDefCon(ResolvedDeclaration):
     ref: ResolvedRefDefCon
     ref_theorem: ResolvedRefTheorem
     tex: tuple[str, ...]
-
-@dataclass(frozen=True)
-class ResolvedDefFunExist(ResolvedDeclaration):
-    ref: ResolvedRefDefFunExist
-    formula: ResolvedFormula
-    ref_fun: ResolvedRefDefFun
-
-@dataclass(frozen=True)
-class ResolvedDefFunUniq(ResolvedDeclaration):
-    ref: ResolvedRefDefFunUniq
-    formula: ResolvedFormula
-    ref_fun: ResolvedRefDefFun
 
 @dataclass(frozen=True)
 class ResolvedDefFun(ResolvedDeclaration):
