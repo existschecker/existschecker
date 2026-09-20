@@ -426,9 +426,6 @@ class ResolvedFormulaContext:
     def add(self, new_vars: list[ResolvedVar], new_struct_vars: list[ResolvedStructVar], new_pred_tmpls: list[ResolvedPredTemplate], new_fun_tmpls: list[ResolvedFunTemplate]) -> "ResolvedFormulaContext":
         new_used_names = self.used_names.copy()
         for item in new_vars + new_struct_vars + new_pred_tmpls + new_fun_tmpls:
-            if item.name in new_used_names:
-                msg = f"{item.name} is already used"
-                raise Exception(msg)
             new_used_names.add(item.name)
         return ResolvedFormulaContext(list(self.vars + new_vars), list(self.struct_vars + new_struct_vars), list(self.pred_tmpls + new_pred_tmpls), list(self.fun_tmpls + new_fun_tmpls), new_used_names)
 
@@ -447,9 +444,6 @@ class ResolvedControlContext:
     def add(self, new_vars: list[ResolvedVar], new_struct_vars: list[ResolvedStructVar], new_pred_tmpls: list[ResolvedPredTemplate], new_fun_tmpls: list[ResolvedFunTemplate]) -> "ResolvedControlContext":
         new_used_names = self.used_names.copy()
         for item in new_vars + new_struct_vars + new_pred_tmpls + new_fun_tmpls:
-            if item.name in new_used_names:
-                msg = f"{item.name} is already used"
-                raise Exception(msg)
             new_used_names.add(item.name)
         return ResolvedControlContext(list(self.vars + new_vars), list(self.struct_vars + new_struct_vars), list(self.pred_tmpls + new_pred_tmpls), list(self.fun_tmpls + new_fun_tmpls), new_used_names)
 
