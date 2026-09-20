@@ -57,14 +57,14 @@ class CursorState:
     uri: str
     position: lsp.Position
 
-def get_hover(resolved_node: ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred | ResolvedRefStructCon, node: Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon, proofs: dict[Declaration | Control, ProofInfo]) -> str:
+def get_hover(resolved_node: ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred | ResolvedRefStructCon, node: Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon, proofs: dict[int, ProofInfo]) -> str:
     if isinstance(node, (Declaration, Control)):
-        status = proofs.get(node, ProofInfo()).status
+        status = proofs.get(id(node), ProofInfo()).status
         return f"{resolved_node.__class__.__name__} -> {node.__class__.__name__}: {status}"
     else:
         return f"{resolved_node.__class__.__name__} -> {node.__class__.__name__}"
 
-def render_statement(node: Declaration | Control, decl: DeclarationContextNameSpace, proofs: dict[Declaration | Control, ProofInfo]) -> str:
+def render_statement(node: Declaration | Control, decl: DeclarationContextNameSpace, proofs: dict[int, ProofInfo]) -> str:
     renderer = Renderer(decl, proofs)
     method_name = f"render_{node.__class__.__name__.lower()}"
     renderer_method = getattr(renderer, method_name, None)
@@ -82,10 +82,10 @@ def render_expr_list(renderer: Renderer, formulas: Sequence[RefFact | Bottom | F
     except (FormatError, RenderError) as e:
         return f"{e.__class__.__name__}: {e.msg}"
 
-def render_proofinfo(node: Include | Declaration | Control, decl: DeclarationContextNameSpace, proofs: dict[Declaration | Control, ProofInfo]) -> str:
+def render_proofinfo(node: Include | Declaration | Control, decl: DeclarationContextNameSpace, proofs: dict[int, ProofInfo]) -> str:
     if isinstance(node, Declaration):
         statement = render_statement(node, decl, proofs)
-        status = proofs.get(node, ProofInfo()).status
+        status = proofs.get(id(node), ProofInfo()).status
         return f"""<div class="statement">
     <span class="status-icon">{status}</span>
     {statement}
@@ -94,7 +94,7 @@ def render_proofinfo(node: Include | Declaration | Control, decl: DeclarationCon
     elif isinstance(node, Control):
         statement = render_statement(node, decl, proofs)
         renderer = Renderer(decl, proofs)
-        proofinfo = proofs.get(node, ProofInfo())
+        proofinfo = proofs.get(id(node), ProofInfo())
         status = proofinfo.status
         context_symbols = render_expr_list(renderer, proofinfo.ctrl_ctx.symbols)
         context_formulas = render_expr_list(renderer, proofinfo.ctrl_ctx.formulas)

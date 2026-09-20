@@ -60,11 +60,11 @@ class Checker:
         self.diagnostics.append(diag)
 
     def add_proofinfo(self, node: Declaration | Control, proofinfo: ProofInfo) -> None:
-        self.proofinfo[node] = proofinfo
+        self.proofinfo[id(node)] = proofinfo
 
     def check_unit(self) -> CheckedUnit:
         self.diagnostics: list[lsp.Diagnostic] = []
-        self.proofinfo: dict[Declaration | Control, ProofInfo] = {}
+        self.proofinfo: dict[int, ProofInfo] = {}
         if isinstance(self.elaborated_unit.ast, Declaration):
             self.check_declaration(self.elaborated_unit.ast)
         return CheckedUnit(self.diagnostics, self.proofinfo)
