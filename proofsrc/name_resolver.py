@@ -178,8 +178,8 @@ class NameResolver:
         ref = ResolvedRefDefPred(node.ref.name)
         self.add_node_to_token(ref, node.ref)
         context = ResolvedContext.init()
-        local_vars, local_pred_tmpls, local_fun_tmpls, args = self.resolve_vars_or_pred_tmpls_or_fun_tmpls(node.args, context.ctrl)
-        local_ctx = context.add_ctrl(local_vars, [], local_pred_tmpls, local_fun_tmpls)
+        args = self.resolve_vars_or_pred_tmpls_or_fun_tmpls(node.args, context.ctrl)
+        local_ctx = context.add_ctrl(list(args))
         formula = self.resolve_formula(node.formula, local_ctx)
         tex = self.create_or_check_tex(node.tex, node.name, len(node.args), node)
         resolved = ResolvedDefPred(node.name, ref, args, formula, node.autoexpand, tex)
@@ -221,8 +221,8 @@ class NameResolver:
         ref = ResolvedRefDefFunTerm(node.ref.name)
         self.add_node_to_token(ref, node.ref)
         context = ResolvedContext.init()
-        local_vars, local_pred_tmpls, local_fun_tmpls, args = self.resolve_vars_or_pred_tmpls_or_fun_tmpls(node.args, context.ctrl)
-        local_ctx = context.add_ctrl(local_vars, [], local_pred_tmpls, local_fun_tmpls)
+        args = self.resolve_vars_or_pred_tmpls_or_fun_tmpls(node.args, context.ctrl)
+        local_ctx = context.add_ctrl(list(args))
         varterm = self.resolve_term(node.varterm, local_ctx)
         if not isinstance(varterm, ResolvedVarTerm):
             raise ResolveError(node, "Unexpected type")
@@ -248,20 +248,16 @@ class NameResolver:
             raise ResolveError(node.ref, f"{node.ref.name} is already used")
         ref = ResolvedRefStruct(node.ref.name)
         self.add_node_to_token(ref, node.ref)
-        vars: list[ResolvedVar] = []
-        struct_vars: list[ResolvedStructVar] = []
         symbols: list[ResolvedVar | ResolvedStructVar] = []
         context = ResolvedContext.init()
         for v in node.vars:
             if isinstance(v, ParsedIdent):
                 var = self.resolve_var(v, context.ctrl)
-                vars.append(var)
                 symbols.append(var)
             else:
                 struct_var = self.resolve_struct_var(v, context.ctrl)
-                struct_vars.append(struct_var)
                 symbols.append(struct_var)
-        local_ctx = context.add_ctrl(vars, struct_vars, [], [])
+        local_ctx = context.add_ctrl(list(symbols))
         formulas: dict[ResolvedRefStructCondition, ResolvedFormula] = {}
         for k, v in node.formulas.items():
             ref_formula = ResolvedRefStructCondition(k.name)
@@ -289,7 +285,7 @@ class NameResolver:
         context = ResolvedContext.init()
         context = context.add_ref_struct(ref_struct)
         args = self.resolve_vars(node.args, context.ctrl)
-        local_ctx = context.add_ctrl(args, [], [], [])
+        local_ctx = context.add_ctrl(list(args))
         formula = self.resolve_formula(node.formula, local_ctx)
         resolved = ResolvedStructPred(node.name, ref_struct, ref, tuple(args), formula)
         self.add_node_to_token(resolved, node)
@@ -401,8 +397,8 @@ class NameResolver:
             return invalid
 
     def resolve_any(self, node: ParsedAny, context: ResolvedContext) -> ResolvedAny:
-        local_vars, local_struct_vars, local_pred_tmpls, local_fun_tmpls, items = self.resolve_vars_or_struct_vars_or_pred_tmpls_or_fun_tmpls(node.items, context)
-        local_ctx = context.add_ctrl(local_vars, local_struct_vars, local_pred_tmpls, local_fun_tmpls)
+        items = self.resolve_vars_or_struct_vars_or_pred_tmpls_or_fun_tmpls(node.items, context)
+        local_ctx = context.add_ctrl(items)
         body = self.resolve_block(node.body, local_ctx)
         resolved = ResolvedAny(items, body)
         self.add_node_to_token(resolved, node)
@@ -435,7 +431,7 @@ class NameResolver:
     def resolve_some(self, node: ParsedSome, context: ResolvedContext) -> ResolvedSome:
         fact = self.resolve_reference_or_formula(node.fact, context)
         items, local_vars = self.resolve_vars_or_none(node.items, context.ctrl)
-        local_ctx = context.add_ctrl(local_vars, [], [], [])
+        local_ctx = context.add_ctrl(list(local_vars))
         body = self.resolve_block(node.body, local_ctx)
         resolved = ResolvedSome(items, fact, body)
         self.add_node_to_token(resolved, node)
@@ -633,18 +629,18 @@ class NameResolver:
         elif isinstance(node, ParsedIff):
             resolved = ResolvedIff(self.resolve_formula(node.left, context), self.resolve_formula(node.right, context))
         elif isinstance(node, ParsedForall):
-            local_vars, local_struct_vars, local_pred_tmpls, local_fun_tmpls, item = self.resolve_var_or_struct_var_or_pred_tmpl_or_fun_tmpl(node.var, context)
-            local_ctx = context.add_form(local_vars, local_struct_vars, local_pred_tmpls, local_fun_tmpls)
+            item = self.resolve_var_or_struct_var_or_pred_tmpl_or_fun_tmpl(node.var, context)
+            local_ctx = context.add_form([item])
             formula = self.resolve_formula(node.body, local_ctx)
             resolved = ResolvedForall(item, formula)
         elif isinstance(node, ParsedExists):
             var = self.resolve_var(node.var, context.form)
-            local_ctx = context.add_form([var], [], [], [])
+            local_ctx = context.add_form([var])
             formula = self.resolve_formula(node.body, local_ctx)
             resolved = ResolvedExists(var, formula)
         elif isinstance(node, ParsedExistsUniq):
             var = self.resolve_var(node.var, context.form)
-            local_ctx = context.add_form([var], [], [], [])
+            local_ctx = context.add_form([var])
             formula = self.resolve_formula(node.body, local_ctx)
             resolved = ResolvedExistsUniq(var, formula)
         else:
@@ -656,16 +652,16 @@ class NameResolver:
     def resolve_reference_or_atomic_zero_arity_formula(self, node: ParsedIdent | ParsedAccess, context: ResolvedContext) -> ResolvedRefFact | ResolvedAtomicFormula:
         if isinstance(node, ParsedIdent):
             name = node.name
-            if any(pred_tmpl.name == name for pred_tmpl in context.form.pred_tmpls):
-                def_pred_tmpl = next(pred_tmpl for pred_tmpl in context.form.pred_tmpls if pred_tmpl.name == name)
+            if any(pred_tmpl.name == name for pred_tmpl in context.form.items if isinstance(pred_tmpl, ResolvedPredTemplate)):
+                def_pred_tmpl = next(pred_tmpl for pred_tmpl in context.form.items if isinstance(pred_tmpl, ResolvedPredTemplate) and pred_tmpl.name == name)
                 pred = ResolvedPredTemplate(name, def_pred_tmpl.arity)
                 self.add_node_to_token(pred, node)
                 self.add_ctrl_defs_refs(def_pred_tmpl, pred)
                 formula = ResolvedAtomicFormula(pred, ())
                 self.add_node_to_token(formula, node)
                 return formula
-            elif any(pred_tmpl.name == name for pred_tmpl in context.ctrl.pred_tmpls):
-                def_pred_tmpl = next(pred_tmpl for pred_tmpl in context.ctrl.pred_tmpls if pred_tmpl.name == name)
+            elif any(pred_tmpl.name == name for pred_tmpl in context.ctrl.items if isinstance(pred_tmpl, ResolvedPredTemplate)):
+                def_pred_tmpl = next(pred_tmpl for pred_tmpl in context.ctrl.items if isinstance(pred_tmpl, ResolvedPredTemplate) and pred_tmpl.name == name)
                 pred = ResolvedPredTemplate(name, def_pred_tmpl.arity)
                 self.add_node_to_token(pred, node)
                 self.add_ctrl_defs_refs(def_pred_tmpl, pred)
@@ -727,13 +723,13 @@ class NameResolver:
     def resolve_atomic_formula(self, node: ParsedIdent | ParsedIdentArgs | ParsedCall, context: ResolvedContext) -> ResolvedAtomicFormula:
         if isinstance(node, ParsedIdent):
             name = node.name
-            if any(pred_tmpl.name == name for pred_tmpl in context.form.pred_tmpls):
-                def_pred_tmpl = next(pred_tmpl for pred_tmpl in context.form.pred_tmpls if pred_tmpl.name == name)
+            if any(pred_tmpl.name == name for pred_tmpl in context.form.items if isinstance(pred_tmpl, ResolvedPredTemplate)):
+                def_pred_tmpl = next(pred_tmpl for pred_tmpl in context.form.items if isinstance(pred_tmpl, ResolvedPredTemplate) and pred_tmpl.name == name)
                 pred = ResolvedPredTemplate(name, def_pred_tmpl.arity)
                 self.add_node_to_token(pred, node)
                 self.add_ctrl_defs_refs(def_pred_tmpl, pred)
-            elif any(pred_tmpl.name == name for pred_tmpl in context.ctrl.pred_tmpls):
-                def_pred_tmpl = next(pred_tmpl for pred_tmpl in context.ctrl.pred_tmpls if pred_tmpl.name == name)
+            elif any(pred_tmpl.name == name for pred_tmpl in context.ctrl.items if isinstance(pred_tmpl, ResolvedPredTemplate)):
+                def_pred_tmpl = next(pred_tmpl for pred_tmpl in context.ctrl.items if isinstance(pred_tmpl, ResolvedPredTemplate) and pred_tmpl.name == name)
                 pred = ResolvedPredTemplate(name, def_pred_tmpl.arity)
                 self.add_node_to_token(pred, node)
                 self.add_ctrl_defs_refs(def_pred_tmpl, pred)
@@ -746,14 +742,14 @@ class NameResolver:
         elif isinstance(node, ParsedIdentArgs):
             name = node.name.name
             equality = self.decl.get_resolved_equality()
-            if any(pred_tmpl.name == name for pred_tmpl in context.form.pred_tmpls):
-                def_pred_tmpl = next(pred_tmpl for pred_tmpl in context.form.pred_tmpls if pred_tmpl.name == name)
+            if any(pred_tmpl.name == name for pred_tmpl in context.form.items if isinstance(pred_tmpl, ResolvedPredTemplate)):
+                def_pred_tmpl = next(pred_tmpl for pred_tmpl in context.form.items if isinstance(pred_tmpl, ResolvedPredTemplate) and pred_tmpl.name == name)
                 pred = ResolvedPredTemplate(name, def_pred_tmpl.arity)
                 self.add_node_to_token(pred, node.name)
                 self.add_ctrl_defs_refs(def_pred_tmpl, pred)
                 defargs = [ResolvedVar(f"x_{i}") for i in range(pred.arity)]
-            elif any(pred_tmpl.name == name for pred_tmpl in context.ctrl.pred_tmpls):
-                def_pred_tmpl = next(pred_tmpl for pred_tmpl in context.ctrl.pred_tmpls if pred_tmpl.name == name)
+            elif any(pred_tmpl.name == name for pred_tmpl in context.ctrl.items if isinstance(pred_tmpl, ResolvedPredTemplate)):
+                def_pred_tmpl = next(pred_tmpl for pred_tmpl in context.ctrl.items if isinstance(pred_tmpl, ResolvedPredTemplate) and pred_tmpl.name == name)
                 pred = ResolvedPredTemplate(name, def_pred_tmpl.arity)
                 self.add_node_to_token(pred, node.name)
                 self.add_ctrl_defs_refs(def_pred_tmpl, pred)
@@ -801,38 +797,38 @@ class NameResolver:
         if isinstance(node, ParsedIdent):
             name = node.name
             struct = None if context.ref_struct is None else self.decl.get_resolved_ast(ResolvedStruct, context.ref_struct.name)
-            if any(var.name == name for var in context.form.vars):
-                def_var = next(var for var in context.form.vars if var.name == name)
+            if any(var.name == name for var in context.form.items if isinstance(var, ResolvedVar)):
+                def_var = next(var for var in context.form.items if isinstance(var, ResolvedVar) and var.name == name)
                 ref_var = ResolvedVar(name)
                 self.add_node_to_token(ref_var, node)
                 self.add_ctrl_defs_refs(def_var, ref_var)
                 return ref_var
-            elif any(struct_var.name == name for struct_var in context.form.struct_vars):
-                def_var = next(struct_var for struct_var in context.form.struct_vars if struct_var.name == name)
+            elif any(struct_var.name == name for struct_var in context.form.items if isinstance(struct_var, ResolvedStructVar)):
+                def_var = next(struct_var for struct_var in context.form.items if isinstance(struct_var, ResolvedStructVar) and struct_var.name == name)
                 ref_var = ResolvedStructVar(name, def_var.ref_struct)
                 self.add_node_to_token(ref_var, node)
                 self.add_ctrl_defs_refs(def_var, ref_var)
                 return ref_var
-            elif any(pred_tmpl.name == name for pred_tmpl in context.form.pred_tmpls):
-                def_pred_tmpl = next(pred_tmpl for pred_tmpl in context.form.pred_tmpls if pred_tmpl.name == name)
+            elif any(pred_tmpl.name == name for pred_tmpl in context.form.items if isinstance(pred_tmpl, ResolvedPredTemplate)):
+                def_pred_tmpl = next(pred_tmpl for pred_tmpl in context.form.items if isinstance(pred_tmpl, ResolvedPredTemplate) and pred_tmpl.name == name)
                 ref_pred_tmpl = ResolvedPredTemplate(name, def_pred_tmpl.arity)
                 self.add_node_to_token(ref_pred_tmpl, node)
                 self.add_ctrl_defs_refs(def_pred_tmpl, ref_pred_tmpl)
                 return ref_pred_tmpl
-            elif any(var.name == name for var in context.ctrl.vars):
-                def_var = next((var for var in context.ctrl.vars if var.name == name))
+            elif any(var.name == name for var in context.ctrl.items if isinstance(var, ResolvedVar)):
+                def_var = next((var for var in context.ctrl.items if isinstance(var, ResolvedVar) and var.name == name))
                 ref_var = ResolvedVar(name)
                 self.add_node_to_token(ref_var, node)
                 self.add_ctrl_defs_refs(def_var, ref_var)
                 return ref_var
-            elif any(struct_var.name == name for struct_var in context.ctrl.struct_vars):
-                def_var = next(struct_var for struct_var in context.ctrl.struct_vars if struct_var.name == name)
+            elif any(struct_var.name == name for struct_var in context.ctrl.items if isinstance(struct_var, ResolvedStructVar)):
+                def_var = next(struct_var for struct_var in context.ctrl.items if isinstance(struct_var, ResolvedStructVar) and struct_var.name == name)
                 ref_var = ResolvedStructVar(name, def_var.ref_struct)
                 self.add_node_to_token(ref_var, node)
                 self.add_ctrl_defs_refs(def_var, ref_var)
                 return ref_var
-            elif any(pred_tmpl.name == name for pred_tmpl in context.ctrl.pred_tmpls):
-                def_pred_tmpl = next((pred_tmpl for pred_tmpl in context.ctrl.pred_tmpls if pred_tmpl.name == name))
+            elif any(pred_tmpl.name == name for pred_tmpl in context.ctrl.items if isinstance(pred_tmpl, ResolvedPredTemplate)):
+                def_pred_tmpl = next((pred_tmpl for pred_tmpl in context.ctrl.items if isinstance(pred_tmpl, ResolvedPredTemplate) and pred_tmpl.name == name))
                 ref_pred_tmpl = ResolvedPredTemplate(name, def_pred_tmpl.arity)
                 self.add_node_to_token(ref_pred_tmpl, node)
                 self.add_ctrl_defs_refs(def_pred_tmpl, ref_pred_tmpl)
@@ -866,7 +862,7 @@ class NameResolver:
                 raise ResolveError(node, f"{name} is unknown")
         elif isinstance(node, ParsedIdentArgs):
             name = node.name.name
-            if self.decl.has_resolved_ast(ResolvedDefFun, name) or self.decl.has_resolved_ast(ResolvedDefFunTerm, name) or any(fun_tmpl.name == name for fun_tmpl in context.form.fun_tmpls) or any(fun_tmpl.name == name for fun_tmpl in context.ctrl.fun_tmpls):
+            if self.decl.has_resolved_ast(ResolvedDefFun, name) or self.decl.has_resolved_ast(ResolvedDefFunTerm, name) or any(fun_tmpl.name == name for fun_tmpl in context.form.items if isinstance(fun_tmpl, ResolvedFunTemplate)) or any(fun_tmpl.name == name for fun_tmpl in context.ctrl.items if isinstance(fun_tmpl, ResolvedFunTemplate)):
                 if self.decl.has_resolved_ast(ResolvedDefFun, name):
                     fun = ResolvedRefDefFun(name)
                     self.add_node_to_token(fun, node.name)
@@ -875,14 +871,14 @@ class NameResolver:
                     fun = ResolvedRefDefFunTerm(name)
                     self.add_node_to_token(fun, node.name)
                     defargs = self.decl.get_resolved_ast(ResolvedDefFunTerm, name).args
-                elif any(fun_tmpl.name == name for fun_tmpl in context.form.fun_tmpls):
-                    def_fun_tmpl = next(fun_tmpl for fun_tmpl in context.form.fun_tmpls if fun_tmpl.name == name)
+                elif any(fun_tmpl.name == name for fun_tmpl in context.form.items if isinstance(fun_tmpl, ResolvedFunTemplate)):
+                    def_fun_tmpl = next(fun_tmpl for fun_tmpl in context.form.items if isinstance(fun_tmpl, ResolvedFunTemplate) and fun_tmpl.name == name)
                     fun = ResolvedFunTemplate(name, def_fun_tmpl.arity)
                     self.add_node_to_token(fun, node.name)
                     self.add_ctrl_defs_refs(def_fun_tmpl, fun)
                     defargs = [ResolvedVar(f"x_{i}") for i in range(fun.arity)]
                 else:
-                    def_fun_tmpl = next(fun_tmpl for fun_tmpl in context.ctrl.fun_tmpls if fun_tmpl.name == name)
+                    def_fun_tmpl = next(fun_tmpl for fun_tmpl in context.ctrl.items if isinstance(fun_tmpl, ResolvedFunTemplate) and fun_tmpl.name == name)
                     fun = ResolvedFunTemplate(name, def_fun_tmpl.arity)
                     self.add_node_to_token(fun, node.name)
                     self.add_ctrl_defs_refs(def_fun_tmpl, fun)
@@ -908,13 +904,13 @@ class NameResolver:
                 raise ResolveError(node, msg)
         elif isinstance(node, ParsedPredLambda):
             args = self.resolve_vars(node.args, context.form)
-            body = self.resolve_formula(node.body, context.add_form(args, [], [], []))
+            body = self.resolve_formula(node.body, context.add_form(list(args)))
             resolved = ResolvedPredLambda(tuple(args), body)
             self.add_node_to_token(resolved, node)
             return resolved
         elif isinstance(node, ParsedFunLambda):
             args = self.resolve_vars(node.args, context.form)
-            body = self.resolve_term(node.body, context.add_form(args, [], [], []))
+            body = self.resolve_term(node.body, context.add_form(list(args)))
             if not isinstance(body, ResolvedVarTerm):
                 raise ResolveError(node, "Unexpected type")
             resolved = ResolvedFunLambda(tuple(args), body)
@@ -956,83 +952,56 @@ class NameResolver:
         else:
             raise ResolveError(node, "Unexpected type")
 
-    def resolve_vars_or_struct_vars_or_pred_tmpls_or_fun_tmpls(self, node: list[ParsedIdent | ParsedTypedIdent | ParsedPredTemplate | ParsedFunTemplate], context: ResolvedContext) -> tuple[list[ResolvedVar], list[ResolvedStructVar], list[ResolvedPredTemplate], list[ResolvedFunTemplate], list[ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate]]:
-        vars: list[ResolvedVar] = []
-        struct_vars: list[ResolvedStructVar] = []
-        pred_tmpls: list[ResolvedPredTemplate] = []
-        fun_tmpls: list[ResolvedFunTemplate] = []
+    def resolve_vars_or_struct_vars_or_pred_tmpls_or_fun_tmpls(self, node: list[ParsedIdent | ParsedTypedIdent | ParsedPredTemplate | ParsedFunTemplate], context: ResolvedContext) -> list[ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate]:
         items: list[ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate] = []
         for item in node:
             if item.name in [used.name for used in items]:
                 raise ResolveError(item, f"{item.name} is duplicated")
             if isinstance(item, ParsedIdent):
                 var = self.resolve_var(item, context.ctrl)
-                vars.append(var)
                 items.append(var)
             elif isinstance(item, ParsedTypedIdent):
                 struct_var = self.resolve_struct_var(item, context.ctrl)
-                struct_vars.append(struct_var)
                 items.append(struct_var)
             elif isinstance(item, ParsedPredTemplate):
                 pred_tmpl = self.resolve_pred_tmpl(item, context.ctrl)
-                pred_tmpls.append(pred_tmpl)
                 items.append(pred_tmpl)
             elif isinstance(item, ParsedFunTemplate):
                 fun_tmpl = self.resolve_fun_tmpl(item, context.ctrl)
-                fun_tmpls.append(fun_tmpl)
                 items.append(fun_tmpl)
             else:
                 raise ResolveError(item, f"Unexpected type {type(item)}")
-        return vars, struct_vars, pred_tmpls, fun_tmpls, items
+        return items
 
-    def resolve_vars_or_pred_tmpls_or_fun_tmpls(self, node: list[ParsedIdent | ParsedPredTemplate | ParsedFunTemplate], context: ResolvedControlContext | ResolvedFormulaContext) -> tuple[list[ResolvedVar], list[ResolvedPredTemplate], list[ResolvedFunTemplate], list[ResolvedVar | ResolvedPredTemplate | ResolvedFunTemplate]]:
-        vars: list[ResolvedVar] = []
-        pred_tmpls: list[ResolvedPredTemplate] = []
-        fun_tmpls: list[ResolvedFunTemplate] = []
+    def resolve_vars_or_pred_tmpls_or_fun_tmpls(self, node: list[ParsedIdent | ParsedPredTemplate | ParsedFunTemplate], context: ResolvedControlContext | ResolvedFormulaContext) -> list[ResolvedVar | ResolvedPredTemplate | ResolvedFunTemplate]:
         items: list[ResolvedVar | ResolvedPredTemplate | ResolvedFunTemplate] = []
         for item in node:
             if item.name in [used.name for used in items]:
                 raise ResolveError(item, f"{item.name} is duplicated")
             if isinstance(item, (ParsedIdent, ParsedTypedIdent)):
                 var = self.resolve_var(item, context)
-                vars.append(var)
                 items.append(var)
             elif isinstance(item, ParsedPredTemplate):
                 pred_tmpl = self.resolve_pred_tmpl(item, context)
-                pred_tmpls.append(pred_tmpl)
                 items.append(pred_tmpl)
             elif isinstance(item, ParsedFunTemplate):
                 fun_tmpl = self.resolve_fun_tmpl(item, context)
-                fun_tmpls.append(fun_tmpl)
                 items.append(fun_tmpl)
             else:
                 raise ResolveError(item, f"Unexpected type {type(item)}")
-        return vars, pred_tmpls, fun_tmpls, items
+        return items
 
-    def resolve_var_or_struct_var_or_pred_tmpl_or_fun_tmpl(self, node: ParsedIdent | ParsedTypedIdent | ParsedPredTemplate | ParsedFunTemplate, context: ResolvedContext) -> tuple[list[ResolvedVar], list[ResolvedStructVar], list[ResolvedPredTemplate], list[ResolvedFunTemplate], ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate]:
-        vars: list[ResolvedVar] = []
-        struct_vars: list[ResolvedStructVar] = []
-        pred_tmpls: list[ResolvedPredTemplate] = []
-        fun_tmpls: list[ResolvedFunTemplate] = []
+    def resolve_var_or_struct_var_or_pred_tmpl_or_fun_tmpl(self, node: ParsedIdent | ParsedTypedIdent | ParsedPredTemplate | ParsedFunTemplate, context: ResolvedContext) -> ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate:
         if isinstance(node, ParsedIdent):
-            var = self.resolve_var(node, context.form)
-            vars.append(var)
-            item = var
+            return self.resolve_var(node, context.form)
         elif isinstance(node, ParsedTypedIdent):
-            struct_var = self.resolve_struct_var(node, context.form)
-            struct_vars.append(struct_var)
-            item = struct_var
+            return self.resolve_struct_var(node, context.form)
         elif isinstance(node, ParsedPredTemplate):
-            pred_tmpl = self.resolve_pred_tmpl(node, context.form)
-            pred_tmpls.append(pred_tmpl)
-            item = pred_tmpl
+            return self.resolve_pred_tmpl(node, context.form)
         elif isinstance(node, ParsedFunTemplate):
-            fun_tmpl = self.resolve_fun_tmpl(node, context.form)
-            fun_tmpls.append(fun_tmpl)
-            item = fun_tmpl
+            return self.resolve_fun_tmpl(node, context.form)
         else:
             raise ResolveError(node, f"Unexpected type {type(node)}")
-        return vars, struct_vars, pred_tmpls, fun_tmpls, item
 
     def resolve_vars_or_none(self, node: list[ParsedIdent | None], context: ResolvedControlContext | ResolvedFormulaContext) -> tuple[list[ResolvedVar | None], list[ResolvedVar]]:
         vars_or_none: list[ResolvedVar | None] = []
@@ -1063,7 +1032,7 @@ class NameResolver:
             return self.resolve_struct_var(node, context.form)
 
     def resolve_struct_var(self, node: ParsedTypedIdent, context: ResolvedControlContext | ResolvedFormulaContext) -> ResolvedStructVar:
-        if node.name.name in context.used_names:
+        if node.name.name in [item.name for item in context.items]:
             raise ResolveError(node.name, f"{node.name.name} is already used")
         if not self.decl.has_resolved_ast(ResolvedStruct, node.type.name):
             raise ResolveError(node.type, f"{node.type.name} is unknown")
@@ -1075,7 +1044,7 @@ class NameResolver:
         return resolved
 
     def resolve_var(self, node: ParsedIdent, context: ResolvedControlContext | ResolvedFormulaContext) -> ResolvedVar:
-        if node.name in context.used_names:
+        if node.name in [item.name for item in context.items]:
             raise ResolveError(node, f"{node.name} is already used")
         var = ResolvedVar(node.name)
         self.add_node_to_token(var, node)
@@ -1083,7 +1052,7 @@ class NameResolver:
         return var
 
     def resolve_pred_tmpl(self, node: ParsedPredTemplate, context: ResolvedControlContext | ResolvedFormulaContext) -> ResolvedPredTemplate:
-        if node.name in context.used_names:
+        if node.name in [item.name for item in context.items]:
             raise ResolveError(node, f"{node.name} is already used")
         pred_tmpl = ResolvedPredTemplate(node.name, node.arity)
         self.add_node_to_token(pred_tmpl, node)
@@ -1091,7 +1060,7 @@ class NameResolver:
         return pred_tmpl
 
     def resolve_fun_tmpl(self, node: ParsedFunTemplate, context: ResolvedControlContext | ResolvedFormulaContext) -> ResolvedFunTemplate:
-        if node.name in context.used_names:
+        if node.name in [item.name for item in context.items]:
             raise ResolveError(node, f"{node.name} is already used")
         fun_tmpl = ResolvedFunTemplate(node.name, node.arity)
         self.add_node_to_token(fun_tmpl, node)

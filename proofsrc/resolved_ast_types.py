@@ -413,39 +413,25 @@ class ResolvedStructCon(ResolvedDeclaration):
 
 @dataclass
 class ResolvedFormulaContext:
-    vars: list[ResolvedVar]
-    struct_vars: list[ResolvedStructVar]
-    pred_tmpls: list[ResolvedPredTemplate]
-    fun_tmpls: list[ResolvedFunTemplate]
-    used_names: set[str]
+    items: list[ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate]
 
     @staticmethod
     def init() -> "ResolvedFormulaContext":
-        return ResolvedFormulaContext(vars=[], struct_vars=[], pred_tmpls=[], fun_tmpls=[], used_names=set())
+        return ResolvedFormulaContext([])
 
-    def add(self, new_vars: list[ResolvedVar], new_struct_vars: list[ResolvedStructVar], new_pred_tmpls: list[ResolvedPredTemplate], new_fun_tmpls: list[ResolvedFunTemplate]) -> "ResolvedFormulaContext":
-        new_used_names = self.used_names.copy()
-        for item in new_vars + new_struct_vars + new_pred_tmpls + new_fun_tmpls:
-            new_used_names.add(item.name)
-        return ResolvedFormulaContext(list(self.vars + new_vars), list(self.struct_vars + new_struct_vars), list(self.pred_tmpls + new_pred_tmpls), list(self.fun_tmpls + new_fun_tmpls), new_used_names)
+    def add(self, new_items: list[ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate]) -> "ResolvedFormulaContext":
+        return ResolvedFormulaContext(self.items + new_items)
 
 @dataclass
 class ResolvedControlContext:
-    vars: list[ResolvedVar]
-    struct_vars: list[ResolvedStructVar]
-    pred_tmpls: list[ResolvedPredTemplate]
-    fun_tmpls: list[ResolvedFunTemplate]
-    used_names: set[str]
+    items: list[ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate]
 
     @staticmethod
     def init() -> "ResolvedControlContext":
-        return ResolvedControlContext(vars=[], struct_vars=[], pred_tmpls=[], fun_tmpls=[], used_names=set())
+        return ResolvedControlContext([])
 
-    def add(self, new_vars: list[ResolvedVar], new_struct_vars: list[ResolvedStructVar], new_pred_tmpls: list[ResolvedPredTemplate], new_fun_tmpls: list[ResolvedFunTemplate]) -> "ResolvedControlContext":
-        new_used_names = self.used_names.copy()
-        for item in new_vars + new_struct_vars + new_pred_tmpls + new_fun_tmpls:
-            new_used_names.add(item.name)
-        return ResolvedControlContext(list(self.vars + new_vars), list(self.struct_vars + new_struct_vars), list(self.pred_tmpls + new_pred_tmpls), list(self.fun_tmpls + new_fun_tmpls), new_used_names)
+    def add(self, new_items: list[ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate]) -> "ResolvedControlContext":
+        return ResolvedControlContext(self.items + new_items)
 
 @dataclass
 class ResolvedContext:
@@ -457,11 +443,11 @@ class ResolvedContext:
     def init() -> "ResolvedContext":
         return ResolvedContext(ResolvedControlContext.init(), ResolvedFormulaContext.init(), None)
 
-    def add_ctrl(self, new_vars: list[ResolvedVar], new_struct_vars: list[ResolvedStructVar], new_pred_tmpls: list[ResolvedPredTemplate], new_fun_tmpls: list[ResolvedFunTemplate]):
-        return ResolvedContext(self.ctrl.add(new_vars, new_struct_vars, new_pred_tmpls, new_fun_tmpls), self.form, self.ref_struct)
+    def add_ctrl(self, new_items: list[ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate]):
+        return ResolvedContext(self.ctrl.add(new_items), self.form, self.ref_struct)
 
-    def add_form(self, new_vars: list[ResolvedVar], new_struct_vars: list[ResolvedStructVar], new_pred_tmpls: list[ResolvedPredTemplate], new_fun_tmpls: list[ResolvedFunTemplate]):
-        return ResolvedContext(self.ctrl, self.form.add(new_vars, new_struct_vars, new_pred_tmpls, new_fun_tmpls), self.ref_struct)
+    def add_form(self, new_items: list[ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate]):
+        return ResolvedContext(self.ctrl, self.form.add(new_items), self.ref_struct)
 
     def add_ref_struct(self, ref_struct: ResolvedRefStruct):
         return ResolvedContext(self.ctrl, self.form, ref_struct)
