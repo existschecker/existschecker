@@ -41,7 +41,7 @@ class Checker:
         self.decl = decl
 
     def get_node_token(self, node: Declaration | Control) -> Token:
-        return self.lexed_unit.tokens[self.elaborated_unit.node_to_token[node][0]]
+        return self.lexed_unit.tokens[self.elaborated_unit.node_to_token[id(node)][0]]
 
     def add_lsp_error(self, node: Declaration | Control, message: str):
         token = self.get_node_token(node)
