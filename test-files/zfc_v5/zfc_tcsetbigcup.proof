@@ -97,7 +97,7 @@ theorem hsegbigcup_implies_piterate_iff_segbigcup_piterate \forall X \forall^P \
     assume seg(X, \psi, S) \wedge hsegbigcup(S, \psi) \wedge natural(n) {
       split seg(X, \psi, S) \wedge hsegbigcup(S, \psi) \wedge natural(n)
       connect seg(X, \psi, S) \wedge hsegbigcup(S, \psi)
-      apply invoke \forall X \forall S \forall^P \psi[2] (seg(X, \psi, S) \wedge hsegbigcup(S, \psi) \to \forall n (natural(n) \to \forall y (piterate(\lambda^P p, q. \psi(q, p), suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), n, S, u))))) for X, S, \psi
+      apply invoke \forall X \forall^P \psi[2] \forall S (seg(X, \psi, S) \wedge hsegbigcup(S, \psi) \to \forall n (natural(n) \to \forall y (piterate(\lambda^P p, q. \psi(q, p), suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), n, S, u))))) for X, \psi, S
       apply invoke \forall n (natural(n) \to \forall y (piterate(\lambda^P p, q. \psi(q, p), suc(n), X, y) \leftrightarrow \exists u (in(y, u) \wedge piterate(\lambda^P p, q. segbigcup(p, \psi, q), n, S, u)))) for n
     }
   }

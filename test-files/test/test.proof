@@ -61,19 +61,19 @@ theorem test07 \forall x\forall y(in(x,y)\to in(x,y)\wedge\forall z(in(z,x)\to i
   }
 }
 
-theorem test08 \forall v\forall u(in(u,v)\to in(u,v)) {
+theorem test08 \forall u\forall v(in(u,v)\to in(u,v)) {
   any x, y {
     assume in(x,y) {}
   }
 }
 
-theorem test09 \forall v\forall u(in(u,v)\to in(u,v)) {
+theorem test09 \forall u\forall v(in(u,v)\to in(u,v)) {
   any x, y {
     assume in(x,y) {}
   }
 }
 
-theorem test10 \forall v\forall u(in(u,v)\to in(u,v)) {
+theorem test10 \forall u\forall v(in(u,v)\to in(u,v)) {
   any x, y {
     assume in(x,y) {}
   }

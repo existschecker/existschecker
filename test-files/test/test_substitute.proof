@@ -30,7 +30,7 @@ theorem test04 \forall x \forall^P p[1] \forall^P p_0[1] \forall^P p_1[1] (\fora
   }
 }
 
-theorem test05 \forall^P p[1] \forall^F f[1] \forall^F f_0[1] \forall x (\forall^F g[1] \forall^F g_0[1] (p(g(x)) \wedge p(g_0(x))) \to \forall^F g_0[1] (p(f(x)) \wedge p(g_0(x)))) {
+theorem test05 \forall^P p[1] \forall^F f[1] \forall^F f_0[1] \forall x (\forall^F g[1] \forall^F g_0[1] (p(g(x)) \wedge p(g_0(x))) \to \forall^F g_0[1] (p(f_0(x)) \wedge p(g_0(x)))) {
   any predicate p[1], function f[1], function f_0[1], x {
     assume \forall^F f[1] \forall^F f_0[1] (p(f(x)) \wedge p(f_0(x))) {
       apply \forall^F f[1] \forall^F f_0[1] (p(f(x)) \wedge p(f_0(x))) for \lambda^F x. f_0(x), _
@@ -38,7 +38,7 @@ theorem test05 \forall^P p[1] \forall^F f[1] \forall^F f_0[1] \forall x (\forall
   }
 }
 
-theorem test06 \forall^P p[1] \forall^F f[1] \forall^F f_0[1] \forall^F f_1[1] \forall x (\forall^F g[1] \forall^F g_0[1] (p(g(x)) \wedge p(g_0(x)) \wedge p(f_1(x))) \to \forall^F g_0[1] (p(f(x)) \wedge p(g_0(x)) \wedge p(f_1(x)))) {
+theorem test06 \forall^P p[1] \forall^F f[1] \forall^F f_0[1] \forall^F f_1[1] \forall x (\forall^F g[1] \forall^F g_0[1] (p(g(x)) \wedge p(g_0(x)) \wedge p(f_1(x))) \to \forall^F g_0[1] (p(f_0(x)) \wedge p(g_0(x)) \wedge p(f_1(x)))) {
   any predicate p[1], function f[1], function f_0[1], function f_1[1], x {
     assume \forall^F f[1] \forall^F f_0[1] (p(f(x)) \wedge p(f_0(x)) \wedge p(f_1(x))) {
       apply \forall^F f[1] \forall^F f_0[1] (p(f(x)) \wedge p(f_0(x)) \wedge p(f_1(x))) for \lambda^F x. f_0(x), _

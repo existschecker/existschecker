@@ -90,7 +90,7 @@ theorem piterate_addition \forall^P \phi[2] \forall m \forall n \forall l \foral
   }
   connect \forall^P \phi[2] \forall m \forall l \forall x \forall y \forall z (natural(m) \wedge add(m, emptyset, l) \wedge piterate(\phi, m, x, y) \wedge piterate(\phi, emptyset, y, z) \to piterate(\phi, l, x, z)) \wedge \forall n (natural(n) \to (\forall^P \phi[2] \forall m \forall l \forall x \forall y \forall z (natural(m) \wedge add(m, n, l) \wedge piterate(\phi, m, x, y) \wedge piterate(\phi, n, y, z) \to piterate(\phi, l, x, z)) \to \forall^P \phi[2] \forall m \forall l \forall x \forall y \forall z (natural(m) \wedge add(m, suc(n), l) \wedge piterate(\phi, m, x, y) \wedge piterate(\phi, suc(n), y, z) \to piterate(\phi, l, x, z))))
   apply invoke natural_induction for \lambda^P n. \forall^P \phi[2] \forall m \forall l \forall x \forall y \forall z (natural(m) \wedge add(m, n, l) \wedge piterate(\phi, m, x, y) \wedge piterate(\phi, n, y, z) \to piterate(\phi, l, x, z))
-  any predicate \phi[2], m, l, n, x, y, z {
+  any predicate \phi[2], m, n, l, x, y, z {
     assume natural(m) \wedge natural(n) \wedge add(m, n, l) \wedge piterate(\phi, m, x, y) \wedge piterate(\phi, n, y, z) {
       split natural(m) \wedge natural(n) \wedge add(m, n, l) \wedge piterate(\phi, m, x, y) \wedge piterate(\phi, n, y, z)
       apply invoke \forall n (natural(n) \to \forall^P \phi[2] \forall m \forall l \forall x \forall y \forall z (natural(m) \wedge add(m, n, l) \wedge piterate(\phi, m, x, y) \wedge piterate(\phi, n, y, z) \to piterate(\phi, l, x, z))) for n

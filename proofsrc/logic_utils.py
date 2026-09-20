@@ -1,5 +1,4 @@
 from ast_types import Or, Not, Forall, Exists, ExistsUniq, Implies, Iff, And, AtomicFormula, Compound, RefDefCon, Var, Bottom, Term, Formula, PredTemplate, PredLambda, VarTerm, PredTerm, FunTemplate, FunTerm, FunLambda, RefPrimPred, RefDefPred, RefDefFun, RefDefFunTerm, RefEquality, LogicError, DeclarationContextNameSpace, DefFunTerm, DefPred
-from itertools import permutations
 from copy import deepcopy
 from typing import Mapping, Sequence
 from dataclasses import dataclass, field
@@ -166,27 +165,18 @@ class AlphaEquiv:
         if len(vars1) != len(vars2):
             return False
 
-        for perm in permutations(vars2):
-            newenv = env.copy()
-            skip_perm = False
-            for v1, v2 in zip(vars1, perm):
-                if type(v1) is not type(v2):
-                    skip_perm = True
-                    break
-                if isinstance(v1, PredTemplate) and isinstance(v2, PredTemplate):
-                    if v1.arity != v2.arity:
-                        skip_perm = True
-                        break
-                if isinstance(v1, FunTemplate) and isinstance(v2, FunTemplate):
-                    if v1.arity != v2.arity:
-                        skip_perm = True
-                        break
-                newenv[v1] = v2
-            if skip_perm:
-                continue
-            if self.alpha_equiv_formula(body1, body2, newenv, depth+1):
-                return True
-        return False
+        newenv = env.copy()
+        for v1, v2 in zip(vars1, vars2):
+            if type(v1) is not type(v2):
+                return False
+            if isinstance(v1, PredTemplate) and isinstance(v2, PredTemplate):
+                if v1.arity != v2.arity:
+                    return False
+            if isinstance(v1, FunTemplate) and isinstance(v2, FunTemplate):
+                if v1.arity != v2.arity:
+                    return False
+            newenv[v1] = v2
+        return self.alpha_equiv_formula(body1, body2, newenv, depth+1)
 
     def alpha_equiv_formula(self, e1: Formula, e2: Formula, env: dict[Var | PredTemplate | FunTemplate, Var | PredTemplate | FunTemplate], depth: int) -> bool:
         self.begin_log(depth, e1, e2, env)
