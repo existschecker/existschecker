@@ -5,7 +5,7 @@ import threading
 import re
 from enum import IntEnum
 from typing import Sequence
-
+from immutables import Map
 from dependency import DependencyResolver, DependencyResult
 from lexer import KEYWORDS, STRINGS, Token
 from ast_types import DeclarationUnit, Workspace, Declaration, Include, Control, Formula, Term, RefFact, FormatError, RenderError, Bottom, DeclarationContextNameSpace, RefStruct, RefStructCondition, StructVar, RefStructPred, Equality, PrimPred, DefPred, DefFunTerm, Var, PredTemplate, DefCon, DefFun, Struct, StructPred, LexedUnit, RefStructCon, ProofInfo
@@ -57,14 +57,14 @@ class CursorState:
     uri: str
     position: lsp.Position
 
-def get_hover(resolved_node: ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred | ResolvedRefStructCon, node: Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon, proofs: dict[int, ProofInfo]) -> str:
+def get_hover(resolved_node: ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred | ResolvedRefStructCon, node: Include | Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon, proofs: Map[int, ProofInfo]) -> str:
     if isinstance(node, (Declaration, Control)):
         status = proofs.get(id(node), ProofInfo()).status
         return f"{resolved_node.__class__.__name__} -> {node.__class__.__name__}: {status}"
     else:
         return f"{resolved_node.__class__.__name__} -> {node.__class__.__name__}"
 
-def render_statement(node: Declaration | Control, decl: DeclarationContextNameSpace, proofs: dict[int, ProofInfo]) -> str:
+def render_statement(node: Declaration | Control, decl: DeclarationContextNameSpace, proofs: Map[int, ProofInfo]) -> str:
     renderer = Renderer(decl, proofs)
     method_name = f"render_{node.__class__.__name__.lower()}"
     renderer_method = getattr(renderer, method_name, None)
@@ -82,7 +82,7 @@ def render_expr_list(renderer: Renderer, formulas: Sequence[RefFact | Bottom | F
     except (FormatError, RenderError) as e:
         return f"{e.__class__.__name__}: {e.msg}"
 
-def render_proofinfo(node: Include | Declaration | Control, decl: DeclarationContextNameSpace, proofs: dict[int, ProofInfo]) -> str:
+def render_proofinfo(node: Include | Declaration | Control, decl: DeclarationContextNameSpace, proofs: Map[int, ProofInfo]) -> str:
     if isinstance(node, Declaration):
         statement = render_statement(node, decl, proofs)
         status = proofs.get(id(node), ProofInfo()).status
@@ -618,6 +618,7 @@ class Analyzer:
                     t_type = None
                 if t_type is not None:
                     raw_tokens.append((token.line - 1, token.column - 1, len(token.value), t_type))
+        raw_tokens.sort(key=lambda x: (x[0], x[1]))
         data: list[int] = []
         last_line = 0
         last_column = 0

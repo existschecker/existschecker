@@ -5,6 +5,7 @@ from svg import output_svg
 from typing import Sequence, Mapping, TypeVar
 from formatter import ExprFormatter
 from lexer import DECLARATIONS, CONTROLS
+from immutables import Map
 
 HTML_TEMPLATE = """<!doctype html>
 <html lang="en">
@@ -54,7 +55,7 @@ SVG_HEAD = """
 """
 
 class Renderer:
-    def __init__(self, decl: DeclarationContextNameSpace, proofs: dict[int, ProofInfo], use_svg: bool = False):
+    def __init__(self, decl: DeclarationContextNameSpace, proofs: Map[int, ProofInfo], use_svg: bool = False):
         self.decl = decl
         self.proofs = proofs
         if use_svg:

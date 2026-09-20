@@ -4,14 +4,14 @@ import os
 from lsprotocol import types as lsp
 from pygls import uris
 from dataclasses import dataclass
-
+from immutables import Map
 import sys
 
 class DependencyResolver:
     def __init__(self, result: "DependencyResult"):
-        self.dependencies = result.dependencies.copy()
-        self.tokens_cache = result.tokens_cache.copy()
-        self.source_cache = result.source_cache.copy()
+        self.dependencies = dict(result.dependencies)
+        self.tokens_cache = dict(result.tokens_cache)
+        self.source_cache = dict(result.source_cache)
         self.visiting_files: set[str] = set()
         self.diagnostics: dict[str, list[lsp.Diagnostic]] = {}
 
@@ -32,7 +32,7 @@ class DependencyResolver:
             self.diagnostics[uri] = []
         self.diagnostics[uri].append(diag)
 
-    def get_content(self, target_path: str, editor_files: dict[str, str] | None = None) -> tuple[str, list[Token]]:
+    def get_content(self, target_path: str, editor_files: dict[str, str] | None = None) -> tuple[str, tuple[Token, ...]]:
         if editor_files is not None and target_path in editor_files:
             src = editor_files[target_path]
             tokens = lex(target_path, src)
@@ -74,21 +74,21 @@ class DependencyResolver:
             else:
                 stream.consume(token.type)
         self.visiting_files.remove(path)
-        self.dependencies[path] = dependency
+        self.dependencies[path] = tuple(dependency)
 
     def resolve(self, path: str, editor_files: dict[str, str] | None = None):
         self.dependencies.pop(path, None)
         self.tokens_cache.pop(path, None)
         self.source_cache.pop(path, None)
         self.resolve_recursive(path, editor_files)
-        return DependencyResult(self.dependencies, self.tokens_cache, self.source_cache, self.diagnostics)
+        return DependencyResult(Map(self.dependencies), Map(self.tokens_cache), Map(self.source_cache), Map({k: tuple(v) for k, v in self.diagnostics.items()}))
 
-@dataclass
+@dataclass(frozen=True)
 class DependencyResult:
-    dependencies: dict[str, list[str]]
-    tokens_cache: dict[str, list[Token]]
-    source_cache: dict[str, str]
-    diagnostics: dict[str, list[lsp.Diagnostic]]
+    dependencies: Map[str, tuple[str, ...]]
+    tokens_cache: Map[str, tuple[Token, ...]]
+    source_cache: Map[str, str]
+    diagnostics: Map[str, tuple[lsp.Diagnostic, ...]]
 
     def create_reverse_deps(self) -> dict[str, set[str]]:
         reverse_dependencies: dict[str, set[str]] = {}
@@ -146,7 +146,7 @@ class DependencyResult:
 if __name__ == "__main__":
     import sys
     path = sys.argv[1]
-    dependency_result = DependencyResolver(DependencyResult({}, {}, {}, {})).resolve(path)
+    dependency_result = DependencyResolver(DependencyResult(Map({}), Map({}), Map({}), Map({}))).resolve(path)
     resolved_files = dependency_result.get_dependent_order(path)
     for file in resolved_files:
         print(f"file: {file}, length of tokens: {len(dependency_result.tokens_cache[file])}")

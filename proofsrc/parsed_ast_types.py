@@ -297,8 +297,8 @@ class ParsedInclude:
 class ParsedInvalidInclude(ParsedInclude):
     pass
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedUnit:
     ast: ParsedInclude | ParsedDeclaration
-    node_to_token: dict[int, tuple[Token, Token]]
-    diagnostics: list[lsp.Diagnostic]
+    node_to_token: Map[int, tuple[Token, Token]]
+    diagnostics: tuple[lsp.Diagnostic, ...]

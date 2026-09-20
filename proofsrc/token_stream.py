@@ -6,7 +6,7 @@ class TokenStreamError(Exception):
         self.msg = msg
 
 class TokenStream:
-    def __init__(self, tokens: list[Token]):
+    def __init__(self, tokens: tuple[Token, ...]):
         self.tokens = tokens
         self.pos = 0
         self.last_token = tokens[0]

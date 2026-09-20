@@ -561,26 +561,26 @@ class Include:
 class InvalidInclude(Include):
     pass
 
-@dataclass
+@dataclass(frozen=True)
 class LexedUnit:
     file: str
-    tokens: list[Token]
-    token_to_index: dict[Token, int]
+    tokens: tuple[Token, ...]
+    token_to_index: Map[Token, int]
     hash: str
 
-@dataclass
+@dataclass(frozen=True)
 class ElaboratedUnit:
     ast: Include | Declaration
-    node_to_token: dict[int, tuple[Token, Token]]
-    nodes: list[Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon]
-    token_to_node: dict[Token, Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon]
-    token_to_control: dict[Token, Control]
-    diagnostics: list[lsp.Diagnostic]
+    node_to_token: Map[int, tuple[Token, Token]]
+    nodes: tuple[Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon, ...]
+    token_to_node: Map[Token, Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon]
+    token_to_control: Map[Token, Control]
+    diagnostics: tuple[lsp.Diagnostic, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class CheckedUnit:
-    diagnostics: list[lsp.Diagnostic]
-    proofs: dict[int, ProofInfo]
+    diagnostics: tuple[lsp.Diagnostic, ...]
+    proofs: Map[int, ProofInfo]
 
 @dataclass
 class DeclarationUnit:
@@ -601,7 +601,7 @@ class Workspace:
 
     @staticmethod
     def empty() -> "Workspace":
-        return Workspace({}, DependencyResult({}, {}, {}, {}))
+        return Workspace({}, DependencyResult(Map({}), Map({}), Map({}), Map({})))
 
     def get_decl_def(self, name: str, order: list[str]) -> Token | None:
         for path in order:

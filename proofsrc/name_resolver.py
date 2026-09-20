@@ -98,7 +98,7 @@ class NameResolver:
         else:
             resolved_ast = self.resolve_declaration(self.parsed_unit.ast)
         resolved_token_to_node, resolved_token_to_control = self.build_token_to_node()
-        return ResolvedUnit(resolved_ast, self.resolved_node_to_token, self.resolved_nodes, resolved_token_to_node, resolved_token_to_control, self.resolved_decl_refs, self.resolved_ctrl_defs, self.resolved_ctrl_refs, self.diagnostics)
+        return ResolvedUnit(resolved_ast, Map(self.resolved_node_to_token), tuple(self.resolved_nodes), Map(resolved_token_to_node), Map(resolved_token_to_control), Map({k: tuple(v) for k, v in self.resolved_decl_refs.items()}), Map(self.resolved_ctrl_defs), Map({k: tuple(v) for k, v in self.resolved_ctrl_refs.items()}), tuple(self.diagnostics))
 
     def resolve_include(self, node: ParsedInclude) -> ResolvedInclude:
         if isinstance(node, ParsedInvalidInclude):

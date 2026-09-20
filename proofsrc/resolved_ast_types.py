@@ -429,14 +429,14 @@ class ResolvedContext:
     def add_ref_struct(self, ref_struct: ResolvedRefStruct):
         return ResolvedContext(self.ctrl, self.form, ref_struct)
 
-@dataclass
+@dataclass(frozen=True)
 class ResolvedUnit:
     resolved_ast: ResolvedInclude | ResolvedDeclaration
-    resolved_node_to_token: dict[int, tuple[Token, Token]]
-    resolved_nodes: list[ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred | ResolvedRefStructCon]
-    resolved_token_to_node: dict[Token, ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred | ResolvedRefStructCon]
-    resolved_token_to_control: dict[Token, ResolvedControl]
-    resolved_decl_refs: dict[str, list[Token]]
-    resolved_ctrl_defs: dict[int, tuple[str, int]]
-    resolved_ctrl_refs: dict[int, list[int]]
-    diagnostics: list[lsp.Diagnostic]
+    resolved_node_to_token: Map[int, tuple[Token, Token]]
+    resolved_nodes: tuple[ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred | ResolvedRefStructCon, ...]
+    resolved_token_to_node: Map[Token, ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred | ResolvedRefStructCon]
+    resolved_token_to_control: Map[Token, ResolvedControl]
+    resolved_decl_refs: Map[str, tuple[Token, ...]]
+    resolved_ctrl_defs: Map[int, tuple[str, int]]
+    resolved_ctrl_refs: Map[int, tuple[int, ...]]
+    diagnostics: tuple[lsp.Diagnostic, ...]

@@ -69,7 +69,7 @@ class Parser:
             node = ParsedInvalidDeclaration("<invalid>")
             self.add_node_to_token(node, tok, self.stream.last_token)
             ast = node
-        return ParsedUnit(ast, self.node_to_token, self.diagnostics)
+        return ParsedUnit(ast, Map(self.node_to_token), tuple(self.diagnostics))
 
     def parse_declaration(self, tok: Token) -> ParsedDeclaration:
         try:

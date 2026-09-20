@@ -1,3 +1,4 @@
+from immutables import Map
 from lexer import Token
 from ast_types import Context, Theorem, Any, Assume, Divide, Case, Some, Deny, Contradict, Explode, Apply, Lift, AtomicFormula, And, Or, Implies, Forall, Exists, Not, Bottom, Iff, Axiom, Invoke, Expand, PrimPred, DefPred, DefCon, Pad, Split, Connect, ExistsUniq, DefFun, DefFunTerm, Equality, Var, Substitute, Characterize, Show, Control, Formula, Declaration, Term, Assert, Fold, VarTerm, RefDefPred, InvalidDeclaration, InvalidControl, LexedUnit, RefFact, RefEquality, CheckError, ContextError, LogicError, FormatError, DeclarationContextNameSpace, Struct, StructPred, ElaboratedUnit, CheckedUnit, StructCon, ProofInfo, ProofStatus
 from logic_utils import Substitutor, DefExpander, strip_forall_vars, strip_exists_vars, make_forall_vars, make_exists_vars, collect_vars, flatten_op, fresh_var, alpha_equiv_with_defs, alpha_safe_formula, beta_reduction_formula, mapping_adapter
@@ -67,7 +68,7 @@ class Checker:
         self.proofinfo: dict[int, ProofInfo] = {}
         if isinstance(self.elaborated_unit.ast, Declaration):
             self.check_declaration(self.elaborated_unit.ast)
-        return CheckedUnit(self.diagnostics, self.proofinfo)
+        return CheckedUnit(tuple(self.diagnostics), Map(self.proofinfo))
 
     def check_declaration(self, node: Declaration) -> None:
         try:

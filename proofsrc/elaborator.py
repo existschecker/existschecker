@@ -67,7 +67,7 @@ class Elaborator:
         else:
             ast = self.elaborate_declaration(self.resolved_unit.resolved_ast)
         token_to_node, token_to_control = self.build_token_to_node()
-        return ElaboratedUnit(ast, self.node_to_token, self.nodes, token_to_node, token_to_control, self.diagnostics)
+        return ElaboratedUnit(ast, Map(self.node_to_token), tuple(self.nodes), Map(token_to_node), Map(token_to_control), tuple(self.diagnostics))
 
     def elaborate_include(self, node: ResolvedInclude) -> Include:
         if isinstance(node, ResolvedInvalidInclude):
