@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Literal
 from lsprotocol import types as lsp
-
+from immutables import Map
 from lexer import Token
 
 @dataclass(frozen=True)
@@ -103,187 +103,186 @@ class ParsedExistsUniq(ParsedExpr):
 class ParsedBottom:
     pass
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedControl:
     pass
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedInvalidControl(ParsedControl):
     pass
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedAssume(ParsedControl):
     premise: ParsedExpr
-    body: list[ParsedControl]
+    body: tuple[ParsedControl, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedAny(ParsedControl):
-    items: list[ParsedIdent | ParsedTypedIdent | ParsedPredTemplate | ParsedFunTemplate]
-    body: list[ParsedControl]
+    items: tuple[ParsedIdent | ParsedTypedIdent | ParsedPredTemplate | ParsedFunTemplate, ...]
+    body: tuple[ParsedControl, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedCase(ParsedControl):
     premise: ParsedExpr
-    body: list[ParsedControl]
+    body: tuple[ParsedControl, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedDivide(ParsedControl):
     fact: ParsedExpr
-    cases: list[ParsedCase]
+    cases: tuple[ParsedCase, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedSome(ParsedControl):
-    items: list[ParsedIdent | None]
+    items: tuple[ParsedIdent | None, ...]
     fact: ParsedExpr
-    body: list[ParsedControl]
+    body: tuple[ParsedControl, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedDeny(ParsedControl):
     premise: ParsedExpr
-    body: list[ParsedControl]
+    body: tuple[ParsedControl, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedContradict(ParsedControl):
     contradiction: ParsedExpr
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedExplode(ParsedControl):
     conclusion: ParsedExpr
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedApply(ParsedControl):
     invoke: Literal["none", "invoke", "invoke-rightward", "invoke-leftward"]
     fact: ParsedExpr
-    terms: list[ParsedExpr | None]
+    terms: tuple[ParsedExpr | None, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedLift(ParsedControl):
-    varterms: list[ParsedExpr | None]
+    varterms: tuple[ParsedExpr | None, ...]
     conclusion: ParsedExpr
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedCharacterize(ParsedControl):
     varterm: ParsedExpr
     conclusion: ParsedExpr
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedInvoke(ParsedControl):
     direction: Literal["none", "rightward", "leftward"]
     fact: ParsedExpr
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedExpand(ParsedControl):
     fact: ParsedExpr
-    refs: list[ParsedIdent]
-    indexes: dict[ParsedIdent, list[int]]
+    refs: tuple[ParsedIdent, ...]
+    indexes: Map[ParsedIdent, tuple[int, ...]]
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedFold(ParsedControl):
-    refs: list[ParsedIdent]
-    indexes: dict[ParsedIdent, list[int]]
+    refs: tuple[ParsedIdent, ...]
+    indexes: Map[ParsedIdent, tuple[int, ...]]
     conclusion: ParsedExpr
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedPad(ParsedControl):
     fact: ParsedExpr
     conclusion: ParsedExpr
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedSplit(ParsedControl):
     index: int | None
     fact: ParsedExpr
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedConnect(ParsedControl):
     conclusion: ParsedExpr
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedSubstitute(ParsedControl):
     fact: ParsedExpr
-    env: dict[ParsedExpr, ParsedExpr]
-    indexes: dict[ParsedExpr, list[int]]
+    env: Map[ParsedExpr, ParsedExpr]
+    indexes: Map[ParsedExpr, tuple[int, ...]]
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedShow(ParsedControl):
     conclusion: ParsedBottom | ParsedExpr
-    body: list[ParsedControl]
+    body: tuple[ParsedControl, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedAssert(ParsedControl):
     reference: ParsedExpr
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedDeclaration:
     name: str
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedInvalidDeclaration(ParsedDeclaration):
     pass
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedPrimPred(ParsedDeclaration):
     ref: ParsedIdent
     arity: int
-    tex: list[str]
+    tex: tuple[str, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedAxiom(ParsedDeclaration):
     ref: ParsedIdent
     conclusion: ParsedExpr
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedTheorem(ParsedDeclaration):
     ref: ParsedIdent
     conclusion: ParsedExpr
-    proof: list[ParsedControl]
+    proof: tuple[ParsedControl, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedDefPred(ParsedDeclaration):
     ref: ParsedIdent
-    args: list[ParsedIdent | ParsedPredTemplate | ParsedFunTemplate]
+    args: tuple[ParsedIdent | ParsedPredTemplate | ParsedFunTemplate, ...]
     formula: ParsedExpr
     autoexpand: bool
-    tex: list[str]
+    tex: tuple[str, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedDefCon(ParsedDeclaration):
     ref: ParsedIdent
     ref_theorem: ParsedIdent
-    tex: list[str]
+    tex: tuple[str, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedDefFun(ParsedDeclaration):
     ref: ParsedIdent
-    args: list[ParsedIdent | ParsedPredTemplate | ParsedFunTemplate]
     ref_theorem: ParsedIdent
-    tex: list[str]
+    tex: tuple[str, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedDefFunTerm(ParsedDeclaration):
     ref: ParsedIdent
-    args: list[ParsedIdent | ParsedPredTemplate | ParsedFunTemplate]
+    args: tuple[ParsedIdent | ParsedPredTemplate | ParsedFunTemplate, ...]
     varterm: ParsedExpr
-    tex: list[str]
+    tex: tuple[str, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedEquality(ParsedDeclaration):
     ref: ParsedIdent
-    tex: list[str]
+    tex: tuple[str, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedStruct(ParsedDeclaration):
     ref: ParsedIdent
-    vars: list[ParsedIdent | ParsedTypedIdent]
-    formulas: dict[ParsedIdent, ParsedExpr]
+    vars: tuple[ParsedIdent | ParsedTypedIdent, ...]
+    formulas: Map[ParsedIdent, ParsedExpr]
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedStructPred(ParsedDeclaration):
     ref_struct: ParsedIdent
     ref: ParsedIdent
     args: tuple[ParsedIdent, ...]
     formula: ParsedExpr
 
-@dataclass
+@dataclass(frozen=True)
 class ParsedStructCon(ParsedDeclaration):
     ref_struct: ParsedIdent
     ref: ParsedIdent

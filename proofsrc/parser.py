@@ -2,7 +2,7 @@ from ast_types import LexedUnit, ContextError, ParseError
 from parsed_ast_types import ParsedExpr, ParsedIdent, ParsedIdentArgs, ParsedFunTemplate, ParsedFunLambda, ParsedPredTemplate, ParsedPredLambda, ParsedNot, ParsedAnd, ParsedOr, ParsedImplies, ParsedIff, ParsedForall, ParsedExists, ParsedExistsUniq, ParsedBottom, ParsedControl, ParsedInvalidControl, ParsedAny, ParsedAssume, ParsedDivide, ParsedSome, ParsedDeny, ParsedContradict, ParsedCase, ParsedExplode, ParsedApply, ParsedLift, ParsedCharacterize, ParsedInvoke, ParsedExpand, ParsedFold, ParsedPad, ParsedSplit, ParsedConnect, ParsedSubstitute, ParsedShow, ParsedAssert, ParsedDeclaration, ParsedInvalidDeclaration, ParsedPrimPred, ParsedAxiom, ParsedTheorem, ParsedDefPred, ParsedDefCon, ParsedDefFun, ParsedDefFunTerm, ParsedEquality, ParsedInclude, ParsedInvalidInclude, ParsedUnit, ParsedStruct, ParsedTypedIdent, ParsedAccess, ParsedStructPred, ParsedCall, ParsedStructCon, ParsedExistence, ParsedUniqueness
 from lexer import Token
 from token_stream import TokenStream, TokenStreamError
-
+from immutables import Map
 from lsprotocol import types as lsp
 from pygls import uris
 
@@ -167,7 +167,7 @@ class Parser:
         ref = ParsedIdent(name)
         self.add_node_to_token(ref, name_token, name_token)
         self.stream.consume("LPAREN")
-        args, _, _, _ = self.parse_vars_or_pred_tmpls_or_fun_tmpls()
+        args = self.parse_vars_or_pred_tmpls_or_fun_tmpls()
         self.stream.consume("RPAREN")
         self.stream.consume("AS")
         formula = self.parse_formula()
@@ -212,7 +212,7 @@ class Parser:
         ref_theorem = ParsedIdent(theorem_name)
         self.add_node_to_token(ref_theorem, theorem_token, theorem_token)
         tex = self.parse_tex()
-        deffun = ParsedDefFun(name=name, ref=ref, args=[], ref_theorem=ref_theorem, tex=tex)
+        deffun = ParsedDefFun(name=name, ref=ref, ref_theorem=ref_theorem, tex=tex)
         self.add_node_to_token(deffun, start_token, self.stream.last_token)
         logger.debug(f"[deffun] {name}")
         return deffun
@@ -222,7 +222,7 @@ class Parser:
         ref = ParsedIdent(name)
         self.add_node_to_token(ref, name_token, name_token)
         self.stream.consume("LPAREN")
-        args, _, _, _ = self.parse_vars_or_pred_tmpls_or_fun_tmpls()
+        args = self.parse_vars_or_pred_tmpls_or_fun_tmpls()
         self.stream.consume("RPAREN")
         self.stream.consume("AS")
         term = self.parse_term()
@@ -283,7 +283,7 @@ class Parser:
                 break
         self.stream.consume("RBRACE")
         self.stream.consume("RBRACE")
-        struct = ParsedStruct(name=ref.name, ref=ref, vars=vars, formulas=formulas)
+        struct = ParsedStruct(name=ref.name, ref=ref, vars=vars, formulas=Map(formulas))
         self.add_node_to_token(struct, start_token, self.stream.last_token)
         logger.debug(f"[struct] {ref.name}")
         return struct
@@ -339,7 +339,7 @@ class Parser:
             self.add_node_to_token(node, start_token, self.stream.last_token)
             return node
 
-    def parse_block(self) -> list[ParsedControl]:
+    def parse_block(self) -> tuple[ParsedControl, ...]:
         body: list[ParsedControl] = []
         while True:
 
@@ -351,7 +351,7 @@ class Parser:
                 body.append(control)
                 if isinstance(control, ParsedInvalidControl):
                     self.skip_until_next_RBRACE_or_control()
-        return body
+        return tuple(body)
 
     def parse_control(self, tok: Token) -> ParsedControl:
         try:
@@ -410,7 +410,7 @@ class Parser:
 
     def parse_any(self) -> ParsedAny:
         start_token = self.stream.consume("ANY")
-        items, _, _, _ = self.parse_vars_or_struct_vars_or_pred_tmpls_or_fun_tmpls()
+        items = self.parse_vars_or_struct_vars_or_pred_tmpls_or_fun_tmpls()
         self.stream.consume("LBRACE")
         body = self.parse_block()
         self.stream.consume("RBRACE")
@@ -434,7 +434,7 @@ class Parser:
         cases: list[ParsedCase] = []
         while self.stream.peek().type == "CASE":
             cases.append(self.parse_case())
-        node = ParsedDivide(fact=fact, cases=cases)
+        node = ParsedDivide(fact=fact, cases=tuple(cases))
         self.add_node_to_token(node, start_token, self.stream.last_token)
         return node
     
@@ -466,7 +466,7 @@ class Parser:
         self.stream.consume("LBRACE")
         body = self.parse_block()
         self.stream.consume("RBRACE")
-        node = ParsedSome(items=items, fact=fact, body=body)
+        node = ParsedSome(items=tuple(items), fact=fact, body=body)
         self.add_node_to_token(node, start_token, self.stream.last_token)
         return node
     
@@ -601,7 +601,7 @@ class Parser:
         fact = self.parse_formula()
         self.stream.consume("FOR")
         env: dict[ParsedExpr, ParsedExpr] = {}
-        indexes: dict[ParsedExpr, list[int]] = {}
+        indexes: dict[ParsedExpr, tuple[int, ...]] = {}
         while True:
             key = self.parse_term()
             if self.stream.peek().type == "LBRACKET":
@@ -614,7 +614,7 @@ class Parser:
                     else:
                         break
                 self.stream.consume("RBRACKET")
-                indexes[key] = indexes_
+                indexes[key] = tuple(indexes_)
             self.stream.consume("COLON")
             value = self.parse_term()
             env[key] = value
@@ -622,7 +622,7 @@ class Parser:
                 self.stream.consume("COMMA")
             else:
                 break
-        node = ParsedSubstitute(fact=fact, env=env, indexes=indexes)
+        node = ParsedSubstitute(fact=fact, env=Map(env), indexes=Map(indexes))
         self.add_node_to_token(node, start_token, self.stream.last_token)
         return node
 
@@ -760,7 +760,7 @@ class Parser:
             msg = "Formula objct is required, but unknown token is found"
             raise ParseError(tok, msg)
 
-    def parse_terms_or_none(self) -> list[ParsedExpr | None]:
+    def parse_terms_or_none(self) -> tuple[ParsedExpr | None, ...]:
         terms: list[ParsedExpr | None] = []
         while True:
             if self.stream.peek().type == "UNDERSCORE":
@@ -772,7 +772,7 @@ class Parser:
                 self.stream.consume("COMMA")
             else:
                 break
-        return terms
+        return tuple(terms)
 
     def parse_terms(self) -> list[ParsedExpr]:
         terms = [self.parse_term()]
@@ -847,18 +847,12 @@ class Parser:
             msg = "Term object is required, but unknown token is found"
             raise ParseError(tok, msg)
 
-    def parse_or_create_tex(self, name: str, arity: int) -> list[str]:
-        if self.stream.peek().type == "TEX":
-            return self.parse_tex()
-        else:
-            return self.create_tex(name, arity)
-
-    def parse_tex(self) -> list[str]:
+    def parse_tex(self) -> tuple[str, ...]:
         if self.stream.peek().type == "TEX":
             self.stream.consume("TEX")
             if self.stream.peek().type == "INFIX":
                 self.stream.consume("INFIX")
-                return ["", self.stream.consume("STRING").value, ""]
+                return ("", self.stream.consume("STRING").value, "")
             else:
                 tex: list[str] = []
                 while True:
@@ -867,20 +861,11 @@ class Parser:
                         self.stream.consume("COMMA")
                     else:
                         break
-                return tex
+                return tuple(tex)
         else:
-            return []
+            return ()
 
-    def create_tex(self, name: str, arity: int):
-        if arity == 0:
-            tex = [f"\\mathrm{{{name}}}"]
-        else:
-            tex = [f"\\mathrm{{{name}}}("]
-            tex.extend(["," for _ in range(arity - 1)])
-            tex.append(")")
-        return tex
-
-    def parse_vars_or_struct_vars(self) -> list[ParsedIdent | ParsedTypedIdent]:
+    def parse_vars_or_struct_vars(self) -> tuple[ParsedIdent | ParsedTypedIdent, ...]:
         vars: list[ParsedIdent | ParsedTypedIdent] = []
         while True:
             vars.append(self.parse_var_or_struct_var())
@@ -888,59 +873,47 @@ class Parser:
                 self.stream.consume("COMMA")
             else:
                 break
-        return vars
+        return tuple(vars)
 
-    def parse_vars_or_struct_vars_or_pred_tmpls_or_fun_tmpls(self) -> tuple[list[ParsedIdent | ParsedTypedIdent | ParsedPredTemplate | ParsedFunTemplate], list[ParsedIdent | ParsedTypedIdent], list[ParsedPredTemplate], list[ParsedFunTemplate]]:
+    def parse_vars_or_struct_vars_or_pred_tmpls_or_fun_tmpls(self) -> tuple[ParsedIdent | ParsedTypedIdent | ParsedPredTemplate | ParsedFunTemplate, ...]:
         items: list[ParsedIdent | ParsedTypedIdent | ParsedPredTemplate | ParsedFunTemplate] = []
-        vars: list[ParsedIdent | ParsedTypedIdent] = []
-        pred_tmpls: list[ParsedPredTemplate] = []
-        fun_tmpls: list[ParsedFunTemplate] = []
         while True:
             if self.stream.peek().type == "PREDICATE":
                 self.stream.consume("PREDICATE")
                 pred_tmpl = self.parse_pred_tmpl()
                 items.append(pred_tmpl)
-                pred_tmpls.append(pred_tmpl)
             elif self.stream.peek().type == "FUNCTION":
                 self.stream.consume("FUNCTION")
                 fun_tmpl = self.parse_fun_tmpl()
                 items.append(fun_tmpl)
-                fun_tmpls.append(fun_tmpl)
             else:
                 var = self.parse_var_or_struct_var()
                 items.append(var)
-                vars.append(var)
             if self.stream.peek().type == "COMMA":
                 self.stream.consume("COMMA")
             else:
                 break
-        return items, vars, pred_tmpls, fun_tmpls
+        return tuple(items)
 
-    def parse_vars_or_pred_tmpls_or_fun_tmpls(self) -> tuple[list[ParsedIdent | ParsedPredTemplate | ParsedFunTemplate], list[ParsedIdent], list[ParsedPredTemplate], list[ParsedFunTemplate]]:
+    def parse_vars_or_pred_tmpls_or_fun_tmpls(self) -> tuple[ParsedIdent | ParsedPredTemplate | ParsedFunTemplate, ...]:
         items: list[ParsedIdent | ParsedPredTemplate | ParsedFunTemplate] = []
-        vars: list[ParsedIdent] = []
-        pred_tmpls: list[ParsedPredTemplate] = []
-        fun_tmpls: list[ParsedFunTemplate] = []
         while True:
             if self.stream.peek().type == "PREDICATE":
                 self.stream.consume("PREDICATE")
                 pred_tmpl = self.parse_pred_tmpl()
                 items.append(pred_tmpl)
-                pred_tmpls.append(pred_tmpl)
             elif self.stream.peek().type == "FUNCTION":
                 self.stream.consume("FUNCTION")
                 fun_tmpl = self.parse_fun_tmpl()
                 items.append(fun_tmpl)
-                fun_tmpls.append(fun_tmpl)
             else:
                 var = self.parse_var()
                 items.append(var)
-                vars.append(var)
             if self.stream.peek().type == "COMMA":
                 self.stream.consume("COMMA")
             else:
                 break
-        return items, vars, pred_tmpls, fun_tmpls
+        return tuple(items)
 
     def parse_vars(self) -> list[ParsedIdent]:
         vars: list[ParsedIdent] = []
@@ -995,9 +968,9 @@ class Parser:
         self.add_node_to_token(fun, tok, tok)
         return fun
 
-    def parse_refs_indexes(self) -> tuple[list[ParsedIdent], dict[ParsedIdent, list[int]]]:
+    def parse_refs_indexes(self) -> tuple[tuple[ParsedIdent, ...], Map[ParsedIdent, tuple[int, ...]]]:
         refs: list[ParsedIdent] = []
-        indexes: dict[ParsedIdent, list[int]] = {}
+        indexes: dict[ParsedIdent, tuple[int, ...]] = {}
         while True:
             ref_token = self.stream.consume("IDENT")
             ref_name = ref_token.value
@@ -1014,9 +987,9 @@ class Parser:
                     else:
                         break
                 self.stream.consume("RBRACKET")
-                indexes[parsed_name] = indexes_
+                indexes[parsed_name] = tuple(indexes_)
             if self.stream.peek().type == "COMMA":
                 self.stream.consume("COMMA")
             else:
                 break
-        return refs, indexes
+        return tuple(refs), Map(indexes)

@@ -319,7 +319,7 @@ class NameResolver:
         self.add_node_to_token(resolved, node)
         return resolved
 
-    def create_or_check_tex(self, tex: list[str], name: str, arity: int, node: ParsedPrimPred | ParsedDefPred | ParsedDefCon | ParsedDefFun | ParsedDefFunTerm | ParsedEquality) -> tuple[str, ...]:
+    def create_or_check_tex(self, tex: tuple[str, ...], name: str, arity: int, node: ParsedPrimPred | ParsedDefPred | ParsedDefCon | ParsedDefFun | ParsedDefFunTerm | ParsedEquality) -> tuple[str, ...]:
         if len(tex) == 0:
             return self.create_tex(name, arity)
         elif len(tex) == arity + 1:
@@ -336,7 +336,7 @@ class NameResolver:
             tex.append(")")
         return tuple(tex)
 
-    def resolve_block(self, node: list[ParsedControl], context: ResolvedContext) -> tuple[ResolvedControl, ...]:
+    def resolve_block(self, node: tuple[ParsedControl, ...], context: ResolvedContext) -> tuple[ResolvedControl, ...]:
         return tuple(self.resolve_control(control, context) for control in node)
 
     def resolve_control(self, node: ParsedControl, context: ResolvedContext) -> ResolvedControl:
@@ -953,7 +953,7 @@ class NameResolver:
         else:
             raise ResolveError(node, "Unexpected type")
 
-    def resolve_vars_or_struct_vars_or_pred_tmpls_or_fun_tmpls(self, node: list[ParsedIdent | ParsedTypedIdent | ParsedPredTemplate | ParsedFunTemplate], context: ResolvedContext) -> tuple[ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate, ...]:
+    def resolve_vars_or_struct_vars_or_pred_tmpls_or_fun_tmpls(self, node: tuple[ParsedIdent | ParsedTypedIdent | ParsedPredTemplate | ParsedFunTemplate, ...], context: ResolvedContext) -> tuple[ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate, ...]:
         items: list[ResolvedVar | ResolvedStructVar | ResolvedPredTemplate | ResolvedFunTemplate] = []
         for item in node:
             if item.name in [used.name for used in items]:
@@ -974,7 +974,7 @@ class NameResolver:
                 raise ResolveError(item, f"Unexpected type {type(item)}")
         return tuple(items)
 
-    def resolve_vars_or_pred_tmpls_or_fun_tmpls(self, node: list[ParsedIdent | ParsedPredTemplate | ParsedFunTemplate], context: ResolvedControlContext | ResolvedFormulaContext) -> tuple[ResolvedVar | ResolvedPredTemplate | ResolvedFunTemplate, ...]:
+    def resolve_vars_or_pred_tmpls_or_fun_tmpls(self, node: tuple[ParsedIdent | ParsedPredTemplate | ParsedFunTemplate, ...], context: ResolvedControlContext | ResolvedFormulaContext) -> tuple[ResolvedVar | ResolvedPredTemplate | ResolvedFunTemplate, ...]:
         items: list[ResolvedVar | ResolvedPredTemplate | ResolvedFunTemplate] = []
         for item in node:
             if item.name in [used.name for used in items]:
@@ -1004,7 +1004,7 @@ class NameResolver:
         else:
             raise ResolveError(node, f"Unexpected type {type(node)}")
 
-    def resolve_vars_or_none(self, node: list[ParsedIdent | None], context: ResolvedControlContext | ResolvedFormulaContext) -> tuple[tuple[ResolvedVar | None, ...], tuple[ResolvedVar, ...]]:
+    def resolve_vars_or_none(self, node: tuple[ParsedIdent | None, ...], context: ResolvedControlContext | ResolvedFormulaContext) -> tuple[tuple[ResolvedVar | None, ...], tuple[ResolvedVar, ...]]:
         vars_or_none: list[ResolvedVar | None] = []
         vars: list[ResolvedVar] = []
         for item in node:
