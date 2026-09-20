@@ -432,10 +432,10 @@ class ResolvedContext:
 @dataclass
 class ResolvedUnit:
     resolved_ast: ResolvedInclude | ResolvedDeclaration
-    resolved_node_to_token: dict[int, tuple[int, int]]
+    resolved_node_to_token: dict[int, tuple[Token, Token]]
     resolved_nodes: list[ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred | ResolvedRefStructCon]
-    resolved_token_to_node: dict[int, ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred | ResolvedRefStructCon]
-    resolved_token_to_control: dict[int, ResolvedControl]
+    resolved_token_to_node: dict[Token, ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred | ResolvedRefStructCon]
+    resolved_token_to_control: dict[Token, ResolvedControl]
     resolved_decl_refs: dict[str, list[Token]]
     resolved_ctrl_defs: dict[int, tuple[str, int]]
     resolved_ctrl_refs: dict[int, list[int]]

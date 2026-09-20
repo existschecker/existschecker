@@ -34,28 +34,32 @@ class Elaborator:
         self.diagnostics.append(diag)
 
     def get_node_token(self, node: ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact) -> Token:
-        return self.lexed_unit.tokens[self.resolved_unit.resolved_node_to_token[id(node)][0]]
+        return self.resolved_unit.resolved_node_to_token[id(node)][0]
 
     def add_node_to_token(self, node: Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon, resolved: ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructCondition | ResolvedRefStructPred | ResolvedRefStructCon) -> None:
         self.node_to_token[id(node)] = self.resolved_unit.resolved_node_to_token[id(resolved)]
         self.nodes.append(node)
 
-    def build_token_to_node(self) -> tuple[dict[int, Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon], dict[int, Control]]:
-        token_to_node: dict[int, Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon] = {}
-        token_to_control: dict[int, Control] = {}
+    def build_token_to_node(self) -> tuple[dict[Token, Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon], dict[Token, Control]]:
+        token_to_node: dict[Token, Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon] = {}
+        token_to_control: dict[Token, Control] = {}
         for node in reversed(self.nodes):
-            start, end = self.node_to_token[id(node)]
+            start_token, end_token = self.node_to_token[id(node)]
+            start = self.lexed_unit.token_to_index[start_token]
+            end = self.lexed_unit.token_to_index[end_token]
             for index in range(start, end + 1):
-                token_to_node[index] = node
+                token_to_node[self.lexed_unit.tokens[index]] = node
         for node in reversed(self.nodes):
             if isinstance(node, Control):
-                start, end = self.node_to_token[id(node)]
+                start_token, end_token = self.node_to_token[id(node)]
+                start = self.lexed_unit.token_to_index[start_token]
+                end = self.lexed_unit.token_to_index[end_token]
                 for index in range(start, end + 1):
-                    token_to_control[index] = node
+                    token_to_control[self.lexed_unit.tokens[index]] = node
         return token_to_node, token_to_control
 
     def elaborate_unit(self) -> ElaboratedUnit:
-        self.node_to_token: dict[int, tuple[int, int]] = {}
+        self.node_to_token: dict[int, tuple[Token, Token]] = {}
         self.nodes: list[Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon] = []
         self.diagnostics: list[lsp.Diagnostic] = []
         if isinstance(self.resolved_unit.resolved_ast, ResolvedInclude):

@@ -565,15 +565,16 @@ class InvalidInclude(Include):
 class LexedUnit:
     file: str
     tokens: list[Token]
+    token_to_index: dict[Token, int]
     hash: str
 
 @dataclass
 class ElaboratedUnit:
     ast: Include | Declaration
-    node_to_token: dict[int, tuple[int, int]]
+    node_to_token: dict[int, tuple[Token, Token]]
     nodes: list[Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon]
-    token_to_node: dict[int, Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon]
-    token_to_control: dict[int, Control]
+    token_to_node: dict[Token, Declaration | Control | Formula | Term | RefFact | RefStruct | RefStructCondition | StructVar | RefStructPred | RefStructCon]
+    token_to_control: dict[Token, Control]
     diagnostics: list[lsp.Diagnostic]
 
 @dataclass
@@ -606,7 +607,7 @@ class Workspace:
         for path in order:
             for unit in self.file_units[path]:
                 if isinstance(unit.elaborated_unit.ast, (Equality, PrimPred, Axiom, Theorem, DefPred, DefCon, DefFun, DefFunTerm, Struct)) and name == unit.elaborated_unit.ast.name:
-                    return unit.lexed_unit.tokens[unit.elaborated_unit.node_to_token[id(unit.elaborated_unit.ast.ref)][0]]
+                    return unit.elaborated_unit.node_to_token[id(unit.elaborated_unit.ast.ref)][0]
         return None
 
     def get_all_decl_refs(self, name: str, affected_files: set[str]) -> list[Token]:
@@ -625,8 +626,7 @@ class Workspace:
                     def_unit = unit
         if def_unit is None:
             return None
-        def_token_index = def_unit.resolved_unit.resolved_node_to_token[def_node_id][0]
-        def_token = def_unit.lexed_unit.tokens[def_token_index]
+        def_token = def_unit.resolved_unit.resolved_node_to_token[def_node_id][0]
         return def_token
 
     def get_ctrl_refs(self, affected_files: set[str], target_def_unit_name: str, target_def_node_id: int) -> list[Token]:
@@ -635,8 +635,8 @@ class Workspace:
             for unit in self.file_units[path]:
                 for ref_node_id, (def_unit_name, def_node_id) in unit.resolved_unit.resolved_ctrl_defs.items():
                     if def_unit_name == target_def_unit_name and def_node_id == target_def_node_id:
-                        ref_token_index = unit.resolved_unit.resolved_node_to_token[ref_node_id][0]
-                        refs.append(unit.lexed_unit.tokens[ref_token_index])
+                        ref_token = unit.resolved_unit.resolved_node_to_token[ref_node_id][0]
+                        refs.append(ref_token)
         return refs
 
     def merge(self, file_units: dict[str, list[DeclarationUnit]], dependency_result: DependencyResult) -> "Workspace":

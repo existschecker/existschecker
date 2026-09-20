@@ -29,7 +29,7 @@ class Parser:
         self.diagnostics.append(diag)
 
     def add_node_to_token(self, node: ParsedInclude | ParsedDeclaration | ParsedControl | ParsedExpr, start_token: Token, end_token: Token):
-        self.node_to_token[id(node)] = (start_token.index, end_token.index)
+        self.node_to_token[id(node)] = (start_token, end_token)
 
     def skip_until_next_RBRACE_or_control(self):
         nest_level = 0
@@ -45,7 +45,7 @@ class Parser:
                 self.stream.consume(tok.type)
 
     def parse_unit(self) -> ParsedUnit:
-        self.node_to_token: dict[int, tuple[int, int]] = {}
+        self.node_to_token: dict[int, tuple[Token, Token]] = {}
         self.diagnostics: list[lsp.Diagnostic] = []
         self.stream = TokenStream(self.lexed_unit.tokens)
         tok = self.stream.peek()
@@ -655,7 +655,7 @@ class Parser:
 
     def parse_implies(self) -> ParsedExpr:
         left = self.parse_and()
-        start_token = self.lexed_unit.tokens[self.node_to_token[id(left)][0]]
+        start_token = self.node_to_token[id(left)][0]
         while self.stream.peek().type in ("IMPLIES", "IFF"):
             tok = self.stream.peek()
             self.stream.consume(tok.type)
@@ -670,7 +670,7 @@ class Parser:
 
     def parse_and(self) -> ParsedExpr:
         left = self.parse_primary()
-        start_token = self.lexed_unit.tokens[self.node_to_token[id(left)][0]]
+        start_token = self.node_to_token[id(left)][0]
         while self.stream.peek().type in ("AND", "OR"):
             tok = self.stream.peek()
             self.stream.consume(tok.type)

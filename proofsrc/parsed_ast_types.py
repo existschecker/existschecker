@@ -300,5 +300,5 @@ class ParsedInvalidInclude(ParsedInclude):
 @dataclass
 class ParsedUnit:
     ast: ParsedInclude | ParsedDeclaration
-    node_to_token: dict[int, tuple[int, int]]
+    node_to_token: dict[int, tuple[Token, Token]]
     diagnostics: list[lsp.Diagnostic]

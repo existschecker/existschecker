@@ -231,7 +231,7 @@ class Analyzer:
             return None
         ref_name = ref_token.value
         order = self.old_workspace.dependency_result.get_dependent_order(unit.lexed_unit.file)
-        ref_node = unit.resolved_unit.resolved_token_to_node[ref_token.index]
+        ref_node = unit.resolved_unit.resolved_token_to_node[ref_token]
         if id(ref_node) in unit.resolved_unit.resolved_ctrl_defs:
             def_unit_name, def_node_id = unit.resolved_unit.resolved_ctrl_defs[id(ref_node)]
             ctrl_def_token = self.old_workspace.get_ctrl_def(order, def_unit_name, def_node_id)
@@ -252,7 +252,7 @@ class Analyzer:
         if ref_token is None:
             return []
         ref_name = ref_token.value
-        ref_node = unit.resolved_unit.resolved_token_to_node[ref_token.index]
+        ref_node = unit.resolved_unit.resolved_token_to_node[ref_token]
         affected_files = self.old_workspace.dependency_result.get_affected_files(unit.lexed_unit.file)
         if id(ref_node) in unit.resolved_unit.resolved_ctrl_defs:
             def_unit_name, def_node_id = unit.resolved_unit.resolved_ctrl_defs[id(ref_node)]
@@ -559,12 +559,12 @@ class Analyzer:
         token = self.find_token_at(unit, params.position)
         if token is None:
             return None
-        if token.index not in unit.resolved_unit.resolved_token_to_node:
+        if token not in unit.resolved_unit.resolved_token_to_node:
             return None
-        resolved_node = unit.resolved_unit.resolved_token_to_node[token.index]
-        if token.index not in unit.elaborated_unit.token_to_node:
+        resolved_node = unit.resolved_unit.resolved_token_to_node[token]
+        if token not in unit.elaborated_unit.token_to_node:
             return None
-        node = unit.elaborated_unit.token_to_node[token.index]
+        node = unit.elaborated_unit.token_to_node[token]
         return lsp.Hover(
             contents=lsp.MarkupContent(
                 kind=lsp.MarkupKind.Markdown,
@@ -577,10 +577,10 @@ class Analyzer:
         target_line = position.line + 1
         last_node = None
         for token in unit.lexed_unit.tokens:
-            if token.line < target_line and token.index in unit.elaborated_unit.token_to_control:
-                last_node = unit.elaborated_unit.token_to_control[token.index]
-            elif token.line == target_line and token.index in unit.elaborated_unit.token_to_control:
-                return unit.elaborated_unit.token_to_control[token.index]
+            if token.line < target_line and token in unit.elaborated_unit.token_to_control:
+                last_node = unit.elaborated_unit.token_to_control[token]
+            elif token.line == target_line and token in unit.elaborated_unit.token_to_control:
+                return unit.elaborated_unit.token_to_control[token]
         return last_node
 
     def get_proofinfo(self, current_cursor: CursorState | None) -> str:
@@ -605,8 +605,7 @@ class Analyzer:
         if path not in self.old_workspace.file_units:
             return lsp.SemanticTokens(data=[])
         for unit in self.old_workspace.file_units[path]:
-            for index, node in unit.resolved_unit.resolved_token_to_node.items():
-                token = unit.lexed_unit.tokens[index]
+            for token, node in unit.resolved_unit.resolved_token_to_node.items():
                 if isinstance(node, (ResolvedRefAxiom, ResolvedRefTheorem, ResolvedRefStructCondition)):
                     t_type = TokenType.FUNCTION
                 elif isinstance(node, (ResolvedRefEquality, ResolvedRefPrimPred, ResolvedRefDefPred, ResolvedRefDefCon, ResolvedRefDefFun, ResolvedRefDefFunTerm)):

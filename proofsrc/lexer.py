@@ -1,7 +1,7 @@
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
-@dataclass
+@dataclass(frozen=True)
 class Token:
     type: str
     value: str
@@ -11,7 +11,6 @@ class Token:
     column: int
     end_line: int
     end_column: int
-    index: int = field(init=False, default=-1)
 
     def info(self):
         return f"[{self.file}:{self.line}:{self.column}]"

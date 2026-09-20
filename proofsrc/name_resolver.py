@@ -44,13 +44,13 @@ class NameResolver:
         self.diagnostics.append(diag)
 
     def get_node_token(self, node: ParsedDeclaration | ParsedControl | ParsedExpr) -> Token:
-        return self.lexed_unit.tokens[self.parsed_unit.node_to_token[id(node)][0]]
+        return self.parsed_unit.node_to_token[id(node)][0]
 
     def add_node_to_token(self, node: ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred | ResolvedRefStructCon, parsed: ParsedDeclaration | ParsedControl | ParsedExpr) -> None:
         self.resolved_node_to_token[id(node)] = self.parsed_unit.node_to_token[id(parsed)]
         self.resolved_nodes.append(node)
         if isinstance(node, (ResolvedRefFact, ResolvedRefEquality, ResolvedRefPrimPred, ResolvedRefDefPred, ResolvedRefDefCon, ResolvedRefDefFun, ResolvedRefDefFunTerm, ResolvedRefStruct, ResolvedRefStructField, ResolvedRefStructCondition)):
-            self.add_decl_ref(node.name, self.lexed_unit.tokens[self.resolved_node_to_token[id(node)][0]])
+            self.add_decl_ref(node.name, self.resolved_node_to_token[id(node)][0])
 
     def add_decl_ref(self, name: str, token: Token) -> None:
         if name not in self.resolved_decl_refs:
@@ -68,22 +68,26 @@ class NameResolver:
             self.resolved_ctrl_refs[id(def_node)] = []
         self.resolved_ctrl_refs[id(def_node)].append(id(ref_node))
 
-    def build_token_to_node(self) -> tuple[dict[int, ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred | ResolvedRefStructCon], dict[int, ResolvedControl]]:
-        resolved_token_to_node: dict[int, ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred | ResolvedRefStructCon] = {}
-        resolved_token_to_control: dict[int, ResolvedControl] = {}
+    def build_token_to_node(self) -> tuple[dict[Token, ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred | ResolvedRefStructCon], dict[Token, ResolvedControl]]:
+        resolved_token_to_node: dict[Token, ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred | ResolvedRefStructCon] = {}
+        resolved_token_to_control: dict[Token, ResolvedControl] = {}
         for node in reversed(self.resolved_nodes):
-            start, end = self.resolved_node_to_token[id(node)]
+            start_token, end_token = self.resolved_node_to_token[id(node)]
+            start = self.lexed_unit.token_to_index[start_token]
+            end = self.lexed_unit.token_to_index[end_token]
             for index in range(start, end + 1):
-                resolved_token_to_node[index] = node
+                resolved_token_to_node[self.lexed_unit.tokens[index]] = node
         for node in reversed(self.resolved_nodes):
             if isinstance(node, ResolvedControl):
-                start, end = self.resolved_node_to_token[id(node)]
+                start_token, end_token = self.resolved_node_to_token[id(node)]
+                start = self.lexed_unit.token_to_index[start_token]
+                end = self.lexed_unit.token_to_index[end_token]
                 for index in range(start, end + 1):
-                    resolved_token_to_control[index] = node
+                    resolved_token_to_control[self.lexed_unit.tokens[index]] = node
         return resolved_token_to_node, resolved_token_to_control
 
     def resolve_unit(self) -> ResolvedUnit:
-        self.resolved_node_to_token: dict[int, tuple[int, int]] = {}
+        self.resolved_node_to_token: dict[int, tuple[Token, Token]] = {}
         self.resolved_nodes: list[ResolvedInclude | ResolvedDeclaration | ResolvedControl | ResolvedFormula | ResolvedTerm | ResolvedRefFact | ResolvedRefStruct | ResolvedRefStructField | ResolvedRefStructCondition | ResolvedStructVar | ResolvedRefStructPred | ResolvedRefStructCon] = []
         self.resolved_decl_refs: dict[str, list[Token]] = {}
         self.resolved_ctrl_defs: dict[int, tuple[str, int]] = {}

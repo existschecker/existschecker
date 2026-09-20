@@ -15,14 +15,13 @@ def split(file: str, file_tokens: list[Token], source: str) -> list[LexedUnit]:
         unit_tokens = [start_token] + get_tokens_until_next(stream)
         last_token = unit_tokens[-1]
         unit_tokens.append(Token("EOF", "", last_token.file, last_token.pos + len(last_token.value), last_token.line, last_token.column + len(last_token.value), last_token.line, last_token.column + len(last_token.value)))
-        for index, token in enumerate(unit_tokens):
-            token.index = index
+        token_to_index = {token: index for index, token in enumerate(unit_tokens)}
         start = unit_tokens[0].pos
         end = unit_tokens[-1].pos
         raw_text = source[start:end]
         normalized_text = raw_text.replace("\r\n", "\n")
         hash = hashlib.md5(normalized_text.encode()).hexdigest()
-        unit = LexedUnit(file=file, tokens=unit_tokens, hash=hash)
+        unit = LexedUnit(file=file, tokens=unit_tokens, token_to_index=token_to_index, hash=hash)
         units.append(unit)
     return units
 
