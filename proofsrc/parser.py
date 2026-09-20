@@ -299,7 +299,7 @@ class Parser:
         self.stream.consume("RPAREN")
         self.stream.consume("AS")
         formula = self.parse_formula()
-        defpred = ParsedStructPred(name=f"{ref_struct.name}.{ref.name}", ref_struct=ref_struct, ref=ref, args=tuple(args), formula=formula)
+        defpred = ParsedStructPred(name=f"{ref_struct.name}.{ref.name}", ref_struct=ref_struct, ref=ref, args=args, formula=formula)
         self.add_node_to_token(defpred, start_token, self.stream.last_token)
         logger.debug(f"[struct predicate] {name}")
         return defpred
@@ -696,9 +696,9 @@ class Parser:
                 args = self.parse_terms()
                 self.stream.consume("RPAREN")
                 if isinstance(expr, ParsedIdent):
-                    expr = ParsedIdentArgs(expr, tuple(args))
+                    expr = ParsedIdentArgs(expr, args)
                 else:
-                    expr = ParsedCall(expr, tuple(args))
+                    expr = ParsedCall(expr, args)
                 self.add_node_to_token(expr, tok, self.stream.last_token)
             return expr
 
@@ -774,12 +774,12 @@ class Parser:
                 break
         return tuple(terms)
 
-    def parse_terms(self) -> list[ParsedExpr]:
+    def parse_terms(self) -> tuple[ParsedExpr, ...]:
         terms = [self.parse_term()]
         while self.stream.peek().type == "COMMA":
             self.stream.consume("COMMA")
             terms.append(self.parse_term())
-        return terms
+        return tuple(terms)
 
     def parse_access(self, parent: ParsedIdent | ParsedAccess, start_token: Token) -> ParsedAccess:
         current_expr = parent
@@ -814,7 +814,7 @@ class Parser:
                 self.stream.consume("LPAREN")
                 args = self.parse_terms()
                 self.stream.consume("RPAREN")
-                term = ParsedIdentArgs(ident, tuple(args))
+                term = ParsedIdentArgs(ident, args)
                 self.add_node_to_token(term, tok, self.stream.last_token)
                 return term
             elif self.stream.peek().type == "DOT":
@@ -824,23 +824,23 @@ class Parser:
         elif tok.type == "LAMBDA_PRED":
             self.stream.consume("LAMBDA_PRED")
             if self.stream.peek().type == "DOT":
-                vars: list[ParsedIdent] = []
+                vars = ()
             else:
                 vars = self.parse_vars()
             self.stream.consume("DOT")
             formula = self.parse_formula()
-            term = ParsedPredLambda(tuple(vars), formula)
+            term = ParsedPredLambda(vars, formula)
             self.add_node_to_token(term, tok, self.stream.last_token)
             return term
         elif tok.type == "LAMBDA_FUN":
             self.stream.consume("LAMBDA_FUN")
             if self.stream.peek().type == "DOT":
-                vars: list[ParsedIdent] = []
+                vars = ()
             else:
                 vars = self.parse_vars()
             self.stream.consume("DOT")
             term = self.parse_term()
-            term = ParsedFunLambda(tuple(vars), term)
+            term = ParsedFunLambda(vars, term)
             self.add_node_to_token(term, tok, self.stream.last_token)
             return term
         else:
@@ -915,7 +915,7 @@ class Parser:
                 break
         return tuple(items)
 
-    def parse_vars(self) -> list[ParsedIdent]:
+    def parse_vars(self) -> tuple[ParsedIdent, ...]:
         vars: list[ParsedIdent] = []
         while True:
             vars.append(self.parse_var())
@@ -923,7 +923,7 @@ class Parser:
                 self.stream.consume("COMMA")
             else:
                 break
-        return vars
+        return tuple(vars)
 
     def parse_var_or_struct_var(self) -> ParsedIdent | ParsedTypedIdent:
         tok = self.stream.consume("IDENT")

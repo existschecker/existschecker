@@ -148,7 +148,7 @@ class NameResolver:
         ref = ResolvedRefPrimPred(node.ref.name)
         self.add_node_to_token(ref, node.ref)
         tex = self.create_or_check_tex(node.tex, node.name, node.arity, node)
-        resolved = ResolvedPrimPred(node.name, ref, node.arity, tuple(tex))
+        resolved = ResolvedPrimPred(node.name, ref, node.arity, tex)
         self.add_node_to_token(resolved, node)
         return resolved
 
@@ -288,7 +288,7 @@ class NameResolver:
         args = self.resolve_vars(node.args, context.ctrl)
         local_ctx = context.add_ctrl(args)
         formula = self.resolve_formula(node.formula, local_ctx)
-        resolved = ResolvedStructPred(node.name, ref_struct, ref, tuple(args), formula)
+        resolved = ResolvedStructPred(node.name, ref_struct, ref, args, formula)
         self.add_node_to_token(resolved, node)
         return resolved
 
@@ -531,21 +531,21 @@ class NameResolver:
                 self.add_node_to_token(resolved_ref, ref)
                 resolved_refs.append(resolved_ref)
                 if ref in node.indexes:
-                    indexes[resolved_ref] = tuple(node.indexes[ref])
+                    indexes[resolved_ref] = node.indexes[ref]
             elif self.decl.has_resolved_ast(ResolvedDefPred, ref.name):
                 resolved_ref = ResolvedRefDefPred(ref.name)
                 self.add_node_to_token(resolved_ref, ref)
                 resolved_refs.append(resolved_ref)
                 if ref in node.indexes:
-                    indexes[resolved_ref] = tuple(node.indexes[ref])
+                    indexes[resolved_ref] = node.indexes[ref]
             else:
                 msg = f"Unexpected name {ref.name}"
                 raise ResolveError(node, msg)
         for k, v in node.indexes.items():
             if self.decl.has_resolved_ast(ResolvedDefFunTerm, k.name):
-                indexes[ResolvedRefDefFunTerm(k.name)] = tuple(v)
+                indexes[ResolvedRefDefFunTerm(k.name)] = v
             elif self.decl.has_resolved_ast(ResolvedDefPred, k.name):
-                indexes[ResolvedRefDefPred(k.name)] = tuple(v)
+                indexes[ResolvedRefDefPred(k.name)] = v
             else:
                 msg = f"Unexpected name {k.name}"
                 raise ResolveError(node, msg)
@@ -581,7 +581,7 @@ class NameResolver:
             self.add_node_to_token(new_v, v)
             env[new_k] = new_v
             if k in node.indexes:
-                indexes[new_k] = tuple(node.indexes[k])
+                indexes[new_k] = node.indexes[k]
         resolved = ResolvedSubstitute(fact, Map(env), Map(indexes))
         self.add_node_to_token(resolved, node)
         return resolved
@@ -884,12 +884,12 @@ class NameResolver:
                     self.add_node_to_token(fun, node.name)
                     self.add_ctrl_defs_refs(def_fun_tmpl, fun)
                     defargs = [ResolvedVar(f"x_{i}") for i in range(fun.arity)]
-                subargs = [self.resolve_term(arg, context) for arg in node.args]
+                subargs = tuple(self.resolve_term(arg, context) for arg in node.args)
                 if len(subargs) == 0:
                     return fun
                 else:
                     self.match_args(defargs, subargs, node)
-                    term = ResolvedCompound(fun, tuple(subargs))
+                    term = ResolvedCompound(fun, subargs)
                     self.add_node_to_token(term, node.name)
                     return term
             elif self.decl.has_resolved_ast(ResolvedPrimPred, name):
@@ -906,7 +906,7 @@ class NameResolver:
         elif isinstance(node, ParsedPredLambda):
             args = self.resolve_vars(node.args, context.form)
             body = self.resolve_formula(node.body, context.add_form(args))
-            resolved = ResolvedPredLambda(tuple(args), body)
+            resolved = ResolvedPredLambda(args, body)
             self.add_node_to_token(resolved, node)
             return resolved
         elif isinstance(node, ParsedFunLambda):
@@ -914,7 +914,7 @@ class NameResolver:
             body = self.resolve_term(node.body, context.add_form(args))
             if not isinstance(body, ResolvedVarTerm):
                 raise ResolveError(node, "Unexpected type")
-            resolved = ResolvedFunLambda(tuple(args), body)
+            resolved = ResolvedFunLambda(args, body)
             self.add_node_to_token(resolved, node)
             return resolved
         elif isinstance(node, ParsedAccess):
